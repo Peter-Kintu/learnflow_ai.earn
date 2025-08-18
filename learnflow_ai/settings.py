@@ -6,7 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-**********************************'
 DEBUG = True
-ALLOWED_HOSTS = []
+# To fix the DisallowedHost error, we need to add the domain
+# 'learnflow-ai-0fdz.onrender.com' to the list of allowed hosts.
+ALLOWED_HOSTS = ['learnflow-ai-0fdz.onrender.com']
 
 # Application definition
 INSTALLED_APPS = [
