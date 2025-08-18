@@ -1,27 +1,16 @@
 # learnflow_ai/settings.py
-
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-**********************************'
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
 INSTALLED_APPS = [
+    'jazzmin',  # 🎷 Jazzmin admin theme
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,7 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'aiapp',
     'video',
-    'user', # Add the new 'user' app
+    'user',
     'book',
 ]
 
@@ -64,59 +53,96 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
+# CORRECTED: This section is updated to use your Neon.tech PostgreSQL database.
+# Be sure to install the required library with: pip install psycopg2-binary
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'neondb',
+        'USER': 'neondb_owner',
+        'PASSWORD': 'npg_Irxs8L1cVhlW',
+        'HOST': 'ep-green-shape-aexq3vr8-pooler.c-2.us-east-2.aws.neon.tech',
+        'PORT': '5432', # 5432 is the default PostgreSQL port
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# New login-related settings
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
+
+# 🎨 Jazzmin Styling
+JAZZMIN_SETTINGS = {
+    "site_title": "LearnFlow Admin",
+    "site_header": "LearnFlow Dashboard",
+    "site_brand": "LearnFlow",
+    "welcome_sign": "Welcome to LearnFlow Admin",
+    "copyright": "KINTU",
+    "search_model": ["user.User", "video.Video"],
+    "topmenu_links": [
+        {"name": "Home", "url": "/", "permissions": ["auth.view_user"]},
+        {"model": "user.User"},
+        {"model": "video.Video"},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "user.User": "fas fa-user",
+        "video.Video": "fas fa-video",
+        "book.Book": "fas fa-book",
+    },
+    "changeform_format": "horizontal_tabs",
+    "related_modal_active": True,
+    # This setting is for the interactive UI builder, remove it for production
+    "show_ui_builder": True,
+}
+
+# 🎨 Jazzmin UI Tweaks for a more beautiful look
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "navbar_fixed": True,
+    "sidebar_fixed": True,
+    "brand_small_text": False,
+    "body_small_text": False,
+    "sidebar_nav_small_text": False,
+    "sidebar_nav_flat_style": True,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_disable_expand": False,
+    "theme": "darkly",  # A sleek dark theme
+    "dark_mode_theme": "darkly", # Use the same theme for dark mode
+    "button_classes": {
+        "primary": "btn-outline-primary",
+        "secondary": "btn-outline-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+    },
+    "actions_button_classes": {
+        "outline-primary": "btn-primary",
+        "primary": "btn-primary",
+        "info": "btn-info",
+        "success": "btn-success",
+        "danger": "btn-danger"
+    },
+    "brand_color": "navbar-dark",
+    "accent": "accent-indigo",
+    "navbar": "navbar-dark navbar-indigo",
+    "sidebar": "sidebar-dark-indigo",
+    "footer_small_text": True,
+}
