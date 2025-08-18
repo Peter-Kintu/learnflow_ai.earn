@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <h2 class="text-3xl font-bold text-gray-200 mb-4">Quiz Results</h2>
+    <p class="text-gray-400 mb-6">
+        You have successfully completed the quiz titled **"{{ quiz.title }}"**.
+    </p>
+    
+    <div class="flex flex-col items-center justify-center p-8 bg-slate-700 rounded-xl shadow-inner">
+        <p class="text-gray-300 font-semibold text-lg">Your Score</p>
+        <div class="text-6xl font-extrabold text-indigo-500 my-4">
+            {{ score }} / {{ total_questions }}
+        </div>
+        {% if score == total_questions %}
+        <p class="text-green-400 font-semibold text-center">
+            Congratulations! You got all the questions right.
+        </p>
+        {% elif score > total_questions|divisibleby:"2" %}
+        <p class="text-yellow-400 font-semibold text-center">
+            Well done! You passed the quiz.
+        </p>
+        {% else %}
+        <p class="text-red-400 font-semibold text-center">
+            You can do better! Keep studying and try again.
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="flex justify-center mt-8 space-x-4">
+        <a href="{% url 'aiapp:quiz_detail' quiz.id %}" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-md font-semibold">
+            View Quiz Details
+        </a>
+        <a href="{% url 'aiapp:quiz_list' %}" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+            Back to Quizzes
+        </a>
+    </div>
+</div>
+{% endblock %}

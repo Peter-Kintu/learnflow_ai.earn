@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <h2 class="text-3xl font-bold text-gray-200 mb-6">Edit Video: {{ video.title }}</h2>
+    <p class="text-gray-400 mb-8">Update the details for your video below.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="space-y-4">
+            {{ form.non_field_errors }}
+            <div>
+                <label for="{{ form.title.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Video Title</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+            <div>
+                <label for="{{ form.url.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Video URL</label>
+                {{ form.url }}
+                <p class="text-sm text-gray-500 mt-1">Please use a YouTube embed URL (e.g., https://www.youtube.com/embed/dQw4w9WgXcQ).</p>
+                {{ form.url.errors }}
+            </div>
+        </div>
+
+        <div class="flex justify-end mt-8 space-x-4">
+            <a href="{% url 'video:teacher_dashboard' %}" class="px-8 py-3 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold">
+                Cancel
+            </a>
+            <button type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                Update Video
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

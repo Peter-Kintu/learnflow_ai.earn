@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Register - LearnFlow AI{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center">Create Your Account</h2>
+    <p class="text-gray-400 mb-8 text-center">Join our platform to access educational videos and quizzes.</p>
+
+    <form method="post" action="{% url 'user:signup' %}" class="space-y-6">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <!-- Username field -->
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Username</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+        </div>
+
+        <!-- Email field -->
+        <div>
+            <label for="{{ form.email.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Email Address</label>
+            {{ form.email }}
+            {{ form.email.errors }}
+        </div>
+        
+        <!-- Password fields -->
+        <div>
+            <label for="{{ form.password.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Password</label>
+            {{ form.password }}
+            {{ form.password.errors }}
+        </div>
+
+        <div>
+            <label for="{{ form.password2.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Confirm Password</label>
+            {{ form.password2 }}
+            {{ form.password2.errors }}
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <button type="submit" class="w-full px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                Sign Up
+            </button>
+        </div>
+    </form>
+
+    <div class="mt-8 text-center text-gray-400">
+        Already have an account? 
+        <a href="{% url 'user:login' %}" class="text-indigo-400 hover:text-indigo-300 font-medium">Log in here</a>
+    </div>
+</div>
+{% endblock %}

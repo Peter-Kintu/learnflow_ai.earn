@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center">Login</h2>
+    
+    <p class="text-gray-400 text-center mb-6">
+        Welcome back! Please sign in to continue.
+    </p>
+
+    <form method="post" action="." class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Display non-field errors if any exist -->
+        {% if form.non_field_errors %}
+            <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Loop through all fields in the form to render them automatically -->
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-gray-300 font-semibold mb-2">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <!-- The login button -->
+        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
+            Log In
+        </button>
+    </form>
+    
+    <!-- Link to the registration page -->
+    <div class="mt-6 text-center text-sm text-gray-400">
+        Don't have an account? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Sign Up</a>
+    </div>
+</div>
+{% endblock %}
