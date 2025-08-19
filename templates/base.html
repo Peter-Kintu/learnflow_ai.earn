@@ -65,9 +65,14 @@
                     <a href="{% url 'video:teacher_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
                     <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white transition-colors">Create Quiz</a>
                     <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white transition-colors">My Profile</a>
-                    <a href="{% url 'user:logout' %}" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm font-semibold">
-                        Logout
-                    </a>
+                    
+                    <!-- FIX: Changed the logout link to a form with a POST method -->
+                    <form action="{% url 'user:logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm font-semibold">
+                            Logout
+                        </button>
+                    </form>
                 {% else %}
                     <!-- Links for non-authenticated users -->
                     <a href="{% url 'user:login' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold">
