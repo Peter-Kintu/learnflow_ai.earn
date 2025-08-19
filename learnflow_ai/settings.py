@@ -86,6 +86,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
+LOGOUT_REDIRECT_URL = 'user:login' # FIX: Added this to redirect to the correct login page
 
 # 🎨 Jazzmin Styling
 JAZZMIN_SETTINGS = {
