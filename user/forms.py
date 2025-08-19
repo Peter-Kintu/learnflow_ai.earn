@@ -1,7 +1,10 @@
+# user/forms.py
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
-from .models import Profile
+# Import ROLE_CHOICES directly from the constants file
+from .constants import ROLE_CHOICES
 
 # Get the custom User model if it exists, otherwise use the default
 User = get_user_model()
@@ -19,10 +22,10 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Enter your email address'
         })
     )
-    
-    # Add the role field to the form
+
+    # Add the role field to the form, using the imported choices
     role = forms.ChoiceField(
-        choices=Profile.ROLE_CHOICES,
+        choices=ROLE_CHOICES,
         widget=forms.RadioSelect(attrs={
             'class': 'mt-2 space-y-2'
         }),
