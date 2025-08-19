@@ -1,40 +1,69 @@
+# user/views.py
+
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
-# Import our new custom form, which we'll create next.
-from .forms import UserRegistrationForm
+from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
+from .forms import CustomUserCreationForm  # Use the correct form class name
+from django.contrib.auth.forms import AuthenticationForm
 
-
-def register(request):
+def register_request(request):
     """
-    Handles user registration using a custom form that includes the user role.
-
-    If the request method is POST and the form is valid, it saves the new user
-    and updates their profile with the selected role before logging them in.
+    Handles user registration.
+    If the request method is POST, it processes the form data.
+    If the request method is GET, it displays an empty registration form.
     """
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
+    if request.method == "POST":
+        form = CustomUserCreationForm(request.POST)  # Use the correct form class name
         if form.is_valid():
-            # Save the new user object
             user = form.save()
-            
-            # The signal we created earlier has already made a Profile for this user.
-            # We just need to update the role based on the form data.
-            role = form.cleaned_data.get('role')
-            user.profile.role = role
-            user.profile.save()
-
-            # Log the new user in and redirect to a home page.
+            # Log the user in immediately after registration
             login(request, user)
-            return redirect('aiapp:home')  # Assuming 'aiapp:home' is the name of your home page URL
+            messages.success(request, "Registration successful.")
+            return redirect("core:dashboard")  # Redirect to the main dashboard after login
+        messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
-        form = UserRegistrationForm()
-        
-    return render(request, 'user/register.html', {'form': form})
+        # If it's a GET request, create an empty form
+        form = CustomUserCreationForm()  # Use the correct form class name
 
-@login_required
+    # Render the registration page with the form
+    return render(request=request, template_name="user/register.html", context={"register_form": form})
+
+def login_request(request):
+    """
+    Handles user login.
+    If the request method is POST, it processes the login credentials.
+    If the request method is GET, it displays an empty login form.
+    """
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.info(request, f"You are now logged in as {username}.")
+                return redirect("core:dashboard")
+            else:
+                messages.error(request, "Invalid username or password.")
+        else:
+            messages.error(request, "Invalid username or password.")
+    
+    # If it's a GET request or the form is invalid, display the form
+    form = AuthenticationForm()
+    return render(request=request, template_name="user/login.html", context={"login_form": form})
+
+def logout_request(request):
+    """
+    Handles user logout.
+    Logs the user out and displays a success message.
+    """
+    logout(request)
+    messages.info(request, "You have successfully logged out.")
+    return redirect("core:login")
+
 def profile_view(request):
     """
-    A placeholder for a user profile view.
+    Displays the user's profile information.
     """
-    return render(request, 'user/profile.html')
+    return render(request, "user/profile.html")
