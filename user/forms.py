@@ -23,7 +23,8 @@ class CustomUserCreationForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ('username', 'email')
+        # Include all necessary fields, including the two password fields
+        fields = ('username', 'email', 'password', 'password2')
         field_classes = {'username': forms.CharField}
         widgets = {
             'username': forms.TextInput(attrs={
@@ -48,4 +49,3 @@ class CustomUserCreationForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("This email address is already in use.")
         return email
-
