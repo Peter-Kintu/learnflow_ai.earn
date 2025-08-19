@@ -1,49 +1,52 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-{% block content %}
-<div class="max-w-md mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center">Login</h2>
-    
-    <p class="text-gray-400 text-center mb-6">
-        Welcome back! Please sign in to continue.
-    </p>
+<div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-2">Welcome Back!</h2>
+    <p class="text-center text-gray-500 mb-8">Log in to your account</p>
 
-    <form method="post" action="." class="space-y-6">
+    <!-- Display Django messages if any exist -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="post" class="space-y-6">
         {% csrf_token %}
-        
-        <!-- Display non-field errors if any exist -->
-        {% if form.non_field_errors %}
-            <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
-                {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {{ login_form.as_p }}
 
-        <!-- Loop through all fields in the form to render them automatically -->
-        {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-gray-300 font-semibold mb-2">
-                    {{ field.label }}
-                </label>
-                {{ field }}
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        <p class="text-red-400 text-xs mt-1">{{ error }}</p>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        {% endfor %}
-        
         <!-- The login button -->
         <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
             Log In
         </button>
     </form>
-    
+
     <!-- Link to the registration page -->
     <div class="mt-6 text-center text-sm text-gray-400">
-        Don't have an account? <a href="{% url 'user:signup' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Sign Up</a>
+        Don't have an account? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Sign Up</a>
     </div>
 </div>
-{% endblock %}
+
+</body>
+</html>
