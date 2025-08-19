@@ -1,57 +1,52 @@
-<!-- user/templates/user/register.html -->
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-{% block title %}Register - LearnFlow AI{% endblock %}
+<div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-2">Create Your Account</h2>
+    <p class="text-center text-gray-500 mb-8">Join our platform to access educational videos and quizzes.</p>
 
-{% block content %}
-<div class="max-w-md mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center">Create Your Account</h2>
-    <p class="text-gray-400 mb-8 text-center">Join our platform to access educational videos and quizzes.</p>
-
-    <form method="post" action="{% url 'user:signup' %}" class="space-y-6">
-        {% csrf_token %}
-
-        <!-- Check for and display any non-field errors at the top of the form -->
-        {% if form.non_field_errors %}
-            <div class="bg-red-500 text-white p-4 rounded-lg">
-                <p>Please correct the following errors:</p>
-                <ul>
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-
-        <!-- Loop through and render each form field -->
-        {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-gray-300 font-semibold mb-2">
-                    {{ field.label }}
-                </label>
-                {{ field }}
-                
-                <!-- Display any field-specific errors below the field -->
-                {% if field.errors %}
-                    <div class="mt-1 text-sm text-red-400">
-                        {% for error in field.errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        {% endfor %}
-
-        <div class="flex justify-center mt-8">
-            <button type="submit" class="w-full px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
-                Sign Up
-            </button>
+    <!-- Display Django messages if any exist -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
         </div>
+    {% endif %}
+
+    <!-- Registration form -->
+    <form method="post" action="{% url 'user:register' %}" class="space-y-6">
+        {% csrf_token %}
+        {{ register_form.as_p }}
+
+        <!-- The registration button -->
+        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
+            Sign Up
+        </button>
     </form>
 
-    <div class="mt-8 text-center text-gray-400">
-        Already have an account? 
-        <a href="{% url 'user:login' %}" class="text-indigo-400 hover:text-indigo-300 font-medium">Log in here</a>
+    <!-- Link to the login page -->
+    <div class="mt-6 text-center text-sm text-gray-400">
+        Already have an account? <a href="{% url 'user:login' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Log In</a>
     </div>
 </div>
-{% endblock %}
+
+</body>
+</html>
