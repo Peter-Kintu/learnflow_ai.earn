@@ -1,3 +1,4 @@
+<!-- user/templates/user/register.html -->
 {% extends "base.html" %}
 
 {% block title %}Register - LearnFlow AI{% endblock %}
@@ -10,16 +11,11 @@
     <form method="post" action="{% url 'user:signup' %}" class="space-y-6">
         {% csrf_token %}
 
-        {# Display all form errors in a single block for visibility #}
-        {% if form.errors %}
+        <!-- Check for and display any non-field errors at the top of the form -->
+        {% if form.non_field_errors %}
             <div class="bg-red-500 text-white p-4 rounded-lg">
                 <p>Please correct the following errors:</p>
                 <ul>
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <li>{{ field.label }}: {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
                     {% for error in form.non_field_errors %}
                         <li>{{ error }}</li>
                     {% endfor %}
@@ -27,28 +23,24 @@
             </div>
         {% endif %}
 
-        <!-- Username field -->
-        <div>
-            <label for="{{ form.username.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Username</label>
-            {{ form.username }}
-        </div>
-
-        <!-- Email field -->
-        <div>
-            <label for="{{ form.email.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Email Address</label>
-            {{ form.email }}
-        </div>
-        
-        <!-- Password fields -->
-        <div>
-            <label for="{{ form.password.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Password</label>
-            {{ form.password }}
-        </div>
-
-        <div>
-            <label for="{{ form.password2.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Confirm Password</label>
-            {{ form.password2 }}
-        </div>
+        <!-- Loop through and render each form field -->
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-gray-300 font-semibold mb-2">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                
+                <!-- Display any field-specific errors below the field -->
+                {% if field.errors %}
+                    <div class="mt-1 text-sm text-red-400">
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
 
         <div class="flex justify-center mt-8">
             <button type="submit" class="w-full px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
