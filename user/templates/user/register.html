@@ -30,7 +30,7 @@
         </div>
     {% endif %}
 
-    <!-- Registration form, manually rendered to add classes directly -->
+    <!-- Registration form, manually rendered to add classes directly and fix radio buttons -->
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
@@ -52,7 +52,7 @@
             <div class="space-x-4 flex">
                 {% for radio in register_form.role %}
                     <label class="inline-flex items-center text-gray-400">
-                        <input type="radio" name="{{ radio.name }}" value="{{ radio.value }}" {% if radio.is_checked %}checked{% endif %} id="{{ radio.id_for_label }}" class="accent-indigo-500">
+                        <input type="radio" name="role" value="{{ radio.value }}" {% if radio.is_checked %}checked{% endif %} id="{{ radio.id_for_label }}" class="accent-indigo-500">
                         <span class="ml-2">{{ radio.choice_label }}</span>
                     </label>
                 {% endfor %}
