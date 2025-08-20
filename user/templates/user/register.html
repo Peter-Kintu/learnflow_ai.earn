@@ -36,6 +36,15 @@
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
+        <!-- Display non-field errors (e.g., "Passwords do not match") -->
+        {% if register_form.non_field_errors %}
+            <div class="p-3 bg-red-900 text-red-300 rounded-md font-bold mb-4">
+                {% for error in register_form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% for field in register_form %}
         <div>
             <!-- Display field label -->
