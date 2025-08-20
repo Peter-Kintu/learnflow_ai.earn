@@ -45,36 +45,82 @@
             </div>
         {% endif %}
 
-        {% for field in register_form %}
+        <!--
+            Explicitly render each field to control the order and number of fields.
+            This prevents the Django form from rendering any unwanted fields (like a hidden password field).
+        -->
+
+        <!-- Username field -->
         <div>
-            <!-- Display field label -->
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ field.label }}
+            <label for="{{ register_form.username.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.username.label }}
             </label>
-
-            <!-- Check if the field is a radio button group and handle it specifically -->
-            {% if field.field.widget.input_type == 'radio' %}
-                <div class="space-x-4 flex">
-                    {% for radio in field %}
-                        <label class="inline-flex items-center text-gray-400">
-                            {{ radio.tag }}
-                            <span class="ml-2">{{ radio.choice_label }}</span>
-                        </label>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <!-- Apply custom styles for standard input fields -->
-                {{ field|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
-            {% endif %}
-
-            <!-- Display specific field errors in a clear way -->
-            {% if field.errors %}
-                {% for error in field.errors %}
+            {{ register_form.username|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            {% if register_form.username.errors %}
+                {% for error in register_form.username.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
                 {% endfor %}
             {% endif %}
         </div>
-        {% endfor %}
+
+        <!-- Email field -->
+        <div>
+            <label for="{{ register_form.email.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.email.label }}
+            </label>
+            {{ register_form.email|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            {% if register_form.email.errors %}
+                {% for error in register_form.email.errors %}
+                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Role field (radio buttons) -->
+        <div>
+            <label for="{{ register_form.role.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.role.label }}
+            </label>
+            <div class="space-x-4 flex">
+                {% for radio in register_form.role %}
+                    <label class="inline-flex items-center text-gray-400">
+                        {{ radio.tag }}
+                        <span class="ml-2">{{ radio.choice_label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            {% if register_form.role.errors %}
+                {% for error in register_form.role.errors %}
+                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Password field 1 -->
+        <div>
+            <label for="{{ register_form.password.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.password.label }}
+            </label>
+            {{ register_form.password|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            {% if register_form.password.errors %}
+                {% for error in register_form.password.errors %}
+                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Password field 2 (Confirmation) -->
+        <div>
+            <label for="{{ register_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.password2.label }}
+            </label>
+            {{ register_form.password2|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            {% if register_form.password2.errors %}
+                {% for error in register_form.password2.errors %}
+                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
 
         <!-- The registration button -->
         <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
