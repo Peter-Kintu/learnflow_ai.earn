@@ -39,15 +39,31 @@
         {% for field in register_form %}
         <div>
             <!-- Display field label -->
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">{{ field.label }}</label>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ field.label }}
+            </label>
 
-            <!-- Apply custom styles using the new filter -->
-            {{ field|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            <!-- Check if the field is a radio button group and handle it specifically -->
+            {% if field.field.widget.input_type == 'radio' %}
+                <div class="space-x-4 flex">
+                    {% for radio in field %}
+                        <label class="inline-flex items-center text-gray-400">
+                            {{ radio.tag }}
+                            <span class="ml-2">{{ radio.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Apply custom styles for standard input fields -->
+                {{ field|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            {% endif %}
 
-            <!-- Display field errors -->
-            {% for error in field.errors %}
-                <p class="text-red-400 text-sm mt-1">{{ error }}</p>
-            {% endfor %}
+            <!-- Display specific field errors in a clear way -->
+            {% if field.errors %}
+                {% for error in field.errors %}
+                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
         </div>
         {% endfor %}
 
