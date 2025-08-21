@@ -1,10 +1,9 @@
-# user/models.py
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .constants import ROLE_CHOICES  # Import the choices from our constants file
+from django.core.exceptions import ObjectDoesNotExist
 
 class Profile(models.Model):
     """
@@ -26,13 +25,19 @@ class Profile(models.Model):
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     """
     This signal handler automatically creates a Profile for a new User
-    and saves the existing Profile whenever the User is saved.
-    This combines the logic of both create and save signal handlers into one,
-    making the code cleaner and more reliable.
+    and ensures an existing profile is saved. This is the robust and
+    recommended way to handle this logic.
     """
     if created:
         # If a new User instance is created, a Profile is also created and linked.
         Profile.objects.create(user=instance)
-    # This line ensures the profile is saved every time the user is saved,
-    # keeping the two models in sync.
-    instance.profile.save()
+    else:
+        try:
+            # For an existing user, we try to save their profile.
+            # This will work for users who already have a profile.
+            instance.profile.save()
+        except ObjectDoesNotExist:
+            # If a profile doesn't exist for an older user, we create one now.
+            # This handles the exact error you were seeing.
+            Profile.objects.create(user=instance)
+
