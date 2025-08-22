@@ -1,10 +1,14 @@
 # user/views.py
 
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
-from .forms import CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.decorators import login_required
+from .forms import CustomUserCreationForm
+
+# Get the custom or default user model
+User = get_user_model()
 
 def register_request(request):
     """
@@ -16,8 +20,8 @@ def register_request(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            # Redirect to the user's profile page instead of 'core:dashboard'
-            return redirect("user:profile")
+            # Redirect to the user's own profile page after registration
+            return redirect("user:profile", username=user.username)
         messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
         form = CustomUserCreationForm()
@@ -37,8 +41,8 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                # Redirect to the user's profile page instead of 'core:dashboard'
-                return redirect("user:profile")
+                # Redirect to the user's own profile page after login
+                return redirect("user:profile", username=user.username)
             else:
                 messages.error(request, "Invalid username or password.")
         else:
@@ -53,11 +57,21 @@ def logout_request(request):
     """
     logout(request)
     messages.info(request, "You have successfully logged out.")
-    # Redirect to the user's login page, which is in the 'user' namespace
     return redirect("user:login")
 
-def profile_view(request):
+@login_required
+def profile_view(request, username):
     """
-    Displays the user's profile information.
+    Displays the profile information for a specific user.
+    The 'username' is passed from the URL.
     """
-    return render(request, "user/profile.html")
+    # Use get_object_or_404 to get the User object.
+    profile_user = get_object_or_404(User, username=username)
+
+    # Pass the fetched user object to the template context.
+    context = {
+        'profile_user': profile_user
+    }
+    
+    # Render the correct template file name.
+    return render(request, "user/profile_detail.html", context)
