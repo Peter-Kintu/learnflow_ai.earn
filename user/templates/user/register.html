@@ -30,95 +30,51 @@
         </div>
     {% endif %}
 
-    <!-- We no longer need to use a custom filter because classes are applied in forms.py -->
-    {% load form_tags %}
-
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
-        <!-- Display non-field errors at the top of the form -->
-        {% if register_form.non_field_errors %}
-            <div class="p-3 bg-red-900 text-red-300 rounded-md font-bold mb-4">
-                {% for error in register_form.non_field_errors %}
-                    <p>{{ error }}</p>
+        <!-- Display ALL form errors here for easier debugging -->
+        {% if register_form.errors %}
+            <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
+                <p>Please correct the following errors:</p>
+                <ul>
+                {% for field, errors in register_form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
                 {% endfor %}
+                </ul>
             </div>
         {% endif %}
 
-        <!-- Explicitly render each form field -->
-        
-        <!-- Username field -->
-        <div>
-            <label for="{{ register_form.username.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.username.label }}
-            </label>
-            <!-- The class is now applied directly in the forms.py file -->
-            {{ register_form.username }}
-            {% if register_form.username.errors %}
-                {% for error in register_form.username.errors %}
-                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-
-        <!-- Email field -->
-        <div>
-            <label for="{{ register_form.email.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.email.label }}
-            </label>
-            <!-- The class is now applied directly in the forms.py file -->
-            {{ register_form.email }}
-            {% if register_form.email.errors %}
-                {% for error in register_form.email.errors %}
-                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-
-        <!-- Role field (radio buttons) -->
-        <div>
-            <label for="id_role_0" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.role.label }}
-            </label>
-            <!-- The RadioSelect widget with classes is applied in the form -->
-            {{ register_form.role }}
-            {% if register_form.role.errors %}
-                {% for error in register_form.role.errors %}
-                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-
-        <!-- Password field 1 -->
-        <div>
-            <label for="{{ register_form.password.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.password.label }}
-            </label>
-            <!-- The class is now applied directly in the forms.py file -->
-            {{ register_form.password }}
-            {% if register_form.password.errors %}
-                {% for error in register_form.password.errors %}
-                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-
-        <!-- Password field 2 (Confirmation) -->
-        <div>
-            <label for="{{ register_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.password2.label }}
-            </label>
-            <!-- The class is now applied directly in the forms.py file -->
-            {{ register_form.password2 }}
-            {% if register_form.password2.errors %}
-                {% for error in register_form.password2.errors %}
-                    <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
+        <!-- Iterate and render ALL form fields -->
+        {% for field in register_form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                    {{ field.label }}
+                </label>
+                
+                <!-- Special handling for password fields to add the visibility toggle -->
+                {% if field.name == 'password' or field.name == 'password2' %}
+                    <div class="relative">
+                        {{ field }}
+                        <!-- Password visibility toggle icon (inline SVG for portability) -->
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </span>
+                    </div>
+                {% else %}
+                    <!-- Render all other fields normally -->
+                    {{ field }}
+                {% endif %}
+            </div>
+        {% endfor %}
 
         <!-- The registration button -->
-        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
+        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full mt-6">
             Sign Up
         </button>
     </form>
@@ -128,6 +84,29 @@
         Already have an account? <a href="{% url 'user:login' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Log In</a>
     </div>
 </div>
+
+<script>
+    /**
+     * Toggles the visibility of a password input field.
+     * @param {string} inputId The ID of the input element to toggle.
+     * @param {HTMLElement} iconElement The SVG icon element that was clicked.
+     */
+    function togglePasswordVisibility(inputId, iconElement) {
+        const input = document.getElementById(inputId);
+        const iconPath = iconElement.querySelector('path:nth-child(2)');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            // Change the icon to a "visible" state (e.g., slash through eye)
+            // We'll update the SVG path for the new icon
+            iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75M5.996 11.996L3.996 10M18.004 14l2-2.004M16.996 10l-2 2M12 18V6M12 6a6 6 0 014.243 10.243M12 6a6 6 0 00-4.243 10.243M12 18a6 6 0 01-4.243-10.243M12 18a6 6 0 004.243-10.243');
+        } else {
+            input.type = 'password';
+            // Change the icon back to the "hidden" state
+            iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
+        }
+    }
+</script>
 
 </body>
 </html>

@@ -42,12 +42,15 @@ class CustomUserCreationForm(UserCreationForm):
         # This prevents the KeyError you were seeing.
         if 'username' in self.fields:
             self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+            self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
         
         if 'password' in self.fields:
             self.fields['password'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+            self.fields['password'].widget.attrs['placeholder'] = 'Enter a password'
         
         if 'password2' in self.fields:
             self.fields['password2'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+            self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
 
     def clean_email(self):
         """
