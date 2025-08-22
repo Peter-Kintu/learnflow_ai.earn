@@ -12,26 +12,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom styles for the loader */
-        .loader {
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #fff;
-            border-bottom-color: transparent;
-            border-radius: 50%;
-            display: inline-block;
-            box-sizing: border-box;
-            animation: rotation 1s linear infinite;
-        }
-
-        @keyframes rotation {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        } 
     </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
@@ -51,26 +31,34 @@
         <!-- Page header -->
         <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center mt-6">Create a New Quiz</h2>
         <p class="text-gray-400 mb-8 text-center">
-            Fill out the form below to create a new quiz. You can add as many questions as you need, and even generate one with AI.
+            Fill out the form below to create a new quiz.
         </p>
-
-        <!-- Message box for success or error messages -->
-        <div id="message-box" class="hidden mb-4 p-4 rounded-lg text-sm transition-all duration-300"></div>
+        
+        <!-- Display Django messages if any exist -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <!-- The form itself -->
-        <form id="quizForm" class="space-y-6">
+        <form id="quizForm" method="post" action="{% url 'quizzes:create' %}" class="space-y-6">
             {% csrf_token %} <!-- Django's CSRF token for security -->
             <!-- Input for Quiz Title -->
             <div>
                 <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
-                <input type="text" name="title" id="id_title" required
+                <input type="text" name="quiz_title" id="id_title" required
                        class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
                        placeholder="e.g., Introduction to Python">
             </div>
             <!-- Input for Quiz Description -->
             <div>
                 <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
-                <textarea name="description" id="id_description" rows="3" required
+                <textarea name="quiz_description" id="id_description" rows="3" required
                           class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
                           placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
             </div>
@@ -80,18 +68,12 @@
                 <!-- Questions will be added here by JavaScript -->
             </div>
 
-            <!-- Button to add a new question and generate a question with AI -->
-            <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 mt-6">
+            <!-- Button to add a new question -->
+            <div class="flex justify-start items-center space-x-4">
                 <button type="button" id="add-question-btn" class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center justify-center space-x-2">
                     <!-- SVG icon for a plus sign, using a Lucide icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                     <span>Add a Question</span>
-                </button>
-                <button type="button" id="generate-question-btn" class="w-full sm:w-auto px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors shadow-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-50" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap-stroke">
-                        <path d="M12 12V3.5L4.2 12H10.5L9.5 21L20.45 9.475L12 12Z"/>
-                    </svg>
-                    <span id="generate-text">Generate with AI</span>
                 </button>
             </div>
             
@@ -102,40 +84,21 @@
                 </button>
             </div>
         </form>
-
-        <!-- Display area for the generated JSON output -->
-        <div id="quiz-output" class="hidden mt-10 p-6 bg-slate-900 rounded-xl shadow-inner overflow-x-auto">
-            <h3 class="text-xl font-bold text-gray-200 mb-4">Quiz Data (JSON)</h3>
-            <pre id="json-output" class="text-gray-300 text-sm whitespace-pre-wrap"></pre>
-        </div>
     </div>
 
-    <!-- JavaScript for dynamic form functionality and Django backend communication -->
+    <!-- JavaScript for dynamic form functionality -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get references to the main container and buttons
             const questionsContainer = document.getElementById('questions-container');
             const addQuestionBtn = document.getElementById('add-question-btn');
-            const generateQuestionBtn = document.getElementById('generate-question-btn');
-            const quizForm = document.getElementById('quizForm');
-            const quizTitleInput = document.getElementById('id_title');
-            const quizOutputDiv = document.getElementById('quiz-output');
-            const jsonOutputPre = document.getElementById('json-output');
-            const messageBox = document.getElementById('message-box');
-
             let questionCount = 0; // Counter for unique question IDs
 
             /**
              * Creates and returns a new HTML element for a question block.
-             * @param {object} [data] - Optional data to pre-fill the question block.
-             * @param {string} [data.questionText] - The text for the question.
-             * @param {string[]} [data.options] - An array of options for a multiple-choice question.
-             * @param {string} [data.correctAnswer] - The correct answer.
              */
-            function createQuestionBlock(data = {}) {
+            function createQuestionBlock() {
                 questionCount++;
 
-                // Create the main question block container
                 const newQuestionBlock = document.createElement('div');
                 newQuestionBlock.className = 'bg-slate-700 p-6 rounded-xl shadow-inner question-block';
                 newQuestionBlock.innerHTML = `
@@ -145,108 +108,52 @@
                     </div>
                     
                     <div class="space-y-4">
-                        <!-- Question Type Selector -->
-                        <div>
-                            <label class="block text-gray-300 font-semibold mb-2">Question Type</label>
-                            <select name="question_type_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500 question-type-select">
-                                <option value="mcq">Multiple Choice</option>
-                                <option value="text">Single Answer (Text)</option>
-                            </select>
-                        </div>
-
                         <!-- Question Text Input -->
                         <div>
                             <label for="question_text_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Text</label>
                             <input type="text" name="question_text_${questionCount}" id="question_text_${questionCount}" required
                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                   placeholder="e.g., What is the capital of France?" value="${data.questionText || ''}">
+                                   placeholder="e.g., What is the capital of France?">
                         </div>
 
-                        <!-- Options & Correct Answer Container (for MCQ) -->
+                        <!-- Options & Correct Answer Container -->
                         <div class="mcq-fields">
                             <label class="block text-gray-300 font-semibold mb-2">Options</label>
                             <div class="space-y-3">
                                 <div>
                                     <input type="text" name="option_a_${questionCount}" required placeholder="Option A"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" value="${data.options ? data.options[0] : ''}">
+                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
                                 </div>
                                 <div>
                                     <input type="text" name="option_b_${questionCount}" required placeholder="Option B"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" value="${data.options ? data.options[1] : ''}">
+                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
                                 </div>
                                 <div>
                                     <input type="text" name="option_c_${questionCount}" required placeholder="Option C"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" value="${data.options ? data.options[2] : ''}">
+                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
                                 </div>
                                 <div>
                                     <input type="text" name="option_d_${questionCount}" required placeholder="Option D"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" value="${data.options ? data.options[3] : ''}">
+                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
                                 </div>
                             </div>
 
                             <div class="mt-4">
                                 <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
                                 <select name="correct_option_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
-                                    <option value="A" ${data.correctAnswer === 'A' ? 'selected' : ''}>A</option>
-                                    <option value="B" ${data.correctAnswer === 'B' ? 'selected' : ''}>B</option>
-                                    <option value="C" ${data.correctAnswer === 'C' ? 'selected' : ''}>C</option>
-                                    <option value="D" ${data.correctAnswer === 'D' ? 'selected' : ''}>D</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
                                 </select>
-                            </div>
-                        </div>
-
-                        <!-- Single Answer Field (for text-based answers) -->
-                        <div class="text-fields hidden">
-                            <div>
-                                <label for="correct_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer (Text)</label>
-                                <input type="text" name="correct_answer_${questionCount}" id="correct_answer_${questionCount}"
-                                       class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                       placeholder="e.g., Paris">
                             </div>
                         </div>
                     </div>
                 `;
                 
-                // Get references to the dynamically created elements
-                const typeSelect = newQuestionBlock.querySelector('.question-type-select');
                 const removeBtn = newQuestionBlock.querySelector('.remove-question-btn');
-                const mcqFields = newQuestionBlock.querySelector('.mcq-fields');
-                const textFields = newQuestionBlock.querySelector('.text-fields');
-
-                // Add change event listener to the question type selector to show/hide relevant fields
-                typeSelect.addEventListener('change', function() {
-                    const textInputs = textFields.querySelectorAll('input');
-                    const mcqInputs = mcqFields.querySelectorAll('input, select');
-                    
-                    if (this.value === 'mcq') {
-                        // Show MCQ fields and hide text fields
-                        mcqFields.classList.remove('hidden');
-                        textFields.classList.add('hidden');
-                        // Add 'required' attribute to MCQ fields, remove from text fields
-                        mcqInputs.forEach(input => input.setAttribute('required', 'required'));
-                        textInputs.forEach(input => input.removeAttribute('required'));
-                    } else {
-                        // Show text fields and hide MCQ fields
-                        mcqFields.classList.add('hidden');
-                        textFields.classList.remove('hidden');
-                        // Add 'required' attribute to text fields, remove from MCQ fields
-                        textInputs.forEach(input => input.setAttribute('required', 'required'));
-                        mcqInputs.forEach(input => input.removeAttribute('required'));
-                    }
-                });
-
-                // Set initial required fields for the default MCQ type
-                if (typeSelect.value === 'mcq') {
-                     mcqFields.querySelectorAll('input, select').forEach(input => input.setAttribute('required', 'required'));
-                } else {
-                    textFields.querySelectorAll('input').forEach(input => input.setAttribute('required', 'required'));
-                }
-                
-
-                // Add a click listener for the remove button
                 removeBtn.addEventListener('click', function() {
                     questionsContainer.removeChild(newQuestionBlock);
-                    // Re-label the remaining questions to maintain sequential numbering
                     updateQuestionLabels();
                 });
 
@@ -255,8 +162,8 @@
 
             /**
              * Iterates through all existing question blocks and re-numbers them
-             * after a question has been removed. This also updates the `name`
-             * attributes to match the new numbering.
+             * after a question has been removed. This is crucial for the
+             * Django backend to correctly identify questions.
              */
             function updateQuestionLabels() {
                 const questionBlocks = questionsContainer.querySelectorAll('.question-block');
@@ -267,11 +174,9 @@
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     
                     // Update the names for all inputs to ensure they are unique and sequential
-                    const typeSelect = block.querySelector('[name^="question_type_"]');
-                    typeSelect.name = `question_type_${currentCount}`;
-                    block.querySelector('[name^="question_text_"]').name = `question_text_${currentCount}`;
+                    const questionText = block.querySelector('[name^="question_text_"]');
+                    if (questionText) questionText.name = `question_text_${currentCount}`;
                     
-                    // Use optional chaining for safety, as some elements may be hidden
                     const optionA = block.querySelector('[name^="option_a_"]');
                     if (optionA) optionA.name = `option_a_${currentCount}`;
                     const optionB = block.querySelector('[name^="option_b_"]');
@@ -282,159 +187,9 @@
                     if (optionD) optionD.name = `option_d_${currentCount}`;
                     const correctOption = block.querySelector('[name^="correct_option_"]');
                     if (correctOption) correctOption.name = `correct_option_${currentCount}`;
-                    const correctAnswer = block.querySelector('[name^="correct_answer_"]');
-                    if (correctAnswer) correctAnswer.name = `correct_answer_${currentCount}`;
                 });
 
-                // Reset the global counter
                 questionCount = currentCount;
-            }
-
-            /**
-             * Displays a message in the dedicated message box.
-             * @param {string} message The message to display.
-             * @param {string} type The type of message ('success', 'error', 'info').
-             */
-            function showMessage(message, type) {
-                messageBox.textContent = message;
-                messageBox.classList.remove('hidden', 'bg-red-900', 'bg-green-900', 'text-red-300', 'text-green-300');
-                if (type === 'success') {
-                    messageBox.classList.add('bg-green-900', 'text-green-300');
-                } else if (type === 'error') {
-                    messageBox.classList.add('bg-red-900', 'text-red-300');
-                }
-                messageBox.classList.remove('hidden');
-                setTimeout(() => messageBox.classList.add('hidden'), 5000); // Hide after 5 seconds
-            }
-
-            /**
-             * Asynchronously generates a new quiz question by making a request
-             * to a Django backend view.
-             */
-            async function generateQuestion() {
-                const title = quizTitleInput.value.trim();
-                if (!title) {
-                    showMessage('Please enter a Quiz Title before generating a question.', 'error');
-                    return;
-                }
-
-                // Show loading state
-                const generateTextSpan = document.getElementById('generate-text');
-                generateTextSpan.innerHTML = '<span class="loader"></span> Generating...';
-                generateQuestionBtn.disabled = true;
-
-                try {
-                    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-                    const response = await fetch('/generate-question/', { // Django URL for the AI endpoint
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ title: title })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Server error: ${response.statusText}`);
-                    }
-
-                    const generatedQuestion = await response.json();
-
-                    // Create a new question block and populate it with the generated data
-                    const newBlock = createQuestionBlock(generatedQuestion);
-                    questionsContainer.appendChild(newBlock);
-                    
-                    showMessage('New question generated successfully!', 'success');
-
-                } catch (error) {
-                    console.error('Error generating question:', error);
-                    showMessage('Failed to generate question. Please try again.', 'error');
-                } finally {
-                    // Reset loading state
-                    generateTextSpan.innerHTML = 'Generate with AI';
-                    generateQuestionBtn.disabled = false;
-                }
-            }
-
-            /**
-             * Handles the form submission, collects data, and saves it by sending it
-             * to a Django backend view.
-             * @param {Event} event - The form submission event.
-             */
-            async function handleFormSubmit(event) {
-                event.preventDefault();
-
-                const quizTitle = document.getElementById('id_title').value;
-                const quizDescription = document.getElementById('id_description').value;
-
-                const questions = [];
-                const questionBlocks = questionsContainer.querySelectorAll('.question-block');
-                
-                questionBlocks.forEach((block, index) => {
-                    const typeSelect = block.querySelector('.question-type-select');
-                    const questionText = block.querySelector('[name^="question_text_"]').value;
-                    const questionType = typeSelect.value;
-                    
-                    let questionData = {
-                        questionText,
-                        type: questionType
-                    };
-
-                    if (questionType === 'mcq') {
-                        const options = [
-                            block.querySelector('[name^="option_a_"]').value,
-                            block.querySelector('[name^="option_b_"]').value,
-                            block.querySelector('[name^="option_c_"]').value,
-                            block.querySelector('[name^="option_d_"]').value,
-                        ];
-                        const correctAnswer = block.querySelector('[name^="correct_option_"]').value;
-                        questionData.options = options;
-                        questionData.correctAnswer = correctAnswer;
-                    } else { // 'text'
-                        const correctAnswer = block.querySelector('[name^="correct_answer_"]').value;
-                        questionData.correctAnswer = correctAnswer;
-                    }
-
-                    questions.push(questionData);
-                });
-
-                const quizData = {
-                    title: quizTitle,
-                    description: quizDescription,
-                    questions: questions
-                };
-
-                // Get the CSRF token from the Django form
-                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-
-                try {
-                    const response = await fetch('/quizzes/create/', { // Django URL to save the quiz
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify(quizData)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Server error: ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showMessage('Quiz saved successfully!', 'success');
-                        // Optionally, redirect to the quiz list page or show a success message
-                        // window.location.href = result.redirect_url;
-                    } else {
-                        showMessage(result.error || 'Failed to save quiz.', 'error');
-                    }
-
-                } catch (error) {
-                    console.error('Error saving quiz:', error);
-                    showMessage('Failed to save quiz. Please try again.', 'error');
-                }
             }
 
             // --- Event Listeners ---
@@ -443,21 +198,6 @@
             addQuestionBtn.addEventListener('click', function() {
                 questionsContainer.appendChild(createQuestionBlock());
             });
-
-            // Generate a question with AI
-            generateQuestionBtn.addEventListener('click', generateQuestion);
-
-            // Enable the generate button when the title field is filled
-            quizTitleInput.addEventListener('input', function() {
-                if (quizTitleInput.value.trim().length > 0) {
-                    generateQuestionBtn.disabled = false;
-                } else {
-                    generateQuestionBtn.disabled = true;
-                }
-            });
-
-            // Handle form submission
-            quizForm.addEventListener('submit', handleFormSubmit);
 
             // Add the first question when the page loads, so the form isn't empty
             questionsContainer.appendChild(createQuestionBlock());
