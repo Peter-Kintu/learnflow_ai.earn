@@ -124,7 +124,7 @@ class CustomUserChangeForm(UserChangeForm):
             self.fields['email'].widget.attrs['class'] = INPUT_CLASSES
 
         # Populate the initial value of the role field from the user's profile
-        if self.instance and self.instance.profile:
+        if self.instance and hasattr(self.instance, 'profile'):
             self.fields['role'].initial = self.instance.profile.role
 
     def save(self, commit=True):

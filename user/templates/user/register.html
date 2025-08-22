@@ -58,19 +58,28 @@
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
-        <!-- A single, prominent block for non-field errors (like a password mismatch) -->
-        {% if register_form.non_field_errors %}
+        <!-- A single, prominent block for ALL form errors (both non-field and field-specific) -->
+        {% if register_form.non_field_errors or register_form.errors %}
             <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
-                <p>Please correct the following errors:</p>
-                <ul>
-                {% for error in register_form.non_field_errors %}
-                    <li>{{ error }}</li>
+                <p class="mb-2">Please correct the following errors to continue:</p>
+                <ul class="list-disc list-inside space-y-1">
+                <!-- Display non-field errors first -->
+                {% if register_form.non_field_errors %}
+                    {% for error in register_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endif %}
+                <!-- Now iterate through all fields to display their specific errors -->
+                {% for field in register_form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
                 {% endfor %}
                 </ul>
             </div>
         {% endif %}
 
-        <!-- Iterate through all fields in the form -->
+        <!-- Iterate through all fields in the form to render them -->
         {% for field in register_form %}
             <div class="form-field">
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
@@ -103,10 +112,8 @@
                     <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ field.label }}" required>
                 {% endif %}
 
-                <!-- Display field-specific errors right below the field -->
-                {% for error in field.errors %}
-                    <p class="text-sm text-red-300 mt-1">{{ error }}</p>
-                {% endfor %}
+                <!-- No need for a separate error block here as we have one at the top. -->
+                
             </div>
         {% endfor %}
 
