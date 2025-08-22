@@ -11,6 +11,42 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
+        /* Custom styling for the radio buttons to align them properly */
+        .radio-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .radio-container input[type="radio"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #6B7280; /* Gray-500 */
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .radio-container input[type="radio"]:checked {
+            background-color: #6366F1; /* Indigo-500 */
+            border-color: #6366F1;
+        }
+        .radio-container input[type="radio"]:checked::after {
+            content: '';
+            display: block;
+            width: 0.5rem;
+            height: 0.5rem;
+            background-color: white;
+            border-radius: 50%;
+            margin: 0.125rem;
+        }
+        .radio-label {
+            color: #D1D5DB; /* Gray-300 */
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
@@ -40,70 +76,44 @@
                 <ul>
                 {% for field, errors in register_form.errors.items %}
                     {% for error in errors %}
-                        <li>{{ field|title }}: {{ error }}</li>
+                        <li>{{ field.label }}: {{ error }}</li>
                     {% endfor %}
                 {% endfor %}
                 </ul>
             </div>
         {% endif %}
 
-        <!-- Explicitly render each field to ensure proper styling -->
-        <div>
-            <label for="{{ register_form.username.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.username.label }}
-            </label>
-            <input type="text" name="{{ register_form.username.name }}" id="{{ register_form.username.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ register_form.username.label }}" required>
-        </div>
+        <!-- Iterate through all fields in the form -->
+        {% for field in register_form %}
+            <div>
+                {% if field.label %}
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                        {{ field.label }}
+                    </label>
+                {% endif %}
 
-        <div>
-            <label for="{{ register_form.email.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.email.label }}
-            </label>
-            <input type="email" name="{{ register_form.email.name }}" id="{{ register_form.email.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ register_form.email.label }}" required>
-        </div>
+                {% if field.name == 'password' or field.name == 'password2' %}
+                    <!-- Special handling for password fields to add the visibility toggle -->
+                    <div class="relative">
+                        {{ field }}
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </span>
+                    </div>
+                {% else %}
+                    <!-- Render all other fields normally -->
+                    {{ field }}
+                {% endif %}
 
-        <div>
-            <label for="{{ register_form.password.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.password.label }}
-            </label>
-            <div class="relative">
-                <input type="password" name="{{ register_form.password.name }}" id="{{ register_form.password.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ register_form.password.label }}" autocomplete="new-password" required>
-                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ register_form.password.id_for_label }}', this)">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                </span>
-            </div>
-        </div>
-
-        <div>
-            <label for="{{ register_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                {{ register_form.password2.label }}
-            </label>
-            <div class="relative">
-                <input type="password" name="{{ register_form.password2.name }}" id="{{ register_form.password2.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ register_form.password2.label }}" autocomplete="new-password" required>
-                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ register_form.password2.id_for_label }}', this)">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                </span>
-            </div>
-        </div>
-        
-        <!-- The corrected field for the user's role -->
-        <div class="mt-6">
-            <label class="block text-sm font-medium text-gray-200 mb-2">
-                {{ register_form.role.label }}
-            </label>
-            {{ register_form.role }}
-            {% if register_form.role.errors %}
-                {% for error in register_form.role.errors %}
+                <!-- Display field-specific errors -->
+                {% for error in field.errors %}
                     <p class="text-sm text-red-300 mt-1">{{ error }}</p>
                 {% endfor %}
-            {% endif %}
-        </div>
+            </div>
+        {% endfor %}
 
         <!-- The registration button -->
         <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full mt-6">
