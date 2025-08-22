@@ -9,16 +9,19 @@ from .models import Profile
 # Get the custom User model
 User = get_user_model()
 
+# Define the common classes for all text inputs to ensure consistency
+INPUT_CLASSES = 'w-full px-4 py-3 bg-slate-700 text-gray-200 placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+
 class CustomUserCreationForm(UserCreationForm):
     """
     A custom form for user registration that includes email and a role selection field.
-    The form now applies Tailwind classes directly to the widgets.
+    The form now applies consistent Tailwind classes directly to the widgets.
     """
     email = forms.EmailField(
         required=True,
         label="Email Address",
         widget=forms.EmailInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+            'class': INPUT_CLASSES.replace('text-gray-200', 'text-white'),
             'placeholder': 'Enter your email address'
         })
     )
@@ -38,19 +41,19 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Check if the fields exist before attempting to access them.
+        # Apply the consistent classes to the other fields
         if 'username' in self.fields:
-            self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES.replace('text-gray-200', 'text-white')
             self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
         
         if 'password' in self.fields:
-            # Added pr-10 class to make space for the eye icon
-            self.fields['password'].widget.attrs['class'] = 'w-full px-4 py-3 pr-10 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+            # Add pr-10 class for the eye icon, but keep the rest consistent
+            self.fields['password'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
             self.fields['password'].widget.attrs['placeholder'] = 'Enter a password'
         
         if 'password2' in self.fields:
-            # Added pr-10 class to make space for the eye icon
-            self.fields['password2'].widget.attrs['class'] = 'w-full px-4 py-3 pr-10 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+            # Add pr-10 class for the eye icon, but keep the rest consistent
+            self.fields['password2'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
             self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
 
     def clean_email(self):
@@ -97,11 +100,11 @@ class CustomUserChangeForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply Tailwind classes to the default widgets
+        # Apply consistent Tailwind classes to the default widgets
         if 'username' in self.fields:
-            self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
         if 'email' in self.fields:
-            self.fields['email'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+            self.fields['email'].widget.attrs['class'] = INPUT_CLASSES
 
         # Populate the initial value of the role field from the user's profile
         if self.instance and self.instance.profile:
