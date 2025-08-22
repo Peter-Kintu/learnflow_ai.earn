@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.http import Http404
 
 # Import models and forms from both aiapp and video apps
+# Note: This is a common pattern for consolidating views in a smaller project.
 from .models import Quiz, Question, Choice, StudentAnswer
 from video.models import Video
 from video.forms import VideoForm
@@ -23,6 +24,7 @@ def home(request):
 def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
+    Quizzes are ordered by creation date in descending order.
     """
     quizzes = Quiz.objects.all().order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
@@ -31,6 +33,7 @@ def quiz_list(request):
 def quiz_detail(request, quiz_id):
     """
     Displays the details of a specific quiz.
+    Uses get_object_or_404 to handle cases where the quiz does not exist.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
     return render(request, 'aiapp/quiz_detail.html', {'quiz': quiz})
