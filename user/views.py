@@ -21,7 +21,7 @@ def register_request(request):
             login(request, user)
             messages.success(request, "Registration successful.")
             # Redirect to the user's own profile page after registration
-            return redirect("user:profile", username=user.username)
+            return redirect("user:my_profile")
         messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
         form = CustomUserCreationForm()
@@ -37,12 +37,12 @@ def login_request(request):
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
+            user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
                 # Redirect to the user's own profile page after login
-                return redirect("user:profile", username=user.username)
+                return redirect("user:my_profile")
             else:
                 messages.error(request, "Invalid username or password.")
         else:
@@ -60,18 +60,23 @@ def logout_request(request):
     return redirect("user:login")
 
 @login_required
+def my_profile_redirect(request):
+    """
+    Redirects the logged-in user to their specific profile URL.
+    This fixes the TypeError when accessing /user/profile/ directly.
+    """
+    return redirect('user:profile', username=request.user.username)
+
+@login_required
 def profile_view(request, username):
     """
     Displays the profile information for a specific user.
     The 'username' is passed from the URL.
     """
-    # Use get_object_or_404 to get the User object.
     profile_user = get_object_or_404(User, username=username)
 
-    # Pass the fetched user object to the template context.
     context = {
         'profile_user': profile_user
     }
     
-    # Render the correct template file name.
     return render(request, "user/profile_detail.html", context)
