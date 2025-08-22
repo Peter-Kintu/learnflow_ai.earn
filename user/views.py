@@ -1,5 +1,4 @@
 # user/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
@@ -12,6 +11,8 @@ User = get_user_model()
 def register_request(request):
     """
     Handles user registration with a custom form.
+    FIXED: Now correctly passes the form with errors back to the template
+           instead of overwriting it and redirecting to login page.
     """
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -19,14 +20,14 @@ def register_request(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            # CORRECTED: Redirect to the home page after successful registration
+            # Redirect to the home page after successful registration
             return redirect("aiapp:home")
         else:
-            # FIX: This message is now correctly placed inside the 'else' block
-            # It will only be displayed if the form is invalid.
-            messages.error(request, "Unsuccessful registration. Invalid information.")
+            # If the form is invalid, simply re-render the page with the form containing errors.
+            messages.error(request, "Unsuccessful registration. Invalid information. Please see the details below.")
+            return render(request, "user/register.html", {"register_form": form})
     
-    # This form is for GET requests or when the POST request was invalid
+    # This handles the initial GET request
     form = CustomUserCreationForm()
     return render(request, "user/register.html", {"register_form": form})
 
@@ -43,7 +44,7 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                # CORRECTED: Redirect to the home page after successful login
+                # Corrected: Redirect to the home page after successful login
                 return redirect("aiapp:home")
             else:
                 messages.error(request, "Invalid username or password.")
