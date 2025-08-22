@@ -34,16 +34,14 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        # FIX: The fields list is corrected to include only the new fields
-        # The username and password fields are handled by the parent class (UserCreationForm)
-        fields = ('username', 'email', 'role',)
+        # The fields list is corrected to include the fields from the parent form
+        # plus our custom email and role fields.
+        fields = UserCreationForm.Meta.fields + ('email', 'role',)
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Choose a username'
             }),
-            # The password widgets are no longer needed here as UserCreationForm handles them
-            # You can customize them via a different approach if necessary, but this is the simplest fix.
         }
 
     def clean_email(self):
@@ -74,9 +72,40 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomUserChangeForm(UserChangeForm):
     """
-    A custom form for updating an existing user.
+    A custom form for updating an existing user that includes role selection.
     """
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES,
+        widget=forms.RadioSelect(attrs={
+            'class': 'mt-2 space-y-2'
+        }),
+        initial='student'
+    )
+    
     class Meta:
         model = User
-        fields = ('username', 'email', 'role',)
+        # FIX: The fields list no longer includes 'role' as it is not
+        # a direct field on the User model.
+        fields = ('username', 'email',)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate the initial value of the role field from the user's profile
+        if self.instance and self.instance.profile:
+            self.fields['role'].initial = self.instance.profile.role
+
+    def save(self, commit=True):
+        """
+        Overrides the save method to handle saving the user's role to their profile.
+        """
+        # Save the user first using the parent's save method
+        user = super().save(commit=False)
+        
+        if commit:
+            user.save()
+            # Update the user's profile role based on the form data
+            role = self.cleaned_data.get('role')
+            if role:
+                user.profile.role = role
+                user.profile.save()
+        return user
