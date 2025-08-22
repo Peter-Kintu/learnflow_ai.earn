@@ -21,7 +21,12 @@ def register_request(request):
             messages.success(request, "Registration successful.")
             # CORRECTED: Redirect to the home page after successful registration
             return redirect("aiapp:home")
-        messages.error(request, "Unsuccessful registration. Invalid information.")
+        else:
+            # FIX: This message is now correctly placed inside the 'else' block
+            # It will only be displayed if the form is invalid.
+            messages.error(request, "Unsuccessful registration. Invalid information.")
+    
+    # This form is for GET requests or when the POST request was invalid
     form = CustomUserCreationForm()
     return render(request, "user/register.html", {"register_form": form})
 
