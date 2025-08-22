@@ -11,10 +11,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Add a custom class to the password input to ensure it has enough padding for the icon */
-        .password-input {
-            padding-right: 2.5rem; /* pr-10, equivalent to 40px */
-        }
     </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
@@ -61,8 +57,8 @@
                 <!-- Special handling for password fields to add the visibility toggle -->
                 {% if field.name == 'password' or field.name == 'password2' %}
                     <div class="relative">
-                        <!-- Render the input widget and apply correct styling -->
-                        {{ field.as_widget(attrs={'class': field.css_classes + ' password-input'}) }}
+                        <!-- Render the field normally, the styling is now handled in forms.py -->
+                        {{ field }}
                         <!-- Password visibility toggle icon (inline SVG for portability) -->
                         <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
