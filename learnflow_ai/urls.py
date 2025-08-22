@@ -9,10 +9,18 @@ urlpatterns = [
     # IMPORTANT: The trailing slash in 'admin/' is crucial.
     # The URL in the browser must be 'your-domain.com/admin/'
     path('admin/', admin.site.urls),
+    
     # Include the URLs from the 'aiapp' application
     path('', include('aiapp.urls')),
+
+    # This is the crucial fix for the "NoReverseMatch" error.
+    # We explicitly define the 'quizzes' namespace for all URLs
+    # that start with 'quizzes/'.
+    path('quizzes/', include('aiapp.urls', namespace='quizzes')),
+
     # Include the URLs from the 'video' application
     path('video/', include('video.urls')),
+    
     # Include the URLs from the new 'books' application
     path('book/', include('book.urls')),
     
@@ -25,3 +33,4 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
