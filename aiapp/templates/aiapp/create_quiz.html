@@ -12,6 +12,10 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Custom styles to hide/show elements */
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
@@ -52,15 +56,15 @@
             <div>
                 <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
                 <input type="text" name="quiz_title" id="id_title" required
-                       class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                       placeholder="e.g., Introduction to Python">
+                        class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                        placeholder="e.g., Introduction to Python">
             </div>
             <!-- Input for Quiz Description -->
             <div>
                 <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
                 <textarea name="quiz_description" id="id_description" rows="3" required
-                          class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                          placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
+                            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                            placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
             </div>
 
             <!-- Dynamic container for question blocks. JavaScript will add content here. -->
@@ -112,40 +116,64 @@
                         <div>
                             <label for="question_text_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Text</label>
                             <input type="text" name="question_text_${questionCount}" id="question_text_${questionCount}" required
-                                   class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                   placeholder="e.g., What is the capital of France?">
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                                    placeholder="e.g., What is the capital of France?">
                         </div>
 
-                        <!-- Options & Correct Answer Container -->
-                        <div class="mcq-fields">
-                            <label class="block text-gray-300 font-semibold mb-2">Options</label>
-                            <div class="space-y-3">
-                                <div>
-                                    <input type="text" name="option_a_${questionCount}" required placeholder="Option A"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                        <!-- Question Type Selector -->
+                        <div>
+                            <label for="question_type_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Type</label>
+                            <select name="question_type_${questionCount}" id="question_type_${questionCount}" 
+                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+                                <option value="mcq">Multiple Choice</option>
+                                <option value="sa">Single Answer</option>
+                            </select>
+                        </div>
+
+                        <!-- Container for fields that change based on question type -->
+                        <div class="question-type-specific-fields">
+                            <!-- Options & Correct Answer Container for Multiple Choice -->
+                            <div class="mcq-fields">
+                                <label class="block text-gray-300 font-semibold mb-2">Options</label>
+                                <div class="space-y-3">
+                                    <div>
+                                        <input type="text" name="mcq_option_a_${questionCount}" required placeholder="Option A"
+                                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="mcq_option_b_${questionCount}" required placeholder="Option B"
+                                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="mcq_option_c_${questionCount}" required placeholder="Option C"
+                                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="mcq_option_d_${questionCount}" required placeholder="Option D"
+                                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                                    </div>
                                 </div>
-                                <div>
-                                    <input type="text" name="option_b_${questionCount}" required placeholder="Option B"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_c_${questionCount}" required placeholder="Option C"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_d_${questionCount}" required placeholder="Option D"
-                                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+
+                                <div class="mt-4">
+                                    <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
+                                    <select name="mcq_correct_option_${questionCount}" 
+                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="mt-4">
-                                <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                                <select name="correct_option_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                </select>
+                            <!-- Fields for Single Answer question type (initially hidden) -->
+                            <div class="single-answer-fields hidden">
+                                <div class="mt-4">
+                                    <label for="sa_correct_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
+                                    <input type="text" name="sa_correct_answer_${questionCount}" id="sa_correct_answer_${questionCount}" required disabled
+                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                                        placeholder="e.g., Paris">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -157,8 +185,46 @@
                     updateQuestionLabels();
                 });
 
+                // Add a listener to the new question type selector
+                const typeSelector = newQuestionBlock.querySelector(`#question_type_${questionCount}`);
+                typeSelector.addEventListener('change', function(event) {
+                    toggleQuestionFields(event.target);
+                });
+
                 return newQuestionBlock;
             }
+
+            /**
+             * Toggles the visibility and required/disabled attributes of input fields
+             * based on the selected question type.
+             */
+            function toggleQuestionFields(typeSelector) {
+                const questionBlock = typeSelector.closest('.question-block');
+                const mcqFields = questionBlock.querySelector('.mcq-fields');
+                const singleAnswerFields = questionBlock.querySelector('.single-answer-fields');
+
+                const mcqInputs = mcqFields.querySelectorAll('input, select');
+                const singleAnswerInput = singleAnswerFields.querySelector('input');
+
+                if (typeSelector.value === 'mcq') {
+                    // Show MCQ fields, hide single answer fields
+                    mcqFields.classList.remove('hidden');
+                    singleAnswerFields.classList.add('hidden');
+                    
+                    // Enable MCQ inputs, disable single answer input
+                    mcqInputs.forEach(input => input.disabled = false);
+                    singleAnswerInput.disabled = true;
+                } else if (typeSelector.value === 'sa') {
+                    // Show single answer fields, hide MCQ fields
+                    mcqFields.classList.add('hidden');
+                    singleAnswerFields.classList.remove('hidden');
+
+                    // Enable single answer input, disable MCQ inputs
+                    singleAnswerInput.disabled = false;
+                    mcqInputs.forEach(input => input.disabled = true);
+                }
+            }
+
 
             /**
              * Iterates through all existing question blocks and re-numbers them
@@ -173,20 +239,21 @@
                     // Update the question number displayed on the header
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     
-                    // Update the names for all inputs to ensure they are unique and sequential
-                    const questionText = block.querySelector('[name^="question_text_"]');
-                    if (questionText) questionText.name = `question_text_${currentCount}`;
-                    
-                    const optionA = block.querySelector('[name^="option_a_"]');
-                    if (optionA) optionA.name = `option_a_${currentCount}`;
-                    const optionB = block.querySelector('[name^="option_b_"]');
-                    if (optionB) optionB.name = `option_b_${currentCount}`;
-                    const optionC = block.querySelector('[name^="option_c_"]');
-                    if (optionC) optionC.name = `option_c_${currentCount}`;
-                    const optionD = block.querySelector('[name^="option_d_"]');
-                    if (optionD) optionD.name = `option_d_${currentCount}`;
-                    const correctOption = block.querySelector('[name^="correct_option_"]');
-                    if (correctOption) correctOption.name = `correct_option_${currentCount}`;
+                    // Update the names and IDs for all inputs to ensure they are unique and sequential
+                    const inputs = block.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        const originalName = input.name;
+                        if (originalName) {
+                            // Use a regular expression to replace the number in the name
+                            const newName = originalName.replace(/_\d+$/, `_${currentCount}`);
+                            input.name = newName;
+                        }
+                        const originalId = input.id;
+                        if (originalId) {
+                            const newId = originalId.replace(/_\d+$/, `_${currentCount}`);
+                            input.id = newId;
+                        }
+                    });
                 });
 
                 questionCount = currentCount;
@@ -196,11 +263,17 @@
             
             // Add a new question block when the button is clicked
             addQuestionBtn.addEventListener('click', function() {
-                questionsContainer.appendChild(createQuestionBlock());
+                const newQuestionBlock = createQuestionBlock();
+                questionsContainer.appendChild(newQuestionBlock);
+                // Ensure the initial state is correct for the new block
+                toggleQuestionFields(newQuestionBlock.querySelector('select'));
             });
 
             // Add the first question when the page loads, so the form isn't empty
-            questionsContainer.appendChild(createQuestionBlock());
+            const firstQuestionBlock = createQuestionBlock();
+            questionsContainer.appendChild(firstQuestionBlock);
+            // Ensure the initial state is correct for the first block
+            toggleQuestionFields(firstQuestionBlock.querySelector('select'));
         });
     </script>
 </body>
