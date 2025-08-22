@@ -1,3 +1,65 @@
+<!-- aiapp/quiz_list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Quizzes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
+
+    <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+
+        <h2 class="text-3xl font-bold text-gray-200 mb-2 text-center">Available Quizzes</h2>
+        <p class="text-center text-gray-400 mb-8">
+            Select a quiz to begin your practice or assessment.
+        </p>
+        
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div id="quiz-list-container" class="space-y-6">
+            {% if quizzes %}
+                {% for quiz in quizzes %}
+                    <!-- Link to the quiz detail page -->
+                    <a href="{% url 'aiapp:quiz_detail' quiz.id %}" class="block bg-slate-700 p-6 rounded-xl shadow-inner cursor-pointer hover:bg-slate-600 transition-colors">
+                        <h3 class="text-xl font-semibold text-gray-200">{{ quiz.title }}</h3>
+                        <p class="text-gray-400 mt-2">{{ quiz.description }}</p>
+                        <span class="text-sm text-gray-500 mt-2 block">Questions: {{ quiz.questions.count }}</span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500 text-center">No quizzes are available yet. Create one now!</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <a href="{% url 'aiapp:create_quiz' %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
+                    <path d="M5 12h14"/><path d="M12 5v14"/>
+                </svg>
+                <span>Create New Quiz</span>
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
+
 <!-- aiapp/create_quiz.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -5,44 +67,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a New Quiz</title>
-    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom styles for radio buttons to match the dark theme */
-        .form-radio {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            display: inline-block;
-            vertical-align: middle;
-            background-repeat: no-repeat;
-            background-position: center;
-            border-radius: 50%;
-            cursor: pointer;
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #6B7280; /* Equivalent to border-gray-600 */
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
-
-        .form-radio:checked {
-            background-color: #4F46E5; /* Equivalent to bg-indigo-600 */
-            border-color: #4F46E5;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
-            background-size: 60% 60%;
-        }
-        
     </style>
 </head>
-<body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
+<body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
-    <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+    <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full relative">
 
         <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
@@ -71,14 +106,14 @@
             <div>
                 <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
                 <input type="text" name="quiz_title" id="id_title" required
-                        class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                        placeholder="e.g., Introduction to Python">
+                       class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                       placeholder="e.g., Introduction to Python">
             </div>
             <div>
                 <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
                 <textarea name="quiz_description" id="id_description" rows="3" required
-                            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                            placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
+                          class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                          placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
             </div>
 
             <div id="questions-container" class="space-y-8 mt-8 pt-8 border-t border-slate-700">
@@ -106,10 +141,6 @@
             const addQuestionBtn = document.getElementById('add-question-btn');
             let questionCount = 0;
 
-            /**
-             * Creates a new question block HTML element.
-             * @returns {HTMLElement} The new question block element.
-             */
             function createQuestionBlock() {
                 questionCount++;
 
@@ -172,23 +203,15 @@
                 return newQuestionBlock;
             }
 
-            /**
-             * Re-indexes the question blocks and their input names after a question is removed.
-             */
             function updateQuestionLabels() {
                 const questionBlocks = questionsContainer.querySelectorAll('.question-block');
                 let currentCount = 0;
                 questionBlocks.forEach(function(block) {
                     currentCount++;
-                    // Update the title
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     
-                    // Update the input names and IDs
                     const questionText = block.querySelector('[name^="question_text_"]');
-                    if (questionText) {
-                        questionText.name = `question_text_${currentCount}`;
-                        questionText.id = `question_text_${currentCount}`;
-                    }
+                    if (questionText) questionText.name = `question_text_${currentCount}`;
                     
                     const optionA = block.querySelector('[name^="option_a_"]');
                     if (optionA) optionA.name = `option_a_${currentCount}`;
@@ -205,14 +228,161 @@
                 questionCount = currentCount;
             }
 
-            // Event listener for the "Add a Question" button
             addQuestionBtn.addEventListener('click', function() {
                 questionsContainer.appendChild(createQuestionBlock());
             });
 
-            // Add the first question block on page load
             questionsContainer.appendChild(createQuestionBlock());
         });
     </script>
+</body>
+</html>
+
+<!-- aiapp/quiz_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full relative">
+
+        <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+            <span>Back to Quizzes</span>
+        </a>
+
+        <div class="text-center mt-6">
+            <h2 class="text-4xl font-bold text-gray-200 mb-4">{{ quiz.title }}</h2>
+            <p class="text-lg text-gray-400 mb-6">{{ quiz.description }}</p>
+            <p class="text-sm text-gray-500">Created by: {{ quiz.teacher.username }}</p>
+            <p class="text-sm text-gray-500">Number of Questions: {{ quiz.questions.count }}</p>
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <a href="{% url 'aiapp:quiz_attempt' quiz.id %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                Start Quiz
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<!-- aiapp/quiz_attempt.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attempting: {{ quiz.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
+
+    <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+
+        <a href="{% url 'aiapp:quiz_detail' quiz.id %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+            <span>Back to Details</span>
+        </a>
+
+        <h2 class="text-3xl font-bold text-gray-200 mb-2 text-center mt-6">{{ quiz.title }}</h2>
+        <p class="text-center text-gray-400 mb-8">{{ quiz.description }}</p>
+
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}" class="space-y-8">
+            {% csrf_token %}
+            {% for question in questions %}
+                <div class="bg-slate-700 p-6 rounded-xl shadow-inner">
+                    <h4 class="text-xl font-semibold text-gray-200 mb-4">
+                        <span class="text-indigo-400">Question {{ forloop.counter }}:</span> {{ question.text }}
+                    </h4>
+                    <div class="space-y-4">
+                        {% for choice in question.choices.all %}
+                            <label class="flex items-center space-x-3 cursor-pointer text-gray-300 hover:text-white transition-colors">
+                                <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required
+                                       class="form-radio h-5 w-5 text-indigo-600 bg-slate-800 border-gray-600 focus:ring-indigo-500">
+                                <span>{{ choice.text }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="flex justify-end mt-8">
+                <button type="submit" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
+                    Submit Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+
+<!-- aiapp/quiz_results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full text-center">
+        <h2 class="text-4xl font-bold text-gray-200 mb-4">Quiz Complete!</h2>
+        <p class="text-lg text-gray-400 mb-6">You've finished the "{{ quiz.title }}" quiz.</p>
+
+        <div class="bg-slate-700 p-6 rounded-xl shadow-inner inline-block">
+            <h3 class="text-5xl font-extrabold text-green-400 mb-2">{{ score }}</h3>
+            <p class="text-lg font-semibold text-gray-200">
+                Correct Answers out of {{ total_questions }}
+            </p>
+        </div>
+
+        <div class="flex justify-center mt-8 space-x-4">
+            <a href="{% url 'aiapp:quiz_list' %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                Back to Quizzes
+            </a>
+        </div>
+    </div>
+
 </body>
 </html>
