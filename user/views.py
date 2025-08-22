@@ -19,8 +19,8 @@ def register_request(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            # Redirect to the user's profile page after successful registration
-            return redirect("user:my_profile")
+            # CORRECTED: Redirect to the home page after successful registration
+            return redirect("aiapp:home")
         messages.error(request, "Unsuccessful registration. Invalid information.")
     form = CustomUserCreationForm()
     return render(request, "user/register.html", {"register_form": form})
@@ -38,8 +38,8 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                # Redirect to the user's profile page after login
-                return redirect("user:my_profile")
+                # CORRECTED: Redirect to the home page after successful login
+                return redirect("aiapp:home")
             else:
                 messages.error(request, "Invalid username or password.")
         else:
