@@ -1,29 +1,26 @@
 # user/views.py
 
-from django.shortcuts import render, redirect , get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib import messages
-from .forms import CustomUserCreationForm
-from django.contrib.auth.models import User
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
+from django.contrib import messages
+from .forms import NewUserForm
 
 def register_request(request):
     """
     Handles user registration.
     """
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+        form = NewUserForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            # Redirect to the user's profile page instead of 'core:dashboard'
-            return redirect("user:profile")
+            return redirect("user:my_profile")
         messages.error(request, "Unsuccessful registration. Invalid information.")
-    else:
-        form = CustomUserCreationForm()
-
-    return render(request=request, template_name="user/register.html", context={"register_form": form})
+    form = NewUserForm()
+    return render(request, "user/register.html", {"register_form": form})
 
 def login_request(request):
     """
@@ -38,15 +35,13 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                # Redirect to the user's profile page instead of 'core:dashboard'
-                return redirect("user:profile")
+                return redirect("user:my_profile")
             else:
                 messages.error(request, "Invalid username or password.")
         else:
             messages.error(request, "Invalid username or password.")
-
     form = AuthenticationForm()
-    return render(request=request, template_name="user/login.html", context={"login_form": form})
+    return render(request, "user/login.html", {"login_form": form})
 
 def logout_request(request):
     """
@@ -54,13 +49,23 @@ def logout_request(request):
     """
     logout(request)
     messages.info(request, "You have successfully logged out.")
-    # Redirect to the user's login page, which is in the 'user' namespace
     return redirect("user:login")
 
-def profile_view(request):
+def my_profile_redirect(request):
     """
-    Displays the user's profile information.
+    Redirects the logged-in user to their specific profile URL.
+    This view is a new addition to handle the URL /user/profile/
     """
-    user_profile = request.user.profile
-    user_profile = get_object_or_404(User, username=request.user.username)
+    if request.user.is_authenticated:
+        return redirect('user:profile', username=request.user.username)
+    # Redirect to login if not authenticated
+    return redirect("user:login")
+
+def profile_view(request, username):
+    """
+    Displays the profile page for a specific user.
+    """
+    # This view is now called with a username, solving the original TypeError.
+    # It fetches the user object and renders the profile template.
+    user_profile = get_object_or_404(User, username=username)
     return render(request, "user/profile.html", {"user_profile": user_profile})
