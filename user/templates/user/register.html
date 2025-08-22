@@ -55,29 +55,16 @@
     <h2 class="text-3xl font-bold text-white text-center mb-2">Create Your Account</h2>
     <p class="text-center text-gray-400 mb-8">Join our platform.</p>
 
-    <!-- Display Django messages if any exist -->
-    {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-                <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
-        <!-- Display ALL form errors here for easier debugging -->
-        {% if register_form.errors %}
+        <!-- A single, prominent block for non-field errors (like a password mismatch) -->
+        {% if register_form.non_field_errors %}
             <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
                 <p>Please correct the following errors:</p>
                 <ul>
-                {% for field, errors in register_form.errors.items %}
-                    {% for error in errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
-                    {% endfor %}
+                {% for error in register_form.non_field_errors %}
+                    <li>{{ error }}</li>
                 {% endfor %}
                 </ul>
             </div>
@@ -85,17 +72,15 @@
 
         <!-- Iterate through all fields in the form -->
         {% for field in register_form %}
-            <div>
-                {% if field.label %}
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                        {{ field.label }}
-                    </label>
-                {% endif %}
-
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                    {{ field.label }}
+                </label>
+                
                 {% if field.name == 'password' or field.name == 'password2' %}
                     <!-- Special handling for password fields to add the visibility toggle -->
                     <div class="relative">
-                        {{ field }}
+                        <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ field.label }}" autocomplete="new-password" required>
                         <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -103,12 +88,22 @@
                             </svg>
                         </span>
                     </div>
+                {% elif field.name == 'role' %}
+                    <!-- Custom rendering for the role radio buttons -->
+                    <div class="mt-2 space-y-2 text-gray-200">
+                        {% for choice in field %}
+                            <label class="radio-container">
+                                {{ choice.tag }}
+                                <span class="radio-label">{{ choice.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
                 {% else %}
-                    <!-- Render all other fields normally -->
-                    {{ field }}
+                    <!-- Standard rendering for other text fields -->
+                    <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ field.label }}" required>
                 {% endif %}
 
-                <!-- Display field-specific errors -->
+                <!-- Display field-specific errors right below the field -->
                 {% for error in field.errors %}
                     <p class="text-sm text-red-300 mt-1">{{ error }}</p>
                 {% endfor %}
