@@ -11,6 +11,10 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Add a custom class to the password input to ensure it has enough padding for the icon */
+        .password-input {
+            padding-right: 2.5rem; /* pr-10, equivalent to 40px */
+        }
     </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
@@ -57,7 +61,8 @@
                 <!-- Special handling for password fields to add the visibility toggle -->
                 {% if field.name == 'password' or field.name == 'password2' %}
                     <div class="relative">
-                        {{ field }}
+                        <!-- Render the input widget and apply correct styling -->
+                        {{ field.as_widget(attrs={'class': field.css_classes + ' password-input'}) }}
                         <!-- Password visibility toggle icon (inline SVG for portability) -->
                         <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,7 +103,6 @@
         if (input.type === 'password') {
             input.type = 'text';
             // Change the icon to a "visible" state (e.g., slash through eye)
-            // We'll update the SVG path for the new icon
             iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75M5.996 11.996L3.996 10M18.004 14l2-2.004M16.996 10l-2 2M12 18V6M12 6a6 6 0 014.243 10.243M12 6a6 6 0 00-4.243 10.243M12 18a6 6 0 01-4.243-10.243M12 18a6 6 0 004.243-10.243');
         } else {
             input.type = 'password';
