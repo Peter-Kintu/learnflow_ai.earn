@@ -40,12 +40,12 @@
     <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full relative">
 
         <!-- Back to Home Button -->
-        <a href="/" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+        <a href="{% url 'quizzes:list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
             <!-- SVG icon for a back arrow -->
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
-            <span>Back to Home</span>
+            <span>Back to Quizzes</span>
         </a>
 
         <!-- Page header -->
@@ -59,6 +59,7 @@
 
         <!-- The form itself -->
         <form id="quizForm" class="space-y-6">
+            {% csrf_token %} <!-- Django's CSRF token for security -->
             <!-- Input for Quiz Title -->
             <div>
                 <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
@@ -109,7 +110,7 @@
         </div>
     </div>
 
-    <!-- JavaScript for dynamic form functionality and LLM integration -->
+    <!-- JavaScript for dynamic form functionality and Django backend communication -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get references to the main container and buttons
@@ -307,7 +308,8 @@
             }
 
             /**
-             * Asynchronously generates a new quiz question using the Gemini API.
+             * Asynchronously generates a new quiz question by making a request
+             * to a Django backend view.
              */
             async function generateQuestion() {
                 const title = quizTitleInput.value.trim();
@@ -322,55 +324,21 @@
                 generateQuestionBtn.disabled = true;
 
                 try {
-                    const prompt = `Based on the topic "${title}", generate a multiple-choice quiz question. The question should have four options (A, B, C, D) and one correct answer. Please return the data as a JSON object with the following schema:
-                    {
-                        "questionText": "What is the primary purpose of a 'for' loop in Python?",
-                        "options": [
-                            "To define a new function",
-                            "To execute a block of code a fixed number of times",
-                            "To handle exceptions",
-                            "To perform a conditional check"
-                        ],
-                        "correctAnswer": "B"
-                    }
-                    Ensure the output is valid JSON only.`;
-
-                    const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = {
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            responseSchema: {
-                                type: "OBJECT",
-                                properties: {
-                                    "questionText": { "type": "STRING" },
-                                    "options": {
-                                        "type": "ARRAY",
-                                        "items": { "type": "STRING" }
-                                    },
-                                    "correctAnswer": { "type": "STRING" }
-                                },
-                                "propertyOrdering": ["questionText", "options", "correctAnswer"]
-                            }
-                        }
-                    };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
+                    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                    const response = await fetch('/generate-question/', { // Django URL for the AI endpoint
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ title: title })
                     });
 
                     if (!response.ok) {
-                        throw new Error(`API error: ${response.statusText}`);
+                        throw new Error(`Server error: ${response.statusText}`);
                     }
 
-                    const result = await response.json();
-                    
-                    const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    const generatedQuestion = JSON.parse(textContent);
+                    const generatedQuestion = await response.json();
 
                     // Create a new question block and populate it with the generated data
                     const newBlock = createQuestionBlock(generatedQuestion);
@@ -389,13 +357,13 @@
             }
 
             /**
-             * Handles the form submission, collects data, and displays it.
+             * Handles the form submission, collects data, and saves it by sending it
+             * to a Django backend view.
              * @param {Event} event - The form submission event.
              */
-            function handleFormSubmit(event) {
+            async function handleFormSubmit(event) {
                 event.preventDefault();
 
-                // Get quiz title and description
                 const quizTitle = document.getElementById('id_title').value;
                 const quizDescription = document.getElementById('id_description').value;
 
@@ -408,18 +376,17 @@
                     const questionType = typeSelect.value;
                     
                     let questionData = {
-                        questionNumber: index + 1,
                         questionText,
                         type: questionType
                     };
 
                     if (questionType === 'mcq') {
-                        const options = {
-                            A: block.querySelector('[name^="option_a_"]').value,
-                            B: block.querySelector('[name^="option_b_"]').value,
-                            C: block.querySelector('[name^="option_c_"]').value,
-                            D: block.querySelector('[name^="option_d_"]').value,
-                        };
+                        const options = [
+                            block.querySelector('[name^="option_a_"]').value,
+                            block.querySelector('[name^="option_b_"]').value,
+                            block.querySelector('[name^="option_c_"]').value,
+                            block.querySelector('[name^="option_d_"]').value,
+                        ];
                         const correctAnswer = block.querySelector('[name^="correct_option_"]').value;
                         questionData.options = options;
                         questionData.correctAnswer = correctAnswer;
@@ -437,10 +404,37 @@
                     questions: questions
                 };
 
-                // Display the JSON data in the output area
-                jsonOutputPre.textContent = JSON.stringify(quizData, null, 2);
-                quizOutputDiv.classList.remove('hidden');
-                showMessage('Quiz data collected successfully!', 'success');
+                // Get the CSRF token from the Django form
+                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+                try {
+                    const response = await fetch('/quizzes/create/', { // Django URL to save the quiz
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(quizData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showMessage('Quiz saved successfully!', 'success');
+                        // Optionally, redirect to the quiz list page or show a success message
+                        // window.location.href = result.redirect_url;
+                    } else {
+                        showMessage(result.error || 'Failed to save quiz.', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Error saving quiz:', error);
+                    showMessage('Failed to save quiz. Please try again.', 'error');
+                }
             }
 
             // --- Event Listeners ---
