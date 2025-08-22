@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- Add a title for the browser tab -->
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+    <style>
+        /* Custom CSS to ensure the profile card is centered and looks good */
+        .profile-card {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+    </style>
+    <div class="bg-gray-100 min-h-screen py-8">
+        <div class="profile-card bg-white rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6">
+            <!-- Profile Picture/Avatar Section -->
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0">
+                <!-- Use a placeholder image or a Gravatar/initials service -->
+                <img src="https://placehold.co/128x128/9f7aea/ffffff?text=U" alt="User Avatar" class="w-full h-full object-cover">
+            </div>
+
+            <!-- Profile Details Section -->
+            <div class="flex-grow text-center md:text-left">
+                <!-- Display the username from the context dictionary passed by the view -->
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">{{ user_profile.username }}</h1>
+                
+                <!-- Display the user's role if it exists on the profile object -->
+                {% if user_profile.profile.role %}
+                    <p class="text-lg text-indigo-600 font-semibold mb-4">{{ user_profile.profile.get_role_display|title }}</p>
+                {% else %}
+                    <p class="text-lg text-gray-500 font-semibold mb-4">Role not defined</p>
+                {% endif %}
+
+                <!-- A simple bio or additional details section -->
+                <p class="text-gray-600 leading-relaxed max-w-sm">
+                    Welcome to your profile page. This is a customizable space where you can share information about yourself.
+                </p>
+
+                <!-- Logout button linking to the logout URL -->
+                <a href="{% url 'user:logout' %}" class="mt-6 inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-105">
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
