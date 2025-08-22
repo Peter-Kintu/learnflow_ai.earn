@@ -1,30 +1,33 @@
 # user/views.py
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.models import User
 from django.contrib import messages
-from .forms import NewUserForm
+from .forms import CustomUserCreationForm
+
+# Get the custom User model
+User = get_user_model()
 
 def register_request(request):
     """
-    Handles user registration.
+    Handles user registration with a custom form.
     """
     if request.method == "POST":
-        form = NewUserForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
+            # Redirect to the user's profile page after successful registration
             return redirect("user:my_profile")
         messages.error(request, "Unsuccessful registration. Invalid information.")
-    form = NewUserForm()
+    form = CustomUserCreationForm()
     return render(request, "user/register.html", {"register_form": form})
 
 def login_request(request):
     """
-    Handles user login.
+    Handles user login using the built-in AuthenticationForm.
     """
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
@@ -35,6 +38,7 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
+                # Redirect to the user's profile page after login
                 return redirect("user:my_profile")
             else:
                 messages.error(request, "Invalid username or password.")
@@ -53,19 +57,19 @@ def logout_request(request):
 
 def my_profile_redirect(request):
     """
-    Redirects the logged-in user to their specific profile URL.
-    This view is a new addition to handle the URL /user/profile/
+    A view to handle redirection to the authenticated user's profile.
+    This is useful for providing a generic "my profile" link.
     """
     if request.user.is_authenticated:
+        # Redirects to the 'profile_view' with the current user's username
         return redirect('user:profile', username=request.user.username)
     # Redirect to login if not authenticated
     return redirect("user:login")
 
 def profile_view(request, username):
     """
-    Displays the profile page for a specific user.
+    Displays the profile page for a specific user based on their username.
     """
-    # This view is now called with a username, solving the original TypeError.
-    # It fetches the user object and renders the profile template.
+    # Fetch the user object or return a 404 error if not found
     user_profile = get_object_or_404(User, username=username)
     return render(request, "user/profile.html", {"user_profile": user_profile})
