@@ -1,14 +1,11 @@
 # user/views.py
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate, get_user_model
+from django.shortcuts import render, redirect , get_object_or_404
+from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm
-
-# Get the custom or default user model
-User = get_user_model()
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 
 def register_request(request):
     """
@@ -20,8 +17,8 @@ def register_request(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            # Redirect to the user's own profile page after registration
-            return redirect("user:my_profile")
+            # Redirect to the user's profile page instead of 'core:dashboard'
+            return redirect("user:profile")
         messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
         form = CustomUserCreationForm()
@@ -37,12 +34,12 @@ def login_request(request):
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
+            user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                # Redirect to the user's own profile page after login
-                return redirect("user:my_profile")
+                # Redirect to the user's profile page instead of 'core:dashboard'
+                return redirect("user:profile")
             else:
                 messages.error(request, "Invalid username or password.")
         else:
@@ -57,26 +54,13 @@ def logout_request(request):
     """
     logout(request)
     messages.info(request, "You have successfully logged out.")
+    # Redirect to the user's login page, which is in the 'user' namespace
     return redirect("user:login")
 
-@login_required
-def my_profile_redirect(request):
+def profile_view(request):
     """
-    Redirects the logged-in user to their specific profile URL.
-    This fixes the TypeError when accessing /user/profile/ directly.
+    Displays the user's profile information.
     """
-    return redirect('user:profile', username=request.user.username)
-
-@login_required
-def profile_view(request, username):
-    """
-    Displays the profile information for a specific user.
-    The 'username' is passed from the URL.
-    """
-    profile_user = get_object_or_404(User, username=username)
-
-    context = {
-        'profile_user': profile_user
-    }
-    
-    return render(request, "user/profile_detail.html", context)
+    user_profile = request.user.profile
+    user_profile = get_object_or_404(User, username=request.user.username)
+    return render(request, "user/profile.html", {"user_profile": user_profile})
