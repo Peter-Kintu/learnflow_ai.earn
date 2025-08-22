@@ -30,14 +30,13 @@
         </div>
     {% endif %}
 
-    <!-- Load the custom filter to add classes -->
+    <!-- Load the custom filter, though we will not use it for the problematic fields -->
     {% load form_tags %}
 
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
         {% csrf_token %}
 
         <!-- Display non-field errors at the top of the form -->
-        <!-- These errors are not tied to a specific field, like "Passwords don't match" -->
         {% if register_form.non_field_errors %}
             <div class="p-3 bg-red-900 text-red-300 rounded-md font-bold mb-4">
                 {% for error in register_form.non_field_errors %}
@@ -53,7 +52,8 @@
             <label for="{{ register_form.username.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
                 {{ register_form.username.label }}
             </label>
-            {{ register_form.username|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            <!-- The class is now applied directly in the forms.py file -->
+            {{ register_form.username }}
             {% if register_form.username.errors %}
                 {% for error in register_form.username.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
@@ -66,7 +66,8 @@
             <label for="{{ register_form.email.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
                 {{ register_form.email.label }}
             </label>
-            {{ register_form.email|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            <!-- The class is now applied directly in the forms.py file -->
+            {{ register_form.email }}
             {% if register_form.email.errors %}
                 {% for error in register_form.email.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
@@ -76,17 +77,11 @@
 
         <!-- Role field (radio buttons) -->
         <div>
-            <label for="{{ register_form.role.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+            <label for="id_role_0" class="block text-sm font-medium text-gray-200 mb-1">
                 {{ register_form.role.label }}
             </label>
-            <div class="space-x-4 flex">
-                {% for radio in register_form.role %}
-                    <label class="inline-flex items-center text-gray-400">
-                        {{ radio.tag }}
-                        <span class="ml-2">{{ radio.choice_label }}</span>
-                    </label>
-                {% endfor %}
-            </div>
+            <!-- The RadioSelect widget with classes is applied in the form -->
+            {{ register_form.role }}
             {% if register_form.role.errors %}
                 {% for error in register_form.role.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
@@ -99,7 +94,8 @@
             <label for="{{ register_form.password.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
                 {{ register_form.password.label }}
             </label>
-            {{ register_form.password|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            <!-- The class is now applied directly in the forms.py file -->
+            {{ register_form.password }}
             {% if register_form.password.errors %}
                 {% for error in register_form.password.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
@@ -112,7 +108,8 @@
             <label for="{{ register_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
                 {{ register_form.password2.label }}
             </label>
-            {{ register_form.password2|add_class:"block w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" }}
+            <!-- The class is now applied directly in the forms.py file -->
+            {{ register_form.password2 }}
             {% if register_form.password2.errors %}
                 {% for error in register_form.password2.errors %}
                     <p class="text-red-400 text-sm mt-1 font-semibold">{{ error }}</p>
