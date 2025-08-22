@@ -47,32 +47,63 @@
             </div>
         {% endif %}
 
-        <!-- Iterate and render ALL form fields -->
-        {% for field in register_form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                    {{ field.label }}
-                </label>
-                
-                <!-- Special handling for password fields to add the visibility toggle -->
-                {% if field.name == 'password' or field.name == 'password2' %}
-                    <div class="relative">
-                        <!-- Render the field normally, the styling is now handled in forms.py -->
-                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ field.label }}" autocomplete="new-password" required>
-                        <!-- Password visibility toggle icon (inline SVG for portability) -->
-                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </span>
-                    </div>
-                {% else %}
-                    <!-- Render all other fields normally -->
-                    <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ field.label }}" required>
-                {% endif %}
+        <!-- Explicitly render each field to ensure proper styling -->
+        <div>
+            <label for="{{ register_form.username.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.username.label }}
+            </label>
+            <input type="text" name="{{ register_form.username.name }}" id="{{ register_form.username.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ register_form.username.label }}" required>
+        </div>
+
+        <div>
+            <label for="{{ register_form.email.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.email.label }}
+            </label>
+            <input type="email" name="{{ register_form.email.name }}" id="{{ register_form.email.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ register_form.email.label }}" required>
+        </div>
+
+        <div>
+            <label for="{{ register_form.password.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.password.label }}
+            </label>
+            <div class="relative">
+                <input type="password" name="{{ register_form.password.name }}" id="{{ register_form.password.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ register_form.password.label }}" autocomplete="new-password" required>
+                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ register_form.password.id_for_label }}', this)">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </span>
             </div>
-        {% endfor %}
+        </div>
+
+        <div>
+            <label for="{{ register_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                {{ register_form.password2.label }}
+            </label>
+            <div class="relative">
+                <input type="password" name="{{ register_form.password2.name }}" id="{{ register_form.password2.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ register_form.password2.label }}" autocomplete="new-password" required>
+                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ register_form.password2.id_for_label }}', this)">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </span>
+            </div>
+        </div>
+        
+        <!-- The corrected field for the user's role -->
+        <div class="mt-6">
+            <label class="block text-sm font-medium text-gray-200 mb-2">
+                {{ register_form.role.label }}
+            </label>
+            {{ register_form.role }}
+            {% if register_form.role.errors %}
+                {% for error in register_form.role.errors %}
+                    <p class="text-sm text-red-300 mt-1">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
 
         <!-- The registration button -->
         <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full mt-6">
