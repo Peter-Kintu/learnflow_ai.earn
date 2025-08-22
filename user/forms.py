@@ -38,11 +38,16 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply Tailwind classes to the default fields inherited from UserCreationForm
-        # This is the key fix that makes the template filter unnecessary for these fields.
-        self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
-        self.fields['password'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
-        self.fields['password2'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+        # Check if the fields exist before attempting to access them.
+        # This prevents the KeyError you were seeing.
+        if 'username' in self.fields:
+            self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+        
+        if 'password' in self.fields:
+            self.fields['password'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+        
+        if 'password2' in self.fields:
+            self.fields['password2'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 text-white placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
 
     def clean_email(self):
         """
@@ -89,8 +94,10 @@ class CustomUserChangeForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Apply Tailwind classes to the default widgets
-        self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
-        self.fields['email'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+        if 'username' in self.fields:
+            self.fields['username'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
+        if 'email' in self.fields:
+            self.fields['email'].widget.attrs['class'] = 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500'
 
         # Populate the initial value of the role field from the user's profile
         if self.instance and self.instance.profile:

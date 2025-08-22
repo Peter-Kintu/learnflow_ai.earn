@@ -30,7 +30,7 @@
         </div>
     {% endif %}
 
-    <!-- Load the custom filter, though we will not use it for the problematic fields -->
+    <!-- We no longer need to use a custom filter because classes are applied in forms.py -->
     {% load form_tags %}
 
     <form method="post" action="{% url 'user:register' %}" class="space-y-6">
