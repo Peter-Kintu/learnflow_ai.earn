@@ -113,18 +113,29 @@ def quiz_results(request, quiz_id):
 def create_quiz(request):
     """
     Handles the creation of a new quiz and its questions.
+    FIXED: Added a validation check for the quiz title to prevent an IntegrityError.
     """
     if request.method == 'POST':
         # Get quiz title and description from the form
         quiz_title = request.POST.get('quiz_title')
         quiz_description = request.POST.get('quiz_description')
-        
+
+        # Critical: Add a validation check for the title before creating the object
+        if not quiz_title:
+            messages.error(request, "Quiz title is required. Please provide a title.")
+            # Re-render the form with the POST data to preserve user's input
+            return render(request, 'aiapp/create_quiz.html', {'request': request, **request.POST})
+
         # Create the new Quiz instance
-        quiz = Quiz.objects.create(
-            teacher=request.user,
-            title=quiz_title,
-            description=quiz_description
-        )
+        try:
+            quiz = Quiz.objects.create(
+                teacher=request.user,
+                title=quiz_title,
+                description=quiz_description
+            )
+        except Exception as e:
+            messages.error(request, f"An unexpected error occurred while creating the quiz: {e}")
+            return render(request, 'aiapp/create_quiz.html', {'request': request, **request.POST})
 
         # Process questions and choices from the dynamically generated form
         question_count = 1

@@ -7,20 +7,32 @@
         Fill out the form below to create a new quiz. You can add as many questions as you need, choosing between multiple-choice and single-answer formats.
     </p>
 
+    <!-- Display Django messages if any exist -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <form method="post" id="quizForm" class="space-y-6">
         {% csrf_token %}
         <!-- Quiz Title and Description -->
         <div>
             <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
-            <input type="text" name="title" id="id_title" required
+            <input type="text" name="quiz_title" id="id_title" required
                    class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                   placeholder="e.g., Introduction to Python">
+                   placeholder="e.g., Introduction to Python"
+                   value="{{ request.POST.quiz_title }}">
         </div>
         <div>
             <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
-            <textarea name="description" id="id_description" rows="3" required
+            <textarea name="quiz_description" id="id_description" rows="3" required
                       class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                      placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
+                      placeholder="e.g., This quiz covers the basics of Python syntax.">{{ request.POST.quiz_description }}</textarea>
         </div>
 
         <!-- Dynamic Questions Container -->
@@ -64,15 +76,6 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <!-- Question Type Selector -->
-                    <div>
-                        <label class="block text-gray-300 font-semibold mb-2">Question Type</label>
-                        <select name="question_type_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500 question-type-select">
-                            <option value="mcq">Multiple Choice</option>
-                            <option value="text">Single Answer (Text)</option>
-                        </select>
-                    </div>
-
                     <!-- Question Text -->
                     <div>
                         <label for="question_text_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Text</label>
@@ -113,46 +116,9 @@
                             </select>
                         </div>
                     </div>
-
-                    <!-- Single Answer Field (for text-based answers) -->
-                    <div class="text-fields hidden">
-                        <div>
-                            <label for="correct_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer (Text)</label>
-                            <input type="text" name="correct_answer_${questionCount}" id="correct_answer_${questionCount}"
-                                   class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                   placeholder="e.g., Paris">
-                        </div>
-                    </div>
                 </div>
             `;
             
-            // Add change event listener for the question type selector
-            const typeSelect = newQuestionBlock.querySelector('.question-type-select');
-            typeSelect.addEventListener('change', function() {
-                const mcqFields = newQuestionBlock.querySelector('.mcq-fields');
-                const textFields = newQuestionBlock.querySelector('.text-fields');
-                const textInputs = textFields.querySelectorAll('input');
-                const mcqInputs = mcqFields.querySelectorAll('input, select');
-                
-                if (this.value === 'mcq') {
-                    mcqFields.classList.remove('hidden');
-                    textFields.classList.add('hidden');
-                    // Add 'required' attribute to MCQ fields, remove from text fields
-                    mcqInputs.forEach(input => input.setAttribute('required', 'required'));
-                    textInputs.forEach(input => input.removeAttribute('required'));
-                } else {
-                    mcqFields.classList.add('hidden');
-                    textFields.classList.remove('hidden');
-                    // Add 'required' attribute to text fields, remove from MCQ fields
-                    textInputs.forEach(input => input.setAttribute('required', 'required'));
-                    mcqInputs.forEach(input => input.removeAttribute('required'));
-                }
-            });
-
-            // Set initial required fields
-            const mcqInputs = newQuestionBlock.querySelector('.mcq-fields').querySelectorAll('input, select');
-            mcqInputs.forEach(input => input.setAttribute('required', 'required'));
-
             // Add a click listener for the remove button
             const removeBtn = newQuestionBlock.querySelector('.remove-question-btn');
             removeBtn.addEventListener('click', function() {
@@ -174,14 +140,12 @@
                 block.querySelector('h4').textContent = `Question ${questionCount}`;
                 
                 // Update the names for all inputs
-                block.querySelector('[name^="question_type_"]').name = `question_type_${questionCount}`;
                 block.querySelector('[name^="question_text_"]').name = `question_text_${questionCount}`;
                 block.querySelector('[name^="option_a_"]').name = `option_a_${questionCount}`;
                 block.querySelector('[name^="option_b_"]').name = `option_b_${questionCount}`;
                 block.querySelector('[name^="option_c_"]').name = `option_c_${questionCount}`;
                 block.querySelector('[name^="option_d_"]').name = `option_d_${questionCount}`;
                 block.querySelector('[name^="correct_option_"]').name = `correct_option_${questionCount}`;
-                block.querySelector('[name^="correct_answer_"]').name = `correct_answer_${questionCount}`;
             });
         }
         
