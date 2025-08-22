@@ -1,5 +1,4 @@
 # user/forms.py
-
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
@@ -10,7 +9,25 @@ from .models import Profile
 User = get_user_model()
 
 # Define the common classes for all text inputs to ensure consistency
-INPUT_CLASSES = 'w-full px-4 py-3 bg-slate-700 text-gray-200 placeholder-gray-400 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+INPUT_CLASSES = 'w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
+
+class LoginForm(forms.Form):
+    """
+    A simple login form with a username and password.
+    """
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASSES,
+            'placeholder': 'Enter your username'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': f'{INPUT_CLASSES} pr-10', # Added padding for the eye icon
+            'placeholder': 'Enter your password'
+        })
+    )
 
 class CustomUserCreationForm(UserCreationForm):
     """
@@ -21,7 +38,7 @@ class CustomUserCreationForm(UserCreationForm):
         required=True,
         label="Email Address",
         widget=forms.EmailInput(attrs={
-            'class': INPUT_CLASSES.replace('text-gray-200', 'text-white'),
+            'class': INPUT_CLASSES,
             'placeholder': 'Enter your email address'
         })
     )
@@ -29,7 +46,7 @@ class CustomUserCreationForm(UserCreationForm):
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
         widget=forms.RadioSelect(attrs={
-            'class': 'mt-2 space-y-2'
+            'class': 'mt-2 space-y-2 text-gray-200'
         }),
         initial='student',
         label="I am a:"
@@ -43,7 +60,7 @@ class CustomUserCreationForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         # Apply the consistent classes to the other fields
         if 'username' in self.fields:
-            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES.replace('text-gray-200', 'text-white')
+            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
             self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
         
         if 'password' in self.fields:
