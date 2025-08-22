@@ -32,24 +32,18 @@ class CustomUserCreationForm(UserCreationForm):
         initial='student'
     )
 
-    class Meta:
+    class Meta(UserCreationForm.Meta):
         model = User
-        # Include all necessary fields in the form
-        fields = ('username', 'email', 'role', 'password', 'password2')
-        field_classes = {'username': forms.CharField}
+        # FIX: The fields list is corrected to include only the new fields
+        # The username and password fields are handled by the parent class (UserCreationForm)
+        fields = ('username', 'email', 'role',)
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Choose a username'
             }),
-            'password': forms.PasswordInput(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
-                'placeholder': 'Choose a password'
-            }),
-            'password2': forms.PasswordInput(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
-                'placeholder': 'Confirm password'
-            })
+            # The password widgets are no longer needed here as UserCreationForm handles them
+            # You can customize them via a different approach if necessary, but this is the simplest fix.
         }
 
     def clean_email(self):
@@ -77,3 +71,12 @@ class CustomUserCreationForm(UserCreationForm):
             user.profile.role = role
             user.profile.save()
         return user
+
+class CustomUserChangeForm(UserChangeForm):
+    """
+    A custom form for updating an existing user.
+    """
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'role',)
+
