@@ -25,8 +25,10 @@ def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
     Quizzes are ordered by creation date in descending order.
+    
+    CRITICAL FIX: This view now only shows quizzes that are marked as published.
     """
-    quizzes = Quiz.objects.all().order_by('-created_at')
+    quizzes = Quiz.objects.filter(published=True).order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
 
 @login_required
