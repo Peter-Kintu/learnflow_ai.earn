@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Available Quizzes</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -15,13 +16,16 @@
 </head>
 <body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
 
+    <!-- Main content container -->
     <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
 
+        <!-- Page heading and description -->
         <h2 class="text-3xl font-bold text-gray-200 mb-2 text-center">Available Quizzes</h2>
         <p class="text-center text-gray-400 mb-8">
             Select a quiz to begin your practice or assessment.
         </p>
         
+        <!-- Display Django messages if any exist -->
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -32,6 +36,7 @@
             </div>
         {% endif %}
 
+        <!-- Container for the list of quizzes -->
         <div id="quiz-list-container" class="space-y-6">
             {% if quizzes %}
                 {% for quiz in quizzes %}
@@ -47,8 +52,10 @@
             {% endif %}
         </div>
 
+        <!-- Button to create a new quiz -->
         <div class="flex justify-center mt-8">
             <a href="{% url 'aiapp:create_quiz' %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center space-x-2">
+                <!-- Lucide icon for a plus sign -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
                     <path d="M5 12h14"/><path d="M12 5v14"/>
                 </svg>
@@ -67,6 +74,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a New Quiz</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -79,18 +87,22 @@
 
     <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full relative">
 
+        <!-- Back button to quiz list -->
         <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+            <!-- Lucide icon for a left chevron -->
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
             <span>Back to Quizzes</span>
         </a>
 
+        <!-- Page heading and description -->
         <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center mt-6">Create a New Quiz</h2>
         <p class="text-gray-400 mb-8 text-center">
             Fill out the form below to create a new quiz.
         </p>
         
+        <!-- Display Django messages if any exist -->
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -101,32 +113,39 @@
             </div>
         {% endif %}
 
+        <!-- Form for creating the quiz -->
         <form id="quizForm" method="post" action="{% url 'aiapp:create_quiz' %}" class="space-y-6">
             {% csrf_token %}
+            <!-- Quiz title input -->
             <div>
                 <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
                 <input type="text" name="quiz_title" id="id_title" required
                        class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
                        placeholder="e.g., Introduction to Python">
             </div>
+            <!-- Quiz description textarea -->
             <div>
                 <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
                 <textarea name="quiz_description" id="id_description" rows="3" required
-                          class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                          placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
+                              class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                              placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
             </div>
 
+            <!-- Container where questions will be dynamically added -->
             <div id="questions-container" class="space-y-8 mt-8 pt-8 border-t border-slate-700">
                 <!-- Questions will be added here by JavaScript -->
             </div>
 
+            <!-- Button to add a new question -->
             <div class="flex justify-start items-center space-x-4">
                 <button type="button" id="add-question-btn" class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center justify-center space-x-2">
+                    <!-- Lucide icon for a plus sign -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                     <span>Add a Question</span>
                 </button>
             </div>
             
+            <!-- Button to save the quiz -->
             <div class="flex justify-end mt-8">
                 <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
                     Save Quiz
@@ -141,6 +160,10 @@
             const addQuestionBtn = document.getElementById('add-question-btn');
             let questionCount = 0;
 
+            /**
+             * Creates and returns a new HTML element for a question block.
+             * This function is responsible for the dynamic form generation.
+             */
             function createQuestionBlock() {
                 questionCount++;
 
@@ -194,6 +217,7 @@
                     </div>
                 `;
                 
+                // Add an event listener to the "Remove" button
                 const removeBtn = newQuestionBlock.querySelector('.remove-question-btn');
                 removeBtn.addEventListener('click', function() {
                     questionsContainer.removeChild(newQuestionBlock);
@@ -203,13 +227,19 @@
                 return newQuestionBlock;
             }
 
+            /**
+             * Re-labels the question blocks and their input names after a question is removed.
+             * This ensures the form data is submitted correctly to the Django backend.
+             */
             function updateQuestionLabels() {
                 const questionBlocks = questionsContainer.querySelectorAll('.question-block');
                 let currentCount = 0;
                 questionBlocks.forEach(function(block) {
                     currentCount++;
+                    // Update the visible question number
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     
+                    // Update the 'name' attributes for all inputs to maintain correct numbering
                     const questionText = block.querySelector('[name^="question_text_"]');
                     if (questionText) questionText.name = `question_text_${currentCount}`;
                     
@@ -225,13 +255,16 @@
                     if (correctOption) correctOption.name = `correct_option_${currentCount}`;
                 });
 
+                // Update the global question count
                 questionCount = currentCount;
             }
 
+            // Event listener for the "Add a Question" button
             addQuestionBtn.addEventListener('click', function() {
                 questionsContainer.appendChild(createQuestionBlock());
             });
 
+            // Add an initial question block on page load
             questionsContainer.appendChild(createQuestionBlock());
         });
     </script>
@@ -245,6 +278,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ quiz.title }} Details</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -255,15 +289,19 @@
 </head>
 <body class="bg-gray-950 flex flex-col items-center justify-center min-h-screen p-4">
 
+    <!-- Main content container -->
     <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full relative">
 
+        <!-- Back button to quiz list -->
         <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+            <!-- Lucide icon for a left chevron -->
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
             <span>Back to Quizzes</span>
         </a>
 
+        <!-- Quiz details section -->
         <div class="text-center mt-6">
             <h2 class="text-4xl font-bold text-gray-200 mb-4">{{ quiz.title }}</h2>
             <p class="text-lg text-gray-400 mb-6">{{ quiz.description }}</p>
@@ -271,6 +309,7 @@
             <p class="text-sm text-gray-500">Number of Questions: {{ quiz.questions.count }}</p>
         </div>
 
+        <!-- Button to start the quiz -->
         <div class="flex justify-center mt-8">
             <a href="{% url 'aiapp:quiz_attempt' quiz.id %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
                 Start Quiz
@@ -288,6 +327,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attempting: {{ quiz.title }}</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -298,18 +338,23 @@
 </head>
 <body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
 
+    <!-- Main content container -->
     <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
 
+        <!-- Back button to quiz details -->
         <a href="{% url 'aiapp:quiz_detail' quiz.id %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+            <!-- Lucide icon for a left chevron -->
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
             <span>Back to Details</span>
         </a>
 
+        <!-- Quiz title and description -->
         <h2 class="text-3xl font-bold text-gray-200 mb-2 text-center mt-6">{{ quiz.title }}</h2>
         <p class="text-center text-gray-400 mb-8">{{ quiz.description }}</p>
 
+        <!-- Display Django messages if any exist -->
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -320,14 +365,17 @@
             </div>
         {% endif %}
 
+        <!-- Form for submitting quiz answers -->
         <form method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}" class="space-y-8">
             {% csrf_token %}
+            <!-- Loop through each question in the quiz -->
             {% for question in questions %}
                 <div class="bg-slate-700 p-6 rounded-xl shadow-inner">
                     <h4 class="text-xl font-semibold text-gray-200 mb-4">
                         <span class="text-indigo-400">Question {{ forloop.counter }}:</span> {{ question.text }}
                     </h4>
                     <div class="space-y-4">
+                        <!-- Loop through each choice for the current question -->
                         {% for choice in question.choices.all %}
                             <label class="flex items-center space-x-3 cursor-pointer text-gray-300 hover:text-white transition-colors">
                                 <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required
@@ -339,6 +387,7 @@
                 </div>
             {% endfor %}
 
+            <!-- Submit button for the quiz -->
             <div class="flex justify-end mt-8">
                 <button type="submit" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
                     Submit Quiz
@@ -356,6 +405,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ quiz.title }} Results</title>
+    <!-- Use Tailwind CSS from a CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -366,10 +416,13 @@
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
+    <!-- Main content container -->
     <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full text-center">
+        <!-- Heading and description -->
         <h2 class="text-4xl font-bold text-gray-200 mb-4">Quiz Complete!</h2>
         <p class="text-lg text-gray-400 mb-6">You've finished the "{{ quiz.title }}" quiz.</p>
 
+        <!-- Score display section -->
         <div class="bg-slate-700 p-6 rounded-xl shadow-inner inline-block">
             <h3 class="text-5xl font-extrabold text-green-400 mb-2">{{ score }}</h3>
             <p class="text-lg font-semibold text-gray-200">
@@ -377,6 +430,7 @@
             </p>
         </div>
 
+        <!-- Button to go back to the quiz list -->
         <div class="flex justify-center mt-8 space-x-4">
             <a href="{% url 'aiapp:quiz_list' %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
                 Back to Quizzes
