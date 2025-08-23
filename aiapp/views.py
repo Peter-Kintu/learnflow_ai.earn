@@ -63,8 +63,11 @@ def quiz_attempt(request, quiz_id):
             # Check if a choice was selected
             if submitted_choice_id:
                 try:
-                    selected_choice = Choice.objects.get(pk=submitted_choice_id)
+                    # CRITICAL FIX: Convert the submitted ID to an integer
+                    # This resolves the ValueError when the ID is a string like 'A'
+                    selected_choice = get_object_or_404(Choice, pk=int(submitted_choice_id))
                     is_correct = selected_choice.is_correct
+                    
                     if is_correct:
                         score += 1
 
@@ -75,9 +78,9 @@ def quiz_attempt(request, quiz_id):
                         selected_choice=selected_choice,
                         is_correct=is_correct
                     )
-                except Choice.DoesNotExist:
-                    # Handle the case where the selected choice does not exist
-                    # This might happen if the form data is tampered with
+                except (ValueError, Choice.DoesNotExist):
+                    # Handle cases where the submitted ID is not a number (ValueError)
+                    # or the choice does not exist in the database.
                     messages.error(request, 'An invalid choice was submitted.')
                     # Continue to process other questions if possible
                     continue
