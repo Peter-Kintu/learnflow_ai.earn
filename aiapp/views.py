@@ -88,7 +88,8 @@ def quiz_attempt(request, quiz_id):
         # Store the results in the session and redirect to the results page
         request.session['quiz_score'] = score
         request.session['quiz_total_questions'] = total_questions
-        return redirect('quizzes:quiz_results', quiz_id=quiz.id)
+        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+        return redirect('aiapp:quiz_results', quiz_id=quiz.id)
 
     # For a GET request, render the quiz attempt page
     return render(request, 'aiapp/quiz_attempt.html', {'quiz': quiz, 'questions': questions})
@@ -107,7 +108,8 @@ def quiz_results(request, quiz_id):
     # If session data is missing, redirect to quiz detail page
     if score is None or total_questions is None:
         messages.warning(request, "Quiz results not found. Please attempt the quiz again.")
-        return redirect('quizzes:quiz_detail', quiz_id=quiz.id)
+        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+        return redirect('aiapp:quiz_detail', quiz_id=quiz.id)
     
     return render(request, 'aiapp/quiz_results.html', {
         'quiz': quiz,
@@ -159,11 +161,13 @@ def create_quiz(request):
                 except json.JSONDecodeError:
                     # Handle the case where the JSON data is invalid.
                     messages.error(request, "Invalid question data format.")
-                    return redirect('quizzes:create_quiz')
+                    # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+                    return redirect('aiapp:create_quiz')
 
             # Display a success message and redirect.
             messages.success(request, f'"{quiz.title}" has been created successfully!')
-            return redirect('quizzes:quiz_list')
+            # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+            return redirect('aiapp:quiz_list')
     else:
         quiz_form = QuizForm()
         
@@ -219,10 +223,12 @@ def edit_quiz(request, quiz_id):
                             )
                 except json.JSONDecodeError:
                     messages.error(request, "Invalid question data format.")
-                    return redirect('quizzes:edit_quiz', quiz_id=quiz.id)
+                    # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+                    return redirect('aiapp:edit_quiz', quiz_id=quiz.id)
             
             messages.success(request, f'"{quiz.title}" has been updated successfully!')
-            return redirect('quizzes:teacher_quiz_dashboard')
+            # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+            return redirect('aiapp:teacher_quiz_dashboard')
     else:
         quiz_form = QuizForm(instance=quiz)
     
@@ -244,7 +250,8 @@ def delete_quiz(request, quiz_id):
     if request.method == 'POST':
         quiz.delete()
         messages.success(request, f'"{quiz.title}" has been deleted successfully!')
-        return redirect('quizzes:teacher_quiz_dashboard')
+        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
+        return redirect('aiapp:teacher_quiz_dashboard')
 
     return render(request, 'aiapp/delete_quiz_confirm.html', {'quiz': quiz})
 

@@ -79,7 +79,7 @@
             timeLeft--;
             timerDisplay.textContent = formatTime(timeLeft);
 
-            // Change color when time is running low
+            // Change color when time is running low (last 60 seconds)
             if (timeLeft <= 60) {
                 timerDisplay.classList.remove('text-indigo-400');
                 timerDisplay.classList.add('text-red-500');
