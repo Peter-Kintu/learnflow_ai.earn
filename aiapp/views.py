@@ -26,9 +26,10 @@ def quiz_list(request):
     Renders a list of all quizzes for students to view.
     Quizzes are ordered by creation date in descending order.
     
-    CRITICAL FIX: This view now only shows quizzes that are marked as published.
+    CRITICAL FIX: The 'published' field does not exist on the Quiz model,
+    as indicated by the FieldError. We are removing the filter to resolve the issue.
     """
-    quizzes = Quiz.objects.filter(published=True).order_by('-created_at')
+    quizzes = Quiz.objects.order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
 
 @login_required
