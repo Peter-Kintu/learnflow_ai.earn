@@ -1,5 +1,6 @@
 # aiapp/views.py
 
+import json # We need to import the json library to handle the data from the dynamic form.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -9,6 +10,7 @@ from django.http import Http404
 # Import models and forms from both aiapp and video apps
 # Note: This is a common pattern for consolidating views in a smaller project.
 from .models import Quiz, Question, Choice, StudentAnswer
+from .forms import QuizForm # Import the QuizForm for proper form handling.
 from video.models import Video
 from video.forms import VideoForm
 
@@ -25,8 +27,11 @@ def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
     Quizzes are ordered by creation date in descending order.
+    
+    FIX: The filter `id__isnull=False` prevents `NoReverseMatch` errors
+    by ensuring that only quizzes with a valid primary key are retrieved.
     """
-    quizzes = Quiz.objects.all().order_by('-created_at')
+    quizzes = Quiz.objects.filter(id__isnull=False).order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
 
 @login_required
@@ -85,7 +90,7 @@ def quiz_attempt(request, quiz_id):
         # Store the results in the session and redirect to the results page
         request.session['quiz_score'] = score
         request.session['quiz_total_questions'] = total_questions
-        return redirect('aiapp:quiz_results', quiz_id=quiz.id)
+        return redirect('quizzes:quiz_results', quiz_id=quiz.id)
 
     # For a GET request, render the quiz attempt page
     return render(request, 'aiapp/quiz_attempt.html', {'quiz': quiz, 'questions': questions})
@@ -104,7 +109,7 @@ def quiz_results(request, quiz_id):
     # If session data is missing, redirect to quiz detail page
     if score is None or total_questions is None:
         messages.warning(request, "Quiz results not found. Please attempt the quiz again.")
-        return redirect('aiapp:quiz_detail', quiz_id=quiz.id)
+        return redirect('quizzes:quiz_detail', quiz_id=quiz.id)
     
     return render(request, 'aiapp/quiz_results.html', {
         'quiz': quiz,
@@ -116,77 +121,55 @@ def quiz_results(request, quiz_id):
 def create_quiz(request):
     """
     Handles the creation of a new quiz and its questions.
-    FIXED: Added a validation check for the quiz title to prevent an IntegrityError.
+    
+    This updated function now correctly processes the JSON data sent from the
+    dynamic create_quiz.html template, ensuring the quiz object is fully
+    created before questions are added and redirecting to the quiz list.
     """
     if request.method == 'POST':
-        # Get quiz title and description from the form
-        quiz_title = request.POST.get('quiz_title')
-        quiz_description = request.POST.get('quiz_description')
-
-        # Critical: Add a validation check for the title before creating the object
-        if not quiz_title:
-            messages.error(request, "Quiz title is required. Please provide a title.")
-            # Re-render the form with the POST data to preserve user's input
-            return render(request, 'aiapp/create_quiz.html', {'request': request, **request.POST})
-
-        # Create the new Quiz instance
-        try:
-            quiz = Quiz.objects.create(
-                teacher=request.user,
-                title=quiz_title,
-                description=quiz_description
-            )
-        except Exception as e:
-            messages.error(request, f"An unexpected error occurred while creating the quiz: {e}")
-            return render(request, 'aiapp/create_quiz.html', {'request': request, **request.POST})
-
-        # Process questions and choices from the dynamically generated form
-        question_count = 1
-        while True:
-            question_text = request.POST.get(f'question_text_{question_count}')
-            if not question_text:
-                # Break the loop if there are no more questions
-                break
-
-            # Get the correct option letter
-            correct_option_letter = request.POST.get(f'correct_option_{question_count}')
-
-            # Create the Question instance
-            question = Question.objects.create(
-                quiz=quiz,
-                text=question_text
-            )
-
-            # Create the choices and set the correct one based on the form data
-            Choice.objects.create(
-                question=question,
-                text=request.POST.get(f'option_a_{question_count}'),
-                is_correct=(correct_option_letter and correct_option_letter.upper() == 'A')
-            )
-            Choice.objects.create(
-                question=question,
-                text=request.POST.get(f'option_b_{question_count}'),
-                is_correct=(correct_option_letter and correct_option_letter.upper() == 'B')
-            )
-            Choice.objects.create(
-                question=question,
-                text=request.POST.get(f'option_c_{question_count}'),
-                is_correct=(correct_option_letter and correct_option_letter.upper() == 'C')
-            )
-            Choice.objects.create(
-                question=question,
-                text=request.POST.get(f'option_d_{question_count}'),
-                is_correct=(correct_option_letter and correct_option_letter.upper() == 'D')
-            )
+        quiz_form = QuizForm(request.POST)
+        
+        # Check if the quiz form data is valid.
+        if quiz_form.is_valid():
+            # Create a new quiz instance but don't save it to the database yet.
+            # We need to set the teacher first.
+            quiz = quiz_form.save(commit=False)
+            quiz.teacher = request.user
             
-            question_count += 1
+            # Now, save the quiz to the database. This will generate a primary key (id).
+            quiz.save()
 
-        messages.success(request, f'"{quiz.title}" has been created successfully!')
-        # Redirect to a success page or the dashboard after saving
-        return redirect('aiapp:quiz_list') 
-    
-    # If the request is a GET, just render the template
-    return render(request, 'aiapp/create_quiz.html')
+            # The data for questions and choices is passed in the request.POST
+            # as a JSON string from the JavaScript in the new template.
+            questions_data = request.POST.get('questions_data')
+            if questions_data:
+                try:
+                    questions_list = json.loads(questions_data)
+                    for q_data in questions_list:
+                        # Create and save each question, linking it to the newly created quiz.
+                        question = Question.objects.create(
+                            quiz=quiz,
+                            text=q_data['text']
+                        )
+                        # Create and save each choice for the current question.
+                        for c_data in q_data['choices']:
+                            Choice.objects.create(
+                                question=question,
+                                text=c_data['text'],
+                                is_correct=c_data['isCorrect']
+                            )
+                except json.JSONDecodeError:
+                    # Handle the case where the JSON data is invalid.
+                    messages.error(request, "Invalid question data format.")
+                    return redirect('quizzes:create_quiz')
+
+            # Display a success message and redirect.
+            messages.success(request, f'"{quiz.title}" has been created successfully!')
+            return redirect('quizzes:quiz_list')
+    else:
+        quiz_form = QuizForm()
+        
+    return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
 @login_required
 def user_profile(request, user_id):
@@ -280,3 +263,4 @@ def delete_video(request, video_id):
         return redirect('video:teacher_dashboard')
 
     return render(request, 'video/video_delete_confirm.html', {'video': video})
+
