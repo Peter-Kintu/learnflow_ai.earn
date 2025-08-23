@@ -41,8 +41,10 @@
 </head>
 <body class="bg-gray-950 flex flex-col items-center justify-start min-h-screen p-4">
 
+    <!-- Main content container -->
     <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
 
+        <!-- Back link -->
         <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
                 <path d="m15 18-6-6 6-6"/>
@@ -50,11 +52,13 @@
             <span>Back to Quizzes</span>
         </a>
 
+        <!-- Page heading -->
         <h2 class="text-3xl font-bold text-gray-200 mb-6 text-center mt-6">Create a New Quiz</h2>
         <p class="text-gray-400 mb-8 text-center">
             Fill out the form below to create a new quiz.
         </p>
         
+        <!-- Django messages -->
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -65,6 +69,7 @@
             </div>
         {% endif %}
 
+        <!-- Quiz creation form -->
         <form id="quizForm" method="post" action="{% url 'aiapp:create_quiz' %}" class="space-y-6">
             {% csrf_token %}
             <div>
@@ -80,10 +85,12 @@
                                 placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
             </div>
 
+            <!-- Questions container populated by JavaScript -->
             <div id="questions-container" class="space-y-8 mt-8 pt-8 border-t border-slate-700">
                 <!-- Questions will be added here by JavaScript -->
             </div>
 
+            <!-- "Add a Question" button -->
             <div class="flex justify-start items-center space-x-4">
                 <button type="button" id="add-question-btn" class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
@@ -91,6 +98,7 @@
                 </button>
             </div>
             
+            <!-- "Save Quiz" button -->
             <div class="flex justify-end mt-8">
                 <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
                     Save Quiz
@@ -107,6 +115,8 @@
 
             /**
              * Creates a new question block HTML element.
+             * The function dynamically generates a block for either a multiple-choice
+             * or a single-answer question, complete with input fields and a remove button.
              * @param {string} type The type of question to create ('mcq' or 'single_answer').
              * @returns {HTMLElement} The new question block element.
              */
@@ -117,89 +127,49 @@
                 newQuestionBlock.className = 'bg-slate-700 p-6 rounded-xl shadow-inner question-block';
                 newQuestionBlock.setAttribute('data-question-index', questionCount);
 
-                let contentHtml = '';
+                // Use a template literal to construct the HTML for the different question types
+                const mcqFieldsHtml = `
+                    <div class="mcq-fields">
+                        <label class="block text-gray-300 font-semibold mb-2">Options</label>
+                        <div class="space-y-3">
+                            <div>
+                                <input type="text" name="option_a_${questionCount}" required placeholder="Option A"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <input type="text" name="option_b_${questionCount}" required placeholder="Option B"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <input type="text" name="option_c_${questionCount}" required placeholder="Option C"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <input type="text" name="option_d_${questionCount}" required placeholder="Option D"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
 
-                if (type === 'mcq') {
-                    contentHtml = `
-                        <div class="mcq-fields">
-                            <label class="block text-gray-300 font-semibold mb-2">Options</label>
-                            <div class="space-y-3">
-                                <div>
-                                    <input type="text" name="option_a_${questionCount}" required placeholder="Option A"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_b_${questionCount}" required placeholder="Option B"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_c_${questionCount}" required placeholder="Option C"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_d_${questionCount}" required placeholder="Option D"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                            </div>
+                        <div class="mt-4">
+                            <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
+                            <select name="correct_option_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
 
-                            <div class="mt-4">
-                                <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                                <select name="correct_option_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="single-answer-fields hidden">
-                            <label for="single_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                            <input type="text" name="single_answer_${questionCount}" id="single_answer_${questionCount}" required disabled
-                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                placeholder="e.g., Paris">
-                        </div>
-                    `;
-                } else {
-                    contentHtml = `
-                        <div class="mcq-fields hidden">
-                            <label class="block text-gray-300 font-semibold mb-2">Options</label>
-                            <div class="space-y-3">
-                                <div>
-                                    <input type="text" name="option_a_${questionCount}" required disabled placeholder="Option A"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_b_${questionCount}" required disabled placeholder="Option B"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_c_${questionCount}" required disabled placeholder="Option C"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <input type="text" name="option_d_${questionCount}" required disabled placeholder="Option D"
-                                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500">
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <label class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                                <select name="correct_option_${questionCount}" disabled class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="single-answer-fields">
-                            <label for="single_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                            <input type="text" name="single_answer_${questionCount}" id="single_answer_${questionCount}" required
-                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                placeholder="e.g., Paris">
-                        </div>
-                    `;
-                }
+                const singleAnswerFieldsHtml = `
+                    <div class="single-answer-fields">
+                        <label for="single_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
+                        <input type="text" name="single_answer_${questionCount}" id="single_answer_${questionCount}" required
+                            class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                            placeholder="e.g., Paris">
+                    </div>
+                `;
 
                 newQuestionBlock.innerHTML = `
                     <div class="flex items-center justify-between mb-4">
@@ -222,7 +192,9 @@
                             </select>
                         </div>
                         
-                        ${contentHtml}
+                        <!-- Dynamically generated fields for the selected question type -->
+                        ${mcqFieldsHtml}
+                        ${singleAnswerFieldsHtml}
 
                     </div>
                 `;
@@ -231,11 +203,15 @@
                 const typeSelect = newQuestionBlock.querySelector(`#question_type_${questionCount}`);
                 typeSelect.addEventListener('change', toggleQuestionTypeFields);
 
+                // Add event listener for the remove button
                 const removeBtn = newQuestionBlock.querySelector('.remove-question-btn');
                 removeBtn.addEventListener('click', function() {
                     questionsContainer.removeChild(newQuestionBlock);
                     updateQuestionLabels();
                 });
+
+                // Set initial state based on the question type
+                toggleQuestionTypeFields({ target: typeSelect });
 
                 return newQuestionBlock;
             }
@@ -254,37 +230,50 @@
                 const singleAnswerFields = questionBlock.querySelector('.single-answer-fields');
 
                 if (selectedType === 'mcq') {
-                    // Show MCQ fields and hide single answer fields
+                    // Show MCQ fields, hide and disable single-answer fields
                     mcqFields.classList.remove('hidden');
                     singleAnswerFields.classList.add('hidden');
                     
-                    // Enable MCQ fields and disable single answer field
-                    mcqFields.querySelectorAll('input, select').forEach(input => input.disabled = false);
-                    singleAnswerFields.querySelectorAll('input').forEach(input => input.disabled = true);
+                    mcqFields.querySelectorAll('input, select').forEach(input => {
+                        input.disabled = false;
+                        input.required = true;
+                    });
+                    singleAnswerFields.querySelectorAll('input').forEach(input => {
+                        input.disabled = true;
+                        input.required = false;
+                    });
                 } else { // 'single_answer'
-                    // Show single answer fields and hide MCQ fields
+                    // Show single-answer fields, hide and disable MCQ fields
                     singleAnswerFields.classList.remove('hidden');
                     mcqFields.classList.add('hidden');
 
-                    // Enable single answer field and disable MCQ fields
-                    singleAnswerFields.querySelectorAll('input').forEach(input => input.disabled = false);
-                    mcqFields.querySelectorAll('input, select').forEach(input => input.disabled = true);
+                    singleAnswerFields.querySelectorAll('input').forEach(input => {
+                        input.disabled = false;
+                        input.required = true;
+                    });
+                    mcqFields.querySelectorAll('input, select').forEach(input => {
+                        input.disabled = true;
+                        input.required = false;
+                    });
                 }
             }
 
             /**
              * Re-indexes the question blocks and their input names after a question is removed.
+             * This ensures the form data is correctly submitted with sequential question numbers.
              */
             function updateQuestionLabels() {
                 const questionBlocks = questionsContainer.querySelectorAll('.question-block');
                 let currentCount = 0;
                 questionBlocks.forEach(function(block) {
                     currentCount++;
+                    
                     // Update the title
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     
-                    // Update the input names and IDs
+                    // Update the input names and IDs to maintain correct form data structure
                     block.setAttribute('data-question-index', currentCount);
+                    
                     const questionText = block.querySelector('[name^="question_text_"]');
                     if (questionText) {
                         questionText.name = `question_text_${currentCount}`;
@@ -313,6 +302,7 @@
 
                 });
 
+                // Update the global question count
                 questionCount = currentCount;
             }
 
