@@ -2,10 +2,27 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <!-- Quiz title and description -->
     <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ quiz.title }}</h2>
-    <p class="text-gray-400 mb-6">{{ quiz.description }}</p>
+    <p class="text-gray-400 mb-4">{{ quiz.description }}</p>
 
-    <form method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}">
+    <!-- Countdown Timer -->
+    <div class="flex items-center justify-between bg-slate-700 p-4 rounded-xl shadow-inner mb-6">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer text-indigo-400 mr-2">
+                <path d="M10 2h4"/>
+                <path d="M12 14v-4"/>
+                <circle cx="12" cy="14" r="8"/>
+            </svg>
+            <span class="text-gray-400 font-medium">Time Remaining:</span>
+        </div>
+        <div id="countdown-timer" class="text-2xl font-bold text-indigo-400">
+            10:00
+        </div>
+    </div>
+
+    <!-- Quiz questions form -->
+    <form id="quiz-form" method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}">
         {% csrf_token %}
         <div class="space-y-8">
             {% for question in questions %}
@@ -40,4 +57,47 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quizForm = document.getElementById('quiz-form');
+        const timerDisplay = document.getElementById('countdown-timer');
+
+        // Set the quiz duration in seconds (10 minutes)
+        let timeLeft = 10 * 60; 
+
+        // Function to format time as MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Function to update the timer and handle submission
+        function updateTimer() {
+            timeLeft--;
+            timerDisplay.textContent = formatTime(timeLeft);
+
+            // Change color when time is running low
+            if (timeLeft <= 60) {
+                timerDisplay.classList.remove('text-indigo-400');
+                timerDisplay.classList.add('text-red-500');
+            }
+
+            // Automatically submit the form when time runs out
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                // Display a message to the user before submitting
+                timerDisplay.textContent = 'Time\'s up!';
+                // Submit the form
+                quizForm.submit();
+            }
+        }
+
+        // Update the timer every second
+        const timerInterval = setInterval(updateTimer, 1000);
+    });
+</script>
 {% endblock %}
