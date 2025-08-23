@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - Quizzes{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+    <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-bold text-gray-200">My Quizzes</h2>
+        <a href="{% url 'aiapp:create_quiz' %}" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span>New Quiz</span>
+        </a>
+    </div>
+
+    {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+                <div class="p-3 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="space-y-6">
+        {% if user_quizzes %}
+            {% for quiz in user_quizzes %}
+                <div class="bg-slate-700 p-6 rounded-xl shadow-inner flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                    <div class="flex-grow mb-4 sm:mb-0">
+                        <h3 class="text-xl font-semibold text-gray-200">{{ quiz.title }}</h3>
+                        <p class="text-gray-400 mt-2 text-sm">{{ quiz.description }}</p>
+                        <span class="text-sm text-gray-500 mt-2 block">Questions: {{ quiz.questions.count }}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{% url 'aiapp:edit_quiz' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
+                            Edit
+                        </a>
+                        <a href="{% url 'aiapp:delete_quiz' quiz.id %}" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-gray-500 text-center">You have not created any quizzes yet. Click 'New Quiz' to get started!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

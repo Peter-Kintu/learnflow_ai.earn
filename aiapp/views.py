@@ -1,11 +1,9 @@
-# aiapp/views.py
-
-import json # We need to import the json library to handle the data from the dynamic form.
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 # Import models and forms from both aiapp and video apps
 # Note: This is a common pattern for consolidating views in a smaller project.
@@ -27,11 +25,8 @@ def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
     Quizzes are ordered by creation date in descending order.
-    
-    FIX: The filter `id__isnull=False` prevents `NoReverseMatch` errors
-    by ensuring that only quizzes with a valid primary key are retrieved.
     """
-    quizzes = Quiz.objects.filter(id__isnull=False).order_by('-created_at')
+    quizzes = Quiz.objects.all().order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
 
 @login_required
@@ -122,7 +117,7 @@ def create_quiz(request):
     """
     Handles the creation of a new quiz and its questions.
     
-    This updated function now correctly processes the JSON data sent from the
+    This function now correctly processes the JSON data sent from the
     dynamic create_quiz.html template, ensuring the quiz object is fully
     created before questions are added and redirecting to the quiz list.
     """
@@ -170,6 +165,85 @@ def create_quiz(request):
         quiz_form = QuizForm()
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+
+@login_required
+def teacher_quiz_dashboard(request):
+    """
+    Displays a dashboard of quizzes created by the current user.
+    """
+    user_quizzes = Quiz.objects.filter(teacher=request.user).order_by('-created_at')
+    return render(request, 'aiapp/teacher_quiz_dashboard.html', {'user_quizzes': user_quizzes})
+
+@login_required
+def edit_quiz(request, quiz_id):
+    """
+    Allows a teacher to edit an existing quiz.
+    
+    This view uses a GET request to display the form with existing data and
+    a POST request to process the updated form data.
+    """
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    
+    # Check if the current user is the teacher of this quiz.
+    if quiz.teacher != request.user:
+        raise Http404
+
+    if request.method == 'POST':
+        quiz_form = QuizForm(request.POST, instance=quiz)
+        if quiz_form.is_valid():
+            quiz = quiz_form.save()
+            
+            # Update questions and choices based on submitted JSON data.
+            questions_data = request.POST.get('questions_data')
+            if questions_data:
+                try:
+                    questions_list = json.loads(questions_data)
+                    
+                    # Delete existing questions and choices to avoid duplicates.
+                    # This is a simple but effective way to handle updates for a dynamic form.
+                    quiz.questions.all().delete()
+                    
+                    for q_data in questions_list:
+                        question = Question.objects.create(
+                            quiz=quiz,
+                            text=q_data['text']
+                        )
+                        for c_data in q_data['choices']:
+                            Choice.objects.create(
+                                question=question,
+                                text=c_data['text'],
+                                is_correct=c_data['isCorrect']
+                            )
+                except json.JSONDecodeError:
+                    messages.error(request, "Invalid question data format.")
+                    return redirect('quizzes:edit_quiz', quiz_id=quiz.id)
+            
+            messages.success(request, f'"{quiz.title}" has been updated successfully!')
+            return redirect('quizzes:teacher_quiz_dashboard')
+    else:
+        quiz_form = QuizForm(instance=quiz)
+    
+    return render(request, 'aiapp/edit_quiz.html', {'quiz_form': quiz_form, 'quiz': quiz})
+
+@login_required
+def delete_quiz(request, quiz_id):
+    """
+    Allows a teacher to delete a quiz.
+    
+    This view confirms the deletion via a POST request.
+    """
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    
+    # Check if the current user is the teacher of this quiz.
+    if quiz.teacher != request.user:
+        raise Http404
+        
+    if request.method == 'POST':
+        quiz.delete()
+        messages.success(request, f'"{quiz.title}" has been deleted successfully!')
+        return redirect('quizzes:teacher_quiz_dashboard')
+
+    return render(request, 'aiapp/delete_quiz_confirm.html', {'quiz': quiz})
 
 @login_required
 def user_profile(request, user_id):
@@ -263,4 +337,3 @@ def delete_video(request, video_id):
         return redirect('video:teacher_dashboard')
 
     return render(request, 'video/video_delete_confirm.html', {'video': video})
-
