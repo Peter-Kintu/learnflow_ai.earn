@@ -92,64 +92,79 @@ LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login' # FIX: Added this to redirect to the correct login page
 
-# 🎨 Jazzmin Styling
+
+# JAZZMIN Settings - UI for the Django Admin
 JAZZMIN_SETTINGS = {
-    "site_title": "LearnFlow Admin",
-    "site_header": "LearnFlow Dashboard",
-    "site_brand": "LearnFlow",
-    "welcome_sign": "Welcome to LearnFlow Admin",
-    "copyright": "KINTU",
-    "search_model": ["user.User", "video.Video"],
+    "site_title": "PETER Admin",
+    "site_header": "PETER Admin",
+    "site_brand": "PETER",
+    "site_logo": None,
+    "login_logo": None,
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    "site_icon": None,
+    "welcome_sign": "Welcome to the PETER Admin Portal",
+    "search_model": ["auth.User", "languages.PhraseContribution"],
+    "user_avatar": None,
     "topmenu_links": [
-        {"name": "Home", "url": "/", "permissions": ["auth.view_user"]},
-        {"model": "user.User"},
-        {"model": "video.Video"},
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Support", "url": "https://github.com/farkasgabor/django-jazzmin/issues", "new_window": True},
+        {"model": "auth.User"},
+        {"model": "languages.PhraseContribution"},
     ],
     "show_sidebar": True,
     "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["auth", "languages"],
     "icons": {
-        "user.User": "fas fa-user",
-        "video.Video": "fas fa-video",
-        "book.Book": "fas fa-book",
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "languages.PhraseContribution": "fas fa-language",
     },
-    "changeform_format": "horizontal_tabs",
-    "related_modal_active": True,
-    # This setting is for the interactive UI builder, remove it for production
-    "show_ui_builder": True,
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+
+    "related_modal_active": False
 }
 
-# 🎨 Jazzmin UI Tweaks for a more beautiful look
+# JAZZMIN UI Tweaks
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
-    "navbar_fixed": True,
-    "sidebar_fixed": True,
-    "brand_small_text": False,
+    "footer_small_text": False,
     "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": False,
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-dark-primary",
     "sidebar_nav_small_text": False,
-    "sidebar_nav_flat_style": True,
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_child_indent": True,
-    "sidebar_nav_compact_style": False,
     "sidebar_disable_expand": False,
-    "theme": "darkly",  # A sleek dark theme
-    "dark_mode_theme": "darkly", # Use the same theme for dark mode
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
     "button_classes": {
         "primary": "btn-outline-primary",
         "secondary": "btn-outline-secondary",
-        "info": "btn-info",
-        "warning": "btn-warning",
-        "danger": "btn-danger",
+        "info": "btn-outline-info",
+        "warning": "btn-outline-warning",
+        "danger": "btn-outline-danger",
+        "success": "btn-outline-success"
     },
     "actions_button_classes": {
-        "outline-primary": "btn-primary",
-        "primary": "btn-primary",
-        "info": "btn-info",
-        "success": "btn-success",
-        "danger": "btn-danger"
-    },
-    "brand_color": "navbar-dark",
-    "accent": "accent-indigo",
-    "navbar": "navbar-dark navbar-indigo",
-    "sidebar": "sidebar-dark-indigo",
-    "footer_small_text": True,
+        "add": "btn-success",
+        "change": "btn-info",
+        "delete": "btn-danger",
+        "save": "btn-primary",
+        "submit": "btn-primary",
+    }
 }
