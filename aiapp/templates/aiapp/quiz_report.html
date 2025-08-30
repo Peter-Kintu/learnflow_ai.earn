@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quiz Report</title>
+<style>
+body {
+font-family: sans-serif;
+color: #333;
+margin: 40px;
+}
+h1, h2, h3 {
+color: #2c3e50;
+}
+h1 {
+border-bottom: 2px solid #3498db;
+padding-bottom: 10px;
+}
+.quiz-section {
+margin-bottom: 30px;
+padding: 15px;
+border: 1px solid #ddd;
+border-radius: 5px;
+}
+.question-item {
+margin-bottom: 15px;
+border-bottom: 1px dashed #eee;
+padding-bottom: 10px;
+}
+.question-text {
+font-weight: bold;
+margin-bottom: 5px;
+}
+ul {
+list-style-type: none;
+padding: 0;
+margin: 0;
+}
+li {
+padding: 3px 0;
+}
+.correct-answer {
+color: #27ae60;
+font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<h1>LearnFlow AI - Quiz Report</h1>
+
+<p>This document contains a comprehensive report of all available quizzes and their questions.</p>
+
+{% for quiz in quizzes %}
+    <div class="quiz-section">
+        <h2>Quiz: {{ quiz.title }}</h2>
+        <p><strong>Description:</strong> {{ quiz.description }}</p>
+        <p><strong>Created by:</strong> {{ quiz.teacher.get_full_name|default:quiz.teacher.username }}</p>
+        
+        <h3>Questions:</h3>
+        <ul>
+            {% for question in quiz.question_set.all %}
+            <li class="question-item">
+                <div class="question-text">{{ forloop.counter }}. {{ question.text }}</div>
+                <ul>
+                    <li>Option A: {{ question.option_a }}</li>
+                    <li>Option B: {{ question.option_b }}</li>
+                    <li>Option C: {{ question.option_c }}</li>
+                    <li>Option D: {{ question.option_d }}</li>
+                </ul>
+                <p class="correct-answer">Correct Answer: {{ question.get_correct_option_display }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endfor %}
+
+</body>
+</html>

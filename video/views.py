@@ -1,11 +1,38 @@
-# video/views.py
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Video
 from .forms import VideoForm
 from django.http import Http404
+from urllib.parse import urlparse, parse_qs
+
+# Helper function to get the YouTube embed URL from a standard URL
+def get_embed_url(youtube_url):
+    """
+    Parses a standard YouTube URL and returns the embed URL format.
+    
+    Args:
+        youtube_url (str): The standard YouTube URL.
+    
+    Returns:
+        str: The embed URL or None if the URL is invalid.
+    """
+    try:
+        query = urlparse(youtube_url)
+        if query.hostname in ['www.youtube.com', 'youtube.com', 'youtu.be']:
+            if query.hostname == 'youtu.be':
+                # Handle short URLs like https://youtu.be/abc123
+                video_id = query.path[1:]
+            else:
+                # Handle standard URLs like https://www.youtube.com/watch?v=abc123
+                video_id = parse_qs(query.query).get("v", [None])[0]
+            
+            if video_id:
+                return f"https://www.youtube.com/embed/{video_id}"
+    except Exception:
+        pass # Fallback to None
+    
+    return None
 
 @login_required
 def video_list(request):
@@ -21,7 +48,13 @@ def video_detail(request, video_id):
     Renders the detail page for a single video.
     """
     video = get_object_or_404(Video, pk=video_id)
-    return render(request, 'video/video_detail.html', {'video': video})
+    embed_url = get_embed_url(video.url)
+    
+    context = {
+        'video': video,
+        'embed_url': embed_url,
+    }
+    return render(request, 'video/video_detail.html', context)
 
 @login_required
 def create_video(request):

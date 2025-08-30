@@ -22,6 +22,7 @@ urlpatterns = [
     # This URL handles the deletion of a specific quiz.
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
     path('quizzes/create/', views.create_quiz, name='create_quiz'),
+    path('quizzes/report/', views.quiz_report, name='quiz_report'),
     
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),

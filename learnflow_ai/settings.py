@@ -8,7 +8,11 @@ SECRET_KEY = 'django-insecure-**********************************'
 DEBUG = True
 # To fix the DisallowedHost error, we need to add the domain
 # 'learnflow-ai-0fdz.onrender.com' to the list of allowed hosts.
-ALLOWED_HOSTS = ['learnflow-ai-0fdz.onrender.com']
+ALLOWED_HOSTS = [
+    '127.0.0.1', 
+    'localhost',
+    'learnflow-ai-0fdz.onrender.com'
+    ]
 
 # Application definition
 INSTALLED_APPS = [

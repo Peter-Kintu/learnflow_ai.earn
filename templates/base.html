@@ -42,7 +42,6 @@
     <nav class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center relative">
             <!-- Logo/Home Link -->
-            <!-- Updated the URL to point to the 'aiapp' home page -->
             <a href="{% url 'aiapp:home' %}" class="text-2xl font-bold text-indigo-500">LearnFlow AI</a>
 
             <!-- Mobile Menu Button -->
@@ -62,7 +61,7 @@
                 
                 {% if user.is_authenticated %}
                     <!-- Links for authenticated users -->
-                    <a href="{% url 'video:teacher_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
+                    <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
                     <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white transition-colors">Create Quiz</a>
                     <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white transition-colors">My Profile</a>
                     

@@ -4,3 +4,4 @@ whitenoise
 python-decouple
 psycopg2-binary
 django-jazzmin
+xhtml2pdf

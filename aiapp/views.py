@@ -1,9 +1,14 @@
 import json
+import io
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import Http404, HttpResponse
+from django.template.loader import get_template
+
+# Import the necessary libraries for PDF generation
+from xhtml2pdf import pisa
 
 # Import models and forms from both aiapp and video apps
 # Note: This is a common pattern for consolidating views in a smaller project.
@@ -11,6 +16,18 @@ from .models import Quiz, Question, Choice, StudentAnswer
 from .forms import QuizForm # Import the QuizForm for proper form handling.
 from video.models import Video
 from video.forms import VideoForm
+
+def render_to_pdf(template_src, context_dict={}):
+    """
+    Renders a Django template to a PDF file.
+    """
+    template = get_template(template_src)
+    html  = template.render(context_dict)
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return None
 
 @login_required
 def home(request):
@@ -350,3 +367,22 @@ def delete_video(request, video_id):
         return redirect('video:teacher_dashboard')
 
     return render(request, 'video/video_delete_confirm.html', {'video': video})
+
+@login_required
+def quiz_report(request):
+    """
+    Generates a PDF report of all quizzes.
+    """
+    quizzes = Quiz.objects.all().order_by('-created_at')
+    context = {
+        'quizzes': quizzes,
+        'request_user': request.user
+    }
+    pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = "quiz_report.pdf"
+        content = "attachment; filename='%s'" %(filename)
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Error generating PDF", status=500)
