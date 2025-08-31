@@ -6,14 +6,14 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.template.loader import get_template
+from django.db import transaction
 
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
 
 # Import models and forms from both aiapp and video apps
-# Note: This is a common pattern for consolidating views in a smaller project.
 from .models import Quiz, Question, Choice, StudentAnswer
-from .forms import QuizForm # Import the QuizForm for proper form handling.
+from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
 
@@ -42,9 +42,6 @@ def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
     Quizzes are ordered by creation date in descending order.
-    
-    CRITICAL FIX: The 'published' field does not exist on the Quiz model,
-    as indicated by the FieldError. We are removing the filter to resolve the issue.
     """
     quizzes = Quiz.objects.order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
@@ -62,11 +59,11 @@ def quiz_detail(request, quiz_id):
 def quiz_attempt(request, quiz_id):
     """
     Handles the student's attempt at a quiz.
-
+    
     This view fetches all questions for a given quiz. When the student submits
     the form, it processes their answers, calculates a score, and saves the
-    results to the database. It expects the radio button values to be the
-    primary keys (IDs) of the Choice objects.
+    results to the database. It now handles both Multiple Choice (MC) and
+    Single Answer (SA) question types.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
@@ -75,43 +72,44 @@ def quiz_attempt(request, quiz_id):
         score = 0
         total_questions = questions.count()
 
-        # Iterate through submitted answers
         for question in questions:
-            # The name of the radio input is 'question_<question.id>'
-            submitted_choice_id = request.POST.get(f'question_{question.id}')
-
-            # Check if a choice was selected
-            if submitted_choice_id:
-                try:
-                    # CRITICAL FIX: Convert the submitted ID to an integer
-                    # This resolves the ValueError when the ID is a string like 'A'
-                    selected_choice = get_object_or_404(Choice, pk=int(submitted_choice_id))
-                    is_correct = selected_choice.is_correct
-                    
-                    if is_correct:
-                        score += 1
-
-                    # Save the student's answer
+            is_correct = False
+            
+            if question.question_type == 'MC':
+                submitted_choice_id = request.POST.get(f'question_{question.id}')
+                if submitted_choice_id:
+                    try:
+                        selected_choice = get_object_or_404(Choice, pk=int(submitted_choice_id))
+                        is_correct = selected_choice.is_correct
+                        StudentAnswer.objects.create(
+                            student=request.user,
+                            question=question,
+                            selected_choice=selected_choice,
+                            is_correct=is_correct
+                        )
+                    except (ValueError, Choice.DoesNotExist):
+                        messages.error(request, f'An invalid choice was submitted for question: {question.text[:20]}...')
+                        continue
+            
+            elif question.question_type == 'SA':
+                submitted_answer_text = request.POST.get(f'question_{question.id}')
+                if submitted_answer_text:
+                    # Compare the submitted text to the correct answer, case-insensitively and trimmed
+                    is_correct = (submitted_answer_text.strip().lower() == question.correct_answer_text.strip().lower())
                     StudentAnswer.objects.create(
                         student=request.user,
                         question=question,
-                        selected_choice=selected_choice,
+                        text_answer=submitted_answer_text,
                         is_correct=is_correct
                     )
-                except (ValueError, Choice.DoesNotExist):
-                    # Handle cases where the submitted ID is not a number (ValueError)
-                    # or the choice does not exist in the database.
-                    messages.error(request, 'An invalid choice was submitted.')
-                    # Continue to process other questions if possible
-                    continue
+            
+            if is_correct:
+                score += 1
         
-        # Store the results in the session and redirect to the results page
         request.session['quiz_score'] = score
         request.session['quiz_total_questions'] = total_questions
-        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
         return redirect('aiapp:quiz_results', quiz_id=quiz.id)
 
-    # For a GET request, render the quiz attempt page
     return render(request, 'aiapp/quiz_attempt.html', {'quiz': quiz, 'questions': questions})
 
 @login_required
@@ -121,14 +119,11 @@ def quiz_results(request, quiz_id):
     """
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     
-    # Retrieve score and total questions from the session
     score = request.session.pop('quiz_score', None)
     total_questions = request.session.pop('quiz_total_questions', None)
     
-    # If session data is missing, redirect to quiz detail page
     if score is None or total_questions is None:
         messages.warning(request, "Quiz results not found. Please attempt the quiz again.")
-        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
         return redirect('aiapp:quiz_detail', quiz_id=quiz.id)
     
     return render(request, 'aiapp/quiz_results.html', {
@@ -138,60 +133,67 @@ def quiz_results(request, quiz_id):
     })
 
 @login_required
+@transaction.atomic
 def create_quiz(request):
     """
     Handles the creation of a new quiz and its questions.
-    
-    This function now correctly processes the JSON data sent from the
-    dynamic create_quiz.html template, ensuring the quiz object is fully
-    created before questions are added and redirecting to the quiz list.
     """
     if request.method == 'POST':
         quiz_form = QuizForm(request.POST)
         
-        # Check if the quiz form data is valid.
         if quiz_form.is_valid():
-            # Create a new quiz instance but don't save it to the database yet.
-            # We need to set the teacher first.
             quiz = quiz_form.save(commit=False)
             quiz.teacher = request.user
-            
-            # Now, save the quiz to the database. This will generate a primary key (id).
             quiz.save()
-
-            # The data for questions and choices is passed in the request.POST
-            # as a JSON string from the JavaScript in the new template.
+            
             questions_data = request.POST.get('questions_data')
             if questions_data:
                 try:
                     questions_list = json.loads(questions_data)
                     for q_data in questions_list:
-                        # Create and save each question, linking it to the newly created quiz.
-                        question = Question.objects.create(
-                            quiz=quiz,
-                            text=q_data['text']
-                        )
-                        # Create and save each choice for the current question.
-                        for c_data in q_data['choices']:
-                            Choice.objects.create(
-                                question=question,
-                                text=c_data['text'],
-                                is_correct=c_data['isCorrect']
-                            )
-                except json.JSONDecodeError:
-                    # Handle the case where the JSON data is invalid.
-                    messages.error(request, "Invalid question data format.")
-                    # FIX: Changed the namespace from 'quizzes' to 'aiapp'
-                    return redirect('aiapp:create_quiz')
+                        question_text = q_data.get('text')
+                        question_type = q_data.get('question_type')
 
-            # Display a success message and redirect.
-            messages.success(request, f'"{quiz.title}" has been created successfully!')
-            # FIX: Changed the namespace from 'quizzes' to 'aiapp'
-            return redirect('aiapp:quiz_list')
+                        # Skip empty questions
+                        if not question_text:
+                            continue
+                        
+                        question_instance = Question.objects.create(
+                            quiz=quiz,
+                            text=question_text,
+                            question_type=question_type,
+                        )
+
+                        if question_type == 'MC':
+                            choices_data = q_data.get('choices', [])
+                            for c_data in choices_data:
+                                if c_data.get('text'):
+                                    Choice.objects.create(
+                                        question=question_instance,
+                                        text=c_data['text'],
+                                        is_correct=c_data.get('isCorrect', False)
+                                    )
+                        elif question_type == 'SA':
+                            correct_answer_text = q_data.get('correct_answer_text')
+                            question_instance.correct_answer_text = correct_answer_text
+                            question_instance.save()
+
+                    messages.success(request, f'"{quiz.title}" has been created successfully!')
+                    return redirect('aiapp:quiz_list')
+
+                except (json.JSONDecodeError, KeyError) as e:
+                    # Log the error for debugging
+                    print(f"JSON processing error: {e}")
+                    messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
+                    # Rollback the transaction to delete the created quiz and any related objects
+                    raise # re-raise the exception to trigger the atomic block's rollback
+        else:
+            messages.error(request, "Please correct the form errors below.")
     else:
         quiz_form = QuizForm()
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+
 
 @login_required
 def teacher_quiz_dashboard(request):
@@ -202,16 +204,13 @@ def teacher_quiz_dashboard(request):
     return render(request, 'aiapp/teacher_quiz_dashboard.html', {'user_quizzes': user_quizzes})
 
 @login_required
+@transaction.atomic
 def edit_quiz(request, quiz_id):
     """
     Allows a teacher to edit an existing quiz.
-    
-    This view uses a GET request to display the form with existing data and
-    a POST request to process the updated form data.
     """
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     
-    # Check if the current user is the teacher of this quiz.
     if quiz.teacher != request.user:
         raise Http404
 
@@ -220,57 +219,68 @@ def edit_quiz(request, quiz_id):
         if quiz_form.is_valid():
             quiz = quiz_form.save()
             
-            # Update questions and choices based on submitted JSON data.
             questions_data = request.POST.get('questions_data')
             if questions_data:
                 try:
                     questions_list = json.loads(questions_data)
                     
                     # Delete existing questions and choices to avoid duplicates.
-                    # This is a simple but effective way to handle updates for a dynamic form.
                     quiz.questions.all().delete()
                     
                     for q_data in questions_list:
-                        question = Question.objects.create(
+                        question_text = q_data.get('text')
+                        question_type = q_data.get('question_type')
+                        
+                        if not question_text:
+                            continue
+                        
+                        question_instance = Question.objects.create(
                             quiz=quiz,
-                            text=q_data['text']
+                            text=question_text,
+                            question_type=question_type,
                         )
-                        for c_data in q_data['choices']:
-                            Choice.objects.create(
-                                question=question,
-                                text=c_data['text'],
-                                is_correct=c_data['isCorrect']
-                            )
-                except json.JSONDecodeError:
-                    messages.error(request, "Invalid question data format.")
-                    # FIX: Changed the namespace from 'quizzes' to 'aiapp'
-                    return redirect('aiapp:edit_quiz', quiz_id=quiz.id)
-            
-            messages.success(request, f'"{quiz.title}" has been updated successfully!')
-            # FIX: Changed the namespace from 'quizzes' to 'aiapp'
-            return redirect('aiapp:teacher_quiz_dashboard')
+                        
+                        if question_type == 'MC':
+                            choices_data = q_data.get('choices', [])
+                            for c_data in choices_data:
+                                if c_data.get('text'):
+                                    Choice.objects.create(
+                                        question=question_instance,
+                                        text=c_data['text'],
+                                        is_correct=c_data.get('isCorrect', False)
+                                    )
+                        elif question_type == 'SA':
+                            correct_answer_text = q_data.get('correct_answer_text')
+                            question_instance.correct_answer_text = correct_answer_text
+                            question_instance.save()
+                            
+                    messages.success(request, f'"{quiz.title}" has been updated successfully!')
+                    return redirect('aiapp:teacher_quiz_dashboard')
+
+                except (json.JSONDecodeError, KeyError) as e:
+                    print(f"JSON processing error: {e}")
+                    messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
+                    raise # Rollback the transaction
+        else:
+            messages.error(request, "Please correct the form errors below.")
     else:
         quiz_form = QuizForm(instance=quiz)
-    
+        
     return render(request, 'aiapp/edit_quiz.html', {'quiz_form': quiz_form, 'quiz': quiz})
 
 @login_required
 def delete_quiz(request, quiz_id):
     """
     Allows a teacher to delete a quiz.
-    
-    This view confirms the deletion via a POST request.
     """
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     
-    # Check if the current user is the teacher of this quiz.
     if quiz.teacher != request.user:
         raise Http404
         
     if request.method == 'POST':
         quiz.delete()
         messages.success(request, f'"{quiz.title}" has been deleted successfully!')
-        # FIX: Changed the namespace from 'quizzes' to 'aiapp'
         return redirect('aiapp:teacher_quiz_dashboard')
 
     return render(request, 'aiapp/delete_quiz_confirm.html', {'quiz': quiz})
@@ -281,8 +291,6 @@ def user_profile(request, user_id):
     Displays the user profile page.
     """
     user_to_display = get_object_or_404(User, pk=user_id)
-    # The template was previously named 'user_profile.html' but the file is 'profile_detail.html'.
-    # This change corrects the template name to match the file.
     return render(request, 'aiapp/profile_detail.html', {'profile_user': user_to_display})
 
 # Video-related views from the video app
@@ -313,8 +321,6 @@ def create_video(request):
             video = form.save(commit=False)
             video.teacher = request.user
             video.save()
-            # This is where the ManyToMany relationship is saved.
-            # It must be done after the video object has been saved to the database.
             form.save_m2m()
             messages.success(request, f'"{video.title}" has been uploaded successfully!')
             return redirect('video:teacher_dashboard')

@@ -1,21 +1,50 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-4">{{ quiz.title }}</h2>
-    <p class="text-gray-400 mb-6">{{ quiz.description }}</p>
+<div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10 relative">
 
-    <div class="flex items-center text-sm text-gray-500 mb-8">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user mr-1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Created by {{ quiz.teacher.get_full_name|default:quiz.teacher.username }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days ml-4 mr-1"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
-        <span>Created on {{ quiz.created_at|date:"M d, Y" }}</span>
-    </div>
-    
-    <div class="flex justify-end">
-        <a href="{% url 'aiapp:quiz_attempt' quiz.id %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
-            Start Quiz
-        </a>
+    <a href="{% url 'aiapp:quiz_list' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left">
+            <path d="m15 18-6-6 6-6"/>
+        </svg>
+        <span>Back to Quizzes</span>
+    </a>
+
+    <div class="mt-8">
+        <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ quiz.title }}</h2>
+        <p class="text-gray-400 mb-6">{{ quiz.description }}</p>
+
+        <div class="flex items-center text-sm text-gray-500 mb-8 space-x-4">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user mr-1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Created by {{ quiz.teacher.get_full_name|default:quiz.teacher.username }}</span>
+            </div>
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days mr-1"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                <span>Created on {{ quiz.created_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list mr-1">
+                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+                </svg>
+                <span>{{ quiz.questions.count }} Questions</span>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            {% if latest_attempt %}
+                <div class="text-right">
+                    <p class="text-gray-400 mb-2">You scored: <span class="font-bold text-green-400">{{ latest_attempt.score }}</span> out of <span class="font-bold text-gray-200">{{ latest_attempt.total_questions }}</span></p>
+                    <a href="{% url 'aiapp:quiz_results' latest_attempt.id %}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
+                        View Results
+                    </a>
+                </div>
+            {% else %}
+                <a href="{% url 'aiapp:quiz_attempt' quiz.id %}" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                    Start Quiz
+                </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

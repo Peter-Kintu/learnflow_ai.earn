@@ -10,6 +10,7 @@
         </div>
         <h2 class="text-3xl font-bold text-gray-200">Confirm Deletion</h2>
     </div>
+    
     <p class="text-gray-400 mb-8">
         Are you sure you want to delete the quiz titled "<span class="font-semibold text-white">{{ quiz.title }}</span>"?
         This action cannot be undone.
@@ -19,6 +20,7 @@
         <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold">
             Cancel
         </a>
+        
         <form method="post" action="{% url 'aiapp:delete_quiz' quiz.id %}">
             {% csrf_token %}
             <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm font-semibold">

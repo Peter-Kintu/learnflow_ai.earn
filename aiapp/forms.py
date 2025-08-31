@@ -1,25 +1,30 @@
 # aiapp/forms.py
 
 from django import forms
+from .models import Quiz
 
-class QuizForm(forms.Form):
+class QuizForm(forms.ModelForm):
     """
-    A Django form for creating a quiz.
-
-    This form is designed to handle user input for generating a quiz.
-    The `quiz_topic` field will be a text area where the user can enter
-    the subject they want a quiz on.
+    A Django ModelForm for creating a new Quiz instance.
+    
+    This form handles the creation of a Quiz object by accepting
+    the title and description. It is designed to work in tandem with
+    the JavaScript on the frontend, which handles the dynamic
+    questions and choices.
     """
-    quiz_topic = forms.CharField(
-        label='Enter the topic for your quiz',
-        widget=forms.Textarea(attrs={'rows': 4, 'cols': 40}),
-    )
-
-    # You can add more fields here if needed, for example:
-    # num_questions = forms.IntegerField(
-    #     label='Number of questions',
-    #     min_value=1,
-    #     max_value=10,
-    #     initial=5
-    # )
-
+    class Meta:
+        model = Quiz
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'placeholder': 'e.g., Introduction to Python',
+                'required': 'true'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'rows': 3,
+                'placeholder': 'e.g., This quiz covers the basics of Python syntax.',
+                'required': 'true'
+            }),
+        }

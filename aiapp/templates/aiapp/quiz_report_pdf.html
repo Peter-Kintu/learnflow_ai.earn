@@ -1,32 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Quiz Report - {{ quiz.title }}</title>
     <style>
-        /* Add your CSS styles for the PDF report here */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
-        }
-        h1, h2 {
+            background-color: #f8fafc;
             color: #1e293b;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .meta-info {
+            font-size: 0.875rem;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .summary-card {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .summary-item {
+            flex: 1;
+        }
+        .summary-item h3 {
+            font-size: 1.125rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+        .summary-item p {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin: 0;
+        }
+        .score-correct {
+            color: #22c55e;
+        }
+        .score-incorrect {
+            color: #ef4444;
+        }
+        .score-total {
+            color: #3b82f6;
+        }
+        .question-block {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .question-text {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
+        .answer-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .answer-item {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .answer-item .icon {
+            margin-right: 0.5rem;
+            width: 20px;
+            height: 20px;
+        }
+        .correct {
+            color: #22c55e;
+            font-weight: 600;
+        }
+        .incorrect {
+            color: #ef4444;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     {% load custom_filters %}
-    <h1>Quiz Report: {{ quiz.title }}</h1>
-    <p>Report for user: {{ user.username }}</p>
-    <p>Score: {{ score }} / {{ total_questions }}</p>
+    <div class="container">
+        <h1>Quiz Report</h1>
+        <p class="meta-info">
+            Generated for **{{ user.username }}** on **{{ today|date:"F j, Y" }}**
+        </p>
 
-    <h2>Questions and Answers</h2>
-    {% for question in quiz.questions.all %}
-        <div>
-            <p><strong>Question {{ forloop.counter }}:</strong> {{ question.question_text }}</p>
-            <ul>
-                <li>Your Answer: {{ user_answers|get_item:question.id }}</li>
-                <li>Correct Answer: {{ question.correct_option }}</li>
-            </ul>
+        <h2>Summary</h2>
+        <div class="summary-card">
+            <div class="summary-item">
+                <h3>Score</h3>
+                <p class="score-total">{{ score }} / {{ total_questions }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Correct</h3>
+                <p class="score-correct">{{ score }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Incorrect</h3>
+                <p class="score-incorrect">{{ incorrect_answers }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Percentage</h3>
+                <p class="score-total">{{ score|div:total_questions|mul:100|floatformat:"0" }}%</p>
+            </div>
         </div>
-    {% endfor %}
+
+        <h2>Questions and Answers</h2>
+        {% for question in quiz.questions.all %}
+            <div class="question-block">
+                <p class="question-text">Question {{ forloop.counter }}: {{ question.question_text }}</p>
+                
+                <ul class="answer-list">
+                    <li class="answer-item {% if user_answers|get_item:question.id == question.correct_option %}correct{% else %}incorrect{% endif %}">
+                        <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            {% if user_answers|get_item:question.id == question.correct_option %}
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            {% else %}
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            {% endif %}
+                        </svg>
+                        <span>Your Answer: <span class="{% if user_answers|get_item:question.id == question.correct_option %}correct{% else %}incorrect{% endif %}">{{ user_answers|get_item:question.id }}</span></span>
+                    </li>
+                    <li class="answer-item">
+                        <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Correct Answer: <span class="correct">{{ question.correct_option }}</span></span>
+                    </li>
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

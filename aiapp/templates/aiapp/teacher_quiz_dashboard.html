@@ -15,7 +15,7 @@
     {% if messages %}
         <div class="mb-4 space-y-2">
             {% for message in messages %}
-                <div class="p-3 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                <div class="p-4 rounded-md font-medium {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -28,12 +28,19 @@
                 <div class="bg-slate-700 p-6 rounded-xl shadow-inner flex flex-col sm:flex-row items-start sm:items-center justify-between">
                     <div class="flex-grow mb-4 sm:mb-0">
                         <h3 class="text-xl font-semibold text-gray-200">{{ quiz.title }}</h3>
-                        <p class="text-gray-400 mt-2 text-sm">{{ quiz.description }}</p>
+                        <p class="text-gray-400 mt-2 text-sm line-clamp-2">{{ quiz.description }}</p>
                         <span class="text-sm text-gray-500 mt-2 block">Questions: {{ quiz.questions.count }}</span>
                     </div>
-                    <div class="flex space-x-2">
+
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% url 'aiapp:quiz_detail' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
+                            View
+                        </a>
                         <a href="{% url 'aiapp:edit_quiz' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
                             Edit
+                        </a>
+                        <a href="{% url 'aiapp:quiz_report' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
+                            Reports
                         </a>
                         <a href="{% url 'aiapp:delete_quiz' quiz.id %}" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm">
                             Delete

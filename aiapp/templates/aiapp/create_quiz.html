@@ -63,59 +63,17 @@
             </div>
         {% endif %}
 
-        <script>
-            document.getElementById('quizForm').addEventListener('submit', function(e) {
-                const questionBlocks = document.querySelectorAll('.question-block');
-                const questions = [];
-
-                questionBlocks.forEach(block => {
-                    const index = block.getAttribute('data-question-index');
-                    const questionText = block.querySelector(`#question_text_${index}`)?.value || `Question ${index}`;
-                    const questionType = block.querySelector(`#question_type_${index}`)?.value;
-
-                    const questionData = { text: questionText, choices: [] };
-
-                    if (questionType === 'mcq') {
-                        const optionA = block.querySelector(`[name="option_a_${index}"]`)?.value;
-                        const optionB = block.querySelector(`[name="option_b_${index}"]`)?.value;
-                        const optionC = block.querySelector(`[name="option_c_${index}"]`)?.value;
-                        const optionD = block.querySelector(`[name="option_d_${index}"]`)?.value;
-                        const correct = block.querySelector(`[name="correct_option_${index}"]`)?.value;
-
-                        questionData.choices = [
-                            { text: optionA, isCorrect: correct === 'A' },
-                            { text: optionB, isCorrect: correct === 'B' },
-                            { text: optionC, isCorrect: correct === 'C' },
-                            { text: optionD, isCorrect: correct === 'D' }
-                        ];
-                    } else if (questionType === 'single_answer') {
-                        const answer = block.querySelector(`[name="single_answer_${index}"]`)?.value;
-                        questionData.choices = [
-                            { text: answer, isCorrect: true }
-                        ];
-                    }
-
-                    questions.push(questionData);
-                });
-
-                document.getElementById('questions_data').value = JSON.stringify(questions);
-            });
-        </script>
-
         <form id="quizForm" method="post" action="{% url 'aiapp:create_quiz' %}" class="space-y-6">
             <input type="hidden" name="questions_data" id="questions_data">
             {% csrf_token %}
+            
             <div>
-                <label for="id_title" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
-                <input type="text" name="title" id="id_title" required
-                        class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                        placeholder="e.g., Introduction to Python">
+                <label for="{{ quiz_form.title.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
+                {{ quiz_form.title }}
             </div>
             <div>
-                <label for="id_description" class="block text-gray-300 font-semibold mb-2">Description</label>
-                <textarea name="description" id="id_description" rows="3" required
-                                class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                placeholder="e.g., This quiz covers the basics of Python syntax."></textarea>
+                <label for="{{ quiz_form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description</label>
+                {{ quiz_form.description }}
             </div>
 
             <div id="questions-container" class="space-y-8 mt-8 pt-8 border-t border-slate-700">
@@ -146,10 +104,10 @@
              * Creates a new question block HTML element.
              * The function dynamically generates a block for either a multiple-choice
              * or a single-answer question, complete with input fields and a remove button.
-             * @param {string} type The type of question to create ('mcq' or 'single_answer').
+             * @param {string} type The type of question to create ('MC' or 'SA').
              * @returns {HTMLElement} The new question block element.
              */
-            function createQuestionBlock(type = 'mcq') {
+            function createQuestionBlock(type = 'MC') {
                 questionCount++;
 
                 const newQuestionBlock = document.createElement('div');
@@ -192,8 +150,8 @@
 
                 const singleAnswerFieldsHtml = `
                     <div class="single-answer-fields">
-                        <label for="single_answer_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
-                        <input type="text" name="single_answer_${questionCount}" id="single_answer_${questionCount}" required
+                        <label for="correct_answer_text_${questionCount}" class="block text-gray-300 font-semibold mb-2">Correct Answer</label>
+                        <input type="text" name="correct_answer_text_${questionCount}" id="correct_answer_text_${questionCount}" required
                             class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
                             placeholder="e.g., Paris">
                     </div>
@@ -209,14 +167,14 @@
                         <div>
                             <label for="question_text_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Text</label>
                             <input type="text" name="question_text_${questionCount}" id="question_text_${questionCount}" required
-                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                                    placeholder="e.g., What is the capital of France?">
+                                class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                                placeholder="e.g., What is the capital of France?">
                         </div>
                         <div>
                             <label for="question_type_${questionCount}" class="block text-gray-300 font-semibold mb-2">Question Type</label>
                             <select id="question_type_${questionCount}" name="question_type_${questionCount}" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
-                                <option value="mcq" ${type === 'mcq' ? 'selected' : ''}>Multiple Choice</option>
-                                <option value="single_answer" ${type === 'single_answer' ? 'selected' : ''}>Single Answer</option>
+                                <option value="MC" ${type === 'MC' ? 'selected' : ''}>Multiple Choice</option>
+                                <option value="SA" ${type === 'SA' ? 'selected' : ''}>Single Answer</option>
                             </select>
                         </div>
                         
@@ -256,7 +214,7 @@
                 const mcqFields = questionBlock.querySelector('.mcq-fields');
                 const singleAnswerFields = questionBlock.querySelector('.single-answer-fields');
 
-                if (selectedType === 'mcq') {
+                if (selectedType === 'MC') {
                     mcqFields.classList.remove('hidden');
                     singleAnswerFields.classList.add('hidden');
                     
@@ -268,7 +226,7 @@
                         input.disabled = true;
                         input.required = false;
                     });
-                } else { // 'single_answer'
+                } else { // 'SA'
                     singleAnswerFields.classList.remove('hidden');
                     mcqFields.classList.add('hidden');
 
@@ -282,6 +240,52 @@
                     });
                 }
             }
+            
+            /**
+             * The main function that gathers data from the form and prepares the JSON payload.
+             */
+            document.getElementById('quizForm').addEventListener('submit', function(e) {
+                const questionBlocks = document.querySelectorAll('.question-block');
+                const questions = [];
+
+                questionBlocks.forEach(block => {
+                    const index = block.getAttribute('data-question-index');
+                    const questionText = block.querySelector(`#question_text_${index}`)?.value.trim();
+                    const questionType = block.querySelector(`#question_type_${index}`)?.value;
+
+                    // Skip blocks with empty question text
+                    if (!questionText) return;
+
+                    const questionData = { 
+                        text: questionText, 
+                        question_type: questionType 
+                    };
+
+                    if (questionType === 'MC') {
+                        const choices = [];
+                        const optionA = block.querySelector(`[name="option_a_${index}"]`)?.value.trim();
+                        const optionB = block.querySelector(`[name="option_b_${index}"]`)?.value.trim();
+                        const optionC = block.querySelector(`[name="option_c_${index}"]`)?.value.trim();
+                        const optionD = block.querySelector(`[name="option_d_${index}"]`)?.value.trim();
+                        const correct = block.querySelector(`[name="correct_option_${index}"]`)?.value;
+
+                        if (optionA) choices.push({ text: optionA, isCorrect: correct === 'A' });
+                        if (optionB) choices.push({ text: optionB, isCorrect: correct === 'B' });
+                        if (optionC) choices.push({ text: optionC, isCorrect: correct === 'C' });
+                        if (optionD) choices.push({ text: optionD, isCorrect: correct === 'D' });
+                        
+                        questionData.choices = choices;
+                    } else if (questionType === 'SA') {
+                        const answer = block.querySelector(`[name="correct_answer_text_${index}"]`)?.value.trim();
+                        questionData.correct_answer_text = answer;
+                    }
+
+                    questions.push(questionData);
+                });
+
+                document.getElementById('questions_data').value = JSON.stringify(questions);
+            });
+
 
             /**
              * Re-indexes the question blocks and their input names after a question is removed.
@@ -295,39 +299,6 @@
                     
                     block.querySelector('h4').textContent = `Question ${currentCount}`;
                     block.setAttribute('data-question-index', currentCount);
-                    
-                    // Update all inputs and labels within this specific block
-                    const questionText = block.querySelector('[name^="question_text_"]');
-                    if (questionText) {
-                        questionText.name = `question_text_${currentCount}`;
-                        questionText.id = `question_text_${currentCount}`;
-                        const label = block.querySelector(`label[for^="question_text_"]`);
-                        if (label) label.setAttribute('for', `question_text_${currentCount}`);
-                    }
-
-                    const questionType = block.querySelector('[name^="question_type_"]');
-                    if (questionType) {
-                        questionType.name = `question_type_${currentCount}`;
-                        questionType.id = `question_type_${currentCount}`;
-                        const label = block.querySelector(`label[for^="question_type_"]`);
-                        if (label) label.setAttribute('for', `question_type_${currentCount}`);
-                    }
-
-                    const correctOption = block.querySelector('[name^="correct_option_"]');
-                    if (correctOption) {
-                        correctOption.name = `correct_option_${currentCount}`;
-                        correctOption.id = `correct_option_${currentCount}`;
-                        const label = block.querySelector(`label[for^="correct_option_"]`);
-                        if (label) label.setAttribute('for', `correct_option_${currentCount}`);
-                    }
-                    
-                    const singleAnswer = block.querySelector('[name^="single_answer_"]');
-                    if (singleAnswer) {
-                        singleAnswer.name = `single_answer_${currentCount}`;
-                        singleAnswer.id = `single_answer_${currentCount}`;
-                        const label = block.querySelector(`label[for^="single_answer_"]`);
-                        if (label) label.setAttribute('for', `single_answer_${currentCount}`);
-                    }
                 });
                 questionCount = currentCount;
             }

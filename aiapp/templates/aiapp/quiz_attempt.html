@@ -2,11 +2,9 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <!-- Quiz title and description -->
     <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ quiz.title }}</h2>
     <p class="text-gray-400 mb-4">{{ quiz.description }}</p>
 
-    <!-- Countdown Timer -->
     <div class="flex items-center justify-between bg-slate-700 p-4 rounded-xl shadow-inner mb-6">
         <div class="flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer text-indigo-400 mr-2">
@@ -21,7 +19,6 @@
         </div>
     </div>
 
-    <!-- Quiz questions form -->
     <form id="quiz-form" method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}">
         {% csrf_token %}
         <div class="space-y-8">
@@ -29,12 +26,6 @@
             <div class="bg-slate-700 p-6 rounded-xl shadow-inner question-block">
                 <h4 class="text-lg font-semibold text-gray-200 mb-4">{{ forloop.counter }}. {{ question.text }}</h4>
                 <div class="space-y-3">
-                    <!-- 
-                        CRITICAL FIX: We are now looping through the related 'choices' 
-                        of each question and setting the radio button's 'value'
-                        to the numeric database ID of the choice object ({{ choice.id }}).
-                        This resolves the "Field 'id' expected a number but got 'A'" error.
-                    -->
                     {% for choice in question.choices.all %}
                     <label class="flex items-center text-gray-200 cursor-pointer p-3 rounded-lg hover:bg-slate-600 transition-colors">
                         <input type="radio" 
@@ -50,7 +41,7 @@
         </div>
 
         <div class="flex justify-end mt-8">
-            <button type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+            <button id="submit-button" type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
                 Submit Answers
             </button>
         </div>
@@ -63,6 +54,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         const quizForm = document.getElementById('quiz-form');
         const timerDisplay = document.getElementById('countdown-timer');
+        const submitButton = document.getElementById('submit-button');
+        const timerWarning = document.createElement('div');
+        timerWarning.className = 'text-center text-sm font-medium text-red-400 mt-4';
 
         // Set the quiz duration in seconds (10 minutes)
         let timeLeft = 10 * 60; 
@@ -79,16 +73,24 @@
             timeLeft--;
             timerDisplay.textContent = formatTime(timeLeft);
 
-            // Change color when time is running low (last 60 seconds)
-            if (timeLeft <= 60) {
+            // Change color and add a warning message when time is running low (last 60 seconds)
+            if (timeLeft === 60) {
                 timerDisplay.classList.remove('text-indigo-400');
                 timerDisplay.classList.add('text-red-500');
+                timerWarning.textContent = 'Hurry! Only 60 seconds remaining.';
+                quizForm.parentNode.insertBefore(timerWarning, quizForm.nextSibling);
             }
 
             // Automatically submit the form when time runs out
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 timerDisplay.textContent = 'Time\'s up!';
+                submitButton.textContent = 'Time Expired';
+                submitButton.disabled = true;
+                submitButton.classList.add('bg-gray-500', 'cursor-not-allowed', 'hover:bg-gray-500');
+                submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                timerWarning.textContent = 'Your answers have been automatically submitted.';
+                
                 // Submit the form
                 quizForm.submit();
             }

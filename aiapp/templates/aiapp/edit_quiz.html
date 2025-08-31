@@ -16,10 +16,8 @@
         {% csrf_token %}
         {{ quiz_form.as_p }}
 
-        <!-- Container for dynamically added questions -->
         <div id="questions-container" class="space-y-8">
-            <!-- Questions will be added here by JavaScript -->
-        </div>
+            </div>
 
         <div class="flex justify-between items-center pt-4 border-t border-slate-700">
             <button type="button" id="add-question-btn" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold">
@@ -30,16 +28,10 @@
             </button>
         </div>
         
-        <!-- Hidden input to store dynamic form data -->
         <input type="hidden" name="questions_data" id="questions-data-input">
     </form>
 </div>
 
-<!-- 
-    The json_script tag is the recommended way to securely pass a Python dictionary or list
-    to JavaScript. It automatically escapes the data, preventing syntax errors and XSS attacks.
-    The Django view must provide the `quiz_questions_json` context variable.
--->
 <script id="quiz-questions-data" type="application/json">
     {{ quiz_questions_json|safe }}
 </script>
@@ -53,13 +45,17 @@
         const questionsDataInput = document.getElementById('questions-data-input');
         let questionCounter = 0;
 
-        // Function to create a new question block
+        /**
+         * Creates a new HTML block for a question.
+         * @param {object|null} questionData - Optional data to pre-populate the form.
+         * @returns {HTMLElement} The created question block element.
+         */
         function createQuestionBlock(questionData = null) {
             questionCounter++;
             const block = document.createElement('div');
             block.classList.add('bg-slate-700', 'p-6', 'rounded-xl', 'shadow-inner', 'question-block', 'relative');
             
-            // Set a unique identifier for the question, using the DB ID if it exists
+            // Use the DB ID for existing questions, or a temporary ID for new ones
             const questionId = questionData && questionData.id ? questionData.id : `new-${questionCounter}`;
             block.dataset.questionId = questionId;
 
@@ -95,23 +91,9 @@
             return block;
         }
 
-        // Add event listener for the "Add a Question" button
-        addQuestionBtn.addEventListener('click', function() {
-            questionsContainer.appendChild(createQuestionBlock());
-        });
-
-        // Add a single event listener to the parent container for all "Remove" buttons
-        questionsContainer.addEventListener('click', function(event) {
-            const removeBtn = event.target.closest('.remove-question-btn');
-            if (removeBtn) {
-                const questionBlock = removeBtn.closest('.question-block');
-                questionBlock.remove();
-                // Re-update numbers after removing a block
-                updateQuestionNumbers();
-            }
-        });
-
-        // Function to update the numbering of the question blocks
+        /**
+         * Updates the visible numbering of all question blocks.
+         */
         function updateQuestionNumbers() {
             const questionBlocks = questionsContainer.querySelectorAll('.question-block');
             questionCounter = 0; // Reset counter for re-numbering
@@ -122,8 +104,10 @@
             });
         }
 
-        // Function to gather all question data and put it in the hidden input
-        form.addEventListener('submit', function(event) {
+        /**
+         * Gathers all question data from the form and populates the hidden input.
+         */
+        function packageQuestionData() {
             const questions = [];
             document.querySelectorAll('.question-block').forEach(block => {
                 const questionId = block.dataset.questionId;
@@ -146,9 +130,33 @@
             });
 
             questionsDataInput.value = JSON.stringify(questions);
+        }
+
+        // --- Event Listeners and Initialization ---
+
+        // Add event listener for the "Add a Question" button
+        addQuestionBtn.addEventListener('click', function() {
+            questionsContainer.appendChild(createQuestionBlock());
+            updateQuestionNumbers();
         });
 
-        // Parse the JSON data from the script tag
+        // Use event delegation for "Remove" buttons
+        questionsContainer.addEventListener('click', function(event) {
+            const removeBtn = event.target.closest('.remove-question-btn');
+            if (removeBtn) {
+                const questionBlock = removeBtn.closest('.question-block');
+                questionBlock.remove();
+                // Re-update numbers after removing a block
+                updateQuestionNumbers();
+            }
+        });
+
+        // Intercept form submission to package the dynamic data
+        form.addEventListener('submit', function(event) {
+            packageQuestionData();
+        });
+
+        // Parse the JSON data from the script tag and create the initial questions
         const quizQuestionsScript = document.getElementById('quiz-questions-data');
         const quizQuestions = quizQuestionsScript && quizQuestionsScript.textContent.trim()
             ? JSON.parse(quizQuestionsScript.textContent)
@@ -159,10 +167,11 @@
                 questionsContainer.appendChild(createQuestionBlock(q));
             });
         } else {
+            // If no questions exist, add one empty question to start with
             questionsContainer.appendChild(createQuestionBlock());
         }
 
-        // Initially update question numbers
+        // Set initial numbering
         updateQuestionNumbers();
     });
 </script>
