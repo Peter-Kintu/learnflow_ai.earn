@@ -27,7 +27,7 @@
             <div class="relative w-32 h-32 md:w-40 md:h-40">
                 <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
                     <circle class="text-gray-300 dark:text-gray-600" stroke-width="12" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
-                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ 339.29 * (1 - score|floatformat:2 / total_questions|floatformat:2) }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ 339.29 * (1 - score|floatformat:2 / total_questions) }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
                 </svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                     <span class="text-4xl md:text-5xl font-extrabold text-blue-500">{{ score }}</span>
