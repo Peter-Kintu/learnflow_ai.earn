@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'video',
     'user',
     'book',
-    'quiz',  # ✅ Activated
 ]
 
 # 🧱 Middleware
