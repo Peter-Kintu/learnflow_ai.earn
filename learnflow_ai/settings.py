@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
+import dj_database_url  # ✅ Added for parsing DATABASE_URL
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 🔐 Security settings
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
 
 # 📦 Installed apps
@@ -22,8 +22,7 @@ INSTALLED_APPS = [
     'video',
     'user',
     'book',
-    # Add your quiz app if needed
-    # 'quiz',
+    # 'quiz',  # Uncomment if needed
 ]
 
 # 🧱 Middleware
@@ -59,16 +58,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-# 🗄️ Database (Neon.tech)
+# 🗄️ Database (Neon.tech via DATABASE_URL)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'neondb'),
-        'USER': os.environ.get('DB_USER', 'neondb_owner'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', ''),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 # 🔐 Password validation
