@@ -116,7 +116,9 @@ class StudentAnswer(models.Model):
         Attempt,
         on_delete=models.CASCADE,
         related_name='student_answers',
-        help_text="The specific quiz attempt this answer belongs to."
+        help_text="The specific quiz attempt this answer belongs to.",
+        null=True,  # This change allows existing rows to have a null value
+        blank=True  # This change makes the field optional in forms
     )
     question = models.ForeignKey(
         Question,

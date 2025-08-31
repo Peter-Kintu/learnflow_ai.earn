@@ -1,3 +1,5 @@
+# aiapp/urls.py
+
 from django.urls import path
 from . import views
 
@@ -12,7 +14,9 @@ urlpatterns = [
     path('quizzes/', views.quiz_list, name='quiz_list'),
     path('quizzes/<int:quiz_id>/', views.quiz_detail, name='quiz_detail'),
     path('quizzes/<int:quiz_id>/attempt/', views.quiz_attempt, name='quiz_attempt'),
-    path('quizzes/<int:quiz_id>/results/', views.quiz_results, name='quiz_results'),
+    # CORRECTED: This URL now takes an attempt_id instead of a quiz_id
+    path('quizzes/results/<int:attempt_id>/', views.quiz_results, name='quiz_results'),
+    path('quizzes/review/<int:attempt_id>/', views.quiz_review, name='quiz_review'),
     
     # Teacher Quiz Management URLs
     # This dashboard lists quizzes created by the logged-in teacher.
@@ -22,7 +26,8 @@ urlpatterns = [
     # This URL handles the deletion of a specific quiz.
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
     path('quizzes/create/', views.create_quiz, name='create_quiz'),
-    path('quizzes/report/', views.quiz_report, name='quiz_report'),
+    # CORRECTED: The report URL now expects an integer for the quiz ID.
+    path('quizzes/report/<int:quiz_id>/', views.quiz_report, name='quiz_report'),
     
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
