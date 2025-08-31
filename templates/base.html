@@ -60,12 +60,6 @@
                 <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
                 <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white transition-colors">Create Quiz</a>
                 <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white transition-colors">My Profile</a>
-                <!-- NOTE: The 'quiz_report' link requires a specific quiz ID. 
-                You will need to pass the ID to this URL, for example:
-                {% url 'aiapp:quiz_report' 123 %} 
-                This link should only be used on pages where a quiz ID is available.
-                -->
-                <a href="#" class="text-gray-300 hover:text-white transition-colors">Quiz Report</a>
                 
                 <form action="{% url 'user:logout' %}" method="post">
                     {% csrf_token %}
@@ -109,15 +103,6 @@
                 <a href="{% url 'aiapp:user_profile' user.id %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-circle mr-2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>
                     My Profile
-                </a>
-                <!-- NOTE: The 'quiz_report' link requires a specific quiz ID. 
-                You will need to pass the ID to this URL, for example:
-                {% url 'aiapp:quiz_report' 123 %} 
-                This link should only be used on pages where a quiz ID is available.
-                -->
-                <a href="#" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-bar-chart mr-2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L15.5 2z"/><path d="M12 12v6"/><path d="M16 12v4"/><path d="M8 12v4"/></svg>
-                    Quiz Report
                 </a>
                 
                 <form action="{% url 'user:logout' %}" method="post" class="mt-2">
