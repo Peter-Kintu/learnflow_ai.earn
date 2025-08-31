@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import dj_database_url  # ✅ Added for parsing DATABASE_URL
+import dj_database_url  # ✅ For parsing DATABASE_URL
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -87,7 +87,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # 🌍 Localization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Kampala'
 USE_I18N = True
 USE_TZ = True
 
@@ -105,10 +105,82 @@ LOGOUT_REDIRECT_URL = 'user:login'
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
     "site_header": "LearnFlow",
-    "welcome_sign": "Welcome to the LearnFlow Admin",
-    "search_model": "auth.User",
+    "site_brand": "LearnFlow",
+    "site_logo": "static/images/learnflow_logo.png",  # ✅ Add your logo here
+    "site_icon": "static/images/favicon.ico",         # ✅ Add your favicon here
+    "welcome_sign": "Welcome to LearnFlow — where every click is a step toward wisdom.",
+    "search_model": ["auth.User", "aiapp.Question", "video.Video", "book.Book"],
+    "user_avatar": None,
+
+    "topmenu_links": [
+        {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Support", "url": "https://github.com/farkasgabor/django-jazzmin/issues", "new_window": True},
+        {"model": "auth.User"},
+        {"model": "aiapp.Question"},
+        {"model": "video.Video"},
+        {"model": "book.Book"},
+    ],
+
     "show_sidebar": True,
     "navigation_expanded": True,
     "order_with_respect_to": ["auth", "aiapp", "video", "user", "book"],
+    "hide_apps": ["contenttypes", "sessions"],
+    "hide_models": [],
+
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "aiapp.Choice": "fas fa-check-square",
+        "aiapp.Question": "fas fa-question-circle",
+        "aiapp.Quiz": "fas fa-puzzle-piece",
+        "aiapp.StudentAnswer": "fas fa-edit",
+        "video.Video": "fas fa-video",
+        "book.Book": "fas fa-book-open",
+    },
+
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False
 }
+
+# 🎨 Jazzmin UI Tweaks
+JAZZMIN_UI_TWEAKS = {
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "sidebar": "sidebar-dark-primary",
+    "button_classes": {
+        "primary": "btn-outline-primary",
+        "secondary": "btn-outline-secondary",
+        "info": "btn-outline-info",
+        "warning": "btn-outline-warning",
+        "danger": "btn-outline-danger",
+        "success": "btn-outline-success"
+    },
+    "actions_button_classes": {
+        "add": "btn-success",
+        "change": "btn-info",
+        "delete": "btn-danger",
+        "save": "btn-primary",
+        "submit": "btn-primary",
+    },
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+}
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
