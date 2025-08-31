@@ -93,9 +93,9 @@ LOGOUT_REDIRECT_URL = 'user:login'
 
 # 🎷 Jazzmin Admin Customization
 JAZZMIN_SETTINGS = {
-    "site_title": "PETER Admin",
-    "site_header": "PETER Admin",
-    "site_brand": "PETER",
+    "site_title": "KINTU Admin",
+    "site_header": "KINTU Admin",
+    "site_brand": "KINTU",
     "site_logo": None,
     "login_logo": None,
     "login_logo_dark": None,
