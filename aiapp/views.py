@@ -148,8 +148,7 @@ def quiz_results(request, attempt_id):
             if answer.question.question_type == 'MC':
                 # Safely get the correct option for multiple choice questions
                 try:
-                    mc_question = MultipleChoiceQuestion.objects.get(question=answer.question)
-                    correct_choice = mc_question.choice_set.get(is_correct=True)
+                    correct_choice = answer.question.choice_set.get(is_correct=True)
                     correct_answer_display = correct_choice.text
                 except (ObjectDoesNotExist, AttributeError):
                     correct_answer_display = "N/A"
@@ -488,8 +487,7 @@ def quiz_report_pdf(request, attempt_id):
         correct_answer_display = ""
         if answer.question.question_type == 'MC':
             try:
-                mc_question = MultipleChoiceQuestion.objects.get(question=answer.question)
-                correct_choice = mc_question.choice_set.get(is_correct=True)
+                correct_choice = answer.question.choice_set.get(is_correct=True)
                 correct_answer_display = correct_choice.text
             except (ObjectDoesNotExist, AttributeError):
                 correct_answer_display = "N/A"
