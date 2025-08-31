@@ -1,15 +1,17 @@
 import os
 from pathlib import Path
-import dj_database_url  # ✅ For parsing DATABASE_URL
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 🔐 Security settings
+# 🔐 Security
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
 
-# 📦 Installed apps
+CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
+
+# 📦 Installed Apps
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -18,17 +20,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
     'aiapp',
     'video',
     'user',
     'book',
-    # 'quiz',  # Uncomment if needed
+    'quiz',  # ✅ Activated
 ]
 
 # 🧱 Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ For static file serving on Render
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -40,27 +44,24 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'learnflow_ai.urls'
 
 # 🧠 Templates
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [os.path.join(BASE_DIR, 'templates')],
+    'APP_DIRS': True,
+    'OPTIONS': {
+        'context_processors': [
+            'django.template.context_processors.debug',
+            'django.template.context_processors.request',
+            'django.contrib.auth.context_processors.auth',
+            'django.contrib.messages.context_processors.messages',
+        ],
     },
-]
+}]
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-# 🗄️ Database (Neon.tech via DATABASE_URL or fallback to SQLite)
+# 🗄️ Database (Neon.tech or fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
@@ -77,7 +78,7 @@ else:
         }
     }
 
-# 🔐 Password validation
+# 🔐 Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -91,27 +92,29 @@ TIME_ZONE = 'Africa/Kampala'
 USE_I18N = True
 USE_TZ = True
 
-# 📁 Static files
+# 📁 Static & Media
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# 🔐 Auth redirects
+MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# 🔐 Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login'
 
-# 🎷 Jazzmin Admin Customization
+# 🎷 Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
     "site_header": "LearnFlow",
     "site_brand": "LearnFlow",
-    "site_logo": "static/images/learnflow_logo.png",  # ✅ Add your logo here
-    "site_icon": "static/images/favicon.ico",         # ✅ Add your favicon here
+    "site_logo": "static/images/learnflow_logo.png",
+    "site_icon": "static/images/favicon.ico",
     "welcome_sign": "Welcome to LearnFlow — where every click is a step toward wisdom.",
     "search_model": ["auth.User", "aiapp.Question", "video.Video", "book.Book"],
     "user_avatar": None,
-
     "topmenu_links": [
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Support", "url": "https://github.com/farkasgabor/django-jazzmin/issues", "new_window": True},
@@ -120,13 +123,11 @@ JAZZMIN_SETTINGS = {
         {"model": "video.Video"},
         {"model": "book.Book"},
     ],
-
     "show_sidebar": True,
     "navigation_expanded": True,
     "order_with_respect_to": ["auth", "aiapp", "video", "user", "book"],
     "hide_apps": ["contenttypes", "sessions"],
     "hide_models": [],
-
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -138,7 +139,6 @@ JAZZMIN_SETTINGS = {
         "video.Video": "fas fa-video",
         "book.Book": "fas fa-book-open",
     },
-
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
     "related_modal_active": False
