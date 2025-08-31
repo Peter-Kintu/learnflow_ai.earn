@@ -81,14 +81,42 @@ class Choice(models.Model):
     def __str__(self):
         return self.text
 
+class Attempt(models.Model):
+    """
+    Represents a single attempt by a user on a specific quiz.
+    This model is crucial for reliable score tracking.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='quiz_attempts'
+    )
+    quiz = models.ForeignKey(
+        Quiz,
+        on_delete=models.CASCADE,
+        related_name='attempts'
+    )
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=0)
+    submission_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s attempt on {self.quiz.title}"
+
 class StudentAnswer(models.Model):
     """
-    Records a student's answer to a specific question.
+    Records a student's answer to a specific question within an attempt.
     """
     student = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='answers'
+    )
+    attempt = models.ForeignKey(
+        Attempt,
+        on_delete=models.CASCADE,
+        related_name='student_answers',
+        help_text="The specific quiz attempt this answer belongs to."
     )
     question = models.ForeignKey(
         Question,
