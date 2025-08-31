@@ -22,7 +22,7 @@ def render_to_pdf(template_src, context_dict={}):
     Renders a Django template to a PDF file.
     """
     template = get_template(template_src)
-    html  = template.render(context_dict)
+    html = template.render(context_dict)
     result = io.BytesIO()
     pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
     if not pdf.err:
