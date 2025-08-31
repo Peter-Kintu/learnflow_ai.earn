@@ -32,7 +32,7 @@ def render_to_pdf(template_src, context_dict={}):
             return HttpResponse(result.getvalue(), content_type='application/pdf')
         else:
             print("PDF generation error:", pdf.err)
-            print("Rendered HTML:", html)  # Optional: helps debug template issues
+            print("Rendered HTML:", html)
     except Exception as e:
         print("Exception during PDF generation:", str(e))
     return None
@@ -48,7 +48,6 @@ def home(request):
 def quiz_list(request):
     """
     Renders a list of all quizzes for students to view.
-    Quizzes are ordered by creation date in descending order.
     """
     quizzes = Quiz.objects.order_by('-created_at')
     return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
@@ -57,7 +56,6 @@ def quiz_list(request):
 def quiz_detail(request, quiz_id):
     """
     Displays the details of a specific quiz.
-    Uses get_object_or_404 to handle cases where the quiz does not exist.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
     return render(request, 'aiapp/quiz_detail.html', {'quiz': quiz})
@@ -67,11 +65,6 @@ def quiz_detail(request, quiz_id):
 def quiz_attempt(request, quiz_id):
     """
     Handles the student's attempt at a quiz.
-    
-    This view fetches all questions for a given quiz. When the student submits
-    the form, it processes their answers, calculates a score, and saves the
-    results to the database. It now handles both Multiple Choice (MC) and
-    Short Answer (SA) question types.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
@@ -80,7 +73,6 @@ def quiz_attempt(request, quiz_id):
         score = 0
         total_questions = questions.count()
 
-        # Create a new Attempt object to store this session's results
         new_attempt = Attempt.objects.create(
             user=request.user,
             quiz=quiz,
@@ -100,20 +92,15 @@ def quiz_attempt(request, quiz_id):
                         selected_choice = Choice.objects.get(pk=int(submitted_choice_id))
                         is_correct = selected_choice.is_correct
                     except (ValueError, ObjectDoesNotExist):
-                        # Gracefully handle invalid or missing choices
                         is_correct = False
             
             elif question.question_type == 'SA':
-                # Get submitted text with a default empty string to prevent AttributeError
                 submitted_answer_text = request.POST.get(f'question_{question.id}', '')
                 if submitted_answer_text.strip():
-                    # Compare the submitted text to the correct answer, case-insensitively and trimmed
                     is_correct = (submitted_answer_text.strip().lower() == question.correct_answer_text.strip().lower())
                 else:
-                    # An unanswered question is always incorrect
                     is_correct = False
             
-            # Create a StudentAnswer for the question, regardless of whether it was answered
             StudentAnswer.objects.create(
                 student=request.user,
                 question=question,
@@ -126,7 +113,6 @@ def quiz_attempt(request, quiz_id):
             if is_correct:
                 score += 1
         
-        # Update the score on the new Attempt object
         new_attempt.score = score
         new_attempt.save()
 
@@ -145,24 +131,22 @@ def quiz_results(request, attempt_id):
         'quiz': attempt.quiz,
         'score': attempt.score,
         'total_questions': attempt.total_questions,
-        'attempt_id': attempt.id, # Pass attempt_id for "Review Answers" link
+        'attempt_id': attempt.id,
     })
 
 @login_required
 def quiz_review(request, attempt_id):
     """
-    Displays a detailed review of a specific quiz attempt, showing correct and incorrect answers.
+    Displays a detailed review of a specific quiz attempt.
     """
     attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
     student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
     
     questions_and_answers = []
-    # It's safer to loop through the quiz's questions to ensure all are accounted for
     for q in attempt.quiz.questions.all():
         try:
             student_answer = student_answers.get(question=q)
         except ObjectDoesNotExist:
-            # This should no longer be needed with the fix in quiz_attempt, but it's a good fallback
             student_answer = None
         
         questions_and_answers.append({
@@ -200,7 +184,7 @@ def create_quiz(request):
                         if not question_text:
                             continue
 
-                        question_type = q_data.get('question_type', 'MC') # Default to MC if type is missing
+                        question_type = q_data.get('question_type', 'MC')
                         
                         question_instance = Question.objects.create(
                             quiz=quiz,
@@ -229,7 +213,6 @@ def create_quiz(request):
                 except (json.JSONDecodeError, KeyError) as e:
                     print(f"JSON processing error: {e}")
                     messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
-                    # Re-raise to trigger the atomic block's rollback
                     raise
         else:
             messages.error(request, "Please correct the form errors below.")
@@ -267,7 +250,6 @@ def edit_quiz(request, quiz_id):
                 try:
                     questions_list = json.loads(questions_data)
                     
-                    # Get existing question IDs to find which ones were deleted
                     existing_question_ids = set(quiz.questions.values_list('id', flat=True))
                     questions_to_keep = set()
 
@@ -280,24 +262,20 @@ def edit_quiz(request, quiz_id):
                         question_type = q_data.get('question_type', 'MC')
                         
                         if question_id and str(question_id).isdigit():
-                            # This is an existing question, update it
                             question_instance = Question.objects.get(pk=question_id, quiz=quiz)
                             question_instance.text = question_text
                             question_instance.question_type = question_type
                             
-                            # Add its ID to the set of questions to keep
                             questions_to_keep.add(int(question_id))
                         else:
-                            # This is a new question, create it
                             question_instance = Question.objects.create(
                                 quiz=quiz,
                                 text=question_text,
                                 question_type=question_type,
                             )
                         
-                        # Handle choices for MC and SA questions
                         if question_type == 'MC':
-                            question_instance.choice_set.all().delete() # Clear existing choices
+                            question_instance.choice_set.all().delete()
                             choices_data = q_data.get('choices', [])
                             for c_data in choices_data:
                                 if c_data.get('text'):
@@ -306,21 +284,17 @@ def edit_quiz(request, quiz_id):
                                         text=c_data['text'],
                                         is_correct=c_data.get('isCorrect', False)
                                     )
-                            # Clear SA field to avoid conflicts
                             question_instance.correct_answer_text = None
                             question_instance.save()
                         elif question_type == 'SA':
-                            # For SA, update the correct_answer_text directly on the question
                             correct_answer_text = q_data.get('correct_answer_text')
                             if correct_answer_text:
                                 question_instance.correct_answer_text = correct_answer_text
                             else:
                                 question_instance.correct_answer_text = ""
                             question_instance.save()
-                            # Clear choices to avoid conflicts
                             question_instance.choice_set.all().delete()
 
-                    # Delete questions that were removed from the form
                     questions_to_delete_ids = existing_question_ids - questions_to_keep
                     Question.objects.filter(id__in=questions_to_delete_ids, quiz=quiz).delete()
                                 
@@ -330,7 +304,7 @@ def edit_quiz(request, quiz_id):
                 except (json.JSONDecodeError, KeyError, ObjectDoesNotExist) as e:
                     print(f"JSON processing error: {e}")
                     messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
-                    raise # Rollback the transaction
+                    raise
         else:
             messages.error(request, "Please correct the form errors below.")
     else:
@@ -445,39 +419,56 @@ def delete_video(request, video_id):
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
 @login_required
-def quiz_report_pdf(request, attempt_id):
+def quiz_report_pdf_for_quiz(request, quiz_id):
+    """
+    Generates a PDF report for a specific quiz, including all student attempts.
+    """
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+
+    # Security check: Only the teacher of the quiz can generate this report
+    if request.user != quiz.teacher:
+        raise Http404
+
+    attempts = Attempt.objects.filter(quiz=quiz)
+    
+    # You can customize the context to include more data as needed.
+    context = {
+        'quiz': quiz,
+        'attempts': attempts,
+        'report_date': timezone.now(),
+        'request_user': request.user,
+    }
+    
+    pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+        content = f"attachment; filename='{filename}'"
+        response['Content-Disposition'] = content
+        return response
+    
+    return HttpResponse("Error generating PDF", status=500)
+    
+@login_required
+def quiz_report_pdf_for_attempt(request, attempt_id):
     """
     Generates a PDF report for a specific quiz attempt.
     """
     attempt = get_object_or_404(Attempt, pk=attempt_id)
     
-    # Check if the user is the owner of the attempt or the quiz teacher
     if request.user != attempt.user and request.user != attempt.quiz.teacher:
         raise Http404
 
-    # Get all student answers for this specific attempt
     student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
-    
-    # Create a dictionary for easy template lookup
-    answers_dict = {}
-    for student_answer in student_answers:
-        if student_answer.question.question_type == 'MC':
-            # Use the choice's text for MC questions
-            answers_dict[student_answer.question.id] = student_answer.selected_choice.text if student_answer.selected_choice else None
-        elif student_answer.question.question_type == 'SA':
-            # Use the text answer for SA questions
-            answers_dict[student_answer.question.id] = student_answer.text_answer
     
     context = {
         'quiz': attempt.quiz,
         'attempt': attempt,
         'student_answers': student_answers,
-        'user_answers': answers_dict,
         'report_date': timezone.now(),
         'request_user': request.user,
     }
     
-    # Render the PDF
     pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
