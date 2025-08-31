@@ -1,22 +1,17 @@
-# learnflow_ai/settings.py
 import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-**********************************'
-DEBUG = True
-# To fix the DisallowedHost error, we need to add the domain
-# 'learnflow-ai-0fdz.onrender.com' to the list of allowed hosts.
-ALLOWED_HOSTS = [
-    '127.0.0.1', 
-    'localhost',
-    'learnflow-ai-0fdz.onrender.com'
-    ]
+# 🔐 Security settings
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-# Application definition
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
+
+# 📦 Installed apps
 INSTALLED_APPS = [
-    'jazzmin',  # 🎷 Jazzmin admin theme
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -27,10 +22,14 @@ INSTALLED_APPS = [
     'video',
     'user',
     'book',
+    # Add your quiz app if needed
+    # 'quiz',
 ]
 
+# 🧱 Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ For static file serving on Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -41,6 +40,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'learnflow_ai.urls'
 
+# 🧠 Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -59,19 +59,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-# CORRECTED: This section is updated to use your Neon.tech PostgreSQL database.
-# Be sure to install the required library with: pip install psycopg2-binary
+# 🗄️ Database (Neon.tech)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_Irxs8L1cVhlW',
-        'HOST': 'ep-green-shape-aexq3vr8-pooler.c-2.us-east-2.aws.neon.tech',
-        'PORT': '5432', # 5432 is the default PostgreSQL port
+        'NAME': os.environ.get('DB_NAME', 'neondb'),
+        'USER': os.environ.get('DB_USER', 'neondb_owner'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
+# 🔐 Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -79,21 +79,23 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# 🌍 Localization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+# 📁 Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+# 🔐 Auth redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
-LOGOUT_REDIRECT_URL = 'user:login' # FIX: Added this to redirect to the correct login page
+LOGOUT_REDIRECT_URL = 'user:login'
 
-
-# JAZZMIN Settings - UI for the Django Admin
+# 🎷 Jazzmin Admin Customization
 JAZZMIN_SETTINGS = {
     "site_title": "PETER Admin",
     "site_header": "PETER Admin",
@@ -125,11 +127,10 @@ JAZZMIN_SETTINGS = {
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-
     "related_modal_active": False
 }
 
-# JAZZMIN UI Tweaks
+# 🎨 Jazzmin UI Tweaks
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,
@@ -168,3 +169,5 @@ JAZZMIN_UI_TWEAKS = {
         "submit": "btn-primary",
     }
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

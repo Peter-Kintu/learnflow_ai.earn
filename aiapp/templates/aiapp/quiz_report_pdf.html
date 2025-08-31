@@ -13,6 +13,7 @@
     </style>
 </head>
 <body>
+    {% load custom_filters %}
     <h1>Quiz Report: {{ quiz.title }}</h1>
     <p>Report for user: {{ user.username }}</p>
     <p>Score: {{ score }} / {{ total_questions }}</p>
