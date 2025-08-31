@@ -20,8 +20,8 @@ urlpatterns = [
     path('quizzes/create/', views.create_quiz, name='create_quiz'),
     path('quizzes/<int:quiz_id>/edit/', views.edit_quiz, name='edit_quiz'),
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
-    # This URL for the quiz report now correctly expects a quiz ID.
-    path('quizzes/report/<int:quiz_id>/', views.quiz_report, name='quiz_report'),
+    # This URL now correctly expects a quiz ID and calls a specific view function.
+    path('quizzes/report/<int:quiz_id>/', views.quiz_report_pdf_for_quiz, name='quiz_report_pdf_for_quiz'),
     
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
