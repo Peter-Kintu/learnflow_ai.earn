@@ -1,115 +1,226 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111827;
+            background-size: cover;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ quiz.title }}</h2>
-    <p class="text-gray-400 mb-4">{{ quiz.description }}</p>
-
-    <div class="flex items-center justify-between bg-slate-700 p-4 rounded-xl shadow-inner mb-6">
-        <div class="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer text-indigo-400 mr-2">
-                <path d="M10 2h4"/>
-                <path d="M12 14v-4"/>
-                <circle cx="12" cy="14" r="8"/>
-            </svg>
-            <span class="text-gray-400 font-medium">Time Remaining:</span>
-        </div>
-        <div id="countdown-timer" class="text-2xl font-bold text-indigo-400">
-            10:00
-        </div>
+<div class="max-w-4xl w-full mx-auto p-8 bg-slate-800 rounded-3xl shadow-2xl mt-10 mb-10 border border-slate-700">
+    <div id="quiz-container">
+        <!-- Quiz content will be rendered here by JavaScript -->
     </div>
-
-    <form id="quiz-form" method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}">
-        {% csrf_token %}
-        <div class="space-y-8">
-            {% for question in questions %}
-            <div class="bg-slate-700 p-6 rounded-xl shadow-inner question-block">
-                <h4 class="text-lg font-semibold text-gray-200 mb-4">{{ forloop.counter }}. {{ question.text }}</h4>
-                
-                {% if question.question_type == 'MC' %}
-                    <div class="space-y-3">
-                        {% for choice in question.choices.all %}
-                        <label class="flex items-center text-gray-200 cursor-pointer p-3 rounded-lg hover:bg-slate-600 transition-colors">
-                            <input type="radio" 
-                                   name="question_{{ question.id }}" 
-                                   value="{{ choice.id }}" 
-                                   class="form-radio text-indigo-500 mr-3">
-                            <span>{{ choice.text }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                {% elif question.question_type == 'SA' %}
-                    <div class="mt-4">
-                        <input type="text"
-                               name="question_{{ question.id }}"
-                               placeholder="Type your answer here..."
-                               class="w-full p-3 bg-slate-600 border border-slate-500 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
-                    </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="flex justify-end mt-8">
-            <button id="submit-button" type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
-                Submit Answers
-            </button>
-        </div>
-    </form>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const quizForm = document.getElementById('quiz-form');
-        const timerDisplay = document.getElementById('countdown-timer');
-        const submitButton = document.getElementById('submit-button');
-        const timerWarning = document.createElement('div');
-        timerWarning.className = 'text-center text-sm font-medium mt-4';
+    document.addEventListener('DOMContentLoaded', () => {
+        // Sample quiz data to make the file self-contained and runnable
+        const quizData = {
+            title: "General Knowledge Quiz",
+            description: "Test your knowledge on a variety of topics with these challenging questions.",
+            duration: 10 * 60, // 10 minutes in seconds
+            questions: [
+                {
+                    id: 1,
+                    text: "What is the capital of France?",
+                    question_type: 'MC',
+                    choices: [
+                        { id: 101, text: "Berlin" },
+                        { id: 102, text: "Madrid" },
+                        { id: 103, text: "Paris" },
+                        { id: 104, text: "Rome" }
+                    ]
+                },
+                {
+                    id: 2,
+                    text: "What is the square root of 64?",
+                    question_type: 'SA'
+                },
+                {
+                    id: 3,
+                    text: "Who wrote 'To Kill a Mockingbird'?",
+                    question_type: 'MC',
+                    choices: [
+                        { id: 301, text: "Harper Lee" },
+                        { id: 302, text: "Mark Twain" },
+                        { id: 303, text: "J.K. Rowling" },
+                        { id: 304, text: "Stephen King" }
+                    ]
+                },
+                {
+                    id: 4,
+                    text: "In which year did the first man walk on the moon?",
+                    question_type: 'SA'
+                }
+            ]
+        };
 
-        // Set the quiz duration in seconds (10 minutes)
-        let timeLeft = 10 * 60; 
+        const quizContainer = document.getElementById('quiz-container');
 
-        // Function to format time as MM:SS
+        // Function to render the quiz from the data
+        function renderQuiz() {
+            let quizHtml = `
+                <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ quiz.title }}</h2>
+                <p class="text-gray-400 mb-4">{{ quiz.description }}</p>
+
+                <div class="flex items-center justify-between bg-slate-700 p-4 rounded-xl shadow-inner mb-6">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer text-indigo-400 mr-2">
+                            <path d="M10 2h4"/>
+                            <path d="M12 14v-4"/>
+                            <circle cx="12" cy="14" r="8"/>
+                        </svg>
+                        <span class="text-gray-400 font-medium">Time Remaining:</span>
+                    </div>
+                    <div id="countdown-timer" class="text-2xl font-bold text-indigo-400">
+                        --:--
+                    </div>
+                </div>
+
+                <form id="quiz-form" action="#">
+                    <div class="space-y-8">
+                        ${quizData.questions.map((question, index) => `
+                            <div class="bg-slate-700 p-6 rounded-xl shadow-inner question-block">
+                                <h4 class="text-lg font-semibold text-gray-200 mb-4">${index + 1}. ${question.text}</h4>
+                                
+                                ${question.question_type === 'MC' ? `
+                                    <div class="space-y-3">
+                                        ${question.choices.map(choice => `
+                                            <label class="flex items-center text-gray-200 cursor-pointer p-3 rounded-lg hover:bg-slate-600 transition-colors duration-200 ease-in-out">
+                                                <input type="radio" 
+                                                    name="question_${question.id}" 
+                                                    value="${choice.id}" 
+                                                    class="form-radio h-5 w-5 text-indigo-500 bg-slate-600 border-slate-500 checked:bg-indigo-500 checked:ring-indigo-500 focus:ring-0 mr-3 transition-colors duration-200 ease-in-out">
+                                                <span>${choice.text}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+
+                                ${question.question_type === 'SA' ? `
+                                    <div class="mt-4">
+                                        <input type="text"
+                                            name="question_${question.id}"
+                                            placeholder="Type your answer here..."
+                                            class="w-full p-3 bg-slate-600 border border-slate-500 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-200 ease-in-out">
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex justify-end mt-8">
+                        <button id="submit-button" type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-200 ease-in-out shadow-lg font-semibold transform hover:scale-105">
+                            Submit Answers
+                        </button>
+                    </div>
+                </form>
+            `;
+            quizHtml = quizHtml.replace('{{ quiz.title }}', quizData.title);
+            quizHtml = quizHtml.replace('{{ quiz.description }}', quizData.description);
+            quizContainer.innerHTML = quizHtml;
+
+            // Start the timer after rendering the quiz
+            startTimer();
+            setupFormSubmission();
+        }
+
+        let timeLeft = quizData.duration;
+        let timerInterval;
+        let isSubmitting = false;
+
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        // Function to update the timer and handle submission
-        function updateTimer() {
-            timeLeft--;
+        function startTimer() {
+            const timerDisplay = document.getElementById('countdown-timer');
+            const submitButton = document.getElementById('submit-button');
+
+            if (!timerDisplay || !submitButton) return;
+
             timerDisplay.textContent = formatTime(timeLeft);
 
-            // Change color and add a warning message when time is running low (last 60 seconds)
-            if (timeLeft <= 60 && !timerDisplay.classList.contains('text-red-500')) {
-                timerDisplay.classList.remove('text-indigo-400');
-                timerDisplay.classList.add('text-red-500');
-                timerWarning.textContent = 'Hurry! Only 60 seconds remaining.';
-                timerWarning.classList.add('text-red-400');
-                quizForm.parentNode.insertBefore(timerWarning, quizForm.nextSibling);
-            }
+            timerInterval = setInterval(() => {
+                if (isSubmitting) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
 
-            // Automatically submit the form when time runs out
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                timerDisplay.textContent = 'Time\'s up!';
-                submitButton.textContent = 'Time Expired';
-                submitButton.disabled = true;
-                submitButton.classList.add('bg-gray-500', 'cursor-not-allowed', 'hover:bg-gray-500');
-                submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                timerWarning.textContent = 'Your answers have been automatically submitted.';
-                timerWarning.classList.add('text-green-400'); // Add success color
-                
-                // Submit the form
-                quizForm.submit();
+                if (timeLeft <= 60) {
+                    timerDisplay.classList.remove('text-indigo-400');
+                    timerDisplay.classList.add('text-red-500');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.textContent = 'Time\'s up!';
+                    submitButton.textContent = 'Submitting...';
+                    submitButton.disabled = true;
+                    submitButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+                    submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    // Automatically submit the form
+                    document.getElementById('quiz-form').submit();
+                }
+            }, 1000);
+        }
+
+        function setupFormSubmission() {
+            const quizForm = document.getElementById('quiz-form');
+            if (quizForm) {
+                quizForm.addEventListener('submit', (event) => {
+                    event.preventDefault(); // Prevent default form submission
+                    isSubmitting = true;
+                    const submitButton = document.getElementById('submit-button');
+                    submitButton.textContent = 'Submitting...';
+                    submitButton.disabled = true;
+                    submitButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+                    submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+
+                    // Here you would normally send the data to a server
+                    // For this example, we'll just log the answers
+                    const formData = new FormData(quizForm);
+                    const answers = {};
+                    for (let [name, value] of formData.entries()) {
+                        answers[name] = value;
+                    }
+                    console.log('Quiz submitted! Answers:', answers);
+
+                    // Simulate a network delay before showing a thank you message
+                    setTimeout(() => {
+                        quizContainer.innerHTML = `
+                            <div class="text-center p-12">
+                                <h2 class="text-4xl font-bold text-green-400 mb-4">Quiz Submitted!</h2>
+                                <p class="text-gray-300">Thank you for completing the quiz. Your results will be processed shortly.</p>
+                            </div>
+                        `;
+                    }, 1500);
+                });
             }
         }
 
-        // Update the timer every second
-        const timerInterval = setInterval(updateTimer, 1000);
+        // Initial render
+        renderQuiz();
     });
 </script>
-{% endblock %}
+</body>
+</html>

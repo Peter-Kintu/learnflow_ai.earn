@@ -129,12 +129,22 @@ def quiz_results(request, attempt_id):
         attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
         passed = attempt.score >= (attempt.total_questions * 0.5)
 
+        # Calculate the percentage and the SVG stroke-dashoffset here
+        if attempt.total_questions > 0:
+            score_percentage = attempt.score / attempt.total_questions
+            score_offset = 339.29 * (1 - score_percentage)
+        else:
+            score_percentage = 0
+            score_offset = 339.29 # Full circle offset if no questions
+
         return render(request, 'aiapp/quiz_results.html', {
             'quiz': attempt.quiz,
             'score': attempt.score,
             'total_questions': attempt.total_questions,
             'attempt_id': attempt.id,
             'passed': passed,
+            'score_percentage': score_percentage,
+            'score_offset': score_offset,
         })
     except Exception as e:
         print("Error rendering quiz results:", str(e))
@@ -303,7 +313,7 @@ def edit_quiz(request, quiz_id):
 
                     questions_to_delete_ids = existing_question_ids - questions_to_keep
                     Question.objects.filter(id__in=questions_to_delete_ids, quiz=quiz).delete()
-                                
+                                        
                     messages.success(request, f'"{quiz.title}" has been updated successfully!')
                     return redirect('aiapp:teacher_quiz_dashboard')
 
