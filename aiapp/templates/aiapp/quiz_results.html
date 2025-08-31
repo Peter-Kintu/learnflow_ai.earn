@@ -3,130 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Results</title>
+    <title>Quiz Results - {{ quiz.title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background: #111827;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
-        .correct-answer {
+        .correct-score {
             color: #16a34a;
         }
-        .incorrect-answer {
+        .incorrect-score {
             color: #dc2626;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-4">
+    <div class="container mx-auto max-w-2xl mt-8 p-6 bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-4">Quiz Results</h1>
+        <h2 class="text-2xl font-bold text-center mb-6">{{ quiz.title }}</h2>
 
-<div class="max-w-4xl w-full mx-auto p-8 bg-slate-800 rounded-3xl shadow-2xl mt-10 mb-10 border border-slate-700">
-    <div id="results-container">
-        <!-- Results will be rendered here by JavaScript -->
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Sample data to make the file self-contained and runnable
-        const quizResultsData = {
-            quiz: {
-                title: "General Knowledge Quiz"
-            },
-            score: 3,
-            total_questions: 4,
-            questions: [
-                {
-                    text: "What is the capital of France?",
-                    user_answer: "Paris",
-                    correct_answer: "Paris",
-                    is_correct: true
-                },
-                {
-                    text: "What is the square root of 64?",
-                    user_answer: "7",
-                    correct_answer: "8",
-                    is_correct: false
-                },
-                {
-                    text: "Who wrote 'To Kill a Mockingbird'?",
-                    user_answer: "Harper Lee",
-                    correct_answer: "Harper Lee",
-                    is_correct: true
-                },
-                {
-                    text: "In which year did the first man walk on the moon?",
-                    user_answer: "1969",
-                    correct_answer: "1969",
-                    is_correct: true
-                }
-            ]
-        };
-
-        function renderResults() {
-            const container = document.getElementById('results-container');
-            const { quiz, score, total_questions, questions } = quizResultsData;
-            const passed = (score / total_questions) >= 0.7; // Pass/fail based on 70%
-            const scorePercentage = (score / total_questions);
-            const strokeDashoffset = 339.29 * (1 - scorePercentage);
-
-            const resultsHtml = `
-                <div class="text-center p-6 bg-slate-800 rounded-3xl">
-                    <h2 class="text-3xl font-extrabold text-gray-200 mb-2">Quiz Results</h2>
-                    <p class="text-xl font-bold text-gray-300 mb-6">${quiz.title}</p>
-                    
-                    <div class="flex items-center justify-center mb-8">
-                        <div class="relative w-32 h-32 md:w-40 md:h-40">
-                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                                <circle class="text-gray-700" stroke-width="12" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
-                                <circle class="text-indigo-400 transition-all duration-700" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="${strokeDashoffset}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-4xl md:text-5xl font-extrabold text-indigo-400">${score}</span>
-                                <span class="text-lg md:text-xl font-semibold text-slate-400">/ ${total_questions}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center text-lg font-semibold mb-6">
-                        ${passed ? `<span class="text-emerald-600">You passed! Great job!</span>` : `<span class="text-red-600">You did not pass. Try again!</span>`}
-                    </div>
-
-                    <div class="space-y-4 text-left">
-                        ${questions.map(q => `
-                            <div class="p-4 rounded-xl shadow-inner ${q.is_correct ? 'bg-slate-700' : 'bg-red-900/50'}">
-                                <h4 class="text-lg font-semibold text-gray-200 mb-2">${q.text}</h4>
-                                <p class="text-sm font-medium">
-                                    Your Answer: <span class="${q.is_correct ? 'correct-answer' : 'incorrect-answer'}">${q.user_answer}</span>
-                                </p>
-                                <p class="text-sm font-medium">
-                                    Correct Answer: <span class="correct-answer">${q.correct_answer}</span>
-                                </p>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="flex justify-center mt-8 space-x-4">
-                        <button onclick="window.location.reload();" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                            Play Again
-                        </button>
-                        <!-- These links are placeholders as they require a backend -->
-                        <a href="#" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" target="_blank">
-                            Download Report
-                        </a>
-                    </div>
+        <div class="flex items-center justify-center mb-8">
+            <div class="relative w-32 h-32 md:w-40 md:h-40">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                    <circle class="text-gray-300 dark:text-gray-600" stroke-width="12" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ 339.29 * (1 - score|floatformat:2 / total_questions) }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-4xl md:text-5xl font-extrabold text-blue-500">{{ score }}</span>
+                    <span class="text-lg md:text-xl font-semibold text-slate-500 dark:text-slate-400">/ {{ total_questions }}</span>
                 </div>
-            `;
-            container.innerHTML = resultsHtml;
-        }
+            </div>
+        </div>
 
-        renderResults();
-    });
-</script>
+        <div class="text-center text-lg font-semibold mb-6">
+            {% if passed %}
+                <span class="text-emerald-600">You passed! Great job!</span>
+            {% else %}
+                <span class="text-red-600">You did not pass. Try again!</span>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'aiapp:review_answers' attempt_id=attempt_id %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Review Answers
+            </a>
+            <a href="{% url 'aiapp:quiz_report_pdf_for_attempt' attempt_id=attempt_id %}" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" target="_blank">
+                Download Report
+            </a>
+        </div>
+    </div>
 </body>
 </html>
