@@ -4,87 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LearnFlow AI{% endblock %}</title>
-    <!-- Use Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Style for the responsive menu button */
-        #mobile-menu-button {
+        /* Mobile menu specific styles for a clean, full-width drawer */
+        #mobile-menu {
             display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #1e293b; /* slate-800 */
+            padding: 1rem 0;
+            border-top: 1px solid #334155; /* slate-700 */
         }
-        @media (max-width: 768px) {
-            #mobile-menu-button {
-                display: block;
-            }
-            #nav-links {
+        #mobile-menu.active {
+            display: block;
+        }
+        
+        /* Hidden on desktop */
+        #mobile-menu-button {
+            display: block;
+        }
+        @media (min-width: 768px) {
+            #mobile-menu-button, #mobile-menu {
                 display: none;
             }
-            #nav-links.active {
+            #nav-links {
                 display: flex;
-                flex-direction: column;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background-color: #1e293b; /* slate-800 */
-                padding: 1rem 0;
-                border-top: 1px solid #334155; /* slate-700 */
             }
         }
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200 min-h-screen flex flex-col">
 
-    <!-- Navigation Bar -->
     <nav class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center relative">
-            <!-- Logo/Home Link -->
             <a href="{% url 'aiapp:home' %}" class="text-2xl font-bold text-indigo-500">LearnFlow AI</a>
 
-            <!-- Mobile Menu Button -->
-            <button id="mobile-menu-button" class="text-gray-400 focus:outline-none">
+            <button id="mobile-menu-button" class="text-gray-400 focus:outline-none md:hidden">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
                     <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
                 </svg>
             </button>
 
-            <!-- Nav Links (Desktop) -->
-            <div id="nav-links" class="md:flex items-center space-x-6">
-                <!-- Links for all users -->
+            <div id="nav-links" class="hidden md:flex items-center md:space-x-6">
                 <a href="{% url 'video:video_list' %}" class="text-gray-300 hover:text-white transition-colors">Videos</a>
                 <a href="{% url 'aiapp:quiz_list' %}" class="text-gray-300 hover:text-white transition-colors">Quizzes</a>
-                <!-- New button for the books app -->
                 <a href="{% url 'book:book_list' %}" class="text-gray-300 hover:text-white transition-colors">Books</a>
                 
                 {% if user.is_authenticated %}
-                    <!-- Links for authenticated users -->
-                    <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
-                    <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white transition-colors">Create Quiz</a>
-                    <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white transition-colors">My Profile</a>
-                    
-                    <!-- FIX: Changed the logout link to a form with a POST method -->
-                    <form action="{% url 'user:logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm font-semibold">
-                            Logout
-                        </button>
-                    </form>
+                <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
+                <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white transition-colors">Create Quiz</a>
+                <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white transition-colors">My Profile</a>
+                
+                <form action="{% url 'user:logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm font-semibold">
+                        Logout
+                    </button>
+                </form>
                 {% else %}
-                    <!-- Links for non-authenticated users -->
-                    <a href="{% url 'user:login' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold">
-                        Login
-                    </a>
+                <a href="{% url 'user:login' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold">
+                    Login
+                </a>
                 {% endif %}
             </div>
         </div>
+
+        <div id="mobile-menu" class="md:hidden mt-2 p-4">
+            <div class="space-y-2">
+                <a href="{% url 'video:video_list' %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">Videos</a>
+                <a href="{% url 'aiapp:quiz_list' %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">Quizzes</a>
+                <a href="{% url 'book:book_list' %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">Books</a>
+            </div>
+            {% if user.is_authenticated %}
+            <div class="mt-4 pt-4 border-t border-slate-700 space-y-2">
+                <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">My Dashboard</a>
+                <a href="{% url 'aiapp:create_quiz' %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">Create Quiz</a>
+                <a href="{% url 'aiapp:user_profile' user.id %}" class="block py-2 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-slate-700 transition-colors">My Profile</a>
+                
+                <form action="{% url 'user:logout' %}" method="post" class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm font-semibold text-center">
+                        Logout
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="mt-4 pt-4 border-t border-slate-700 space-y-2">
+                <a href="{% url 'user:login' %}" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-center block">
+                    Login
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </nav>
 
-    <!-- Main Content Area -->
     <main class="container mx-auto p-4 flex-grow">
-        <!-- Message Display Area -->
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -96,17 +116,15 @@
         {% endif %}
 
         {% block content %}
-        <!-- Content from other templates will be inserted here -->
         {% endblock %}
     </main>
 
     <script>
-        // JavaScript for mobile menu toggle
         const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const navLinks = document.getElementById('nav-links');
+        const mobileMenu = document.getElementById('mobile-menu');
 
         mobileMenuButton.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
         });
     </script>
 </body>
