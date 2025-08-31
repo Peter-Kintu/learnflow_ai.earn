@@ -7,12 +7,14 @@ from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.template.loader import get_template
 from django.db import transaction
+from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
 
 # Import models and forms from both aiapp and video apps
-from .models import Quiz, Question, Choice, StudentAnswer
+from .models import Quiz, Question, Choice, StudentAnswer, Attempt
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
@@ -56,6 +58,7 @@ def quiz_detail(request, quiz_id):
     return render(request, 'aiapp/quiz_detail.html', {'quiz': quiz})
 
 @login_required
+@transaction.atomic
 def quiz_attempt(request, quiz_id):
     """
     Handles the student's attempt at a quiz.
@@ -72,6 +75,14 @@ def quiz_attempt(request, quiz_id):
         score = 0
         total_questions = questions.count()
 
+        # Create a new Attempt object to store this session's results
+        new_attempt = Attempt.objects.create(
+            user=request.user,
+            quiz=quiz,
+            score=0,
+            total_questions=total_questions
+        )
+
         for question in questions:
             is_correct = False
             
@@ -79,17 +90,18 @@ def quiz_attempt(request, quiz_id):
                 submitted_choice_id = request.POST.get(f'question_{question.id}')
                 if submitted_choice_id:
                     try:
-                        selected_choice = get_object_or_404(Choice, pk=int(submitted_choice_id))
+                        selected_choice = Choice.objects.get(pk=int(submitted_choice_id))
                         is_correct = selected_choice.is_correct
                         StudentAnswer.objects.create(
                             student=request.user,
                             question=question,
                             selected_choice=selected_choice,
-                            is_correct=is_correct
+                            is_correct=is_correct,
+                            attempt=new_attempt
                         )
-                    except (ValueError, Choice.DoesNotExist):
-                        messages.error(request, f'An invalid choice was submitted for question: {question.text[:20]}...')
-                        continue
+                    except (ValueError, ObjectDoesNotExist):
+                        # Handle invalid or missing choices gracefully
+                        pass
             
             elif question.question_type == 'SA':
                 submitted_answer_text = request.POST.get(f'question_{question.id}')
@@ -100,37 +112,64 @@ def quiz_attempt(request, quiz_id):
                         student=request.user,
                         question=question,
                         text_answer=submitted_answer_text,
-                        is_correct=is_correct
+                        is_correct=is_correct,
+                        attempt=new_attempt
                     )
             
             if is_correct:
                 score += 1
         
-        request.session['quiz_score'] = score
-        request.session['quiz_total_questions'] = total_questions
-        return redirect('aiapp:quiz_results', quiz_id=quiz.id)
+        # Update the score on the new Attempt object
+        new_attempt.score = score
+        new_attempt.save()
+
+        return redirect('aiapp:quiz_results', attempt_id=new_attempt.id)
 
     return render(request, 'aiapp/quiz_attempt.html', {'quiz': quiz, 'questions': questions})
 
 @login_required
-def quiz_results(request, quiz_id):
+def quiz_results(request, attempt_id):
     """
-    Displays the results of a quiz attempt.
+    Displays the results of a specific quiz attempt.
     """
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
-    
-    score = request.session.pop('quiz_score', None)
-    total_questions = request.session.pop('quiz_total_questions', None)
-    
-    if score is None or total_questions is None:
-        messages.warning(request, "Quiz results not found. Please attempt the quiz again.")
-        return redirect('aiapp:quiz_detail', quiz_id=quiz.id)
+    attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
     
     return render(request, 'aiapp/quiz_results.html', {
-        'quiz': quiz,
-        'score': score,
-        'total_questions': total_questions
+        'quiz': attempt.quiz,
+        'score': attempt.score,
+        'total_questions': attempt.total_questions,
+        'attempt_id': attempt.id, # Pass attempt_id for "Review Answers" link
     })
+
+@login_required
+def quiz_review(request, attempt_id):
+    """
+    Displays a detailed review of a specific quiz attempt, showing correct and incorrect answers.
+    """
+    attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
+    student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
+    
+    questions_and_answers = []
+    for q in attempt.quiz.questions.all():
+        try:
+            student_answer = student_answers.get(question=q)
+            questions_and_answers.append({
+                'question': q,
+                'student_answer': student_answer,
+            })
+        except ObjectDoesNotExist:
+            # Handle un-answered questions
+            questions_and_answers.append({
+                'question': q,
+                'student_answer': None,
+            })
+
+    context = {
+        'attempt': attempt,
+        'questions_and_answers': questions_and_answers
+    }
+    return render(request, 'aiapp/quiz_review.html', context)
+
 
 @login_required
 @transaction.atomic
@@ -152,11 +191,10 @@ def create_quiz(request):
                     questions_list = json.loads(questions_data)
                     for q_data in questions_list:
                         question_text = q_data.get('text')
-                        question_type = q_data.get('question_type')
-
-                        # Skip empty questions
                         if not question_text:
                             continue
+
+                        question_type = q_data.get('question_type', 'MC') # Default to MC if type is missing
                         
                         question_instance = Question.objects.create(
                             quiz=quiz,
@@ -175,25 +213,24 @@ def create_quiz(request):
                                     )
                         elif question_type == 'SA':
                             correct_answer_text = q_data.get('correct_answer_text')
-                            question_instance.correct_answer_text = correct_answer_text
-                            question_instance.save()
+                            if correct_answer_text:
+                                question_instance.correct_answer_text = correct_answer_text
+                                question_instance.save()
 
                     messages.success(request, f'"{quiz.title}" has been created successfully!')
-                    return redirect('aiapp:quiz_list')
+                    return redirect('aiapp:teacher_quiz_dashboard')
 
                 except (json.JSONDecodeError, KeyError) as e:
-                    # Log the error for debugging
                     print(f"JSON processing error: {e}")
                     messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
-                    # Rollback the transaction to delete the created quiz and any related objects
-                    raise # re-raise the exception to trigger the atomic block's rollback
+                    # Re-raise to trigger the atomic block's rollback
+                    raise
         else:
             messages.error(request, "Please correct the form errors below.")
     else:
         quiz_form = QuizForm()
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
-
 
 @login_required
 def teacher_quiz_dashboard(request):
@@ -224,23 +261,37 @@ def edit_quiz(request, quiz_id):
                 try:
                     questions_list = json.loads(questions_data)
                     
-                    # Delete existing questions and choices to avoid duplicates.
-                    quiz.questions.all().delete()
-                    
+                    # Get existing question IDs to find which ones were deleted
+                    existing_question_ids = set(quiz.questions.values_list('id', flat=True))
+                    questions_to_keep = set()
+
                     for q_data in questions_list:
+                        question_id = q_data.get('id')
                         question_text = q_data.get('text')
-                        question_type = q_data.get('question_type')
-                        
                         if not question_text:
                             continue
                         
-                        question_instance = Question.objects.create(
-                            quiz=quiz,
-                            text=question_text,
-                            question_type=question_type,
-                        )
+                        question_type = q_data.get('question_type', 'MC')
                         
+                        if question_id and str(question_id).isdigit():
+                            # This is an existing question, update it
+                            question_instance = Question.objects.get(pk=question_id, quiz=quiz)
+                            question_instance.text = question_text
+                            question_instance.question_type = question_type
+                            
+                            # Add its ID to the set of questions to keep
+                            questions_to_keep.add(int(question_id))
+                        else:
+                            # This is a new question, create it
+                            question_instance = Question.objects.create(
+                                quiz=quiz,
+                                text=question_text,
+                                question_type=question_type,
+                            )
+                        
+                        # Handle choices for MC and SA questions
                         if question_type == 'MC':
+                            question_instance.choice_set.all().delete() # Clear existing choices
                             choices_data = q_data.get('choices', [])
                             for c_data in choices_data:
                                 if c_data.get('text'):
@@ -249,15 +300,28 @@ def edit_quiz(request, quiz_id):
                                         text=c_data['text'],
                                         is_correct=c_data.get('isCorrect', False)
                                     )
-                        elif question_type == 'SA':
-                            correct_answer_text = q_data.get('correct_answer_text')
-                            question_instance.correct_answer_text = correct_answer_text
+                            # Clear SA field to avoid conflicts
+                            question_instance.correct_answer_text = None
                             question_instance.save()
+                        elif question_type == 'SA':
+                            # For SA, update the correct_answer_text directly on the question
+                            correct_answer_text = q_data.get('correct_answer_text')
+                            if correct_answer_text:
+                                question_instance.correct_answer_text = correct_answer_text
+                            else:
+                                question_instance.correct_answer_text = ""
+                            question_instance.save()
+                            # Clear choices to avoid conflicts
+                            question_instance.choice_set.all().delete()
+
+                    # Delete questions that were removed from the form
+                    questions_to_delete_ids = existing_question_ids - questions_to_keep
+                    Question.objects.filter(id__in=questions_to_delete_ids, quiz=quiz).delete()
                             
                     messages.success(request, f'"{quiz.title}" has been updated successfully!')
                     return redirect('aiapp:teacher_quiz_dashboard')
 
-                except (json.JSONDecodeError, KeyError) as e:
+                except (json.JSONDecodeError, KeyError, ObjectDoesNotExist) as e:
                     print(f"JSON processing error: {e}")
                     messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
                     raise # Rollback the transaction
@@ -375,20 +439,29 @@ def delete_video(request, video_id):
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
 @login_required
-def quiz_report(request):
+def quiz_report(request, quiz_id):
     """
-    Generates a PDF report of all quizzes.
+    Generates a PDF report for a specific quiz.
     """
-    quizzes = Quiz.objects.all().order_by('-created_at')
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    
+    # Get all attempts for this quiz
+    attempts = Attempt.objects.filter(quiz=quiz)
+    
     context = {
-        'quizzes': quizzes,
-        'request_user': request.user
+        'quiz': quiz,
+        'attempts': attempts,
+        'request_user': request.user,
+        'report_date': timezone.now(),
     }
+    
+    # Render the PDF
     pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = "quiz_report.pdf"
-        content = "attachment; filename='%s'" %(filename)
+        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+        content = f"attachment; filename='{filename}'"
         response['Content-Disposition'] = content
         return response
+    
     return HttpResponse("Error generating PDF", status=500)
