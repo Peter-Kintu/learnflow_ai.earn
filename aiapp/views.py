@@ -14,7 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from xhtml2pdf import pisa
 
 # Import models and forms from both aiapp and video apps
-from .models import Quiz, Question, Choice, StudentAnswer, Attempt
+from .models import Quiz, Question, Choice, StudentAnswer, Attempt, MultipleChoiceQuestion
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
@@ -138,14 +138,46 @@ def quiz_results(request, attempt_id):
     """
     Displays the results of a specific quiz attempt.
     """
-    attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
-    
-    return render(request, 'aiapp/quiz_results.html', {
-        'quiz': attempt.quiz,
-        'score': attempt.score,
-        'total_questions': attempt.total_questions,
-        'attempt_id': attempt.id, # Pass attempt_id for "Review Answers" link
-    })
+    try:
+        attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
+        answers = StudentAnswer.objects.filter(attempt=attempt)
+
+        detailed_answers = []
+        for answer in answers:
+            correct_answer_display = ""
+            if answer.question.question_type == 'MC':
+                # Safely get the correct option for multiple choice questions
+                try:
+                    mc_question = MultipleChoiceQuestion.objects.get(question=answer.question)
+                    correct_choice = mc_question.choice_set.get(is_correct=True)
+                    correct_answer_display = correct_choice.text
+                except (ObjectDoesNotExist, AttributeError):
+                    correct_answer_display = "N/A"
+            else: # SA questions
+                correct_answer_display = answer.question.correct_answer_text
+
+            detailed_answers.append({
+                'question': answer.question,
+                'user_answer': answer.text_answer if answer.text_answer else (answer.selected_choice.text if answer.selected_choice else "No Answer"),
+                'is_correct': answer.is_correct,
+                'correct_answer_display': correct_answer_display
+            })
+
+        # Calculate the 'passed' status in the view
+        passed = attempt.score >= (attempt.total_questions / 2)
+
+        context = {
+            'quiz': attempt.quiz,
+            'score': attempt.score,
+            'total_questions': attempt.total_questions,
+            'attempt_id': attempt.id,
+            'passed': passed,
+            'answers': detailed_answers,
+        }
+        return render(request, 'aiapp/quiz_results.html', context)
+    except Exception as e:
+        print(f"Error in quiz_results view: {str(e)}")
+        return render(request, 'aiapp/error.html', {'message': 'Something went wrong displaying the results.'}, status=500)
 
 @login_required
 def quiz_review(request, attempt_id):
@@ -175,7 +207,6 @@ def quiz_review(request, attempt_id):
         'questions_and_answers': questions_and_answers
     }
     return render(request, 'aiapp/quiz_review.html', context)
-
 
 @login_required
 @transaction.atomic
@@ -445,19 +476,37 @@ def delete_video(request, video_id):
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
 @login_required
-def quiz_report(request, quiz_id):
+def quiz_report_pdf(request, attempt_id):
     """
-    Generates a PDF report for a specific quiz.
+    Generates a PDF report for a specific quiz attempt.
     """
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
-    
-    # Get all attempts for this quiz
-    attempts = Attempt.objects.filter(quiz=quiz)
+    attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
+    student_answers = StudentAnswer.objects.filter(attempt=attempt)
+
+    detailed_answers = []
+    for answer in student_answers:
+        correct_answer_display = ""
+        if answer.question.question_type == 'MC':
+            try:
+                mc_question = MultipleChoiceQuestion.objects.get(question=answer.question)
+                correct_choice = mc_question.choice_set.get(is_correct=True)
+                correct_answer_display = correct_choice.text
+            except (ObjectDoesNotExist, AttributeError):
+                correct_answer_display = "N/A"
+        else:
+            correct_answer_display = answer.question.correct_answer_text
+
+        detailed_answers.append({
+            'question_text': answer.question.text,
+            'user_answer': answer.text_answer if answer.text_answer else (answer.selected_choice.text if answer.selected_choice else "No Answer"),
+            'is_correct': answer.is_correct,
+            'correct_answer_display': correct_answer_display
+        })
     
     context = {
-        'quiz': quiz,
-        'attempts': attempts,
-        'request_user': request.user,
+        'quiz': attempt.quiz,
+        'attempt': attempt,
+        'student_answers': detailed_answers,
         'report_date': timezone.now(),
     }
     
@@ -465,7 +514,7 @@ def quiz_report(request, quiz_id):
     pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+        filename = f"{attempt.quiz.title.replace(' ', '_')}_{attempt.id}_report.pdf"
         content = f"attachment; filename='{filename}'"
         response['Content-Disposition'] = content
         return response

@@ -14,6 +14,12 @@
         .container {
             max-width: 600px;
         }
+        .correct-answer {
+            color: #4ade80; /* green-400 */
+        }
+        .incorrect-answer {
+            color: #f87171; /* red-400 */
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200 min-h-screen flex items-center justify-center">
@@ -42,6 +48,31 @@
             </p>
         {% endif %}
 
+        {% if answers %}
+            <div class="mt-8 pt-6 border-t border-slate-700">
+                <h3 class="text-2xl font-bold text-slate-200 mb-4">Detailed Breakdown</h3>
+                {% for answer in answers %}
+                    <div class="mb-4 p-4 rounded-lg bg-slate-700">
+                        <p class="font-bold text-slate-300">{{ forloop.counter }}. {{ answer.question.text }}</p>
+                        <p class="text-sm mt-1">
+                            Your Answer: 
+                            <span class="{% if answer.is_correct %}correct-answer{% else %}incorrect-answer{% endif %}">
+                                "{{ answer.user_answer }}"
+                            </span>
+                        </p>
+                        <p class="text-sm mt-1">
+                            Correct Answer: 
+                            <span class="correct-answer">
+                                "{{ answer.correct_answer_display }}"
+                            </span>
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-slate-400 text-center mt-6">No answers submitted for this quiz attempt.</p>
+        {% endif %}
+
         <div class="mt-8 flex justify-center space-x-4">
             <a href="{% url 'aiapp:quiz_list' %}" class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-full hover:bg-indigo-700 transition-colors shadow-sm">
                 Back to Quizzes
@@ -49,8 +80,8 @@
             <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="px-6 py-3 bg-gray-600 text-white font-medium rounded-full hover:bg-gray-700 transition-colors shadow-sm">
                 My Dashboard
             </a>
-            <a href="{% url 'aiapp:quiz_report_pdf' attempt_id %}" class="px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors shadow-sm">
-                Download Report
+            <a href="{% url 'aiapp:review_answers' attempt_id %}" class="px-6 py-3 bg-orange-600 text-white font-medium rounded-full hover:bg-orange-700 transition-colors shadow-sm">
+                Review Answers
             </a>
         </div>
     </div>
