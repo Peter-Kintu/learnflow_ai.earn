@@ -39,9 +39,9 @@
                         <a href="{% url 'aiapp:edit_quiz' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
                             Edit
                         </a>
-                        <a href="{% url 'aiapp:quiz_report' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
-                            Reports
-                        </a>
+                        <a href="{% url 'aiapp:quiz_report_pdf' attempt_id %}" class="px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors shadow-sm">
+                         Download Report
+                      </a>
                         <a href="{% url 'aiapp:delete_quiz' quiz.id %}" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm">
                             Delete
                         </a>
