@@ -13,15 +13,17 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/', views.quiz_detail, name='quiz_detail'),
     path('quizzes/<int:quiz_id>/attempt/', views.quiz_attempt, name='quiz_attempt'),
     path('quizzes/results/<int:attempt_id>/', views.quiz_results, name='quiz_results'),
-    path('quizzes/review/<int:attempt_id>/', views.quiz_review, name='quiz_review'),
+    path('quizzes/review/<int:attempt_id>/', views.quiz_review, name='review_answers'),
     
     # Teacher Quiz Management URLs
     path('quizzes/dashboard/', views.teacher_quiz_dashboard, name='teacher_quiz_dashboard'),
     path('quizzes/create/', views.create_quiz, name='create_quiz'),
     path('quizzes/<int:quiz_id>/edit/', views.edit_quiz, name='edit_quiz'),
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
-    # This URL now correctly expects a quiz ID and calls a specific view function.
-    path('quizzes/report/<int:quiz_id>/', views.quiz_report_pdf_for_quiz, name='quiz_report_pdf_for_quiz'),
+    # This URL for the quiz report now correctly expects a quiz ID.
+    path('quizzes/report/quiz/<int:quiz_id>/', views.quiz_report_pdf_for_quiz, name='quiz_report_pdf_for_quiz'),
+    # This URL is needed for the "Download Report" button on the results page.
+    path('quizzes/report/attempt/<int:attempt_id>/', views.quiz_report_pdf_for_attempt, name='quiz_report_pdf_for_attempt'),
     
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),

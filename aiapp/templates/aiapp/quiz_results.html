@@ -3,88 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Results - {{ quiz.title|default:"Untitled Quiz" }}</title>
+    <title>Quiz Results - {{ quiz.title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9; /* slate-100 */
         }
-        .container {
-            max-width: 600px;
+        .correct-score {
+            color: #16a34a;
         }
-        .correct-answer {
-            color: #4ade80; /* green-400 */
-        }
-        .incorrect-answer {
-            color: #f87171; /* red-400 */
+        .incorrect-score {
+            color: #dc2626;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-gray-200 min-h-screen flex items-center justify-center">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-4">
+    <div class="container mx-auto max-w-2xl mt-8 p-6 bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-4">Quiz Results</h1>
+        <h2 class="text-2xl font-bold text-center mb-6">{{ quiz.title }}</h2>
 
-    <div class="container mx-auto p-8 bg-slate-800 rounded-2xl shadow-xl">
-        <h1 class="text-4xl font-extrabold text-indigo-500 mb-2 text-center">Quiz Results</h1>
-        <h2 class="text-xl font-semibold text-slate-300 mb-6 text-center">
-            <span class="font-semibold text-white">{{ quiz.title|default:"Untitled Quiz" }}</span>
-        </h2>
-        
-        <div class="text-center mb-6">
-            <p class="text-3xl font-bold mb-1">Your Score: <span class="text-indigo-400">{{ score }} / {{ total_questions }}</span></p>
+        <div class="flex items-center justify-center mb-8">
+            <div class="relative w-32 h-32 md:w-40 md:h-40">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                    <circle class="text-gray-300 dark:text-gray-600" stroke-width="12" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ 339.29 * (1 - score|floatformat:2 / total_questions|floatformat:2) }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-4xl md:text-5xl font-extrabold text-blue-500">{{ score }}</span>
+                    <span class="text-lg md:text-xl font-semibold text-slate-500 dark:text-slate-400">/ {{ total_questions }}</span>
+                </div>
+            </div>
         </div>
 
-        {% if score == total_questions %}
-            <p class="text-green-400 font-semibold text-center text-lg">
-                Congratulations! You got a perfect score.
-            </p>
-        {% elif passed %}
-            <p class="text-yellow-400 font-semibold text-center text-lg">
-                Well done! You passed the quiz.
-            </p>
-        {% else %}
-            <p class="text-red-400 font-semibold text-center text-lg">
-                Keep studying! You can do better next time.
-            </p>
-        {% endif %}
+        <div class="text-center text-lg font-semibold mb-6">
+            {% if passed %}
+                <span class="text-emerald-600">You passed! Great job!</span>
+            {% else %}
+                <span class="text-red-600">You did not pass. Try again!</span>
+            {% endif %}
+        </div>
 
-        {% if answers %}
-            <div class="mt-8 pt-6 border-t border-slate-700">
-                <h3 class="text-2xl font-bold text-slate-200 mb-4">Detailed Breakdown</h3>
-                {% for answer in answers %}
-                    <div class="mb-4 p-4 rounded-lg bg-slate-700">
-                        <p class="font-bold text-slate-300">{{ forloop.counter }}. {{ answer.question.text }}</p>
-                        <p class="text-sm mt-1">
-                            Your Answer: 
-                            <span class="{% if answer.is_correct %}correct-answer{% else %}incorrect-answer{% endif %}">
-                                "{{ answer.user_answer }}"
-                            </span>
-                        </p>
-                        <p class="text-sm mt-1">
-                            Correct Answer: 
-                            <span class="correct-answer">
-                                "{{ answer.correct_answer_display }}"
-                            </span>
-                        </p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-slate-400 text-center mt-6">No answers submitted for this quiz attempt.</p>
-        {% endif %}
-
-        <div class="mt-8 flex justify-center space-x-4">
-            <a href="{% url 'aiapp:quiz_list' %}" class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-full hover:bg-indigo-700 transition-colors shadow-sm">
-                Back to Quizzes
-            </a>
-            <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="px-6 py-3 bg-gray-600 text-white font-medium rounded-full hover:bg-gray-700 transition-colors shadow-sm">
-                My Dashboard
-            </a>
-            <a href="{% url 'aiapp:review_answers' attempt_id %}" class="px-6 py-3 bg-orange-600 text-white font-medium rounded-full hover:bg-orange-700 transition-colors shadow-sm">
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'aiapp:review_answers' attempt_id=attempt_id %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 Review Answers
+            </a>
+            <a href="{% url 'aiapp:quiz_report_pdf_for_attempt' attempt_id=attempt_id %}" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" target="_blank">
+                Download Report
             </a>
         </div>
     </div>
-    
 </body>
 </html>

@@ -125,14 +125,20 @@ def quiz_results(request, attempt_id):
     """
     Displays the results of a specific quiz attempt.
     """
-    attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
-    
-    return render(request, 'aiapp/quiz_results.html', {
-        'quiz': attempt.quiz,
-        'score': attempt.score,
-        'total_questions': attempt.total_questions,
-        'attempt_id': attempt.id,
-    })
+    try:
+        attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user)
+        passed = attempt.score >= (attempt.total_questions * 0.5)
+
+        return render(request, 'aiapp/quiz_results.html', {
+            'quiz': attempt.quiz,
+            'score': attempt.score,
+            'total_questions': attempt.total_questions,
+            'attempt_id': attempt.id,
+            'passed': passed,
+        })
+    except Exception as e:
+        print("Error rendering quiz results:", str(e))
+        return HttpResponse("Error displaying results", status=500)
 
 @login_required
 def quiz_review(request, attempt_id):
