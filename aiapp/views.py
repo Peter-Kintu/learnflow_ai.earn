@@ -23,12 +23,18 @@ def render_to_pdf(template_src, context_dict={}):
     """
     Renders a Django template to a PDF file.
     """
-    template = get_template(template_src)
-    html = template.render(context_dict)
-    result = io.BytesIO()
-    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
-    if not pdf.err:
-        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    try:
+        template = get_template(template_src)
+        html = template.render(context_dict)
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+        if not pdf.err:
+            return HttpResponse(result.getvalue(), content_type='application/pdf')
+        else:
+            print("PDF generation error:", pdf.err)
+            print("Rendered HTML:", html)  # Optional: helps debug template issues
+    except Exception as e:
+        print("Exception during PDF generation:", str(e))
     return None
 
 @login_required
