@@ -14,7 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from xhtml2pdf import pisa
 
 # Import models and forms from both aiapp and video apps
-from .models import Quiz, Question, Choice, StudentAnswer, Attempt, MultipleChoiceQuestion
+from .models import Quiz, Question, Choice, StudentAnswer, Attempt
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
