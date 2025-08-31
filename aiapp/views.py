@@ -41,7 +41,6 @@ def render_to_pdf(template_src, context_dict={}):
 def home(request):
     """
     Renders the home page of the application.
-    This is a placeholder for a potential home view.
     """
     return render(request, 'aiapp/home.html')
 
@@ -72,7 +71,7 @@ def quiz_attempt(request, quiz_id):
     This view fetches all questions for a given quiz. When the student submits
     the form, it processes their answers, calculates a score, and saves the
     results to the database. It now handles both Multiple Choice (MC) and
-    Single Answer (SA) question types.
+    Short Answer (SA) question types.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.questions.all()
@@ -91,36 +90,38 @@ def quiz_attempt(request, quiz_id):
 
         for question in questions:
             is_correct = False
-            
+            selected_choice = None
+            submitted_answer_text = None
+
             if question.question_type == 'MC':
-                submitted_choice_id = request.POST.get(f'question_{question.id}')
+                submitted_choice_id = request.POST.get(f'question_{question.id}', None)
                 if submitted_choice_id:
                     try:
                         selected_choice = Choice.objects.get(pk=int(submitted_choice_id))
                         is_correct = selected_choice.is_correct
-                        StudentAnswer.objects.create(
-                            student=request.user,
-                            question=question,
-                            selected_choice=selected_choice,
-                            is_correct=is_correct,
-                            attempt=new_attempt
-                        )
                     except (ValueError, ObjectDoesNotExist):
-                        # Handle invalid or missing choices gracefully
-                        pass
+                        # Gracefully handle invalid or missing choices
+                        is_correct = False
             
             elif question.question_type == 'SA':
-                submitted_answer_text = request.POST.get(f'question_{question.id}')
-                if submitted_answer_text:
+                # Get submitted text with a default empty string to prevent AttributeError
+                submitted_answer_text = request.POST.get(f'question_{question.id}', '')
+                if submitted_answer_text.strip():
                     # Compare the submitted text to the correct answer, case-insensitively and trimmed
                     is_correct = (submitted_answer_text.strip().lower() == question.correct_answer_text.strip().lower())
-                    StudentAnswer.objects.create(
-                        student=request.user,
-                        question=question,
-                        text_answer=submitted_answer_text,
-                        is_correct=is_correct,
-                        attempt=new_attempt
-                    )
+                else:
+                    # An unanswered question is always incorrect
+                    is_correct = False
+            
+            # Create a StudentAnswer for the question, regardless of whether it was answered
+            StudentAnswer.objects.create(
+                student=request.user,
+                question=question,
+                selected_choice=selected_choice,
+                text_answer=submitted_answer_text,
+                is_correct=is_correct,
+                attempt=new_attempt
+            )
             
             if is_correct:
                 score += 1
@@ -156,19 +157,18 @@ def quiz_review(request, attempt_id):
     student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
     
     questions_and_answers = []
+    # It's safer to loop through the quiz's questions to ensure all are accounted for
     for q in attempt.quiz.questions.all():
         try:
             student_answer = student_answers.get(question=q)
-            questions_and_answers.append({
-                'question': q,
-                'student_answer': student_answer,
-            })
         except ObjectDoesNotExist:
-            # Handle un-answered questions
-            questions_and_answers.append({
-                'question': q,
-                'student_answer': None,
-            })
+            # This should no longer be needed with the fix in quiz_attempt, but it's a good fallback
+            student_answer = None
+        
+        questions_and_answers.append({
+            'question': q,
+            'student_answer': student_answer,
+        })
 
     context = {
         'attempt': attempt,
@@ -323,7 +323,7 @@ def edit_quiz(request, quiz_id):
                     # Delete questions that were removed from the form
                     questions_to_delete_ids = existing_question_ids - questions_to_keep
                     Question.objects.filter(id__in=questions_to_delete_ids, quiz=quiz).delete()
-                            
+                                
                     messages.success(request, f'"{quiz.title}" has been updated successfully!')
                     return redirect('aiapp:teacher_quiz_dashboard')
 
@@ -445,27 +445,43 @@ def delete_video(request, video_id):
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
 @login_required
-def quiz_report(request, quiz_id):
+def quiz_report_pdf(request, attempt_id):
     """
-    Generates a PDF report for a specific quiz.
+    Generates a PDF report for a specific quiz attempt.
     """
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    attempt = get_object_or_404(Attempt, pk=attempt_id)
     
-    # Get all attempts for this quiz
-    attempts = Attempt.objects.filter(quiz=quiz)
+    # Check if the user is the owner of the attempt or the quiz teacher
+    if request.user != attempt.user and request.user != attempt.quiz.teacher:
+        raise Http404
+
+    # Get all student answers for this specific attempt
+    student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
+    
+    # Create a dictionary for easy template lookup
+    answers_dict = {}
+    for student_answer in student_answers:
+        if student_answer.question.question_type == 'MC':
+            # Use the choice's text for MC questions
+            answers_dict[student_answer.question.id] = student_answer.selected_choice.text if student_answer.selected_choice else None
+        elif student_answer.question.question_type == 'SA':
+            # Use the text answer for SA questions
+            answers_dict[student_answer.question.id] = student_answer.text_answer
     
     context = {
-        'quiz': quiz,
-        'attempts': attempts,
-        'request_user': request.user,
+        'quiz': attempt.quiz,
+        'attempt': attempt,
+        'student_answers': student_answers,
+        'user_answers': answers_dict,
         'report_date': timezone.now(),
+        'request_user': request.user,
     }
     
     # Render the PDF
     pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+        filename = f"{attempt.quiz.title.replace(' ', '_')}_report_attempt_{attempt.id}.pdf"
         content = f"attachment; filename='{filename}'"
         response['Content-Disposition'] = content
         return response
