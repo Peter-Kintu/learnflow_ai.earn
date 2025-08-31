@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Report - {{ quiz.title }}</title>
+    <style>
+        /* Add your CSS styles for the PDF report here */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2 {
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz Report: {{ quiz.title }}</h1>
+    <p>Report for user: {{ user.username }}</p>
+    <p>Score: {{ score }} / {{ total_questions }}</p>
+
+    <h2>Questions and Answers</h2>
+    {% for question in quiz.questions.all %}
+        <div>
+            <p><strong>Question {{ forloop.counter }}:</strong> {{ question.question_text }}</p>
+            <ul>
+                <li>Your Answer: {{ user_answers|get_item:question.id }}</li>
+                <li>Correct Answer: {{ question.correct_option }}</li>
+            </ul>
+        </div>
+    {% endfor %}
+</body>
+</html>
