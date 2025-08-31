@@ -101,3 +101,14 @@ LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login'
 
+# 🎷 Jazzmin Admin Customization
+JAZZMIN_SETTINGS = {
+    "site_title": "LearnFlow Admin",
+    "site_header": "LearnFlow",
+    "welcome_sign": "Welcome to the LearnFlow Admin",
+    "search_model": "auth.User",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "order_with_respect_to": ["auth", "aiapp", "video", "user", "book"],
+}
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
