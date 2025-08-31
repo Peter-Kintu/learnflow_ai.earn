@@ -323,7 +323,7 @@ def edit_quiz(request, quiz_id):
                     # Delete questions that were removed from the form
                     questions_to_delete_ids = existing_question_ids - questions_to_keep
                     Question.objects.filter(id__in=questions_to_delete_ids, quiz=quiz).delete()
-                                
+                            
                     messages.success(request, f'"{quiz.title}" has been updated successfully!')
                     return redirect('aiapp:teacher_quiz_dashboard')
 
@@ -445,43 +445,27 @@ def delete_video(request, video_id):
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
 @login_required
-def quiz_report_pdf(request, attempt_id):
+def quiz_report(request, quiz_id):
     """
-    Generates a PDF report for a specific quiz attempt.
+    Generates a PDF report for a specific quiz.
     """
-    attempt = get_object_or_404(Attempt, pk=attempt_id)
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
     
-    # Check if the user is the owner of the attempt or the quiz teacher
-    if request.user != attempt.user and request.user != attempt.quiz.teacher:
-        raise Http404
-
-    # Get all student answers for this specific attempt
-    student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
-    
-    # Create a dictionary for easy template lookup
-    answers_dict = {}
-    for student_answer in student_answers:
-        if student_answer.question.question_type == 'MC':
-            # Use the choice's text for MC questions
-            answers_dict[student_answer.question.id] = student_answer.selected_choice.text if student_answer.selected_choice else None
-        elif student_answer.question.question_type == 'SA':
-            # Use the text answer for SA questions
-            answers_dict[student_answer.question.id] = student_answer.text_answer
+    # Get all attempts for this quiz
+    attempts = Attempt.objects.filter(quiz=quiz)
     
     context = {
-        'quiz': attempt.quiz,
-        'attempt': attempt,
-        'student_answers': student_answers,
-        'user_answers': answers_dict,
-        'report_date': timezone.now(),
+        'quiz': quiz,
+        'attempts': attempts,
         'request_user': request.user,
+        'report_date': timezone.now(),
     }
     
     # Render the PDF
     pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"{attempt.quiz.title.replace(' ', '_')}_report_attempt_{attempt.id}.pdf"
+        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
         content = f"attachment; filename='{filename}'"
         response['Content-Disposition'] = content
         return response
