@@ -2,29 +2,57 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-6">Available Books</h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-200">Available Books</h2>
+        {% if user.is_authenticated %}
+        <a href="{% url 'book:book_upload' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-sm">
+            Upload Book
+        </a>
+        {% endif %}
+    </div>
+
     <p class="text-gray-400 mb-8">
         Explore a curated collection of educational books. Click on a book to view its details.
     </p>
 
     <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {% for book in books %}
-        <a href="{% url 'book:book_detail' book.id %}" class="block bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
-            <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title }}</h3>
-            <p class="text-sm text-gray-400 mb-4">{{ book.description|truncatechars:100 }}</p>
-            <div class="flex items-center justify-between text-xs text-gray-500">
-                <span class="flex items-center space-x-1">
-                    <!-- Lucide user icon for author -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span>{{ book.author.get_full_name|default:book.author.username }}</span>
-                </span>
-                <span class="flex items-center space-x-1">
-                    <!-- Lucide calendar icon for creation date -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
-                    <span>{{ book.created_at|date:"F j, Y" }}</span>
-                </span>
+        <div class="bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
+            <a href="{% url 'book:book_detail' book.id %}">
+                <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title }}</h3>
+                <p class="text-sm text-gray-400 mb-4">{{ book.description|truncatechars:100 }}</p>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span class="flex items-center space-x-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>{{ book.author.get_full_name|default:book.author.username }}</span>
+                    </span>
+                    <span class="flex items-center space-x-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days">
+                            <path d="M8 2v4"/><path d="M16 2v4"/>
+                            <rect width="18" height="18" x="3" y="4" rx="2"/>
+                            <path d="M3 10h18"/>
+                            <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
+                            <path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
+                        </svg>
+                        <span>{{ book.created_at|date:"F j, Y" }}</span>
+                    </span>
+                </div>
+            </a>
+
+            {% if user == book.uploaded_by %}
+            <div class="mt-4 flex space-x-2">
+                <a href="{% url 'book:edit_book' book.id %}" class="px-3 py-1 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors shadow-sm text-xs font-semibold">
+                    Edit
+                </a>
+                <a href="{% url 'book:delete_book' book.id %}" class="px-3 py-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm text-xs font-semibold">
+                    Delete
+                </a>
             </div>
-        </a>
+            {% endif %}
+        </div>
         {% empty %}
         <div class="md:col-span-3 text-center p-8 bg-slate-700 rounded-xl shadow-inner">
             <p class="text-gray-400">No books are available at the moment. Please check back later.</p>
