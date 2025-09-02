@@ -16,6 +16,9 @@
         .incorrect-score {
             color: #dc2626;
         }
+        .score-ring circle.text-blue-500 {
+            transition: stroke-dashoffset 1s ease-out;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-4">
@@ -24,10 +27,10 @@
         <h2 class="text-2xl font-bold text-center mb-6">{{ quiz.title }}</h2>
 
         <div class="flex items-center justify-center mb-8">
-            <div class="relative w-32 h-32 md:w-40 md:h-40">
+            <div class="relative w-32 h-32 md:w-40 md:h-40 score-ring">
                 <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
                     <circle class="text-gray-300 dark:text-gray-600" stroke-width="12" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
-                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ 339.29 * (1 - score|floatformat:2 / total_questions) }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
+                    <circle class="text-blue-500" stroke-width="12" stroke-dasharray="339.29" stroke-dashoffset="{{ score_offset }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="54" cx="60" cy="60"/>
                 </svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                     <span class="text-4xl md:text-5xl font-extrabold text-blue-500">{{ score }}</span>
