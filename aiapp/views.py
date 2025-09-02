@@ -436,6 +436,46 @@ def delete_video(request, video_id):
 
     
 @login_required
+def quiz_report_pdf_for_quiz(request, quiz_id):
+    """Generates a PDF report for a specific quiz, including all student attempts."""
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    if request.user != quiz.teacher:
+        raise Http404
+
+    attempts = Attempt.objects.filter(quiz=quiz)
+    enriched_attempts = []
+
+    for a in attempts:
+        percentage = round((a.score / a.total_questions) * 100) if a.total_questions else 0
+        incorrect = a.total_questions - a.score
+        enriched_attempts.append({
+            'user': a.user,
+            'score': a.score,
+            'total_questions': a.total_questions,
+            'percentage': percentage,
+            'incorrect_answers': incorrect,
+        })
+
+    context = {
+        'quiz': quiz,
+        'attempts': enriched_attempts,
+        'report_date': timezone.now(),
+        'request_user': request.user,
+    }
+
+    try:
+        pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
+        if pdf:
+            filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f"attachment; filename='{filename}'"
+            return response
+    except Exception as e:
+        print("PDF generation error:", str(e))
+
+    return HttpResponse("Error generating PDF", status=500)
+
+@login_required
 def quiz_report_pdf_for_attempt(request, attempt_id):
     """Generates a PDF report for a specific quiz attempt, including correct answers and feedback."""
     attempt = get_object_or_404(Attempt, pk=attempt_id)
