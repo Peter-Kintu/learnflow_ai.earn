@@ -475,7 +475,6 @@ def quiz_report_pdf_for_quiz(request, quiz_id):
 
     return HttpResponse("Error generating PDF", status=500)
 
-
 @login_required
 def quiz_report_pdf_for_attempt(request, attempt_id):
     """Generates a PDF report for a specific quiz attempt."""
@@ -489,7 +488,8 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
     percentage = round((score / total_questions) * 100) if total_questions else 0
     incorrect_answers = total_questions - score
 
-    user_answers = {
+    # Pre-resolve answers for template compatibility
+    user_answers_map = {
         ans.question.id: ans.selected_choice.text if ans.selected_choice else ans.text_answer
         for ans in student_answers
     }
@@ -506,7 +506,7 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
         'incorrect_answers': incorrect_answers,
         'user': attempt.user,
         'today': timezone.now(),
-        'user_answers': user_answers,
+        'user_answers_map': user_answers_map,  # updated key
     }
 
     try:
