@@ -434,63 +434,89 @@ def delete_video(request, video_id):
 
     return render(request, 'video/video_delete_confirm.html', {'video': video})
 
+    
 @login_required
 def quiz_report_pdf_for_quiz(request, quiz_id):
-    """
-    Generates a PDF report for a specific quiz, including all student attempts.
-    """
+    """Generates a PDF report for a specific quiz, including all student attempts."""
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-
-    # Security check: Only the teacher of the quiz can generate this report
     if request.user != quiz.teacher:
         raise Http404
 
     attempts = Attempt.objects.filter(quiz=quiz)
-    
-    # You can customize the context to include more data as needed.
+    enriched_attempts = []
+
+    for a in attempts:
+        percentage = round((a.score / a.total_questions) * 100) if a.total_questions else 0
+        incorrect = a.total_questions - a.score
+        enriched_attempts.append({
+            'user': a.user,
+            'score': a.score,
+            'total_questions': a.total_questions,
+            'percentage': percentage,
+            'incorrect_answers': incorrect,
+        })
+
     context = {
         'quiz': quiz,
-        'attempts': attempts,
+        'attempts': enriched_attempts,
         'report_date': timezone.now(),
         'request_user': request.user,
     }
-    
-    pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
-    if pdf:
-        response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
-        content = f"attachment; filename='{filename}'"
-        response['Content-Disposition'] = content
-        return response
-    
+
+    try:
+        pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
+        if pdf:
+            filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f"attachment; filename='{filename}'"
+            return response
+    except Exception as e:
+        print("PDF generation error:", str(e))
+
     return HttpResponse("Error generating PDF", status=500)
-    
+
+
 @login_required
 def quiz_report_pdf_for_attempt(request, attempt_id):
-    """
-    Generates a PDF report for a specific quiz attempt.
-    """
+    """Generates a PDF report for a specific quiz attempt."""
     attempt = get_object_or_404(Attempt, pk=attempt_id)
-    
     if request.user != attempt.user and request.user != attempt.quiz.teacher:
         raise Http404
 
     student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
-    
+    score = attempt.score
+    total_questions = attempt.total_questions
+    percentage = round((score / total_questions) * 100) if total_questions else 0
+    incorrect_answers = total_questions - score
+
+    user_answers = {
+        ans.question.id: ans.selected_choice.text if ans.selected_choice else ans.text_answer
+        for ans in student_answers
+    }
+
     context = {
         'quiz': attempt.quiz,
         'attempt': attempt,
         'student_answers': student_answers,
         'report_date': timezone.now(),
         'request_user': request.user,
+        'score': score,
+        'total_questions': total_questions,
+        'percentage': percentage,
+        'incorrect_answers': incorrect_answers,
+        'user': attempt.user,
+        'today': timezone.now(),
+        'user_answers': user_answers,
     }
-    
-    pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
-    if pdf:
-        response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"{attempt.quiz.title.replace(' ', '_')}_report_attempt_{attempt.id}.pdf"
-        content = f"attachment; filename='{filename}'"
-        response['Content-Disposition'] = content
-        return response
-    
+
+    try:
+        pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
+        if pdf:
+            filename = f"{attempt.quiz.title.replace(' ', '_')}_report_attempt_{attempt.id}.pdf"
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f"attachment; filename='{filename}'"
+            return response
+    except Exception as e:
+        print("PDF generation error:", str(e))
+
     return HttpResponse("Error generating PDF", status=500)

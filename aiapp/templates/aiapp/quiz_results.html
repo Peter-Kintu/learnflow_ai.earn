@@ -47,10 +47,6 @@
             {% endif %}
         </div>
 
-        <div class="flex justify-center space-x-4">
-            <a href="{% url 'aiapp:review_answers' attempt_id=attempt_id %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                Review Answers
-            </a>
             <a href="{% url 'aiapp:quiz_report_pdf_for_attempt' attempt_id=attempt_id %}" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" target="_blank">
                 Download Report
             </a>
