@@ -436,48 +436,8 @@ def delete_video(request, video_id):
 
     
 @login_required
-def quiz_report_pdf_for_quiz(request, quiz_id):
-    """Generates a PDF report for a specific quiz, including all student attempts."""
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
-    if request.user != quiz.teacher:
-        raise Http404
-
-    attempts = Attempt.objects.filter(quiz=quiz)
-    enriched_attempts = []
-
-    for a in attempts:
-        percentage = round((a.score / a.total_questions) * 100) if a.total_questions else 0
-        incorrect = a.total_questions - a.score
-        enriched_attempts.append({
-            'user': a.user,
-            'score': a.score,
-            'total_questions': a.total_questions,
-            'percentage': percentage,
-            'incorrect_answers': incorrect,
-        })
-
-    context = {
-        'quiz': quiz,
-        'attempts': enriched_attempts,
-        'report_date': timezone.now(),
-        'request_user': request.user,
-    }
-
-    try:
-        pdf = render_to_pdf('aiapp/quiz_report_pdf.html', context)
-        if pdf:
-            filename = f"{quiz.title.replace(' ', '_')}_report.pdf"
-            response = HttpResponse(pdf, content_type='application/pdf')
-            response['Content-Disposition'] = f"attachment; filename='{filename}'"
-            return response
-    except Exception as e:
-        print("PDF generation error:", str(e))
-
-    return HttpResponse("Error generating PDF", status=500)
-
-@login_required
 def quiz_report_pdf_for_attempt(request, attempt_id):
-    """Generates a PDF report for a specific quiz attempt."""
+    """Generates a PDF report for a specific quiz attempt, including correct answers and feedback."""
     attempt = get_object_or_404(Attempt, pk=attempt_id)
     if request.user != attempt.user and request.user != attempt.quiz.teacher:
         raise Http404
@@ -488,16 +448,29 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
     percentage = round((score / total_questions) * 100) if total_questions else 0
     incorrect_answers = total_questions - score
 
-    # Pre-resolve answers for template compatibility
-    user_answers_map = {
-        ans.question.id: ans.selected_choice.text if ans.selected_choice else ans.text_answer
-        for ans in student_answers
-    }
+    enriched_answers = []
+    for ans in student_answers:
+        correct_choice = ans.question.choices.filter(is_correct=True).first()
+        user_answer = ans.selected_choice.text if ans.selected_choice else ans.text_answer
+        correct_answer = correct_choice.text if correct_choice else "N/A"
+        is_correct = user_answer == correct_answer
+
+        feedback = (
+            "✅ Well done!" if is_correct else
+            f"❌ Almost there — the correct answer was '{correct_answer}'. Keep going!"
+        )
+
+        enriched_answers.append({
+            'question_text': ans.question.text,
+            'user_answer': user_answer,
+            'correct_answer': correct_answer,
+            'is_correct': is_correct,
+            'feedback': feedback,
+        })
 
     context = {
         'quiz': attempt.quiz,
         'attempt': attempt,
-        'student_answers': student_answers,
         'report_date': timezone.now(),
         'request_user': request.user,
         'score': score,
@@ -506,7 +479,7 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
         'incorrect_answers': incorrect_answers,
         'user': attempt.user,
         'today': timezone.now(),
-        'user_answers_map': user_answers_map,  # updated key
+        'answers': enriched_answers,
     }
 
     try:
