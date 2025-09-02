@@ -68,11 +68,11 @@
             {% csrf_token %}
             
             <div>
-                <label for="{{ quiz_form.title.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Quiz Title</label>
+                <label for="{{ quiz_form.title.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Quiz Title / class</label>
                 {{ quiz_form.title }}
             </div>
             <div>
-                <label for="{{ quiz_form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description</label>
+                <label for="{{ quiz_form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description and topic</label>
                 {{ quiz_form.description }}
             </div>
 
