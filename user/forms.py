@@ -11,9 +11,7 @@ User = get_user_model()
 INPUT_CLASSES = 'w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
 
 class LoginForm(forms.Form):
-    """
-    A simple login form with a username and password.
-    """
+    """A simple login form with a username and password."""
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
@@ -29,10 +27,7 @@ class LoginForm(forms.Form):
     )
 
 class CustomUserCreationForm(UserCreationForm):
-    """
-    A custom form for user registration that includes email and a role selection field.
-    The form now applies consistent Tailwind classes directly to the widgets.
-    """
+    """Custom registration form with email and role selection."""
     email = forms.EmailField(
         required=True,
         label="Email Address",
@@ -57,17 +52,18 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'username' in self.fields:
-            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
-            self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
-
-        if 'password1' in self.fields:
-            self.fields['password1'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
-            self.fields['password1'].widget.attrs['placeholder'] = 'Enter a password'
-
-        if 'password2' in self.fields:
-            self.fields['password2'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
-            self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
+        self.fields['username'].widget.attrs.update({
+            'class': INPUT_CLASSES,
+            'placeholder': 'Choose a username'
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': f'{INPUT_CLASSES} pr-10',
+            'placeholder': 'Enter a password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': f'{INPUT_CLASSES} pr-10',
+            'placeholder': 'Confirm your password'
+        })
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -79,6 +75,14 @@ class CustomUserCreationForm(UserCreationForm):
         cleaned_data = super().clean()
         username = cleaned_data.get('username')
         password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        # Reassign form-level errors to specific fields
+        if self.errors.get('__all__'):
+            for error in self.errors['__all__']:
+                if "password" in error.lower() and "match" in error.lower():
+                    self.add_error('password2', error)
+            del self.errors['__all__']
 
         if password1 and username and password1.lower() in username.lower():
             self.add_error('password1', 'The password is too similar to the username.')
@@ -103,9 +107,7 @@ class CustomUserCreationForm(UserCreationForm):
         return user
 
 class CustomUserChangeForm(UserChangeForm):
-    """
-    A custom form for updating an existing user that includes role selection.
-    """
+    """Custom form for updating user with role selection."""
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
         widget=forms.RadioSelect(attrs={
@@ -120,10 +122,8 @@ class CustomUserChangeForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'username' in self.fields:
-            self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
-        if 'email' in self.fields:
-            self.fields['email'].widget.attrs['class'] = INPUT_CLASSES
+        self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
+        self.fields['email'].widget.attrs['class'] = INPUT_CLASSES
 
         if self.instance and hasattr(self.instance, 'profile'):
             self.fields['role'].initial = self.instance.profile.role
