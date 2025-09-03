@@ -77,7 +77,6 @@ class CustomUserCreationForm(UserCreationForm):
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
 
-        # Reassign form-level errors to specific fields
         if self.errors.get('__all__'):
             for error in self.errors['__all__']:
                 if "password" in error.lower() and "match" in error.lower():
@@ -95,15 +94,11 @@ class CustomUserCreationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
+        user._role = self.cleaned_data.get('role')  # Pass role to signal
 
         if commit:
             user.save()
-            role = self.cleaned_data.get('role')
-            if hasattr(user, 'profile'):
-                user.profile.role = role
-                user.profile.save()
-            else:
-                Profile.objects.create(user=user, role=role)
+            Profile.objects.update_or_create(user=user, defaults={'role': user._role})
         return user
 
 class CustomUserChangeForm(UserChangeForm):
@@ -111,7 +106,7 @@ class CustomUserChangeForm(UserChangeForm):
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
         widget=forms.RadioSelect(attrs={
-            'class': 'mt-2 space-y-2'
+            'class': 'mt-2 space-y-2 text-gray-200'
         }),
         initial='student'
     )
@@ -134,7 +129,5 @@ class CustomUserChangeForm(UserChangeForm):
         if commit:
             user.save()
             role = self.cleaned_data.get('role')
-            if role:
-                user.profile.role = role
-                user.profile.save()
+            Profile.objects.update_or_create(user=user, defaults={'role': role})
         return user
