@@ -62,8 +62,14 @@
           {% if field.name == 'role' %}
             <div class="mt-2 space-y-2 text-gray-200">
               {% for choice in field %}
-                <label class="radio-container">
-                  {{ choice.tag }}
+                <label class="radio-container" for="{{ choice.id_for_label }}">
+                  <input
+                    type="radio"
+                    name="{{ field.name }}"
+                    value="{{ choice.choice_value }}"
+                    id="{{ choice.id_for_label }}"
+                    {% if choice.choice_value == field.value %}checked{% endif %}
+                  />
                   <span class="radio-label">{{ choice.choice_label }}</span>
                 </label>
               {% endfor %}
