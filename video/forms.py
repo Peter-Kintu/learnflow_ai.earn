@@ -6,7 +6,10 @@ class VideoForm(forms.ModelForm):
     """
     A form for teachers to upload and add new videos, including a ManyToMany
     field for linking quizzes and a code field to restrict uploads.
+
+    The upload_code field is required and must be numeric, but accepts any number.
     """
+
     upload_code = forms.CharField(
         max_length=10,
         required=True,
@@ -42,7 +45,11 @@ class VideoForm(forms.ModelForm):
 
     def clean_upload_code(self):
         code = self.cleaned_data.get('upload_code')
-        # Replace this with your actual validation logic
-        if code != 'EXPECTED_CODE':
-            raise forms.ValidationError("Invalid upload access code.")
+
+        if not code:
+            raise forms.ValidationError("Please enter the code provided by the admin to authorize your upload.")
+
+        if not code.isdigit():
+            raise forms.ValidationError("Upload access code must be numeric.")
+
         return code

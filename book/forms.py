@@ -9,6 +9,7 @@ class BookForm(forms.ModelForm):
     Tailwind CSS classes for a consistent look and feel.
     Includes an upload_code field to restrict unauthorized submissions.
     """
+
     upload_code = forms.CharField(
         max_length=10,
         required=True,
@@ -50,7 +51,11 @@ class BookForm(forms.ModelForm):
 
     def clean_upload_code(self):
         code = self.cleaned_data.get('upload_code')
-        # Replace this with your actual validation logic
-        if code != 'EXPECTED_CODE':
-            raise forms.ValidationError("Invalid upload access code.")
+
+        if not code:
+            raise forms.ValidationError("Please enter the code provided by the admin to authorize your upload.")
+
+        if not code.isdigit():
+            raise forms.ValidationError("Upload access code must be numeric.")
+
         return code
