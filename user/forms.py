@@ -1,4 +1,3 @@
-# user/forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
@@ -24,7 +23,7 @@ class LoginForm(forms.Form):
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': f'{INPUT_CLASSES} pr-10', # Added padding for the eye icon
+            'class': f'{INPUT_CLASSES} pr-10',
             'placeholder': 'Enter your password'
         })
     )
@@ -58,34 +57,38 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply the consistent classes to the other fields
         if 'username' in self.fields:
             self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
             self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
-        
-        if 'password' in self.fields:
-            # Add pr-10 class for the eye icon, but keep the rest consistent
-            self.fields['password'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
-            self.fields['password'].widget.attrs['placeholder'] = 'Enter a password'
-        
+
+        if 'password1' in self.fields:
+            self.fields['password1'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
+            self.fields['password1'].widget.attrs['placeholder'] = 'Enter a password'
+
         if 'password2' in self.fields:
-            # Add pr-10 class for the eye icon, but keep the rest consistent
             self.fields['password2'].widget.attrs['class'] = f'{INPUT_CLASSES} pr-10'
             self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
 
     def clean_email(self):
-        """
-        Custom validation to ensure the email is unique.
-        """
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("This email address is already in use.")
         return email
 
+    def clean(self):
+        cleaned_data = super().clean()
+        username = cleaned_data.get('username')
+        password1 = cleaned_data.get('password1')
+
+        if password1 and username and password1.lower() in username.lower():
+            self.add_error('password1', 'The password is too similar to the username.')
+
+        if password1 and len(password1) < 8:
+            self.add_error('password1', 'This password is too short. It must contain at least 8 characters.')
+
+        return cleaned_data
+
     def save(self, commit=True):
-        """
-        Overrides the save method to handle saving the user and their profile's role.
-        """
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
 
@@ -117,22 +120,17 @@ class CustomUserChangeForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply consistent Tailwind classes to the default widgets
         if 'username' in self.fields:
             self.fields['username'].widget.attrs['class'] = INPUT_CLASSES
         if 'email' in self.fields:
             self.fields['email'].widget.attrs['class'] = INPUT_CLASSES
 
-        # Populate the initial value of the role field from the user's profile
         if self.instance and hasattr(self.instance, 'profile'):
             self.fields['role'].initial = self.instance.profile.role
 
     def save(self, commit=True):
-        """
-        Overrides the save method to handle saving the user's role to their profile.
-        """
         user = super().save(commit=False)
-        
+
         if commit:
             user.save()
             role = self.cleaned_data.get('role')
