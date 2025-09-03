@@ -42,12 +42,12 @@
                 {{ form.price.errors }}
             </div>
 
-            {% if form.teacher_code %}
+            {% if form.upload_code %}
             <div>
-                <label for="{{ form.teacher_code.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Teacher Verification Code</label>
-                {{ form.teacher_code }}
-                <p class="text-sm text-gray-500 mt-1">Enter the 5-digit code you received during registration.</p>
-                {{ form.teacher_code.errors }}
+                <label for="{{ form.upload_code.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Upload Access Code</label>
+                {{ form.upload_code }}
+                <p class="text-sm text-gray-500 mt-1">Enter the numeric code provided by the admin to authorize your upload.</p>
+                {{ form.upload_code.errors }}
             </div>
             {% endif %}
         </div>

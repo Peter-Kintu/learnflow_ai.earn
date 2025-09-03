@@ -36,14 +36,12 @@
                 {{ form.quizzes.errors }}
             </div>
 
-            {% if form.upload_code %}
             <div>
                 <label for="{{ form.upload_code.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Upload Access Code</label>
                 {{ form.upload_code }}
-                <p class="text-sm text-gray-500 mt-1">Enter the code provided by the admin to authorize your upload.</p>
+                <p class="text-sm text-gray-500 mt-1">Enter the numeric code provided by the admin to authorize your upload.</p>
                 {{ form.upload_code.errors }}
             </div>
-            {% endif %}
         </div>
 
         <div class="flex justify-end mt-8">
