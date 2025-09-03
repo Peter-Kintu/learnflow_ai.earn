@@ -60,20 +60,8 @@
           </label>
 
           {% if field.name == 'role' %}
-            <div class="mt-2 space-y-2 text-gray-200">
-              {% for choice in field %}
-                <label class="radio-container" for="{{ choice.id_for_label }}">
-                  <input
-                    type="radio"
-                    name="{{ field.name }}"
-                    value="{{ choice.choice_value }}"
-                    id="{{ choice.id_for_label }}"
-                    {% if choice.choice_value == field.value %}checked{% endif %}
-                    onclick="toggleTeacherCode(this.value)"
-                  />
-                  <span class="radio-label">{{ choice.choice_label }}</span>
-                </label>
-              {% endfor %}
+            <div class="mt-2 space-y-2 text-gray-200" onchange="handleRoleChange(event)">
+              {{ field }}
             </div>
           {% elif field.name == 'password1' or field.name == 'password2' %}
             <div class="relative">
@@ -126,6 +114,11 @@
         input.type = 'password';
         iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5...');
       }
+    }
+
+    function handleRoleChange(event) {
+      const selectedRole = event.target.value;
+      toggleTeacherCode(selectedRole);
     }
 
     function toggleTeacherCode(selectedRole) {
