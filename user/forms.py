@@ -5,14 +5,15 @@ from .constants import ROLE_CHOICES
 from .models import Profile
 from book.models import Book  # ✅ Corrected import
 
-# Get the custom User model
 User = get_user_model()
 
-# Define the common classes for all text inputs to ensure consistency
-INPUT_CLASSES = 'w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
+INPUT_CLASSES = (
+    'w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 '
+    'border border-slate-700 rounded-md focus:outline-none focus:ring-2 '
+    'focus:ring-indigo-500 focus:border-transparent transition-all'
+)
 
 class LoginForm(forms.Form):
-    """A simple login form with a username and password."""
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
@@ -28,7 +29,6 @@ class LoginForm(forms.Form):
     )
 
 class CustomUserCreationForm(UserCreationForm):
-    """Custom registration form with email, role, and optional teacher code."""
     email = forms.EmailField(
         required=True,
         label="Email Address",
@@ -40,9 +40,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
-        widget=forms.RadioSelect(attrs={
-            'class': 'mt-2 space-y-2 text-gray-200'
-        }),
+        widget=forms.RadioSelect(attrs={'class': 'mt-2 space-y-2 text-gray-200'}),
         initial='student',
         label="I am a:"
     )
@@ -76,7 +74,6 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Confirm your password'
         })
 
-        # Dynamically require teacher_code if role is teacher
         role_value = self.data.get('role') or self.initial.get('role')
         if role_value == 'teacher':
             self.fields['teacher_code'].required = True
@@ -87,12 +84,23 @@ class CustomUserCreationForm(UserCreationForm):
             raise forms.ValidationError("This email address is already in use.")
         return email
 
+    def clean_teacher_code(self):
+        code = self.cleaned_data.get('teacher_code')
+        role = self.cleaned_data.get('role')
+
+        if role == 'teacher':
+            if not code:
+                raise forms.ValidationError("Please enter your teacher verification code.")
+            if not code.isdigit():
+                raise forms.ValidationError("Teacher code must be numeric.")
+            if len(code) != 5:
+                raise forms.ValidationError("Teacher code must be 5 digits.")
+        return code
+
     def clean(self):
         cleaned_data = super().clean()
         username = cleaned_data.get('username')
         password1 = cleaned_data.get('password1')
-        password2 = cleaned_data.get('password2')
-        role = cleaned_data.get('role')
 
         if password1 and username and password1.lower() in username.lower():
             self.add_error('password1', 'The password is too similar to the username.')
@@ -100,18 +108,12 @@ class CustomUserCreationForm(UserCreationForm):
         if password1 and len(password1) < 8:
             self.add_error('password1', 'This password is too short. It must contain at least 8 characters.')
 
-        if role == 'teacher':
-            code = cleaned_data.get('teacher_code')
-            # Replace 'EXPECTED_CODE' with your actual logic or admin-issued code
-            if not code or code != 'EXPECTED_CODE':
-                self.add_error('teacher_code', 'Invalid teacher verification code.')
-
         return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
-        user._role = self.cleaned_data.get('role')  # Pass role to signal
+        user._role = self.cleaned_data.get('role')
 
         if commit:
             user.save()
@@ -119,12 +121,9 @@ class CustomUserCreationForm(UserCreationForm):
         return user
 
 class CustomUserChangeForm(UserChangeForm):
-    """Custom form for updating user with role selection."""
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
-        widget=forms.RadioSelect(attrs={
-            'class': 'mt-2 space-y-2 text-gray-200'
-        }),
+        widget=forms.RadioSelect(attrs={'class': 'mt-2 space-y-2 text-gray-200'}),
         initial='student'
     )
 
@@ -150,7 +149,6 @@ class CustomUserChangeForm(UserChangeForm):
         return user
 
 class BookUploadForm(forms.ModelForm):
-    """Form for uploading a book, restricted to teachers with a valid code."""
     teacher_code = forms.CharField(
         max_length=5,
         required=False,
@@ -164,7 +162,6 @@ class BookUploadForm(forms.ModelForm):
     class Meta:
         model = Book
         fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
-
         widgets = {
             'title': forms.TextInput(attrs={'class': INPUT_CLASSES}),
             'description': forms.Textarea(attrs={'class': INPUT_CLASSES}),
@@ -185,6 +182,10 @@ class BookUploadForm(forms.ModelForm):
     def clean_teacher_code(self):
         code = self.cleaned_data.get('teacher_code')
         if self.user and hasattr(self.user, 'profile') and self.user.profile.role == 'teacher':
-            if not code or code != self.user.profile.teacher_code:
-                raise forms.ValidationError("Invalid teacher verification code.")
+            if not code:
+                raise forms.ValidationError("Please enter your teacher verification code.")
+            if not code.isdigit():
+                raise forms.ValidationError("Teacher code must be numeric.")
+            if len(code) != 5:
+                raise forms.ValidationError("Teacher code must be 5 digits.")
         return code
