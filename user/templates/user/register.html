@@ -85,29 +85,24 @@
                 </svg>
               </span>
             </div>
+          {% elif field.name == 'teacher_code' %}
+            <div id="teacher-code-field" class="form-field {% if register_form.role.value != 'teacher' %}hidden{% endif %}">
+              {{ field }}
+              {% for error in field.errors %}
+                <p class="text-sm text-red-400 mt-1">{{ error }}</p>
+              {% endfor %}
+            </div>
           {% else %}
             {{ field }}
           {% endif %}
 
-          {% for error in field.errors %}
-            <p class="text-sm text-red-400 mt-1">{{ error }}</p>
-          {% endfor %}
+          {% if field.name != 'teacher_code' %}
+            {% for error in field.errors %}
+              <p class="text-sm text-red-400 mt-1">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
         </div>
       {% endfor %}
-
-      <!-- Hidden Teacher Code Field -->
-      <div id="teacher-code-field" class="form-field hidden">
-        <label for="teacher_code" class="block text-sm font-medium text-gray-200 mb-1">Teacher Verification Code</label>
-        <input
-          type="text"
-          name="teacher_code"
-          id="teacher_code"
-          maxlength="5"
-          pattern="\d{5}"
-          class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-          placeholder="Enter 5-digit code"
-        />
-      </div>
 
       <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full mt-6">
         Sign Up
@@ -142,7 +137,6 @@
       }
     }
 
-    // Auto-trigger on page load if teacher is pre-selected
     document.addEventListener('DOMContentLoaded', function () {
       const selected = document.querySelector('input[name="role"]:checked');
       if (selected) {

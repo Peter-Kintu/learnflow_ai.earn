@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
 from .constants import ROLE_CHOICES
 from .models import Profile
+from book.models import Book  # ✅ Corrected import
 
 # Get the custom User model
 User = get_user_model()
@@ -27,7 +28,7 @@ class LoginForm(forms.Form):
     )
 
 class CustomUserCreationForm(UserCreationForm):
-    """Custom registration form with email and role selection."""
+    """Custom registration form with email, role, and optional teacher code."""
     email = forms.EmailField(
         required=True,
         label="Email Address",
@@ -44,6 +45,16 @@ class CustomUserCreationForm(UserCreationForm):
         }),
         initial='student',
         label="I am a:"
+    )
+
+    teacher_code = forms.CharField(
+        max_length=5,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASSES,
+            'placeholder': 'Enter your 5-digit teacher code'
+        }),
+        label="Teacher Verification Code"
     )
 
     class Meta(UserCreationForm.Meta):
@@ -65,6 +76,11 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Confirm your password'
         })
 
+        # Dynamically require teacher_code if role is teacher
+        role_value = self.data.get('role') or self.initial.get('role')
+        if role_value == 'teacher':
+            self.fields['teacher_code'].required = True
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
@@ -76,18 +92,19 @@ class CustomUserCreationForm(UserCreationForm):
         username = cleaned_data.get('username')
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
-
-        if self.errors.get('__all__'):
-            for error in self.errors['__all__']:
-                if "password" in error.lower() and "match" in error.lower():
-                    self.add_error('password2', error)
-            del self.errors['__all__']
+        role = cleaned_data.get('role')
 
         if password1 and username and password1.lower() in username.lower():
             self.add_error('password1', 'The password is too similar to the username.')
 
         if password1 and len(password1) < 8:
             self.add_error('password1', 'This password is too short. It must contain at least 8 characters.')
+
+        if role == 'teacher':
+            code = cleaned_data.get('teacher_code')
+            # Replace 'EXPECTED_CODE' with your actual logic or admin-issued code
+            if not code or code != 'EXPECTED_CODE':
+                self.add_error('teacher_code', 'Invalid teacher verification code.')
 
         return cleaned_data
 
@@ -131,3 +148,43 @@ class CustomUserChangeForm(UserChangeForm):
             role = self.cleaned_data.get('role')
             Profile.objects.update_or_create(user=user, defaults={'role': role})
         return user
+
+class BookUploadForm(forms.ModelForm):
+    """Form for uploading a book, restricted to teachers with a valid code."""
+    teacher_code = forms.CharField(
+        max_length=5,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASSES,
+            'placeholder': 'Enter your 5-digit teacher code'
+        }),
+        label="Teacher Verification Code"
+    )
+
+    class Meta:
+        model = Book
+        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
+
+        widgets = {
+            'title': forms.TextInput(attrs={'class': INPUT_CLASSES}),
+            'description': forms.Textarea(attrs={'class': INPUT_CLASSES}),
+            'cover_image_url': forms.URLInput(attrs={'class': INPUT_CLASSES}),
+            'book_file_url': forms.URLInput(attrs={'class': INPUT_CLASSES}),
+            'price': forms.NumberInput(attrs={'class': INPUT_CLASSES}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if self.user and hasattr(self.user, 'profile') and self.user.profile.role == 'teacher':
+            self.fields['teacher_code'].required = True
+        else:
+            self.fields['teacher_code'].widget = forms.HiddenInput()
+
+    def clean_teacher_code(self):
+        code = self.cleaned_data.get('teacher_code')
+        if self.user and hasattr(self.user, 'profile') and self.user.profile.role == 'teacher':
+            if not code or code != self.user.profile.teacher_code:
+                raise forms.ValidationError("Invalid teacher verification code.")
+        return code
