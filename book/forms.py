@@ -22,7 +22,7 @@ class BookForm(forms.ModelForm):
 
     class Meta:
         model = Book
-        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
+        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']  # upload_code is excluded
 
         widgets = {
             'title': forms.TextInput(attrs={
@@ -57,5 +57,9 @@ class BookForm(forms.ModelForm):
 
         if not code.isdigit():
             raise forms.ValidationError("Upload access code must be numeric.")
+
+        # Optional: add celebratory validation logic
+        if code != "123456":  # Replace with your actual admin code logic
+            raise forms.ValidationError("Hmm... that code doesn’t match our records. Please check with the admin and try again. Your story deserves to be shared.")
 
         return code
