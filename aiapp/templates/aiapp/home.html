@@ -3,48 +3,61 @@
 {% block title %}Home - LearnFlow AI{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10 text-center">
+<div class="max-w-5xl mx-auto p-10 mt-12 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-3xl shadow-2xl text-center backdrop-blur-md border border-slate-600 transition-all duration-300">
+
   <!-- Welcome Message -->
-  <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">Welcome, {{ user.username }} 👋</h1>
-  <p class="text-gray-400 text-lg mb-6">You’ve joined a movement where educators and learners rise together.</p>
+  <h1 class="text-5xl font-extrabold text-white mb-4 tracking-tight animate-fade-in">
+    Welcome, {{ user.username }} 👋
+  </h1>
+  <p class="text-gray-300 text-lg mb-8 font-light">
+    You’ve joined a movement where educators and learners rise together—one joyful click at a time.
+  </p>
 
   <!-- Wikipedia Search -->
-  <div class="mb-8">
-    <h2 class="text-xl font-semibold text-white mb-2">🔍 Quick Knowledge Lookup</h2>
-    <input type="text" id="wikiSearch" placeholder="LearnFlow Searching..." class="w-full px-4 py-2 rounded-md bg-slate-900 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4">
-    <button onclick="searchWikipedia()" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors font-semibold">Search</button>
-    <div id="wikiResult" class="mt-4 text-left text-gray-300"></div>
+  <div class="mb-10 text-left">
+    <h2 class="text-2xl font-semibold text-white mb-3">🔍 Quick Knowledge Lookup</h2>
+    <div class="flex gap-4 items-center">
+      <input type="text" id="wikiSearch" placeholder="Search Wikipedia..." class="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+      <button onclick="searchWikipedia()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md">Search</button>
+    </div>
+    <div id="wikiResult" class="mt-6 text-gray-300"></div>
   </div>
 
   <!-- Chatbot Section -->
-  <div class="mb-8">
-    <h2 class="text-xl font-semibold text-white mb-2">💬 Ask Learnflow</h2>
-    <div class="bg-slate-900 p-4 rounded-lg">
-      <div id="chatLog" class="h-40 overflow-y-auto text-left text-gray-300 mb-2"></div>
-      <input type="text" id="chatInput" placeholder="Type your question..." class="w-full px-4 py-2 rounded-md bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <button onclick="sendChat()" class="mt-2 px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors font-semibold">Send</button>
+  <div class="mb-10 text-left">
+    <h2 class="text-2xl font-semibold text-white mb-3">💬 Ask LearnFlow</h2>
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-inner">
+      <div id="chatLog" class="h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
+      <div class="flex gap-4">
+        <input type="text" id="chatInput" placeholder="Type your question..." class="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200">
+        <button onclick="sendChat()" class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md">Send</button>
+      </div>
     </div>
   </div>
-
+</div>
 
 <!-- Wikipedia API & Chatbot Script -->
 <script>
   function searchWikipedia() {
     const query = document.getElementById('wikiSearch').value;
     const resultDiv = document.getElementById('wikiResult');
-    resultDiv.innerHTML = "Searching...";
+    resultDiv.innerHTML = "<em>Searching...</em>";
 
     fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
       .then(response => response.json())
       .then(data => {
         if (data.extract) {
-          resultDiv.innerHTML = `<h3 class="text-lg font-bold mb-2">${data.title}</h3><p>${data.extract}</p><a href="${data.content_urls.desktop.page}" target="_blank" class="text-indigo-400 underline">Read more on Wikipedia</a>`;
+          resultDiv.innerHTML = `
+            <h3 class="text-lg font-bold mb-2 text-white">${data.title}</h3>
+            <p class="text-gray-300">${data.extract}</p>
+            <a href="${data.content_urls.desktop.page}" target="_blank" class="text-indigo-400 underline">Read more on Wikipedia</a>
+          `;
         } else {
-          resultDiv.innerHTML = "input error, please try again later.";
+          resultDiv.innerHTML = "<span class='text-red-400'>Input error, please try again later.</span>";
         }
       })
       .catch(() => {
-        resultDiv.innerHTML = "input error, please try again later.";
+        resultDiv.innerHTML = "<span class='text-red-400'>Input error, please try again later.</span>";
       });
   }
 
@@ -54,12 +67,11 @@
     const userMessage = input.value.trim();
     if (!userMessage) return;
 
-    log.innerHTML += `<div><strong>You:</strong> ${userMessage}</div>`;
+    log.innerHTML += `<div><strong class="text-green-400">You:</strong> ${userMessage}</div>`;
 
-    // Simulated bot response
     const botResponse = getBotResponse(userMessage);
     setTimeout(() => {
-      log.innerHTML += `<div><strong>Learnflow Bot:</strong> ${botResponse}</div>`;
+      log.innerHTML += `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${botResponse}</div>`;
       log.scrollTop = log.scrollHeight;
     }, 600);
 
@@ -67,10 +79,9 @@
   }
 
   function getBotResponse(message) {
-    // Simple keyword-based responses
     if (message.toLowerCase().includes("upload")) return "To upload content, visit your dashboard and click 'Add Resource'.";
     if (message.toLowerCase().includes("verify")) return "Teacher verification is handled securely—check your profile settings.";
-    return "Thanks for your question! Our team is working to make Learnflow Ai even better.";
+    return "Thanks for your question! Our team is working to make LearnFlow AI even better.";
   }
 </script>
 {% endblock %}
