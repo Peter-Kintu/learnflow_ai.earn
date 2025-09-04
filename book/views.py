@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Book
 from .forms import BookForm
-from django.http import Http404
+from django.http import Http404, HttpResponseServerError
 
 @login_required
 def book_list(request):
@@ -25,10 +25,18 @@ def book_detail(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     has_paid = request.session.get(f'paid_for_book_{book_id}', False)
 
-    if request.method == 'POST' and 'confirm_payment' in request.POST:
-        request.session[f'paid_for_book_{book_id}'] = True
-        messages.success(request, "✅ Payment confirmed! You can now access the book.")
-        return redirect('books:book_detail', book_id=book_id)
+    if request.method == 'POST':
+        try:
+            if 'confirm_payment' in request.POST:
+                request.session[f'paid_for_book_{book_id}'] = True
+                messages.success(request, "✅ Payment confirmed! You can now access the book.")
+                return redirect('books:book_detail', book_id=book_id)
+            else:
+                messages.warning(request, "⚠️ Payment confirmation missing. Please try again.")
+        except Exception as e:
+            print(f"[ERROR] Payment confirmation failed for book {book_id}: {e}")
+            messages.error(request, "🚫 Something went wrong while confirming payment. Please try again or contact support.")
+            return HttpResponseServerError("Internal Server Error")
 
     whatsapp_number = "+256 774 123456"  # Replace with your actual number
 

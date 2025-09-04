@@ -2,17 +2,33 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+
+    <!-- Feedback Messages -->
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="px-4 py-3 rounded-lg shadow-md text-white bg-red-600 animate-pulse">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="flex flex-col md:flex-row items-start md:space-x-8">
         <!-- Book Cover Section -->
         <div class="flex-shrink-0 mb-6 md:mb-0">
-            <img src="{{ book.cover_image_url }}" alt="{{ book.title }} Cover" class="w-64 h-auto rounded-lg shadow-xl">
+            <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}"
+                 alt="{{ book.title }} Cover"
+                 class="w-64 h-auto rounded-lg shadow-xl">
         </div>
 
         <!-- Book Details Section -->
         <div class="flex-grow">
             <h2 class="text-4xl font-bold text-gray-200 mb-2">{{ book.title }}</h2>
             <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round" class="lucide lucide-user">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
@@ -24,13 +40,15 @@
             <div class="flex items-center mb-6">
                 <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price }}</span>
                 {% if has_paid %}
-                    <a href="{{ book.book_file_url }}" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                    <a href="{{ book.book_file_url }}"
+                       class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
                         📘 Read Book
                     </a>
                 {% else %}
                     <form method="post">
                         {% csrf_token %}
-                        <button type="submit" name="confirm_payment" class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
+                        <button type="submit" name="confirm_payment"
+                                class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-transform transform hover:scale-105 shadow-lg font-semibold animate-bounce">
                             I Have Paid – Unlock Book
                         </button>
                     </form>
@@ -40,11 +58,18 @@
             {% if not has_paid %}
             <div class="text-sm text-gray-400 mt-4">
                 <p class="mb-2">To access this book, please send payment via mobile money and confirm via WhatsApp:</p>
-                <p class="text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a></p>
+                <p class="text-green-400 font-semibold animate-pulse">
+                    📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a>
+                </p>
             </div>
             {% else %}
             <div class="mt-4 text-sm text-green-400 font-semibold">
                 ✅ Payment confirmed. Enjoy your reading journey!
+            </div>
+
+            <!-- Floating Toast -->
+            <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+                🎉 Book unlocked! Happy reading.
             </div>
             {% endif %}
         </div>
