@@ -6,7 +6,9 @@
     <h2 class="text-3xl font-bold text-gray-200 mb-4">Confirm Deletion</h2>
     
     <!-- Confirmation message displaying the book's title -->
-    <p class="text-gray-400 mb-6">Are you sure you want to delete the book titled **"{{ book.title }}"**?</p>
+    <p class="text-gray-400 mb-6">
+        Are you sure you want to delete the book titled <span class="font-semibold text-gray-100">"{{ book.title }}"</span>?
+    </p>
     
     <!-- Warning about the action being irreversible -->
     <p class="text-sm text-red-400 mb-8">This action cannot be undone.</p>
@@ -21,10 +23,20 @@
             </button>
             
             <!-- A link to cancel the action and return to the dashboard -->
-            <a href="{% url 'book:teacher_dashboard' %}" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-md font-semibold">
+            <a href="{% url 'books:teacher_book_dashboard' %}" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-md font-semibold">
                 Cancel
             </a>
         </div>
     </form>
+
+    <!-- Support and gratitude section -->
+    <div class="mt-10 text-sm text-gray-400 border-t border-slate-700 pt-6">
+        <p>If you need help or deleted this book by mistake, contact the admin:</p>
+        <p class="mt-2 text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a></p>
+    </div>
+
+    <div class="mt-6 text-center text-indigo-400 text-sm italic">
+        Every book you share is a thread in Africa’s digital tapestry. Thank you for contributing.
+    </div>
 </div>
 {% endblock %}

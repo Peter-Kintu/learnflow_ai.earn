@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <h2 class="text-3xl font-bold text-gray-200 mb-6">Upload a New Book</h2>
-    <p class="text-gray-400 mb-8">Fill out the form below to add a new digital book to the platform.</p>
+    <p class="text-gray-400 mb-8">Fill out the form below to add a new digital book to the platform. Every upload is a gift to learners across Africa.</p>
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -58,5 +58,14 @@
             </button>
         </div>
     </form>
+
+    <div class="mt-10 text-sm text-gray-400 border-t border-slate-700 pt-6">
+        <p>Need help with your upload or access code?</p>
+        <p class="mt-2 text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a></p>
+    </div>
+
+    <div class="mt-6 text-center text-indigo-400 text-sm italic">
+        Every book you share is a thread in Africa’s digital tapestry. Thank you for empowering learners.
+    </div>
 </div>
 {% endblock %}

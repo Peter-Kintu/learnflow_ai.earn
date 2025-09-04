@@ -3,38 +3,44 @@
 {% block content %}
 <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <h2 class="text-3xl font-bold text-gray-200 mb-6">Edit Book: {{ book.title }}</h2>
-    <p class="text-gray-400 mb-8">Update the details for your book below.</p>
+    <p class="text-gray-400 mb-8">Update the details for your book below. Changes will reflect immediately on the platform.</p>
 
     <form method="post">
         {% csrf_token %}
         <div class="space-y-4">
             {{ form.non_field_errors }}
+
             <div>
                 <label for="{{ form.title.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Book Title</label>
                 {{ form.title }}
                 {{ form.title.errors }}
             </div>
+
             <div>
                 <label for="{{ form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description</label>
                 {{ form.description }}
                 {{ form.description.errors }}
             </div>
+
             <div>
                 <label for="{{ form.cover_image_url.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Book Cover URL</label>
                 {{ form.cover_image_url }}
                 <p class="text-sm text-gray-500 mt-1">Please provide a URL for the book's cover image.</p>
                 {{ form.cover_image_url.errors }}
             </div>
+
             <div>
                 <label for="{{ form.book_file_url.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Book File URL</label>
                 {{ form.book_file_url }}
                 <p class="text-sm text-gray-500 mt-1">Please provide a URL for the book file (e.g., a PDF).</p>
                 {{ form.book_file_url.errors }}
             </div>
+
             <div>
                 <label for="{{ form.price.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Price</label>
                 {{ form.price }}
                 {{ form.price.errors }}
+                <p class="text-sm text-gray-500 mt-1">Set the price in UGX. Users must pay before accessing the book.</p>
             </div>
         </div>
 
@@ -47,5 +53,14 @@
             </button>
         </div>
     </form>
+
+    <div class="mt-10 text-sm text-gray-400 border-t border-slate-700 pt-6">
+        <p>Need help updating your book or adjusting the price?</p>
+        <p class="mt-2 text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a></p>
+    </div>
+
+    <div class="mt-6 text-center text-indigo-400 text-sm italic">
+        Every edit you make strengthens the learning journey. Thank you for shaping Africa’s digital library.
+    </div>
 </div>
 {% endblock %}

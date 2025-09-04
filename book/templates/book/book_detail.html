@@ -12,22 +12,41 @@
         <div class="flex-grow">
             <h2 class="text-4xl font-bold text-gray-200 mb-2">{{ book.title }}</h2>
             <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
                 <span>Uploaded by {{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
             </div>
 
             <p class="text-gray-400 mb-6">{{ book.description }}</p>
 
             <div class="flex items-center mb-6">
-                <span class="text-indigo-400 text-3xl font-extrabold mr-4">${{ book.price }}</span>
-                <button class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
-                    Purchase Book
-                </button>
+                <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price }}</span>
+                {% if has_paid %}
+                    <a href="{{ book.book_file_url }}" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                        📘 Read Book
+                    </a>
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" name="confirm_payment" class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-lg font-semibold">
+                            I Have Paid – Unlock Book
+                        </button>
+                    </form>
+                {% endif %}
             </div>
-            
-            <p class="text-sm text-gray-500 mt-2">
-                Note: This is a placeholder for a purchase action.
-            </p>
+
+            {% if not has_paid %}
+            <div class="text-sm text-gray-400 mt-4">
+                <p class="mb-2">To access this book, please send payment via mobile money and confirm via WhatsApp:</p>
+                <p class="text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256 774 123456</a></p>
+            </div>
+            {% else %}
+            <div class="mt-4 text-sm text-green-400 font-semibold">
+                ✅ Payment confirmed. Enjoy your reading journey!
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

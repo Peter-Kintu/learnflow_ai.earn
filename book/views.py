@@ -18,17 +18,32 @@ def book_list(request):
 def book_detail(request, book_id):
     """
     Renders the detail page for a single book.
-    Fetches a specific Book object by its primary key (pk) and passes it to the template.
+
+    If the user has not paid, they will see book metadata and a prompt to contact via WhatsApp.
+    If payment is confirmed (via session), the book file URL is revealed.
     """
     book = get_object_or_404(Book, pk=book_id)
-    return render(request, 'book/book_detail.html', {'book': book})
+    has_paid = request.session.get(f'paid_for_book_{book_id}', False)
+
+    if request.method == 'POST' and 'confirm_payment' in request.POST:
+        request.session[f'paid_for_book_{book_id}'] = True
+        messages.success(request, "✅ Payment confirmed! You can now access the book.")
+        return redirect('books:book_detail', book_id=book_id)
+
+    whatsapp_number = "+256 774 123456"  # Replace with your actual number
+
+    return render(request, 'book/book_detail.html', {
+        'book': book,
+        'has_paid': has_paid,
+        'whatsapp_number': whatsapp_number
+    })
 
 @login_required
 def book_upload(request):
     """
     Allows a teacher to upload a new book.
 
-    Handles both GET (displaying the form) and POST (processing the form and saving the book).
+    Handles both GET and POST requests.
     Validates the upload access code manually and assigns the current user as the uploader.
     """
     if request.method == 'POST':
@@ -36,7 +51,6 @@ def book_upload(request):
         if form.is_valid():
             code = form.cleaned_data.get('upload_code')
 
-            # Validate the upload code manually
             if code != "123456":  # Replace with your actual admin code
                 form.add_error('upload_code', "Hmm... that code doesn’t match our records. Please check with the admin and try again. Your story deserves to be shared.")
             else:
