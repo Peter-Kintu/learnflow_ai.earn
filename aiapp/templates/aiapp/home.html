@@ -54,7 +54,18 @@
         return response.json();
       })
       .then(data => {
-        if (data.extract) {
+        if (data.type === "disambiguation") {
+          resultDiv.innerHTML = `
+            <h3 class="text-lg font-bold mb-2 text-white">${data.title}</h3>
+            <p class="text-gray-300">This term has multiple meanings. Here are a few educational contexts:</p>
+            <ul class="list-disc list-inside text-indigo-400">
+              <li><strong>General Achievement Test (Australia)</strong> – Assesses literacy, numeracy, and general knowledge for VCE students.</li>
+              <li><strong>Graduate Assessment Test (Pakistan)</strong> – Required for postgraduate admissions, includes verbal and quantitative reasoning.</li>
+              <li><strong>General Ability Test (India)</strong> – Part of the NDA exam, covering English and General Knowledge.</li>
+            </ul>
+            <a href="${data.content_urls.desktop.page}" target="_blank" class="text-indigo-400 underline mt-2 inline-block">Explore full list on Wikipedia</a>
+          `;
+        } else if (data.extract) {
           resultDiv.innerHTML = `
             <h3 class="text-lg font-bold mb-2 text-white">${data.title}</h3>
             <p class="text-gray-300">${data.extract}</p>
