@@ -1,109 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In</title>
-    <!-- Use Tailwind CSS from a CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In | Learnflow AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+  </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
-<div class="bg-slate-800 p-8 rounded-lg shadow-2xl w-full max-w-md">
-    <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back!</h2>
-    <p class="text-center text-gray-400 mb-8">Log in to your account</p>
+  <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
+    <!-- Logo or Illustration -->
+    <div class="mb-6 text-center">
+      <img src="/static/img/learnflow-logo.svg" alt="Learnflow Logo" class="mx-auto h-16 animate-pulse">
+    </div>
 
-    <!-- Display Django messages if any exist -->
+    <!-- Headline -->
+    <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
+    <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
+
+    <!-- Django messages -->
     {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-                <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
+      <div class="mb-4">
+        {% for message in messages %}
+          <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
 
     <!-- Login form -->
     <form method="post" class="space-y-6">
-        {% csrf_token %}
-        
-        <!-- Display all form errors -->
-        {% if login_form.errors %}
-            <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
-                <p>Please correct the following errors:</p>
-                <ul>
-                {% for field, errors in login_form.errors.items %}
-                    {% for error in errors %}
-                        <li>{{ field|title }}: {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
+      {% csrf_token %}
 
-        <!-- Iterate and render all form fields with consistent styling -->
-        {% for field in login_form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-                    {{ field.label }}
-                </label>
-                
-                <!-- Special handling for password fields to add the visibility toggle -->
-                {% if field.name == 'password' %}
-                    <div class="relative">
-                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10" placeholder="{{ field.label }}" autocomplete="current-password" required>
-                        <!-- Password visibility toggle icon (inline SVG for portability) -->
-                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </span>
-                    </div>
-                {% else %}
-                    <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="{{ field.label }}" required>
-                {% endif %}
-            </div>
-        {% endfor %}
+      {% if login_form.errors %}
+        <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
+          <p class="mb-2">Let’s smooth this out together:</p>
+          <ul>
+            {% for field, errors in login_form.errors.items %}
+              {% for error in errors %}
+                <li class="bg-red-800 text-red-200 px-3 py-1 rounded-full inline-block mb-1">{{ field|title }}: {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
 
-        <!-- The login button -->
-        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold w-full">
-            Log In
-        </button>
+      {% for field in login_form %}
+        <div class="transition-opacity duration-500 opacity-0 animate-fadeIn">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+            {{ field.label }}
+          </label>
+
+          {% if field.name == 'password' %}
+            <div class="relative">
+              <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
+                placeholder="{{ field.label }}" autocomplete="current-password" required>
+              <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
+                onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </span>
+            </div>
+          {% else %}
+            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+              class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              placeholder="{{ field.label }}" required>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <!-- Login button -->
+      <button type="submit"
+        class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
+        Enter the Flow
+      </button>
     </form>
 
-    <!-- Link to the registration page -->
+    <!-- Registration link -->
     <div class="mt-6 text-center text-sm text-gray-400">
-        Don't have an account? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Sign Up</a>
+      New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
     </div>
-</div>
 
-<script>
-    /**
-     * Toggles the visibility of a password input field.
-     * @param {string} inputId The ID of the input element to toggle.
-     * @param {HTMLElement} iconElement The SVG icon element that was clicked.
-     */
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-gray-500 italic">
+      Learnflow is where Africa’s educators rise. 🌍
+    </div>
+  </div>
+
+  <script>
     function togglePasswordVisibility(inputId, iconElement) {
-        const input = document.getElementById(inputId);
-        const iconPath = iconElement.querySelector('path:nth-child(2)');
-
-        if (input.type === 'password') {
-            input.type = 'text';
-            iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75M5.996 11.996L3.996 10M18.004 14l2-2.004M16.996 10l-2 2M12 18V6M12 6a6 6 0 014.243 10.243M12 6a6 6 0 00-4.243 10.243M12 18a6 6 0 01-4.243-10.243M12 18a6 6 0 004.243-10.243');
-        } else {
-            input.type = 'password';
-            iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
-        }
+      const input = document.getElementById(inputId);
+      const iconPath = iconElement.querySelector('path:nth-child(2)');
+      if (input.type === 'password') {
+        input.type = 'text';
+        iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75...');
+      } else {
+        input.type = 'password';
+        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5...');
+      }
     }
-</script>
-
+  </script>
 </body>
 </html>
