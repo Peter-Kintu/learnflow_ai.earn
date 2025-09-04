@@ -13,12 +13,12 @@
     You’ve joined a movement where educators and learners rise together—one joyful click at a time.
   </p>
 
-  <!-- Wikipedia Search -->
+  <!-- DuckDuckGo Search -->
   <div class="mb-10 text-left">
     <h2 class="text-2xl font-semibold text-white mb-3">🔍 Quick Knowledge Lookup</h2>
     <div class="flex gap-4 items-center">
-      <input type="text" id="wikiSearch" placeholder="Search Wikipedia..." class="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
-      <button onclick="searchWikipedia()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md">Search</button>
+      <input type="text" id="wikiSearch" placeholder="Search anything..." class="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+      <button onclick="searchDuckDuckGo()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md">Search</button>
     </div>
     <div id="wikiResult" class="mt-6 text-gray-300"></div>
   </div>
@@ -36,28 +36,28 @@
   </div>
 </div>
 
-<!-- Wikipedia API & Chatbot Script -->
+<!-- DuckDuckGo API & Chatbot Script -->
 <script>
-  function searchWikipedia() {
+  function searchDuckDuckGo() {
     const query = document.getElementById('wikiSearch').value;
     const resultDiv = document.getElementById('wikiResult');
     resultDiv.innerHTML = "<em>Searching...</em>";
 
-    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
+    fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`)
       .then(response => response.json())
       .then(data => {
-        if (data.extract) {
+        if (data.Abstract) {
           resultDiv.innerHTML = `
-            <h3 class="text-lg font-bold mb-2 text-white">${data.title}</h3>
-            <p class="text-gray-300">${data.extract}</p>
-            <a href="${data.content_urls.desktop.page}" target="_blank" class="text-indigo-400 underline">Read more on Wikipedia</a>
+            <h3 class="text-lg font-bold mb-2 text-white">${data.Heading}</h3>
+            <p class="text-gray-300">${data.Abstract}</p>
+            <a href="${data.AbstractURL}" target="_blank" class="text-indigo-400 underline">Read more</a>
           `;
         } else {
-          resultDiv.innerHTML = "<span class='text-red-400'>Input error, please try again later.</span>";
+          resultDiv.innerHTML = "<span class='text-red-400'>No results found. Try a different term.</span>";
         }
       })
       .catch(() => {
-        resultDiv.innerHTML = "<span class='text-red-400'>Input error, please try again later.</span>";
+        resultDiv.innerHTML = "<span class='text-red-400'>Search failed. Please try again later.</span>";
       });
   }
 
