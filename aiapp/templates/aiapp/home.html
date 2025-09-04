@@ -44,11 +44,11 @@
         if (data.extract) {
           resultDiv.innerHTML = `<h3 class="text-lg font-bold mb-2">${data.title}</h3><p>${data.extract}</p><a href="${data.content_urls.desktop.page}" target="_blank" class="text-indigo-400 underline">Read more on Wikipedia</a>`;
         } else {
-          resultDiv.innerHTML = "No results found.";
+          resultDiv.innerHTML = "input error, please try again later.";
         }
       })
       .catch(() => {
-        resultDiv.innerHTML = "Error fetching data.";
+        resultDiv.innerHTML = "input error, please try again later.";
       });
   }
 
