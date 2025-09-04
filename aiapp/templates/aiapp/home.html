@@ -4,7 +4,6 @@
 
 {% block content %}
 <style>
-    /* A simple loader for the search state */
     .loader {
         border-top-color: #4f46e5;
         -webkit-animation: spinner 1s linear infinite;
@@ -18,7 +17,6 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-    /* Style for the selectable suggestions */
     .suggestion-item {
         cursor: pointer;
         transition: all 0.2s;
@@ -29,31 +27,31 @@
     }
 </style>
 
-<div class="max-w-5xl mx-auto p-10 mt-12 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-3xl shadow-2xl text-center backdrop-blur-md border border-slate-600 transition-all duration-300">
+<div class="max-w-5xl mx-auto p-6 sm:p-10 mt-6 sm:mt-12 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl text-center backdrop-blur-md border border-slate-600 transition-all duration-300">
 
-    <h1 class="text-5xl font-extrabold text-white mb-4 tracking-tight animate-fade-in">
+    <h1 class="text-3xl sm:text-5xl font-extrabold text-white mb-4 tracking-tight animate-fade-in">
         Welcome, {{ user.username }} 👋
     </h1>
-    <p class="text-gray-300 text-lg mb-8 font-light">
+    <p class="text-gray-300 text-base sm:text-lg mb-8 font-light">
         You’ve joined a movement where educators and learners rise together—one joyful click at a time.
     </p>
 
-    <div class="mb-10 text-left">
-        <h2 class="text-2xl font-semibold text-white mb-3">🔍 Quick Knowledge Lookup</h2>
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-inner">
-            <div id="wikiLog" class="h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
-            <div class="flex gap-4">
+    <div class="mb-10 text-center sm:text-left">
+        <h2 class="text-xl sm:text-2xl font-semibold text-white mb-3">🔍 Quick Knowledge Lookup</h2>
+        <div class="bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-inner">
+            <div id="wikiLog" class="max-h-48 sm:h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
                 <input type="text" id="wikiSearch" placeholder="Ask learnflowAi..." class="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200" onkeydown="handleEnter(event)">
                 <button onclick="handleWikiSearch()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md">Search</button>
             </div>
         </div>
     </div>
 
-    <div class="mb-10 text-left">
-        <h2 class="text-2xl font-semibold text-white mb-3">💬 Ask LearnFlow</h2>
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-inner">
-            <div id="chatLog" class="h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
-            <div class="flex gap-4">
+    <div class="mb-10 text-center sm:text-left">
+        <h2 class="text-xl sm:text-2xl font-semibold text-white mb-3">💬 Ask LearnFlow</h2>
+        <div class="bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-inner">
+            <div id="chatLog" class="max-h-48 sm:h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
                 <input type="text" id="chatInput" placeholder="Ask learnflowAi......" class="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200">
                 <button onclick="sendChat()" class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md">Send</button>
             </div>
@@ -62,7 +60,6 @@
 </div>
 
 <script>
-    // Wikipedia section functions
     const wikiLog = document.getElementById('wikiLog');
     const wikiSearchInput = document.getElementById('wikiSearch');
 
@@ -96,9 +93,7 @@
             const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.title || "No direct match found.");
-            }
+            if (!response.ok) throw new Error(data.title || "No direct match found.");
 
             if (data.type === "disambiguation") {
                 const suggestionResponse = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&format=json&origin=*`);
@@ -150,7 +145,6 @@
         }
     }
 
-    // Original Chatbot section functions
     function sendChat() {
         const input = document.getElementById('chatInput');
         const log = document.getElementById('chatLog');
@@ -161,17 +155,7 @@
 
         const botResponse = getBotResponse(userMessage);
         setTimeout(() => {
-            log.innerHTML += `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${botResponse}</div>`;
-            log.scrollTop = log.scrollHeight;
-        }, 600);
-
-        input.value = '';
-    }
-
-    function getBotResponse(message) {
-        if (message.toLowerCase().includes("upload")) return "To upload content, visit your dashboard and click 'Add Resource'.";
-        if (message.toLowerCase().includes("verify")) return "Teacher verification is handled securely—check your profile settings.";
-        return "Thanks for your question! Our team is working to make LearnFlow AI even better.";
-    }
-</script>
-{% endblock %}
+                    log.innerHTML += `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${botResponse}</div>`;
+                    log.scrollTop = log.scrollHeight;
+                }, 500);
+            }
