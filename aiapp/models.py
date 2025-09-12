@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class Quiz(models.Model):
+    upload_code = models.CharField(max_length=10, blank=True, null=True, help_text="Admin-provided code to authorize uploads.")
     """Represents a quiz created by a teacher."""
     teacher = models.ForeignKey(
         User,
