@@ -75,9 +75,18 @@
                 <label for="{{ quiz_form.description.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Description and topic</label>
                 {{ quiz_form.description }}
             </div>
+               <div>
+        <label for="{{ quiz_form.upload_code.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Upload Access Code</label>
+        {{ quiz_form.upload_code }}
+        {% if quiz_form.upload_code.errors %}
+            <p class="text-red-400 text-sm mt-1">{{ quiz_form.upload_code.errors.0 }}</p>
+        {% endif %}
+    </div>
+   
 
             <div id="questions-container" class="space-y-8 mt-8 pt-8 border-t border-slate-700">
             </div>
+            
 
             <div class="flex justify-start items-center space-x-4">
                 <button type="button" id="add-question-btn" class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center justify-center space-x-2">
@@ -180,6 +189,7 @@
                         
                         ${mcqFieldsHtml}
                         ${singleAnswerFieldsHtml}
+                        
 
                     </div>
                 `;
