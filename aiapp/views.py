@@ -232,10 +232,12 @@ def create_quiz(request):
                     raise
         else:
             messages.error(request, "Please correct the form errors below.")
+            print("Form errors:", quiz_form.errors)
     else:
         quiz_form = QuizForm()
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+       
 
 @login_required
 def teacher_quiz_dashboard(request):
