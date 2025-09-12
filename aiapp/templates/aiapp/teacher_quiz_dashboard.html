@@ -30,6 +30,9 @@
                         <h3 class="text-xl font-semibold text-gray-200">{{ quiz.title }}</h3>
                         <p class="text-gray-400 mt-2 text-sm line-clamp-2">{{ quiz.description }}</p>
                         <span class="text-sm text-gray-500 mt-2 block">Questions: {{ quiz.questions.count }}</span>
+                        {% if quiz.upload_code %}
+                            <span class="text-sm text-indigo-400 mt-1 block">Access Code: {{ quiz.upload_code }}</span>
+                        {% endif %}
                     </div>
 
                     <div class="flex flex-wrap gap-2">
@@ -39,9 +42,10 @@
                         <a href="{% url 'aiapp:edit_quiz' quiz.id %}" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-sm font-semibold text-sm">
                             Edit
                         </a>
-                        <a href="{% url 'aiapp:quiz_report_pdf' attempt_id %}" class="px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors shadow-sm">
-                         Download Report
-                      </a>
+                        {# Removed broken attempt_id reference #}
+                        <a href="#" class="px-6 py-3 bg-teal-600 text-white font-medium rounded-full opacity-50 cursor-not-allowed" title="Report download coming soon">
+                            Download Report
+                        </a>
                         <a href="{% url 'aiapp:delete_quiz' quiz.id %}" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm">
                             Delete
                         </a>
