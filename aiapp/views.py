@@ -189,6 +189,7 @@ def create_quiz(request):
         if quiz_form.is_valid():
             quiz = quiz_form.save(commit=False)
             quiz.teacher = request.user
+            quiz.upload_code = quiz_form.cleaned_data.get('upload_code')
             quiz.save()
             
             questions_data = request.POST.get('questions_data')

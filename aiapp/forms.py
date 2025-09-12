@@ -47,7 +47,7 @@ class QuizForm(forms.ModelForm):
 
     class Meta:
         model = Quiz
-        fields = ['title', 'description']
+        fields = ['title', 'description',  'upload_code']
 
     def clean_upload_code(self):
         code = self.cleaned_data.get('upload_code')
