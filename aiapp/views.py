@@ -19,6 +19,22 @@ from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def home(request):
+    """
+    Renders the AI-powered home page with personalized context.
+    """
+    return render(request, 'aiapp/home.html', {
+        "user": request.user,
+        "username": request.user.get_full_name() or request.user.username,
+        "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
+    })
+
+
+
 def render_to_pdf(template_src, context_dict={}):
     """
     Renders a Django template to a PDF file.
@@ -37,12 +53,12 @@ def render_to_pdf(template_src, context_dict={}):
         print("Exception during PDF generation:", str(e))
     return None
 
-@login_required
-def home(request):
-    """
-    Renders the home page of the application.
-    """
-    return render(request, 'aiapp/home.html')
+# @login_required
+# def home(request):
+#     """
+#     Renders the home page of the application.
+#     """
+#     return render(request, 'aiapp/home.html')
 
 @login_required
 def quiz_list(request):
