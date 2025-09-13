@@ -98,6 +98,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+CELERY_BROKER_URL = 'rediss://default:AXhKAAIncDFhOTEzZTIxOGNiMTA0YmE1OGI4ZGFhODBmZDFmYmQ4Y3AxMzA3OTQ@native-calf-30794.upstash.io:6379?ssl_cert_reqs=CERT_NONE'
+CELERY_RESULT_BACKEND = 'rediss://default:AXhKAAIncDFhOTEzZTIxOGNiMTA0YmE1OGI4ZGFhODBmZDFmYmQ4Y3AxMzA3OTQ@native-calf-30794.upstash.io:6379?ssl_cert_reqs=CERT_NONE'
 
 # 🔐 Auth Redirects
 LOGIN_URL = 'user:login'
@@ -183,5 +185,3 @@ JAZZMIN_UI_TWEAKS = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
