@@ -1,5 +1,7 @@
 import io
 import json
+from .tasks import ask_learnflow_ai
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -33,7 +35,10 @@ def home(request):
         "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
     })
 
-
+def ask_ai_view(request):
+    query = request.POST.get("query")
+    task = ask_learnflow_ai.delay(query)
+    return JsonResponse({"task_id": task.id})
 
 def render_to_pdf(template_src, context_dict={}):
     """
@@ -53,12 +58,7 @@ def render_to_pdf(template_src, context_dict={}):
         print("Exception during PDF generation:", str(e))
     return None
 
-# @login_required
-# def home(request):
-#     """
-#     Renders the home page of the application.
-#     """
-#     return render(request, 'aiapp/home.html')
+
 
 @login_required
 def quiz_list(request):
