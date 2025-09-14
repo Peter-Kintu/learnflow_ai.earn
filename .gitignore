@@ -1,0 +1,10 @@
+# Python virtual environment
+aienv/
+
+# Common Python-related files and directories to ignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
