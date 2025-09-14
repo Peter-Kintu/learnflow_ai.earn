@@ -32,6 +32,16 @@ from django.views.decorators.csrf import csrf_exempt
 # NOTE: For this to work with your AI models, you'll need to import
 # and use them here. This is a placeholder for the actual AI logic.
 
+@login_required
+def home(request):
+    """
+    Renders the AI-powered home page with personalized context.
+    """
+    return render(request, 'aiapp/home.html', {
+        "user": request.user,
+        "username": request.user.get_full_name() or request.user.username,
+        "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
+    })
 @csrf_exempt
 def chat_api(request):
     """
@@ -77,17 +87,6 @@ def feedback_api(request):
             return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-@login_required
-def home(request):
-    """
-    Renders the AI-powered home page with personalized context.
-    """
-    return render(request, 'aiapp/home.html', {
-        "user": request.user,
-        "username": request.user.get_full_name() or request.user.username,
-        "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
-    })
 
 def ask_ai_view(request):
     query = request.POST.get("query")
