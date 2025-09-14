@@ -6,9 +6,10 @@ import logging
 app = FastAPI()
 
 # ─── CORS Setup ───────────────────────────────────────────────────────────────
+# Allows cross-origin requests from any domain.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with your Django domain in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,9 +25,14 @@ context = (
 feedback_log = []
 
 # ─── Lazy Model Loader ────────────────────────────────────────────────────────
+# This function loads the model on the first request.
+# We're using a more lightweight QA model to fit within the memory
+# limitations of free-tier hosting services like Render (typically ~512MB RAM).
+# The 'distilbert-base-uncased-distilled-squad' model is fine-tuned
+# specifically for extractive question answering and is smaller than the multilingual version.
 def get_qa_pipeline():
     # Load model only when needed
-    return pipeline("question-answering", model="distilbert-base-multilingual-cased")
+    return pipeline("question-answering", model="distilbert-base-uncased-distilled-squad")
 
 # ─── Chat Endpoint ────────────────────────────────────────────────────────────
 @app.post("/api/chat")
@@ -40,9 +46,14 @@ async def chat(request: Request):
     elif "verify" in query:
         return {"answer": "Teacher verification is handled securely—check your profile settings."}
     else:
-        qa = get_qa_pipeline()
-        result = qa(question=query, context=context)
-        return {"answer": result["answer"]}
+        try:
+            qa = get_qa_pipeline()
+            result = qa(question=query, context=context)
+            return {"answer": result["answer"]}
+        except Exception as e:
+            # Added basic error handling to prevent the app from crashing on model load errors.
+            logging.error(f"Error processing question-answering request: {e}")
+            return {"answer": "I'm sorry, I am currently unable to answer that question."}
 
 # ─── Feedback Endpoint ────────────────────────────────────────────────────────
 @app.post("/api/feedback")
