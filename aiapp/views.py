@@ -27,7 +27,7 @@ from django.shortcuts import render
 
 import json
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 
 # NOTE: For this to work with your AI models, you'll need to import
 # and use them here. This is a placeholder for the actual AI logic.
