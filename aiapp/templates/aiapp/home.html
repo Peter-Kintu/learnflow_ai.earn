@@ -30,11 +30,13 @@
     <div class="mb-6 sm:mb-10 text-left">
         <h2 class="text-xl sm:text-2xl font-semibold text-white mb-2">💬 Ask LearnFlow AI</h2>
         <div class="bg-slate-900 p-4 sm:p-6 rounded-xl border border-slate-700 shadow-inner">
+            <!-- Chat log and input section -->
             <div id="chatLog" class="h-48 overflow-y-auto text-gray-300 mb-4 px-2 py-1 bg-slate-800 rounded-lg border border-slate-600"></div>
             <div class="flex flex-col sm:flex-row gap-4">
                 <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
                 <button onclick="sendChat()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md">Send</button>
             </div>
+            <!-- Feedback section -->
             <div class="mt-4">
                 <input type="text" id="feedbackInput" placeholder="Suggest a better answer..." class="w-full px-4 py-2 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200">
                 <button onclick="sendFeedback()" class="mt-2 w-full px-5 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md">Submit Feedback</button>
@@ -48,45 +50,97 @@
     const chatLog = document.getElementById('chatLog');
     const feedbackInput = document.getElementById('feedbackInput');
 
+    // Load chat history from localStorage on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedChat = localStorage.getItem('chatHistory');
+        if (storedChat) {
+            chatLog.innerHTML = storedChat;
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+    });
+
+    // Save chat history to localStorage whenever it changes
+    function saveChatHistory() {
+        localStorage.setItem('chatHistory', chatLog.innerHTML);
+    }
+
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendChat();
     });
+
+    // Simulate an AI response based on the input
+    function getSimulatedAiResponse(text) {
+        const lowerText = text.toLowerCase();
+        if (lowerText.includes('hello')) {
+            return 'Hello there! How can I help you today?';
+        } else if (lowerText.includes('how are you')) {
+            return "I'm a computer program, so I don't have feelings, but I'm operating perfectly! How can I assist you?";
+        } else if (lowerText.includes('name')) {
+            return 'I am a large language model. I do not have a name.';
+        } else if (lowerText.includes('thank you')) {
+            return "You're welcome! Is there anything else I can do?";
+        } else {
+            return 'I am still learning. Can you rephrase that?';
+        }
+    }
 
     async function sendChat() {
         const query = chatInput.value.trim();
         if (!query) return;
 
-        chatLog.innerHTML += `<div><strong class="text-green-400">You:</strong> ${query}</div>`;
+        // Display user message
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.innerHTML = `<div><strong class="text-green-400">You:</strong> ${query}</div>`;
+        chatLog.appendChild(userMsgDiv);
         chatInput.value = '';
-        chatLog.innerHTML += `<div class='loader'></div>`;
-
-        try {
-            const response = await fetch("https://your-fastapi-domain.com/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
-            });
-            const data = await response.json();
-            chatLog.innerHTML += `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${data.answer}</div>`;
-        } catch (error) {
-            chatLog.innerHTML += `<div class='text-red-400'>Error fetching answer. Please try again.</div>`;
-        }
-
+        saveChatHistory();
+        
+        chatLog.innerHTML += `<div id="loader" class='loader'></div>`;
         chatLog.scrollTop = chatLog.scrollHeight;
+
+        // Simulate fetching AI response
+        setTimeout(() => {
+            const aiResponse = getSimulatedAiResponse(query);
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.innerHTML = `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${aiResponse}</div>`;
+            chatLog.appendChild(aiMsgDiv);
+            saveChatHistory();
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }, 1000); // Simulate 1-second delay for API call
     }
 
-    async function sendFeedback() {
+    function sendFeedback() {
         const feedback = feedbackInput.value.trim();
         if (!feedback) return;
 
-        await fetch("https://your-fastapi-domain.com/api/feedback", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ feedback })
-        });
-
+        // In a real app, you would send this feedback to a server
+        // Example:
+        // fetch("https://your-fastapi-domain.com/api/feedback", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({ feedback })
+        // });
+        
         feedbackInput.value = '';
-        alert("Thanks for helping LearnFlow improve!");
+        
+        // Custom message box instead of alert()
+        const messageBox = document.createElement('div');
+        messageBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-gray-800 p-6 rounded-lg shadow-xl border border-gray-200 z-50';
+        messageBox.innerHTML = `
+            <div class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <h3 class="text-lg font-bold">Feedback Submitted!</h3>
+                <p class="text-sm mt-2">Thanks for helping LearnFlow improve!</p>
+                <button onclick="this.parentElement.parentElement.remove()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full">OK</button>
+            </div>
+        `;
+        document.body.appendChild(messageBox);
     }
 </script>
 {% endblock %}
