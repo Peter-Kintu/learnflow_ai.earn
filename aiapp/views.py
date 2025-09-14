@@ -42,51 +42,51 @@ def home(request):
         "username": request.user.get_full_name() or request.user.username,
         "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
     })
-@csrf_exempt
-def chat_api(request):
-    """
-    Handles POST requests for the chat API.
-    Receives a user query and returns a placeholder AI response.
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            query = data.get('query', '')
+# @csrf_exempt
+# def chat_api(request):
+#     """
+#     Handles POST requests for the chat API.
+#     Receives a user query and returns a placeholder AI response.
+#     """
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             query = data.get('query', '')
             
-            # --- Placeholder for AI model logic ---
-            # Replace this with your actual AI model's code to generate a response.
-            ai_response = f"I received your message: '{query}'. This is a placeholder response."
-            # -------------------------------------
+#             # --- Placeholder for AI model logic ---
+#             # Replace this with your actual AI model's code to generate a response.
+#             ai_response = f"I received your message: '{query}'. This is a placeholder response."
+#             # -------------------------------------
 
-            return JsonResponse({'answer': ai_response})
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
+#             return JsonResponse({'answer': ai_response})
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-@csrf_exempt
-def feedback_api(request):
-    """
-    Handles POST requests for the feedback API.
-    Saves feedback to a log file or a database.
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            feedback = data.get('feedback', '')
+# @csrf_exempt
+# def feedback_api(request):
+#     """
+#     Handles POST requests for the feedback API.
+#     Saves feedback to a log file or a database.
+#     """
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             feedback = data.get('feedback', '')
             
-            # --- Placeholder for feedback storage ---
-            # You can save this to a file, database, or send it to a different service.
-            # For now, let's just log it to the console.
-            print(f"Received user feedback: '{feedback}'")
-            # ---------------------------------------
+#             # --- Placeholder for feedback storage ---
+#             # You can save this to a file, database, or send it to a different service.
+#             # For now, let's just log it to the console.
+#             print(f"Received user feedback: '{feedback}'")
+#             # ---------------------------------------
 
-            return JsonResponse({'message': 'Feedback received successfully'})
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
+#             return JsonResponse({'message': 'Feedback received successfully'})
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 def ask_ai_view(request):
     query = request.POST.get("query")
