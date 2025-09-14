@@ -10,7 +10,7 @@ urlpatterns = [
     
     # This line redirects the root URL ('/') to the login URL.
     # This ensures that the first page the user sees is the login page.
-    path('', RedirectView.as_view(pattern_name='user:login', permanent=False), name='root'),
+    # path('', RedirectView.as_view(pattern_name='user:login', permanent=False), name='root'),
     
     # This includes the URLs from the 'user' app, making them available at the root level.
     # For example, the login page will be at /login/ and the register page at /register/.
