@@ -1,13 +1,38 @@
+import io
+import json
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from transformers import pipeline
 import logging
 import uvicorn
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 # ─── Configure Logging ────────────────────────────────────────────────────────
 # This sets up basic logging to show INFO level messages and above.
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# ─── File-Based Persistence Setup ─────────────────────────────────────────────
+# This is a temporary solution for persistence. For production, consider using
+# a proper database like PostgreSQL, MongoDB, or Firestore.
+FEEDBACK_FILE = "feedback_log.json"
+
+def load_feedback() -> List[str]:
+    """Loads feedback from the JSON file."""
+    try:
+        with open(FEEDBACK_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Return an empty list if the file doesn't exist or is invalid.
+        logging.warning(f"Feedback file '{FEEDBACK_FILE}' not found or is empty/invalid. Starting with an empty log.")
+        return []
+
+def save_feedback(feedback_list: List[str]):
+    """Saves feedback to the JSON file."""
+    try:
+        with open(FEEDBACK_FILE, "w") as f:
+            json.dump(feedback_list, f)
+    except IOError as e:
+        logging.error(f"Error saving feedback to file: {e}")
 
 # ─── FastAPI Application Initialization ───────────────────────────────────────
 app = FastAPI(
@@ -15,6 +40,9 @@ app = FastAPI(
     description="An API for a question-answering chatbot for the LearnFlow AI platform.",
     version="1.0.0"
 )
+
+# Initialize feedback log from file
+FEEDBACK_LOG: list[str] = load_feedback()
 
 # ─── CORS Middleware Setup ────────────────────────────────────────────────────
 # Allows cross-origin requests from any domain, which is useful for development
@@ -35,11 +63,6 @@ CONTEXT = (
     "LearnFlow AI is a platform designed to empower educators and learners across Africa. "
     "It supports joyful onboarding, secure resource sharing, and culturally resonant feedback."
 )
-
-# ─── Temporary In-Memory Storage ──────────────────────────────────────────────
-# In a production application, this data should be stored in a persistent
-# database like MongoDB, PostgreSQL, or Firestore.
-FEEDBACK_LOG: list[str] = []
 
 # ─── Lazy Model Loading ───────────────────────────────────────────────────────
 # The model is loaded only when the first request to the chat endpoint is made.
@@ -73,8 +96,6 @@ async def chat(request: Request) -> Dict[str, str]:
             return {"answer": "Please provide a query."}
 
         # Simple keyword-based intent routing.
-        # For a more robust solution, a dedicated intent classification model
-        # would be used (e.g., using a small BERT model or a rule-based system).
         if "upload" in query:
             return {"answer": "To upload content, visit your dashboard and click 'Add Resource'."}
         elif "verify" in query:
@@ -100,6 +121,7 @@ async def feedback(request: Request) -> Dict[str, str]:
         
         if feedback_text:
             FEEDBACK_LOG.append(feedback_text)
+            save_feedback(FEEDBACK_LOG)
             logging.info(f"New feedback received: '{feedback_text}'")
         
         return {"status": "received"}
