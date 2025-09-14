@@ -68,22 +68,6 @@
         if (e.key === 'Enter') sendChat();
     });
 
-    // Simulate an AI response based on the input
-    function getSimulatedAiResponse(text) {
-        const lowerText = text.toLowerCase();
-        if (lowerText.includes('hello')) {
-            return 'Hello there! How can I help you today?';
-        } else if (lowerText.includes('how are you')) {
-            return "I'm a computer program, so I don't have feelings, but I'm operating perfectly! How can I assist you?";
-        } else if (lowerText.includes('name')) {
-            return 'I am a large language model. I do not have a name.';
-        } else if (lowerText.includes('thank you')) {
-            return "You're welcome! Is there anything else I can do?";
-        } else {
-            return 'I am still learning. Can you rephrase that?';
-        }
-    }
-
     async function sendChat() {
         const query = chatInput.value.trim();
         if (!query) return;
@@ -98,49 +82,70 @@
         chatLog.innerHTML += `<div id="loader" class='loader'></div>`;
         chatLog.scrollTop = chatLog.scrollHeight;
 
-        // Simulate fetching AI response
-        setTimeout(() => {
-            const aiResponse = getSimulatedAiResponse(query);
+        try {
+            // Updated fetch URL to a relative path
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+            const data = await response.json();
+            
             const loader = document.getElementById('loader');
             if (loader) {
                 loader.remove();
             }
+            
             const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.innerHTML = `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${aiResponse}</div>`;
+            aiMsgDiv.innerHTML = `<div><strong class="text-indigo-400">LearnFlow Bot:</strong> ${data.answer}</div>`;
             chatLog.appendChild(aiMsgDiv);
             saveChatHistory();
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }, 1000); // Simulate 1-second delay for API call
+        } catch (error) {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+            const errorMsgDiv = document.createElement('div');
+            errorMsgDiv.innerHTML = `<div class='text-red-400'>Error fetching answer. Please try again.</div>`;
+            chatLog.appendChild(errorMsgDiv);
+            saveChatHistory();
+        }
+
+        chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    function sendFeedback() {
+    async function sendFeedback() {
         const feedback = feedbackInput.value.trim();
         if (!feedback) return;
 
-        // In a real app, you would send this feedback to a server
-        // Example:
-        // fetch("https://your-fastapi-domain.com/api/feedback", {
-        //     method: "POST",
-        //     headers: { "Content-Type": "application/json" },
-        //     body: JSON.stringify({ feedback })
-        // });
-        
-        feedbackInput.value = '';
-        
-        // Custom message box instead of alert()
-        const messageBox = document.createElement('div');
-        messageBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-gray-800 p-6 rounded-lg shadow-xl border border-gray-200 z-50';
-        messageBox.innerHTML = `
-            <div class="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-                <h3 class="text-lg font-bold">Feedback Submitted!</h3>
-                <p class="text-sm mt-2">Thanks for helping LearnFlow improve!</p>
-                <button onclick="this.parentElement.parentElement.remove()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full">OK</button>
-            </div>
-        `;
-        document.body.appendChild(messageBox);
+        try {
+            // Updated fetch URL to a relative path
+            await fetch("/api/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feedback })
+            });
+
+            feedbackInput.value = '';
+            
+            // Custom message box instead of alert()
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-gray-800 p-6 rounded-lg shadow-xl border border-gray-200 z-50';
+            messageBox.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    <h3 class="text-lg font-bold">Feedback Submitted!</h3>
+                    <p class="text-sm mt-2">Thanks for helping LearnFlow improve!</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full">OK</button>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+        } catch (error) {
+            console.error("Error submitting feedback:", error);
+            // You could display a custom error message here as well.
+        }
     }
 </script>
 {% endblock %}
