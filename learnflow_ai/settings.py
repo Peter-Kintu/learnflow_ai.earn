@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #  Security
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com', 'https://secretary-ai-backend.onrender.com').split(',')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,learnflow-ai-0fdz.onrender.com,https://secretary-ai-backend.onrender.com').split(',')
 
 CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
