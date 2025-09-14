@@ -14,6 +14,12 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/attempt/', views.quiz_attempt, name='quiz_attempt'),
     path('quizzes/results/<int:attempt_id>/', views.quiz_results, name='quiz_results'),
     path('quizzes/review/<int:attempt_id>/', views.quiz_review, name='review_answers'),
+
+      # API endpoint for the chat feature
+    path('api/chat', views.chat_api, name='chat_api'),
+
+    # API endpoint for the feedback feature
+    path('api/feedback', views.feedback_api, name='feedback_api'),
     
     # Teacher Quiz Management URLs
     path('quizzes/dashboard/', views.teacher_quiz_dashboard, name='teacher_quiz_dashboard'),
