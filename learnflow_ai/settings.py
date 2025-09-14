@@ -5,14 +5,14 @@ from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-#  Security
+#  Security
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
 
 CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
-#  Installed Apps
+#  Installed Apps
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'book',
 ]
 
-#  Middleware
+#  Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -43,7 +43,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'learnflow_ai.urls'
 
-#  Templates
+#  Templates
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'templates')],
@@ -60,7 +60,7 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-#  Database (Neon.tech or fallback)
+#  Database (Neon.tech or fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -86,13 +86,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-#  Localization
+#  Localization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Kampala'
 USE_I18N = True
 USE_TZ = True
 
-#  Static & Media
+#  Static & Media
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -102,12 +102,17 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
-#  Auth Redirects
+#  Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login'
 
-#  Jazzmin Admin
+# External API Configurations
+# The URL for your FastAPI backend service.
+# Use an environment variable for production and a local fallback for development.
+BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
+
+#  Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
     "site_header": "LearnFlow",
@@ -146,7 +151,7 @@ JAZZMIN_SETTINGS = {
     "related_modal_active": False
 }
 
-#  Jazzmin UI Tweaks
+#  Jazzmin UI Tweaks
 JAZZMIN_UI_TWEAKS = {
     "theme": "darkly",
     "dark_mode_theme": "darkly",
