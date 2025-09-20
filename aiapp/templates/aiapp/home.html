@@ -151,8 +151,8 @@
         <!-- Input and Buttons -->
         <div class="flex flex-col sm:flex-row gap-4">
             <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
-            <button id="sendBtn" onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
-            <button onclick="clearChat()" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
+            <button id="sendBtn" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
+            <button id="clearBtn" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
         </div>
         <div id="messageBox" class="text-center mt-4 hidden"></div>
     </div>
@@ -160,12 +160,23 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, getDocs, doc, collection, query, orderBy, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Global variables for Firebase
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : null);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    // IMPORTANT: In your Django view, you will need to pass your Firebase and Gemini
+    // keys to the template context. This is a placeholder for that data.
+    const firebaseConfig = {
+        apiKey: "{{ FIREBASE_API_KEY }}",
+        authDomain: "{{ FIREBASE_AUTH_DOMAIN }}",
+        projectId: "{{ FIREBASE_PROJECT_ID }}",
+        storageBucket: "{{ FIREBASE_STORAGE_BUCKET }}",
+        messagingSenderId: "{{ FIREBASE_MESSAGING_SENDER_ID }}",
+        appId: "{{ FIREBASE_APP_ID }}"
+    };
+
+    const geminiApiKey = "{{ GEMINI_API_KEY }}";
+    
+    const appId = firebaseConfig.projectId;
 
     let app;
     let auth;
@@ -178,34 +189,38 @@
     const chatLog = document.getElementById('chatLog');
     const userIdDisplay = document.getElementById('userIdDisplay');
     const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
     const messageBox = document.getElementById('messageBox');
 
     // Initialize Firebase on window load
     window.addEventListener('load', () => {
-        if (firebaseConfig) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUserId = user.uid;
-                    userIdDisplay.textContent = currentUserId;
-                } else {
-                    await signInAnonymously(auth);
-                }
-                isAuthReady = true;
-                setupChatListener();
-            });
-
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            if (initialAuthToken) {
-                signInWithCustomToken(auth, initialAuthToken).catch(console.error);
-            }
-        } else {
-            console.error("Firebase config is not available.");
-            userIdDisplay.textContent = "Error";
+        // We assume Django will pass the real config, so we just check for placeholders.
+        if (firebaseConfig.apiKey.startsWith("{{")) {
+            console.error("Firebase config has placeholders. Please ensure your Django view passes the actual keys to the template.");
+            userIdDisplay.textContent = "Config Error";
+            return;
         }
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                userIdDisplay.textContent = currentUserId;
+            } else {
+                await signInAnonymously(auth);
+            }
+            isAuthReady = true;
+            setupChatListener();
+        });
+
+        // Attach event listeners to buttons
+        sendBtn.addEventListener('click', sendChat);
+        clearBtn.addEventListener('click', clearChat);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendChat();
+        });
     });
 
     function setupChatListener() {
@@ -243,7 +258,6 @@
         
         let htmlContent = marked.parse(text);
         
-        // Add copy buttons to code blocks
         if (role === 'ai' && isFinal) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
@@ -256,7 +270,7 @@
                         <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                     </svg>
                 `;
-                copyBtn.onclick = () => copyToClipboard(pre.textContent);
+                copyBtn.addEventListener('click', () => copyToClipboard(pre.textContent));
                 pre.appendChild(copyBtn);
             });
             htmlContent = tempDiv.innerHTML;
@@ -289,7 +303,6 @@
                 clearInterval(typingInterval);
                 bubble.innerHTML = fullHtml;
                 isTyping = false;
-                // Add copy buttons after typing is complete
                 bubble.querySelectorAll('pre').forEach(pre => {
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'copy-btn';
@@ -297,7 +310,7 @@
                             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                         </svg>`;
-                    copyBtn.onclick = () => copyToClipboard(pre.textContent);
+                    copyBtn.addEventListener('click', () => copyToClipboard(pre.textContent));
                     pre.appendChild(copyBtn);
                 });
             }
@@ -306,7 +319,6 @@
 
     async function copyToClipboard(text) {
         try {
-            // Use the older execCommand for better iFrame compatibility
             const tempInput = document.createElement('textarea');
             tempInput.value = text;
             document.body.appendChild(tempInput);
@@ -327,10 +339,6 @@
             messageBox.classList.add('hidden');
         }, 3000);
     }
-
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendChat();
-    });
 
     async function sendChat() {
         const query = chatInput.value.trim();
@@ -355,8 +363,7 @@
                     parts: [{ text: "You are a friendly and helpful assistant specializing in technology, programming, and general knowledge. Provide concise and informative answers. Use Markdown for formatting, including code blocks where appropriate." }]
                 }
             };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
