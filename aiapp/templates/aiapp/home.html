@@ -212,11 +212,12 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             const bubble = document.createElement('div');
-            bubble.className = `${role}-bubble chat-bubble prose`;
+            // Check for 'model' role and apply AI bubble styling
+            bubble.className = `${role === 'user' ? 'user-bubble' : 'ai-bubble'} chat-bubble prose`;
             
             let htmlContent = marked.parse(text);
             
-            if (role === 'ai' && isFinal) {
+            if (role === 'model' && isFinal) {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = htmlContent;
                 tempDiv.querySelectorAll('pre').forEach(pre => {
@@ -297,8 +298,8 @@
                 const result = await response.json();
                 const aiResponse = result.candidates[0].content.parts[0].text;
                 
-                // Add AI response to history and render
-                chatHistory.push({ role: 'ai', parts: [{ text: aiResponse }] });
+                // Add AI response to history with the correct 'model' role
+                chatHistory.push({ role: 'model', parts: [{ text: aiResponse }] });
                 renderMessages();
                 
             } catch (error) {
