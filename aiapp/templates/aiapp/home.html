@@ -5,22 +5,50 @@
 {% block content %}
 <style>
     /* Base styling and animations for the entire page */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
     body {
         font-family: 'Inter', sans-serif;
-        background: #111827;
-        background-image: linear-gradient(135deg, #1f2937, #111827);
-        background-size: 400% 400%;
-        animation: backgroundGradient 15s ease infinite;
+        background: #100f1c; /* A very deep, dark blue-purple */
+        color: #e2e8f0; /* Light gray for readability */
+        overflow: hidden; /* Hide scrollbars for the particles */
     }
 
-    /* Animation for the spinning loader */
-    .loader {
-        border-top-color: #4f46e5;
-        animation: spinner 1s linear infinite;
-        border: 4px solid #ccc;
+    /* Particle animation background */
+    .particle-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+    }
+
+    .particle {
+        position: absolute;
+        background: #4A3E90;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        opacity: 0;
+        animation: floatUp 15s infinite ease-in-out;
+    }
+
+    @keyframes floatUp {
+        0% { transform: translateY(100vh) scale(0); opacity: 0; }
+        25% { opacity: 0.5; }
+        50% { opacity: 1; }
+        75% { opacity: 0.5; }
+        100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* Spinning loader for pending responses */
+    .loader {
+        border-top-color: #5d5dff;
+        animation: spinner 1s linear infinite;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
     }
 
     @keyframes spinner {
@@ -28,13 +56,13 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* General hover effect for buttons to add a dynamic touch */
+    /* General hover effect for buttons */
     .button-hover-effect {
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
     .button-hover-effect:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     }
 
     /* Fade-in animation for initial content load */
@@ -46,65 +74,68 @@
         animation: fade-in-up 0.8s ease-out forwards;
     }
 
-    /* Animation for the hero section background gradient */
-    @keyframes backgroundGradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    /* Custom chat bubble styling */
+    .chat-bubble {
+        max-width: 85%;
+        padding: 1rem 1.25rem;
+        border-radius: 1.5rem;
+        word-wrap: break-word;
+        line-height: 1.6;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        animation: fade-in-up 0.5s ease-out;
     }
 
+    .user-bubble {
+        background-color: #2c2957; /* Deep purple */
+        color: #e2e8f0;
+        border-bottom-right-radius: 0.5rem;
+        margin-left: auto;
+    }
+
+    .ai-bubble {
+        background-color: #212536; /* Very dark gray */
+        color: #a7f3d0; /* Soft green */
+        border-bottom-left-radius: 0.5rem;
+        margin-right: auto;
+    }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Particle animation background container -->
+<div id="particle-bg" class="particle-bg"></div>
+
 <!-- Main container for the entire page content -->
-<div class="max-w-5xl mx-auto p-6 sm:p-12 mt-6 sm:mt-16 rounded-3xl sm:rounded-4xl transform transition-all duration-500">
+<div class="max-w-4xl mx-auto p-6 sm:p-12 mt-6 sm:mt-16 rounded-3xl sm:rounded-4xl transform transition-all duration-500 relative z-10">
 
     <!-- Hero Section -->
-    <div class="text-center bg-gray-900 bg-opacity-70 p-8 sm:p-12 rounded-3xl shadow-2xl border border-gray-700 animate-fade-in-up">
+    <div class="text-center p-8 sm:p-12 rounded-3xl animate-fade-in-up mb-8">
         <h1 class="text-4xl sm:text-6xl font-extrabold text-white mb-2 sm:mb-4 tracking-tighter">
             Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
         </h1>
-        <p class="text-md sm:text-xl text-gray-400 mb-8 sm:mb-12 font-light">
+        <p class="text-md sm:text-xl text-gray-400 mb-8 font-light">
             You’ve joined a movement where educators and learners rise together—one joyful click at a time.
         </p>
     </div>
 
-    <!-- Main Content Area with two distinct cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-
-        <!-- Chatbot Section -->
-        <div class="animate-fade-in-up animation-delay-500">
-            <h2 class="text-xl sm:text-3xl font-semibold text-indigo-400 mb-4 flex items-center gap-2">
-                <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
-                </svg>
-                Ask LearnFlow AI
-            </h2>
-            <div class="bg-gray-800 p-4 sm:p-8 rounded-2xl border border-gray-700 shadow-inner h-full flex flex-col">
-                <div id="chatLog" class="flex-1 overflow-y-auto text-gray-300 mb-4 px-3 py-2 bg-gray-900 rounded-xl border border-gray-600 transition-all duration-300"></div>
-                <div class="flex flex-col sm:flex-row gap-4 mt-auto">
-                    <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
-                    <button onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
-                    <button onclick="clearChat()" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
-                </div>
-            </div>
-        </div>
+    <!-- Main Chatbot Card -->
+    <div class="bg-gray-800 bg-opacity-80 backdrop-blur-md p-4 sm:p-8 rounded-3xl border border-gray-700 shadow-2xl animate-fade-in-up">
         
-        <!-- Feedback/Learn Section -->
-        <div class="animate-fade-in-up animation-delay-700">
-            <h2 class="text-xl sm:text-3xl font-semibold text-green-400 mb-4 flex items-center gap-2">
-                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Help me learn
-            </h2>
-            <div class="bg-gray-800 p-4 sm:p-8 rounded-2xl border border-gray-700 shadow-inner h-full flex flex-col">
-                <p class="text-gray-400 text-lg mb-4">
-                    Got a concept you're struggling with? Tell us what you want to learn, and we'll help train our AI to explain it better.
-                </p>
-                <input type="text" id="feedbackInput" placeholder="Teach me something new..." class="w-full px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300">
-                <button onclick="sendFeedback()" class="mt-4 w-full px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md button-hover-effect">Submit Feedback</button>
-            </div>
+        <!-- Chatbot Section Header -->
+        <h2 class="text-xl sm:text-3xl font-semibold text-indigo-400 mb-4 flex items-center gap-3">
+            <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
+            </svg>
+            Ask LearnFlow AI
+        </h2>
+
+        <!-- Chat Log with improved styling -->
+        <div id="chatLog" class="h-96 overflow-y-auto text-gray-300 mb-4 p-4 bg-gray-900 rounded-xl border border-gray-700 transition-all duration-300 flex flex-col gap-4"></div>
+
+        <!-- Input and Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
+            <button onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
+            <button onclick="clearChat()" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
         </div>
     </div>
 
@@ -113,13 +144,27 @@
 <script>
     const chatInput = document.getElementById('chatInput');
     const chatLog = document.getElementById('chatLog');
-    const feedbackInput = document.getElementById('feedbackInput');
-
+    
     // API endpoint using your AWS EC2 public IP
     const API_BASE_URL = "http://13.60.117.13:8000";
 
     // Load chat history from localStorage on page load
     document.addEventListener('DOMContentLoaded', () => {
+        // Create particle background
+        const particleBg = document.getElementById('particle-bg');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            const size = Math.random() * 10 + 5;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.animationDelay = `${Math.random() * 15}s`;
+            particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
+            particleBg.appendChild(particle);
+        }
+
+        // Load chat history from localStorage
         const storedChat = localStorage.getItem('chatHistory');
         if (storedChat) {
             chatLog.innerHTML = storedChat;
@@ -147,16 +192,17 @@
         const query = chatInput.value.trim();
         if (!query) return;
 
-        // Display user message
+        // Display user message as a chat bubble
         const userMsgDiv = document.createElement('div');
-        userMsgDiv.innerHTML = `<div class="py-2 text-white"><strong class="text-indigo-300">You:</strong> ${query}</div>`;
+        userMsgDiv.className = "flex justify-end";
+        userMsgDiv.innerHTML = `<div class="user-bubble chat-bubble">${query}</div>`;
         chatLog.appendChild(userMsgDiv);
         chatInput.value = '';
         saveChatHistory();
         
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loader';
-        loaderDiv.className = 'loader my-2 mx-auto';
+        loaderDiv.className = 'loader my-4';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
 
@@ -185,19 +231,18 @@
                     
                     // Display the final answer
                     const aiMsgDiv = document.createElement('div');
-                    aiMsgDiv.className = "py-2 text-gray-300";
+                    aiMsgDiv.className = "flex justify-start";
                     chatLog.appendChild(aiMsgDiv);
 
-                    const botNameSpan = document.createElement('strong');
-                    botNameSpan.className = "text-green-300";
-                    botNameSpan.textContent = "LearnFlow Bot: ";
-                    aiMsgDiv.appendChild(botNameSpan);
+                    const aiBubble = document.createElement('div');
+                    aiBubble.className = "ai-bubble chat-bubble";
+                    aiMsgDiv.appendChild(aiBubble);
 
                     const fullText = taskData.answer;
                     let i = 0;
                     const typingInterval = setInterval(() => {
                         if (i < fullText.length) {
-                            aiMsgDiv.innerHTML += fullText.charAt(i);
+                            aiBubble.innerHTML += fullText.charAt(i);
                             chatLog.scrollTop = chatLog.scrollHeight;
                             i++;
                         } else {
@@ -214,72 +259,12 @@
                 loader.remove();
             }
             const errorMsgDiv = document.createElement('div');
-            errorMsgDiv.innerHTML = `<div class='py-2 text-red-400'>Error fetching answer. Please try again.</div>`;
+            errorMsgDiv.innerHTML = `<div class='py-2 text-red-400 text-center'>Error fetching answer. Please try again.</div>`;
             chatLog.appendChild(errorMsgDiv);
             saveChatHistory();
         }
 
         chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    async function sendFeedback() {
-        const feedback = feedbackInput.value.trim();
-        if (!feedback) return;
-
-        try {
-            await fetch(`${API_BASE_URL}/api/feedback`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ feedback })
-            });
-
-            feedbackInput.value = '';
-            
-            // Custom message box instead of alert()
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
-            messageBox.innerHTML = `
-                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
-                    <div class="flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mb-4 animate-bounce" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        <h3 class="text-2xl font-bold mb-2">Feedback Submitted!</h3>
-                        <p class="text-md text-gray-400 mt-2 text-center">Thanks for helping LearnFlow improve!</p>
-                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(messageBox);
-            // Animate in
-            setTimeout(() => {
-                messageBox.style.opacity = '1';
-                messageBox.querySelector('.transform').style.transform = 'scale(1)';
-            }, 10);
-            
-        } catch (error) {
-            console.error("Error submitting feedback:", error);
-            // Custom error message for feedback
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
-            messageBox.innerHTML = `
-                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
-                    <div class="flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                        <h3 class="text-2xl font-bold mb-2">Submission Failed</h3>
-                        <p class="text-md text-gray-400 mt-2 text-center">Please check your network and try again.</p>
-                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(messageBox);
-            setTimeout(() => {
-                messageBox.style.opacity = '1';
-                messageBox.querySelector('.transform').style.transform = 'scale(1)';
-            }, 10);
-        }
     }
 </script>
 {% endblock %}
