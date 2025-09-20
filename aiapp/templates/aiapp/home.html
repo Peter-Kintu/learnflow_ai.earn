@@ -2,13 +2,10 @@
 
 {% block content %}
 <style>
-    /* Base styling and animations for the entire page */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    
     body {
         font-family: 'Inter', sans-serif;
-        background: #100f1c;
-        color: #e2e8f0;
+        background-color: #0d1117;
+        color: #c9d1d9;
         overflow-x: hidden;
     }
 
@@ -28,7 +25,8 @@
         background: #4A3E90;
         border-radius: 50%;
         opacity: 0;
-        animation: floatUp 15s infinite ease-in-out;
+        animation: floatUp var(--duration) infinite ease-in-out;
+        transform: translateY(100vh);
     }
 
     @keyframes floatUp {
@@ -36,10 +34,9 @@
         25% { opacity: 0.5; }
         50% { opacity: 1; }
         75% { opacity: 0.5; }
-        100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
     }
 
-    /* Spinning loader for pending responses */
     .loader {
         border-top-color: #5d5dff;
         animation: spinner 1s linear infinite;
@@ -54,25 +51,6 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* General hover effect for buttons */
-    .button-hover-effect {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    .button-hover-effect:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Fade-in animation for initial content load */
-    @keyframes fade-in-up {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in-up {
-        animation: fade-in-up 0.8s ease-out forwards;
-    }
-
-    /* Custom chat bubble styling */
     .chat-bubble {
         max-width: 85%;
         padding: 1rem 1.25rem;
@@ -84,21 +62,21 @@
     }
 
     .user-bubble {
-        background-color: #2c2957;
+        background-color: #1a202c;
         color: #e2e8f0;
         border-bottom-right-radius: 0.5rem;
     }
 
     .ai-bubble {
-        background-color: #212536;
+        background-color: #161b22;
         color: #a7f3d0;
         border-bottom-left-radius: 0.5rem;
     }
     
-    /* Markdown styling for the AI response */
     .ai-bubble > :first-child { margin-top: 0; }
     .ai-bubble > :last-child { margin-bottom: 0; }
     .ai-bubble pre {
+        position: relative;
         background-color: #1e202f;
         border: 1px solid #3c3e4e;
         padding: 1rem;
@@ -116,6 +94,23 @@
         list-style-type: disc;
     }
     .ai-bubble li { margin-bottom: 0.5rem; }
+
+    .copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    pre:hover .copy-btn {
+        opacity: 1;
+    }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -126,14 +121,16 @@
 <!-- Main container for the entire page content -->
 <div class="max-w-4xl mx-auto p-4 sm:p-6 mt-6 sm:mt-16 rounded-3xl sm:rounded-4xl transform transition-all duration-500 relative z-10">
     
-
     <!-- Hero Section -->
     <div class="text-center p-8 sm:p-12 rounded-3xl animate-fade-in-up mb-8 sm:mb-12">
         <h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-2 sm:mb-4 tracking-tighter">
-            Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
+            Welcome to LearnFlow AI <span class="wave-emoji inline-block">👋</span>
         </h2>
         <p class="text-md sm:text-xl text-gray-400 font-light max-w-2xl mx-auto">
             Your personal learning guide for all things technology and beyond.
+        </p>
+        <p class="text-sm mt-4 text-gray-500">
+            User ID: <span id="userIdDisplay">Authenticating...</span>
         </p>
     </div>
 
@@ -143,7 +140,7 @@
         <!-- Chatbot Section Header -->
         <h3 class="text-xl sm:text-3xl font-semibold text-indigo-400 mb-4 flex items-center gap-3">
             <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10c4.97 0 9 3.582 9 8z" />
             </svg>
             Ask LearnFlow AI
         </h3>
@@ -154,138 +151,289 @@
         <!-- Input and Buttons -->
         <div class="flex flex-col sm:flex-row gap-4">
             <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
-            <button onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
+            <button id="sendBtn" onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
             <button onclick="clearChat()" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
         </div>
+        <div id="messageBox" class="text-center mt-4 hidden"></div>
     </div>
-
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, getDocs, doc, collection, query, orderBy, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Global variables for Firebase
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : null);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    let app;
+    let auth;
+    let db;
+    let currentUserId = null;
+    let isAuthReady = false;
+    let isTyping = false;
+
     const chatInput = document.getElementById('chatInput');
     const chatLog = document.getElementById('chatLog');
-    
-    // API endpoint using your AWS EC2 public IP
-    const API_BASE_URL = "http://13.60.117.13:8000";
+    const userIdDisplay = document.getElementById('userIdDisplay');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageBox = document.getElementById('messageBox');
 
-    // Load chat history from localStorage on page load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Create particle background
-        const particleBg = document.getElementById('particle-bg');
-        for (let i = 0; i < 50; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            const size = Math.random() * 10 + 5;
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size}px`;
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.animationDelay = `${Math.random() * 15}s`;
-            particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
-            particleBg.appendChild(particle);
-        }
+    // Initialize Firebase on window load
+    window.addEventListener('load', () => {
+        if (firebaseConfig) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    userIdDisplay.textContent = currentUserId;
+                } else {
+                    await signInAnonymously(auth);
+                }
+                isAuthReady = true;
+                setupChatListener();
+            });
 
-        // Load chat history from localStorage
-        const storedChat = localStorage.getItem('chatHistory');
-        if (storedChat) {
-            chatLog.innerHTML = storedChat;
-            chatLog.scrollTop = chatLog.scrollHeight;
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (initialAuthToken) {
+                signInWithCustomToken(auth, initialAuthToken).catch(console.error);
+            }
+        } else {
+            console.error("Firebase config is not available.");
+            userIdDisplay.textContent = "Error";
         }
     });
 
-    // Save chat history to localStorage whenever it changes
-    function saveChatHistory() {
-        localStorage.setItem('chatHistory', chatLog.innerHTML);
+    function setupChatListener() {
+        const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
+        const q = query(chatRef, orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            const newMessages = [];
+            snapshot.forEach(doc => newMessages.push({ ...doc.data(), id: doc.id }));
+            renderMessages(newMessages);
+        });
     }
     
-    // Function to clear the chat log and localStorage
-    function clearChat() {
+    // Renders all messages and handles typing effect
+    function renderMessages(messages) {
         chatLog.innerHTML = '';
-        localStorage.removeItem('chatHistory');
+        messages.forEach((msg, index) => {
+            if (msg.role === 'user') {
+                appendMessage(msg.text, 'user', true);
+            } else if (msg.role === 'ai') {
+                if (index === messages.length - 1 && !isTyping) {
+                    typeMessage(msg.text);
+                } else {
+                    appendMessage(msg.text, 'ai', true);
+                }
+            }
+        });
+        chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    // Allow sending message with 'Enter' key
+    function appendMessage(text, role, isFinal) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        const bubble = document.createElement('div');
+        bubble.className = `${role}-bubble chat-bubble prose`;
+        
+        let htmlContent = marked.parse(text);
+        
+        // Add copy buttons to code blocks
+        if (role === 'ai' && isFinal) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            tempDiv.querySelectorAll('pre').forEach(pre => {
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                `;
+                copyBtn.onclick = () => copyToClipboard(pre.textContent);
+                pre.appendChild(copyBtn);
+            });
+            htmlContent = tempDiv.innerHTML;
+        }
+
+        bubble.innerHTML = htmlContent;
+        messageDiv.appendChild(bubble);
+        chatLog.appendChild(messageDiv);
+    }
+
+    function typeMessage(text) {
+        if (isTyping) return;
+        isTyping = true;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-start';
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-bubble chat-bubble prose';
+        messageDiv.appendChild(bubble);
+        chatLog.appendChild(messageDiv);
+        
+        const fullHtml = marked.parse(text);
+        const contentToType = fullHtml.replace(/<[^>]*>?/gm, '');
+        let i = 0;
+        const typingInterval = setInterval(() => {
+            if (i < contentToType.length) {
+                bubble.textContent += contentToType.charAt(i);
+                chatLog.scrollTop = chatLog.scrollHeight;
+                i++;
+            } else {
+                clearInterval(typingInterval);
+                bubble.innerHTML = fullHtml;
+                isTyping = false;
+                // Add copy buttons after typing is complete
+                bubble.querySelectorAll('pre').forEach(pre => {
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-btn';
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>`;
+                    copyBtn.onclick = () => copyToClipboard(pre.textContent);
+                    pre.appendChild(copyBtn);
+                });
+            }
+        }, 10);
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            // Use the older execCommand for better iFrame compatibility
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showMessage("Code copied to clipboard!", "bg-green-500");
+        } catch (err) {
+            showMessage("Failed to copy code.", "bg-red-500");
+        }
+    }
+
+    function showMessage(text, colorClass) {
+        messageBox.textContent = text;
+        messageBox.className = `text-white rounded-md p-2 ${colorClass} animate-fade-in-up`;
+        messageBox.classList.remove('hidden');
+        setTimeout(() => {
+            messageBox.classList.add('hidden');
+        }, 3000);
+    }
+
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendChat();
     });
 
     async function sendChat() {
         const query = chatInput.value.trim();
-        if (!query) return;
+        if (!query || !isAuthReady || isTyping) return;
 
-        // Display user message as a chat bubble
-        const userMsgDiv = document.createElement('div');
-        userMsgDiv.className = "flex justify-end";
-        userMsgDiv.innerHTML = `<div class="user-bubble chat-bubble">${query}</div>`;
-        chatLog.appendChild(userMsgDiv);
-        chatInput.value = '';
-        saveChatHistory();
-        
-        const loaderDiv = document.createElement('div');
-        loaderDiv.id = 'loader';
-        loaderDiv.className = 'loader my-4';
-        chatLog.appendChild(loaderDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
+        setLoadingState(true);
 
         try {
-            // Step 1: Send the query and get a task_id
-            const chatResponse = await fetch(`${API_BASE_URL}/api/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
+            const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
+            await addDoc(chatRef, {
+                userId: currentUserId,
+                text: query,
+                role: 'user',
+                timestamp: Date.now()
             });
-            const chatData = await chatResponse.json();
-            const taskId = chatData.task_id;
+            chatInput.value = '';
 
-            // Step 2: Poll the task endpoint until the answer is ready
-            const pollInterval = setInterval(async () => {
-                const taskResponse = await fetch(`${API_BASE_URL}/api/task/${taskId}`);
-                const taskData = await taskResponse.json();
-                
-                // Check if the task is complete
-                if (taskData.answer !== "Your question is still being processed. Please check back soon.") {
-                    clearInterval(pollInterval); // Stop polling
-                    
-                    // Remove the loader
-                    const loader = document.getElementById('loader');
-                    if (loader) loader.remove();
-                    
-                    // Display the final answer
-                    const aiMsgDiv = document.createElement('div');
-                    aiMsgDiv.className = "flex justify-start";
-                    chatLog.appendChild(aiMsgDiv);
-
-                    const aiBubble = document.createElement('div');
-                    aiBubble.className = "ai-bubble chat-bubble prose";
-                    aiMsgDiv.appendChild(aiBubble);
-
-                    // Render Markdown content and then type it out
-                    const htmlContent = marked.parse(taskData.answer);
-                    let i = 0;
-                    const typingInterval = setInterval(() => {
-                        if (i < htmlContent.length) {
-                            aiBubble.innerHTML += htmlContent.charAt(i);
-                            chatLog.scrollTop = chatLog.scrollHeight;
-                            i++;
-                        } else {
-                            clearInterval(typingInterval);
-                            saveChatHistory();
-                        }
-                    }, 25);
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: "You are a friendly and helpful assistant specializing in technology, programming, and general knowledge. Provide concise and informative answers. Use Markdown for formatting, including code blocks where appropriate." }]
                 }
-            }, 1000); // Poll every 1 second
-            
-        } catch (error) {
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.remove();
-            }
-            const errorMsgDiv = document.createElement('div');
-            errorMsgDiv.innerHTML = `<div class='py-2 text-red-400 text-center'>Error fetching answer. Please try again.</div>`;
-            chatLog.appendChild(errorMsgDiv);
-            saveChatHistory();
-        }
+            };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-        chatLog.scrollTop = chatLog.scrollHeight;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const aiResponseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
+
+            await addDoc(chatRef, {
+                userId: 'ai',
+                text: aiResponseText,
+                role: 'ai',
+                timestamp: Date.now()
+            });
+
+        } catch (error) {
+            console.error("Error sending message or getting AI response:", error);
+            await addDoc(chatRef, {
+                userId: 'system',
+                text: 'An error occurred. Please try again.',
+                role: 'ai',
+                timestamp: Date.now()
+            });
+        } finally {
+            setLoadingState(false);
+        }
+    }
+
+    async function clearChat() {
+        if (!isAuthReady) return;
+        showMessage("Clearing chat...", "bg-blue-500");
+        const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
+        try {
+            const snapshot = await getDocs(chatRef);
+            const deletionPromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletionPromises);
+            showMessage("Chat history cleared!", "bg-green-500");
+        } catch (error) {
+            console.error("Error clearing chat:", error);
+            showMessage("Error clearing chat.", "bg-red-500");
+        }
+    }
+    
+    function setLoadingState(loading) {
+        chatInput.disabled = loading;
+        sendBtn.disabled = loading;
+        sendBtn.textContent = loading ? "..." : "Send";
+        if (loading) {
+            const loaderDiv = document.createElement('div');
+            loaderDiv.id = 'loader';
+            loaderDiv.className = 'loader my-4';
+            chatLog.appendChild(loaderDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        } else {
+            const loader = document.getElementById('loader');
+            if (loader) loader.remove();
+        }
+    }
+
+    // Particle effect initialization
+    const particleBg = document.getElementById('particle-bg');
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 10 + 5;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 15}s`;
+        particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
+        particleBg.appendChild(particle);
     }
 </script>
 {% endblock %}
