@@ -69,7 +69,8 @@
 <script>
     const chatInput = document.getElementById('chatInput');
     const chatLog = document.getElementById('chatLog');
-    const feedbackInput = document.getElementById('feedbackInput');
+    const responseLimit = 3;
+    let responseCount = localStorage.getItem('responseCount') ? parseInt(localStorage.getItem('responseCount')) : 0;
 
     // Load chat history from localStorage on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -83,6 +84,23 @@
     // Save chat history to localStorage whenever it changes
     function saveChatHistory() {
         localStorage.setItem('chatHistory', chatLog.innerHTML);
+        localStorage.setItem('responseCount', responseCount);
+    }
+
+    // Typing animation function
+    function typeWriter(element, text, speed = 10) {
+        let i = 0;
+        element.textContent = ''; // Clear initial text
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            } else {
+                saveChatHistory();
+            }
+        }
+        type();
     }
 
     chatInput.addEventListener('keydown', (e) => {
@@ -100,6 +118,23 @@
         chatInput.value = '';
         saveChatHistory();
         
+        if (responseCount >= responseLimit) {
+            const upgradeMsg = "You've reached your chat limit! Please upgrade for unlimited access.";
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = "py-2 text-gray-300";
+            chatLog.appendChild(aiMsgDiv);
+
+            const botNameSpan = document.createElement('strong');
+            botNameSpan.className = "text-green-300";
+            botNameSpan.textContent = "LearnFlow Bot: ";
+            aiMsgDiv.appendChild(botNameSpan);
+
+            aiMsgDiv.innerHTML += upgradeMsg;
+            saveChatHistory();
+            chatLog.scrollTop = chatLog.scrollHeight;
+            return;
+        }
+
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loader';
         loaderDiv.className = 'loader my-2 mx-auto';
@@ -107,12 +142,11 @@
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
-            const apiKey = "AIzaSyCVj9c7qbPqq_3R9WgWbaRmQ6WQT3-c7CA"; // Your API key will be provided here
+            const apiKey = ""; // Your API key will be provided here
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: [{ parts: [{ text: query }] }],
-                // You can add additional configurations here if needed, like tools or system instructions.
             };
 
             const response = await fetch(apiUrl, {
@@ -137,10 +171,11 @@
             botNameSpan.textContent = "LearnFlow Bot: ";
             aiMsgDiv.appendChild(botNameSpan);
 
-            // Extract text from the Gemini API response
             const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
-            aiMsgDiv.innerHTML += fullText; // Replaced typing animation with direct text for simplicity and performance
-            saveChatHistory(); // Save history after response is received
+            typeWriter(aiMsgDiv, fullText);
+            
+            responseCount++;
+            saveChatHistory();
             
         } catch (error) {
             const loader = document.getElementById('loader');
@@ -160,6 +195,8 @@
     function clearChat() {
         chatLog.innerHTML = '';
         localStorage.removeItem('chatHistory');
+        responseCount = 0;
+        localStorage.setItem('responseCount', '0');
     }
 </script>
 {% endblock %}
