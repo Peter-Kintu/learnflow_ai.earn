@@ -78,6 +78,9 @@
     const chatLog = document.getElementById('chatLog');
     const feedbackInput = document.getElementById('feedbackInput');
 
+    // API endpoint now uses your AWS EC2 public IP address
+    const API_BASE_URL = "http://13.60.117.13:8000";
+
     // Load chat history from localStorage on page load
     document.addEventListener('DOMContentLoaded', () => {
         const storedChat = localStorage.getItem('chatHistory');
@@ -114,40 +117,52 @@
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
-            const response = await fetch("https://secretary-ai-backend.onrender.com/api/chat", {
+            // Step 1: Send the query and get a task_id
+            const chatResponse = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ query })
             });
-            const data = await response.json();
-            
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.remove();
-            }
-            
-            const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = "py-2 text-gray-300";
-            chatLog.appendChild(aiMsgDiv);
+            const chatData = await chatResponse.json();
+            const taskId = chatData.task_id;
 
-            const botNameSpan = document.createElement('strong');
-            botNameSpan.className = "text-green-300";
-            botNameSpan.textContent = "LearnFlow Bot: ";
-            aiMsgDiv.appendChild(botNameSpan);
+            // Step 2: Poll the task endpoint until the answer is ready
+            const pollInterval = setInterval(async () => {
+                const taskResponse = await fetch(`${API_BASE_URL}/api/task/${taskId}`);
+                const taskData = await taskResponse.json();
+                
+                // Check if the task is complete
+                if (taskData.answer !== "Your question is still being processed. Please check back soon.") {
+                    clearInterval(pollInterval); // Stop polling
+                    
+                    // Remove the loader
+                    const loader = document.getElementById('loader');
+                    if (loader) loader.remove();
+                    
+                    // Display the final answer
+                    const aiMsgDiv = document.createElement('div');
+                    aiMsgDiv.className = "py-2 text-gray-300";
+                    chatLog.appendChild(aiMsgDiv);
 
-            // Typing animation for the AI response
-            const fullText = data.answer;
-            let i = 0;
-            const typingInterval = setInterval(() => {
-                if (i < fullText.length) {
-                    aiMsgDiv.innerHTML += fullText.charAt(i);
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    i++;
-                } else {
-                    clearInterval(typingInterval);
-                    saveChatHistory(); // Save history after typing is complete
+                    const botNameSpan = document.createElement('strong');
+                    botNameSpan.className = "text-green-300";
+                    botNameSpan.textContent = "LearnFlow Bot: ";
+                    aiMsgDiv.appendChild(botNameSpan);
+
+                    const fullText = taskData.answer;
+                    let i = 0;
+                    const typingInterval = setInterval(() => {
+                        if (i < fullText.length) {
+                            aiMsgDiv.innerHTML += fullText.charAt(i);
+                            chatLog.scrollTop = chatLog.scrollHeight;
+                            i++;
+                        } else {
+                            clearInterval(typingInterval);
+                            saveChatHistory();
+                        }
+                    }, 25);
                 }
-            }, 25); // Adjust this value to change typing speed
+            }, 1000); // Poll every 1 second
             
         } catch (error) {
             const loader = document.getElementById('loader');
@@ -168,7 +183,7 @@
         if (!feedback) return;
 
         try {
-            await fetch("https://secretary-ai-backend.onrender.com/api/feedback", {
+            await fetch(`${API_BASE_URL}/api/feedback`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ feedback })
@@ -224,4 +239,3 @@
     }
 </script>
 {% endblock %}
-```eof
