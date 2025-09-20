@@ -129,9 +129,6 @@
         <p class="text-md sm:text-xl text-gray-400 font-light max-w-2xl mx-auto">
             Your personal learning guide for all things technology and beyond.
         </p>
-        <p class="text-sm mt-4 text-gray-500">
-            User ID: <span id="userIdDisplay">Authenticating...</span>
-        </p>
     </div>
 
     <!-- Main Chatbot Card -->
@@ -158,64 +155,19 @@
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, getDocs, doc, collection, query, orderBy, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // IMPORTANT: In your Django view, you will need to pass your Firebase and Gemini
-    // keys to the template context. This is a placeholder for that data.
-    const firebaseConfig = {
-        apiKey: "{{ FIREBASE_API_KEY }}",
-        authDomain: "{{ FIREBASE_AUTH_DOMAIN }}",
-        projectId: "{{ FIREBASE_PROJECT_ID }}",
-        storageBucket: "{{ FIREBASE_STORAGE_BUCKET }}",
-        messagingSenderId: "{{ FIREBASE_MESSAGING_SENDER_ID }}",
-        appId: "{{ FIREBASE_APP_ID }}"
-    };
-
-    const geminiApiKey = "{{ GEMINI_API_KEY }}";
-    
-    const appId = firebaseConfig.projectId;
-
-    let app;
-    let auth;
-    let db;
-    let currentUserId = null;
-    let isAuthReady = false;
+<script>
     let isTyping = false;
 
     const chatInput = document.getElementById('chatInput');
     const chatLog = document.getElementById('chatLog');
-    const userIdDisplay = document.getElementById('userIdDisplay');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
     const messageBox = document.getElementById('messageBox');
 
-    // Initialize Firebase on window load
-    window.addEventListener('load', () => {
-        // We assume Django will pass the real config, so we just check for placeholders.
-        if (firebaseConfig.apiKey.startsWith("{{")) {
-            console.error("Firebase config has placeholders. Please ensure your Django view passes the actual keys to the template.");
-            userIdDisplay.textContent = "Config Error";
-            return;
-        }
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                userIdDisplay.textContent = currentUserId;
-            } else {
-                await signInAnonymously(auth);
-            }
-            isAuthReady = true;
-            setupChatListener();
-        });
-
-        // Attach event listeners to buttons
+    // Attach event listeners
+    window.addEventListener('load', async () => {
+        // Fetch existing chat history on page load
+        await fetchChatHistory();
         sendBtn.addEventListener('click', sendChat);
         clearBtn.addEventListener('click', clearChat);
         chatInput.addEventListener('keydown', (e) => {
@@ -223,16 +175,6 @@
         });
     });
 
-    function setupChatListener() {
-        const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
-        const q = query(chatRef, orderBy("timestamp", "asc"));
-        onSnapshot(q, (snapshot) => {
-            const newMessages = [];
-            snapshot.forEach(doc => newMessages.push({ ...doc.data(), id: doc.id }));
-            renderMessages(newMessages);
-        });
-    }
-    
     // Renders all messages and handles typing effect
     function renderMessages(messages) {
         chatLog.innerHTML = '';
@@ -340,72 +282,60 @@
         }, 3000);
     }
 
+    async function fetchChatHistory() {
+        try {
+            const response = await fetch('/api/chat_history/');
+            if (!response.ok) {
+                throw new Error(`Error fetching chat history: ${response.statusText}`);
+            }
+            const chatHistory = await response.json();
+            renderMessages(chatHistory);
+        } catch (error) {
+            console.error("Error fetching chat history:", error);
+            showMessage("Could not load chat history.", "bg-red-500");
+        }
+    }
+
     async function sendChat() {
         const query = chatInput.value.trim();
-        if (!query || !isAuthReady || isTyping) return;
+        if (!query || isTyping) return;
 
         setLoadingState(true);
+        const originalInput = chatInput.value;
+        chatInput.value = '';
 
         try {
-            const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
-            await addDoc(chatRef, {
-                userId: currentUserId,
-                text: query,
-                role: 'user',
-                timestamp: Date.now()
-            });
-            chatInput.value = '';
-
-            const payload = {
-                contents: [{ parts: [{ text: query }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: "You are a friendly and helpful assistant specializing in technology, programming, and general knowledge. Provide concise and informative answers. Use Markdown for formatting, including code blocks where appropriate." }]
-                }
-            };
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
-
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/chat/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ query: originalInput })
             });
 
             if (!response.ok) {
                 throw new Error(`API error: ${response.statusText}`);
             }
 
-            const result = await response.json();
-            const aiResponseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
-
-            await addDoc(chatRef, {
-                userId: 'ai',
-                text: aiResponseText,
-                role: 'ai',
-                timestamp: Date.now()
-            });
-
+            await fetchChatHistory(); // Refresh the chat log
         } catch (error) {
-            console.error("Error sending message or getting AI response:", error);
-            await addDoc(chatRef, {
-                userId: 'system',
-                text: 'An error occurred. Please try again.',
-                role: 'ai',
-                timestamp: Date.now()
-            });
+            console.error("Error sending message:", error);
+            showMessage("An error occurred. Please try again.", "bg-red-500");
+            chatInput.value = originalInput; // Restore input on error
         } finally {
             setLoadingState(false);
         }
     }
 
     async function clearChat() {
-        if (!isAuthReady) return;
         showMessage("Clearing chat...", "bg-blue-500");
-        const chatRef = collection(db, `artifacts/${appId}/public/data/chat_history`);
         try {
-            const snapshot = await getDocs(chatRef);
-            const deletionPromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
-            await Promise.all(deletionPromises);
+            const response = await fetch('/api/clear_chat/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (!response.ok) {
+                throw new Error(`Error clearing chat: ${response.statusText}`);
+            }
+            await fetchChatHistory(); // Refresh the chat log
             showMessage("Chat history cleared!", "bg-green-500");
         } catch (error) {
             console.error("Error clearing chat:", error);
@@ -420,7 +350,7 @@
         if (loading) {
             const loaderDiv = document.createElement('div');
             loaderDiv.id = 'loader';
-            loaderDiv.className = 'loader my-4';
+            loaderDiv.className = 'loader my-4 mx-auto';
             chatLog.appendChild(loaderDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
         } else {
