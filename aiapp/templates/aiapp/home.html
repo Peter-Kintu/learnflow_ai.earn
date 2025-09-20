@@ -179,19 +179,19 @@
 
     <script>
         let isTyping = false;
+        let chatHistory = [];
         const chatInput = document.getElementById('chatInput');
         const chatLog = document.getElementById('chatLog');
         const sendBtn = document.getElementById('sendBtn');
         const clearBtn = document.getElementById('clearBtn');
         const messageBox = document.getElementById('messageBox');
         
-        // Base URL for the API
-        const API_BASE_URL = 'https://learnflow-ai-0fdz.onrender.com:10000/api';
-
+        // Use Gemini API endpoint and model
+        const API_KEY = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+        
         // Attach event listeners
-        window.addEventListener('load', async () => {
-            // Fetch existing chat history on page load
-            await fetchChatHistory();
+        window.addEventListener('load', () => {
             sendBtn.addEventListener('click', sendChat);
             clearBtn.addEventListener('click', clearChat);
             chatInput.addEventListener('keydown', (e) => {
@@ -199,19 +199,11 @@
             });
         });
 
-        // Renders all messages and handles typing effect
-        function renderMessages(messages) {
+        // Renders all messages
+        function renderMessages() {
             chatLog.innerHTML = '';
-            messages.forEach((msg, index) => {
-                if (msg.role === 'user') {
-                    appendMessage(msg.text, 'user', true);
-                } else if (msg.role === 'ai') {
-                    if (index === messages.length - 1 && !isTyping) {
-                        typeMessage(msg.text);
-                    } else {
-                        appendMessage(msg.text, 'ai', true);
-                    }
-                }
+            chatHistory.forEach((msg, index) => {
+                appendMessage(msg.parts[0].text, msg.role, index === chatHistory.length - 1);
             });
             chatLog.scrollTop = chatLog.scrollHeight;
         }
@@ -247,42 +239,6 @@
             chatLog.appendChild(messageDiv);
         }
 
-        function typeMessage(text) {
-            if (isTyping) return;
-            isTyping = true;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'flex justify-start';
-            const bubble = document.createElement('div');
-            bubble.className = 'ai-bubble chat-bubble prose';
-            messageDiv.appendChild(bubble);
-            chatLog.appendChild(messageDiv);
-            
-            const fullHtml = marked.parse(text);
-            const contentToType = fullHtml.replace(/<[^>]*>?/gm, '');
-            let i = 0;
-            const typingInterval = setInterval(() => {
-                if (i < contentToType.length) {
-                    bubble.textContent += contentToType.charAt(i);
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    i++;
-                } else {
-                    clearInterval(typingInterval);
-                    bubble.innerHTML = fullHtml;
-                    isTyping = false;
-                    bubble.querySelectorAll('pre').forEach(pre => {
-                        const copyBtn = document.createElement('button');
-                        copyBtn.className = 'copy-btn';
-                        copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                            </svg>`;
-                        copyBtn.addEventListener('click', () => copyToClipboard(pre.textContent));
-                        pre.appendChild(copyBtn);
-                    });
-                }
-            }, 10);
-        }
-
         async function copyToClipboard(text) {
             try {
                 const tempInput = document.createElement('textarea');
@@ -306,21 +262,7 @@
             }, 3000);
         }
 
-        async function fetchChatHistory() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat_history/`);
-                if (!response.ok) {
-                    throw new Error(`Error fetching chat history: ${response.statusText}`);
-                }
-                const chatHistory = await response.json();
-                renderMessages(chatHistory);
-            } catch (error) {
-                console.error("Error fetching chat history:", error);
-                showMessage("Could not load chat history.", "bg-red-500");
-            }
-        }
-
-        async function sendChat() {
+        async function sendChat(retries = 3, delay = 1000) {
             const query = chatInput.value.trim();
             if (!query || isTyping) return;
 
@@ -328,43 +270,49 @@
             const originalInput = chatInput.value;
             chatInput.value = '';
 
+            // Add user message to history and render
+            chatHistory.push({ role: 'user', parts: [{ text: query }] });
+            renderMessages();
+
             try {
-                const response = await fetch(`${API_BASE_URL}/chat/`, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: originalInput })
+                    body: JSON.stringify({
+                        contents: chatHistory,
+                        systemInstruction: {
+                            parts: [{ text: 'You are a helpful and educational assistant. Provide clear, concise, and accurate information. Format code snippets with Markdown.' }]
+                        }
+                    })
                 });
 
                 if (!response.ok) {
+                    if (response.status === 429 && retries > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                        return sendChat(retries - 1, delay * 2);
+                    }
                     throw new Error(`API error: ${response.statusText}`);
                 }
 
-                await fetchChatHistory(); // Refresh the chat log
+                const result = await response.json();
+                const aiResponse = result.candidates[0].content.parts[0].text;
+                
+                // Add AI response to history and render
+                chatHistory.push({ role: 'ai', parts: [{ text: aiResponse }] });
+                renderMessages();
+                
             } catch (error) {
                 console.error("Error sending message:", error);
                 showMessage("An error occurred. Please try again.", "bg-red-500");
-                chatInput.value = originalInput; // Restore input on error
             } finally {
                 setLoadingState(false);
             }
         }
 
-        async function clearChat() {
-            showMessage("Clearing chat...", "bg-blue-500");
-            try {
-                const response = await fetch(`${API_BASE_URL}/clear_chat/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                if (!response.ok) {
-                    throw new Error(`Error clearing chat: ${response.statusText}`);
-                }
-                await fetchChatHistory(); // Refresh the chat log
-                showMessage("Chat history cleared!", "bg-green-500");
-            } catch (error) {
-                console.error("Error clearing chat:", error);
-                showMessage("Error clearing chat.", "bg-red-500");
-            }
+        function clearChat() {
+            chatHistory = [];
+            renderMessages();
+            showMessage("Chat history cleared!", "bg-green-500");
         }
         
         function setLoadingState(loading) {
