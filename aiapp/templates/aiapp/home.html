@@ -60,14 +60,7 @@
                 <button onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
             </div>
             <div class="mt-6">
-                <h3 class="text-lg font-semibold text-green-400 mb-2 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    Help me learn
-                </h3>
-                <input type="text" id="feedbackInput" placeholder="Teach me something new..." class="w-full px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300">
-                <button onclick="sendFeedback()" class="mt-4 w-full px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md button-hover-effect">Submit Feedback</button>
+                <button onclick="clearChat()" class="w-full px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear Chat</button>
             </div>
         </div>
     </div>
@@ -114,11 +107,20 @@
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
-            const response = await fetch("AIzaSyCVj9c7qbPqq_3R9WgWbaRmQ6WQT3-c7CA", {
+            const apiKey = ""; // Your API key will be provided here
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                // You can add additional configurations here if needed, like tools or system instructions.
+            };
+
+            const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
+                body: JSON.stringify(payload),
             });
+            
             const data = await response.json();
             
             const loader = document.getElementById('loader');
@@ -135,19 +137,10 @@
             botNameSpan.textContent = "LearnFlow Bot: ";
             aiMsgDiv.appendChild(botNameSpan);
 
-            // Typing animation for the AI response
-            const fullText = data.answer;
-            let i = 0;
-            const typingInterval = setInterval(() => {
-                if (i < fullText.length) {
-                    aiMsgDiv.innerHTML += fullText.charAt(i);
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    i++;
-                } else {
-                    clearInterval(typingInterval);
-                    saveChatHistory(); // Save history after typing is complete
-                }
-            }, 25); // Adjust this value to change typing speed
+            // Extract text from the Gemini API response
+            const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+            aiMsgDiv.innerHTML += fullText; // Replaced typing animation with direct text for simplicity and performance
+            saveChatHistory(); // Save history after response is received
             
         } catch (error) {
             const loader = document.getElementById('loader');
@@ -163,65 +156,10 @@
         chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    async function sendFeedback() {
-        const feedback = feedbackInput.value.trim();
-        if (!feedback) return;
-
-        try {
-            await fetch("AIzaSyCVj9c7qbPqq_3R9WgWbaRmQ6WQT3-c7CA", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ feedback })
-            });
-
-            feedbackInput.value = '';
-            
-            // Custom message box instead of alert()
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
-            messageBox.innerHTML = `
-                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
-                    <div class="flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mb-4 animate-bounce" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        <h3 class="text-2xl font-bold mb-2">Feedback Submitted!</h3>
-                        <p class="text-md text-gray-400 mt-2 text-center">Thanks for helping LearnFlow improve!</p>
-                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(messageBox);
-            // Animate in
-            setTimeout(() => {
-                messageBox.style.opacity = '1';
-                messageBox.querySelector('.transform').style.transform = 'scale(1)';
-            }, 10);
-            
-        } catch (error) {
-            console.error("Error submitting feedback:", error);
-            // Custom error message for feedback
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
-            messageBox.innerHTML = `
-                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
-                    <div class="flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                        <h3 class="text-2xl font-bold mb-2">Submission Failed</h3>
-                        <p class="text-md text-gray-400 mt-2 text-center">Please check your network and try again.</p>
-                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(messageBox);
-            setTimeout(() => {
-                messageBox.style.opacity = '1';
-                messageBox.querySelector('.transform').style.transform = 'scale(1)';
-            }, 10);
-        }
+    // Function to clear the chat history and the chat log display
+    function clearChat() {
+        chatLog.innerHTML = '';
+        localStorage.removeItem('chatHistory');
     }
 </script>
 {% endblock %}
-```eof
