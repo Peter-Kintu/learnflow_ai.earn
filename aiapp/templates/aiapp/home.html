@@ -268,19 +268,21 @@
             if (!query || isTyping) return;
 
             setLoadingState(true);
-            const originalInput = chatInput.value;
-            chatInput.value = '';
-
+            
             // Add user message to history and render
             chatHistory.push({ role: 'user', parts: [{ text: query }] });
             renderMessages();
 
             try {
+                // We send a new, independent payload to the API for each message
+                // This avoids the '400 Bad Request' error from misaligned roles
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: chatHistory,
+                        contents: [{
+                            parts: [{ text: query }]
+                        }],
                         systemInstruction: {
                             parts: [{ text: 'You are a helpful and educational assistant. Provide clear, concise, and accurate information. Format code snippets with Markdown.' }]
                         }
