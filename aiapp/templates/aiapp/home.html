@@ -1,13 +1,22 @@
-{% extends "base.html" %}
-
-{% block head %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnFlow AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0d1117;
             color: #c9d1d9;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Particle animation background */
@@ -113,11 +122,20 @@
             opacity: 1;
         }
     </style>
-{% endblock %}
+</head>
+<body class="bg-gray-900 text-gray-300 min-h-screen">
 
-{% block content %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Navigation Bar -->
+    <nav class="bg-gray-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-white text-2xl font-bold tracking-tight">LearnFlow</a>
+            <div class="space-x-4">
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300 font-medium">Home</a>
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300 font-medium">About</a>
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300 font-medium">Contact</a>
+            </div>
+        </div>
+    </nav>
 
     <!-- Particle animation background container -->
     <div id="particle-bg" class="particle-bg"></div>
@@ -161,7 +179,6 @@
 
     <script>
         let isTyping = false;
-
         const chatInput = document.getElementById('chatInput');
         const chatLog = document.getElementById('chatLog');
         const sendBtn = document.getElementById('sendBtn');
@@ -380,4 +397,5 @@
             particleBg.appendChild(particle);
         }
     </script>
-{% endblock %}
+</body>
+</html>
