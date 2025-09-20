@@ -1,383 +1,227 @@
 {% extends "base.html" %}
 
-{% block head %}
-    <title>LearnFlow AI</title>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            overflow-x: hidden;
-        }
-
-        /* Particle animation background */
-        .particle-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .particle {
-            position: absolute;
-            background: #4A3E90;
-            border-radius: 50%;
-            opacity: 0;
-            animation: floatUp var(--duration) infinite ease-in-out;
-            transform: translateY(100vh);
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            25% { opacity: 0.5; }
-            50% { opacity: 1; }
-            75% { opacity: 0.5; }
-            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
-        }
-
-        .loader {
-            border-top-color: #5d5dff;
-            animation: spinner 1s linear infinite;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-        }
-
-        @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .chat-bubble {
-            max-width: 85%;
-            padding: 1rem 1.25rem;
-            border-radius: 1.5rem;
-            word-wrap: break-word;
-            line-height: 1.6;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            animation: fade-in-up 0.5s ease-out;
-        }
-
-        .user-bubble {
-            background-color: #1a202c;
-            color: #e2e8f0;
-            border-bottom-right-radius: 0.5rem;
-        }
-
-        .ai-bubble {
-            background-color: #161b22;
-            color: #a7f3d0;
-            border-bottom-left-radius: 0.5rem;
-        }
-        
-        .ai-bubble > :first-child { margin-top: 0; }
-        .ai-bubble > :last-child { margin-bottom: 0; }
-        .ai-bubble pre {
-            position: relative;
-            background-color: #1e202f;
-            border: 1px solid #3c3e4e;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .ai-bubble code {
-            font-family: 'Courier New', Courier, monospace;
-            color: #e76f51;
-        }
-        .ai-bubble ul, .ai-bubble ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-            list-style-type: disc;
-        }
-        .ai-bubble li { margin-bottom: 0.5rem; }
-
-        .copy-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        pre:hover .copy-btn {
-            opacity: 1;
-        }
-    </style>
-{% endblock %}
+{% block title %}Home - LearnFlow AI{% endblock %}
 
 {% block content %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+    body {
+        background: linear-gradient(135deg, #1f2937, #111827);
+    }
+    .loader {
+        border-top-color: #4f46e5;
+        animation: spinner 1s linear infinite;
+        border: 4px solid #ccc;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+    }
+    @keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .button-hover-effect {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .button-hover-effect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    @keyframes fade-in-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+        animation: fade-in-up 0.8s ease-out forwards;
+    }
+</style>
 
-    <!-- Particle animation background container -->
-    <div id="particle-bg" class="particle-bg"></div>
+<div class="max-w-5xl mx-auto p-6 sm:p-12 mt-6 sm:mt-16 bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl sm:rounded-4xl shadow-2xl border border-gray-700 backdrop-blur-sm transform transition-all duration-500 hover:shadow-3xl">
 
-    <!-- Main container for the entire page content -->
-    <div class="max-w-4xl mx-auto p-4 sm:p-6 mt-6 sm:mt-16 rounded-3xl sm:rounded-4xl transform transition-all duration-500 relative z-10">
-        
-        <!-- Hero Section -->
-        <div class="text-center p-8 sm:p-12 rounded-3xl animate-fade-in-up mb-8 sm:mb-12">
-            <h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-2 sm:mb-4 tracking-tighter">
-                Welcome to LearnFlow AI <span class="wave-emoji inline-block">👋</span>
-            </h2>
-            <p class="text-md sm:text-xl text-gray-400 font-light max-w-2xl mx-auto">
-                Your personal learning guide for all things technology and beyond.
-            </p>
-        </div>
-
-        <!-- Main Chatbot Card -->
-        <div class="bg-gray-800 bg-opacity-80 backdrop-blur-md p-4 sm:p-8 rounded-3xl border border-gray-700 shadow-2xl animate-fade-in-up">
-            
-            <!-- Chatbot Section Header -->
-            <h3 class="text-xl sm:text-3xl font-semibold text-indigo-400 mb-4 flex items-center gap-3">
-                <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10c4.97 0 9 3.582 9 8z" />
-                </svg>
-                Ask LearnFlow AI
-            </h3>
-
-            <!-- Chat Log with improved styling -->
-            <div id="chatLog" class="h-96 overflow-y-auto text-gray-300 mb-4 p-4 bg-gray-900 rounded-xl border border-gray-700 transition-all duration-300 flex flex-col gap-4"></div>
-
-            <!-- Input and Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4">
-                <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
-                <button id="sendBtn" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
-                <button id="clearBtn" class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear</button>
-            </div>
-            <div id="messageBox" class="text-center mt-4 hidden"></div>
-        </div>
+    <div class="text-center">
+        <h1 class="text-4xl sm:text-6xl font-extrabold text-white mb-2 sm:mb-4 tracking-tighter animate-fade-in-up">
+            Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
+        </h1>
+        <p class="text-md sm:text-xl text-gray-400 mb-8 sm:mb-12 font-light animate-fade-in-up animation-delay-300">
+            You’ve joined a movement where educators and learners rise together—one joyful click at a time.
+        </p>
     </div>
 
-    <script>
-        let isTyping = false;
+    <div class="text-left animate-fade-in-up animation-delay-500">
+        <h2 class="text-xl sm:text-3xl font-semibold text-indigo-400 mb-4 flex items-center gap-2">
+            <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
+            </svg>
+            Ask LearnFlow AI
+        </h2>
+        <div class="bg-gray-900 p-4 sm:p-8 rounded-2xl border border-gray-700 shadow-inner">
+            <div id="chatLog" class="h-64 overflow-y-auto text-gray-300 mb-4 px-3 py-2 bg-gray-800 rounded-xl border border-gray-600 transition-all duration-300"></div>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="chatInput" placeholder="Ask LearnFlow AI..." class="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300">
+                <button onclick="sendChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
+            </div>
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-green-400 mb-2 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Help me learn
+                </h3>
+                <input type="text" id="feedbackInput" placeholder="Teach me something new..." class="w-full px-4 py-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300">
+                <button onclick="sendFeedback()" class="mt-4 w-full px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md button-hover-effect">Submit Feedback</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        const chatInput = document.getElementById('chatInput');
-        const chatLog = document.getElementById('chatLog');
-        const sendBtn = document.getElementById('sendBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const messageBox = document.getElementById('messageBox');
-        
-        // Base URL for the API
-        const API_BASE_URL = 'https://learnflow-ai-0fdz.onrender.com:10000/api';
+<script>
+    const chatInput = document.getElementById('chatInput');
+    const chatLog = document.getElementById('chatLog');
+    const feedbackInput = document.getElementById('feedbackInput');
 
-        // Attach event listeners
-        window.addEventListener('load', async () => {
-            // Fetch existing chat history on page load
-            await fetchChatHistory();
-            sendBtn.addEventListener('click', sendChat);
-            clearBtn.addEventListener('click', clearChat);
-            chatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') sendChat();
-            });
-        });
-
-        // Renders all messages and handles typing effect
-        function renderMessages(messages) {
-            chatLog.innerHTML = '';
-            messages.forEach((msg, index) => {
-                if (msg.role === 'user') {
-                    appendMessage(msg.text, 'user', true);
-                } else if (msg.role === 'ai') {
-                    if (index === messages.length - 1 && !isTyping) {
-                        typeMessage(msg.text);
-                    } else {
-                        appendMessage(msg.text, 'ai', true);
-                    }
-                }
-            });
+    // Load chat history from localStorage on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedChat = localStorage.getItem('chatHistory');
+        if (storedChat) {
+            chatLog.innerHTML = storedChat;
             chatLog.scrollTop = chatLog.scrollHeight;
         }
+    });
 
-        function appendMessage(text, role, isFinal) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-            const bubble = document.createElement('div');
-            bubble.className = `${role}-bubble chat-bubble prose`;
+    // Save chat history to localStorage whenever it changes
+    function saveChatHistory() {
+        localStorage.setItem('chatHistory', chatLog.innerHTML);
+    }
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendChat();
+    });
+
+    async function sendChat() {
+        const query = chatInput.value.trim();
+        if (!query) return;
+
+        // Display user message
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.innerHTML = `<div class="py-2 text-white"><strong class="text-indigo-300">You:</strong> ${query}</div>`;
+        chatLog.appendChild(userMsgDiv);
+        chatInput.value = '';
+        saveChatHistory();
+        
+        const loaderDiv = document.createElement('div');
+        loaderDiv.id = 'loader';
+        loaderDiv.className = 'loader my-2 mx-auto';
+        chatLog.appendChild(loaderDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+
+        try {
+            const response = await fetch("AIzaSyCVj9c7qbPqq_3R9WgWbaRmQ6WQT3-c7CA", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+            const data = await response.json();
             
-            let htmlContent = marked.parse(text);
-            
-            if (role === 'ai' && isFinal) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = htmlContent;
-                tempDiv.querySelectorAll('pre').forEach(pre => {
-                    const copyBtn = document.createElement('button');
-                    copyBtn.className = 'copy-btn';
-                    copyBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                        </svg>
-                    `;
-                    copyBtn.addEventListener('click', () => copyToClipboard(pre.textContent));
-                    pre.appendChild(copyBtn);
-                });
-                htmlContent = tempDiv.innerHTML;
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
             }
-
-            bubble.innerHTML = htmlContent;
-            messageDiv.appendChild(bubble);
-            chatLog.appendChild(messageDiv);
-        }
-
-        function typeMessage(text) {
-            if (isTyping) return;
-            isTyping = true;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'flex justify-start';
-            const bubble = document.createElement('div');
-            bubble.className = 'ai-bubble chat-bubble prose';
-            messageDiv.appendChild(bubble);
-            chatLog.appendChild(messageDiv);
             
-            const fullHtml = marked.parse(text);
-            const contentToType = fullHtml.replace(/<[^>]*>?/gm, '');
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = "py-2 text-gray-300";
+            chatLog.appendChild(aiMsgDiv);
+
+            const botNameSpan = document.createElement('strong');
+            botNameSpan.className = "text-green-300";
+            botNameSpan.textContent = "LearnFlow Bot: ";
+            aiMsgDiv.appendChild(botNameSpan);
+
+            // Typing animation for the AI response
+            const fullText = data.answer;
             let i = 0;
             const typingInterval = setInterval(() => {
-                if (i < contentToType.length) {
-                    bubble.textContent += contentToType.charAt(i);
+                if (i < fullText.length) {
+                    aiMsgDiv.innerHTML += fullText.charAt(i);
                     chatLog.scrollTop = chatLog.scrollHeight;
                     i++;
                 } else {
                     clearInterval(typingInterval);
-                    bubble.innerHTML = fullHtml;
-                    isTyping = false;
-                    bubble.querySelectorAll('pre').forEach(pre => {
-                        const copyBtn = document.createElement('button');
-                        copyBtn.className = 'copy-btn';
-                        copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                            </svg>`;
-                        copyBtn.addEventListener('click', () => copyToClipboard(pre.textContent));
-                        pre.appendChild(copyBtn);
-                    });
+                    saveChatHistory(); // Save history after typing is complete
                 }
+            }, 25); // Adjust this value to change typing speed
+            
+        } catch (error) {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+            const errorMsgDiv = document.createElement('div');
+            errorMsgDiv.innerHTML = `<div class='py-2 text-red-400'>Error fetching answer. Please try again.</div>`;
+            chatLog.appendChild(errorMsgDiv);
+            saveChatHistory();
+        }
+
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendFeedback() {
+        const feedback = feedbackInput.value.trim();
+        if (!feedback) return;
+
+        try {
+            await fetch("AIzaSyCVj9c7qbPqq_3R9WgWbaRmQ6WQT3-c7CA", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feedback })
+            });
+
+            feedbackInput.value = '';
+            
+            // Custom message box instead of alert()
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
+            messageBox.innerHTML = `
+                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
+                    <div class="flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mb-4 animate-bounce" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <h3 class="text-2xl font-bold mb-2">Feedback Submitted!</h3>
+                        <p class="text-md text-gray-400 mt-2 text-center">Thanks for helping LearnFlow improve!</p>
+                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+            // Animate in
+            setTimeout(() => {
+                messageBox.style.opacity = '1';
+                messageBox.querySelector('.transform').style.transform = 'scale(1)';
+            }, 10);
+            
+        } catch (error) {
+            console.error("Error submitting feedback:", error);
+            // Custom error message for feedback
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0';
+            messageBox.innerHTML = `
+                <div class="bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
+                    <div class="flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        <h3 class="text-2xl font-bold mb-2">Submission Failed</h3>
+                        <p class="text-md text-gray-400 mt-2 text-center">Please check your network and try again.</p>
+                        <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold button-hover-effect">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+            setTimeout(() => {
+                messageBox.style.opacity = '1';
+                messageBox.querySelector('.transform').style.transform = 'scale(1)';
             }, 10);
         }
-
-        async function copyToClipboard(text) {
-            try {
-                const tempInput = document.createElement('textarea');
-                tempInput.value = text;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                showMessage("Code copied to clipboard!", "bg-green-500");
-            } catch (err) {
-                showMessage("Failed to copy code.", "bg-red-500");
-            }
-        }
-
-        function showMessage(text, colorClass) {
-            messageBox.textContent = text;
-            messageBox.className = `text-white rounded-md p-2 ${colorClass} animate-fade-in-up`;
-            messageBox.classList.remove('hidden');
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 3000);
-        }
-
-        async function fetchChatHistory() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat_history/`);
-                if (!response.ok) {
-                    throw new Error(`Error fetching chat history: ${response.statusText}`);
-                }
-                const chatHistory = await response.json();
-                renderMessages(chatHistory);
-            } catch (error) {
-                console.error("Error fetching chat history:", error);
-                showMessage("Could not load chat history.", "bg-red-500");
-            }
-        }
-
-        async function sendChat() {
-            const query = chatInput.value.trim();
-            if (!query || isTyping) return;
-
-            setLoadingState(true);
-            const originalInput = chatInput.value;
-            chatInput.value = '';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: originalInput })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.statusText}`);
-                }
-
-                await fetchChatHistory(); // Refresh the chat log
-            } catch (error) {
-                console.error("Error sending message:", error);
-                showMessage("An error occurred. Please try again.", "bg-red-500");
-                chatInput.value = originalInput; // Restore input on error
-            } finally {
-                setLoadingState(false);
-            }
-        }
-
-        async function clearChat() {
-            showMessage("Clearing chat...", "bg-blue-500");
-            try {
-                const response = await fetch(`${API_BASE_URL}/clear_chat/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                if (!response.ok) {
-                    throw new Error(`Error clearing chat: ${response.statusText}`);
-                }
-                await fetchChatHistory(); // Refresh the chat log
-                showMessage("Chat history cleared!", "bg-green-500");
-            } catch (error) {
-                console.error("Error clearing chat:", error);
-                showMessage("Error clearing chat.", "bg-red-500");
-            }
-        }
-        
-        function setLoadingState(loading) {
-            chatInput.disabled = loading;
-            sendBtn.disabled = loading;
-            sendBtn.textContent = loading ? "..." : "Send";
-            if (loading) {
-                const loaderDiv = document.createElement('div');
-                loaderDiv.id = 'loader';
-                loaderDiv.className = 'loader my-4 mx-auto';
-                chatLog.appendChild(loaderDiv);
-                chatLog.scrollTop = chatLog.scrollHeight;
-            } else {
-                const loader = document.getElementById('loader');
-                if (loader) loader.remove();
-            }
-        }
-
-        // Particle effect initialization
-        const particleBg = document.getElementById('particle-bg');
-        for (let i = 0; i < 50; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            const size = Math.random() * 10 + 5;
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size}px`;
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.animationDelay = `${Math.random() * 15}s`;
-            particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
-            particleBg.appendChild(particle);
-        }
-    </script>
+    }
+</script>
 {% endblock %}
+```eof
