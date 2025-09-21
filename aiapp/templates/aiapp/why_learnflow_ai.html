@@ -404,10 +404,19 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
+
                         if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(`API call failed with status ${response.status}: ${errorData.error.message}`);
+                            const errorText = await response.text();
+                            let customError = `API call failed with status ${response.status}.`;
+                            try {
+                                const errorData = JSON.parse(errorText);
+                                customError += ` Message: ${errorData.error.message}`;
+                            } catch (e) {
+                                customError += ` Raw response: ${errorText.substring(0, 100)}...`;
+                            }
+                            throw new Error(customError);
                         }
+
                         const result = await response.json();
                         const candidate = result.candidates?.[0];
                         if (candidate && candidate.content?.parts?.[0]?.text) {
@@ -486,13 +495,11 @@
                     errorMessage.textContent = `An error occurred: ${error.message}. Please try again.`;
                     errorMessage.classList.remove('hidden');
                     responseContainer.classList.add('hidden');
-                    console.error(error);
                 } finally {
                     buttonText.classList.remove('hidden');
                     loader.classList.add('hidden');
                 }
             }
-
             askButton.addEventListener('click', () => handleRequest('ask'));
             summarizeButton.addEventListener('click', () => handleRequest('summarize'));
         });
