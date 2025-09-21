@@ -111,6 +111,7 @@ LOGOUT_REDIRECT_URL = 'user:login'
 # The URL for your FastAPI backend service.
 # Use an environment variable for production and a local fallback for development.
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
+WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
 #  Jazzmin Admin
 JAZZMIN_SETTINGS = {
