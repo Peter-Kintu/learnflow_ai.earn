@@ -20,7 +20,6 @@ from .models import Quiz, Question, Choice, StudentAnswer, Attempt
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
-from django.http import HttpResponse
 from book.models import Book
 
 
@@ -35,30 +34,6 @@ from django.http import JsonResponse
 # NOTE: For this to work with your AI models, you'll need to import
 # and use them here. This is a placeholder for the actual AI logic.
  # adjust if Quiz is in another app
-
-def sitemap_view(request):
-    base_url = "https://learnflow-ai-0fdz.onrender.com"
-    urls = [
-        f"{base_url}/",
-        f"{base_url}/aiapp/",
-        f"{base_url}/video/",
-        f"{base_url}/book/",
-    ]
-    urls += [f"{base_url}/quiz/{q.slug}/" for q in Quiz.objects.all()]
-    urls += [f"{base_url}/books/{b.slug}/" for b in Book.objects.all()]
-    urls += [f"{base_url}/video/{v.slug}/" for v in Video.objects.all()]
-
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for url in urls:
-        xml += f'  <url><loc>{url}</loc></url>\n'
-    xml += '</urlset>'
-
-    return HttpResponse(xml, content_type='application/xml')
-
-
-
-
 
 @login_required
 def home(request):
@@ -633,3 +608,24 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
         print("PDF generation error:", str(e))
 
     return HttpResponse("Error generating PDF", status=500)
+
+
+def sitemap_view(request):
+    base_url = "https://learnflow-ai-0fdz.onrender.com"
+    urls = [
+        f"{base_url}/",
+        f"{base_url}/aiapp/",
+        f"{base_url}/video/",
+        f"{base_url}/book/",
+    ]
+    urls += [f"{base_url}/quiz/{q.slug}/" for q in Quiz.objects.all()]
+    urls += [f"{base_url}/books/{b.slug}/" for b in Book.objects.all()]
+    urls += [f"{base_url}/video/{v.slug}/" for v in Video.objects.all()]
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for url in urls:
+        xml += f'  <url><loc>{url}</loc></url>\n'
+    xml += '</urlset>'
+
+    return HttpResponse(xml, content_type='application/xml')
