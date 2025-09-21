@@ -1,121 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Log In | Learnflow AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In | Learnflow AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    .about-btn {
+        background-image: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
+        transition: all 0.3s ease;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        color: #e5e7eb;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .about-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
-    .animate-fadeIn {
-      animation: fadeIn 0.6s ease-out forwards;
-    }
-  </style>
+  </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
-  <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
-    <!-- Logo or Illustration -->
-    
-    <!-- Headline -->
-    <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
-    <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
-    <a href="{% url 'aiapp:why_learnflow_ai' %}" class="text-gray-300 hover:text-white transition-colors">About</a>
-
-    <!-- Django messages -->
-    {% if messages %}
-      <div class="mb-4">
-        {% for message in messages %}
-          <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
-            {{ message }}
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-
-    <!-- Login form -->
-    <form method="post" class="space-y-6">
-      {% csrf_token %}
-
-      {% if login_form.errors %}
-        <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
-          <p class="mb-2">Let’s smooth this out together:</p>
-          <ul>
-            {% for field, errors in login_form.errors.items %}
-              {% for error in errors %}
-                <li class="bg-red-800 text-red-200 px-3 py-1 rounded-full inline-block mb-1">{{ field|title }}: {{ error }}</li>
-              {% endfor %}
-            {% endfor %}
-          </ul>
-        </div>
-      {% endif %}
-
-      {% for field in login_form %}
-        <div class="transition-opacity duration-500 opacity-0 animate-fadeIn">
-          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-            {{ field.label }}
-          </label>
-
-          {% if field.name == 'password' %}
-            <div class="relative">
-              <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
-                class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
-                placeholder="{{ field.label }}" autocomplete="current-password" required>
-              <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
-                onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </span>
-            </div>
-          {% else %}
-            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
-              class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              placeholder="{{ field.label }}" required>
-          {% endif %}
-        </div>
-      {% endfor %}
-
-      <!-- Login button -->
-      <button type="submit"
-        class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
-        Enter the Flow
-      </button>
-    </form>
-
-    <!-- Registration link -->
-    <div class="mt-6 text-center text-sm text-gray-400">
-      New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
+  <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
+    <!-- Logo or Illustration -->
+    
+    <!-- Headline -->
+    <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
+    <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
+    <div class="flex justify-center mb-8">
+        <a href="why_learnflow_ai.html" class="about-btn">About</a>
     </div>
 
-    <!-- Footer -->
-    <div class="mt-8 text-center text-xs text-gray-500 italic">
-      Born in Africa, built for the world🌍
-    </div>
-  </div>
+    <!-- Django messages -->
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-  <script>
-    function togglePasswordVisibility(inputId, iconElement) {
-      const input = document.getElementById(inputId);
-      const iconPath = iconElement.querySelector('path:nth-child(2)');
-      if (input.type === 'password') {
-        input.type = 'text';
-        iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75...');
-      } else {
-        input.type = 'password';
-        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5...');
-      }
-    }
-  </script>
+    <!-- Login form -->
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+
+      {% if login_form.errors %}
+        <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
+          <p class="mb-2">Let’s smooth this out together:</p>
+          <ul>
+            {% for field, errors in login_form.errors.items %}
+              {% for error in errors %}
+                <li class="bg-red-800 text-red-200 px-3 py-1 rounded-full inline-block mb-1">{{ field|title }}: {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% for field in login_form %}
+        <div class="transition-opacity duration-500 opacity-0 animate-fadeIn">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+            {{ field.label }}
+          </label>
+
+          {% if field.name == 'password' %}
+            <div class="relative">
+              <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
+                placeholder="{{ field.label }}" autocomplete="current-password" required>
+              <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
+                onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </span>
+            </div>
+          {% else %}
+            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+              class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              placeholder="{{ field.label }}" required>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <!-- Login button -->
+      <button type="submit"
+        class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
+        Enter the Flow
+      </button>
+    </form>
+
+    <!-- Registration link -->
+    <div class="mt-6 text-center text-sm text-gray-400">
+      New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-gray-500 italic">
+      Born in Africa, built for the world🌍
+    </div>
+  </div>
+
+  <script>
+    function togglePasswordVisibility(inputId, iconElement) {
+      const input = document.getElementById(inputId);
+      const iconPath = iconElement.querySelector('path:nth-child(2)');
+      if (input.type === 'password') {
+        input.type = 'text';
+        iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75...');
+      } else {
+        input.type = 'password';
+        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5...');
+      }
+    }
+  </script>
 </body>
 </html>
