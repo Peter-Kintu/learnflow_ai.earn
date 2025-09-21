@@ -60,6 +60,9 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .icon {
+            filter: invert(1);
+        }
     </style>
 
     <!-- Structured Metadata -->
@@ -102,22 +105,66 @@
             </div>
         </header>
 
+        <!-- Mission & Vision Section -->
+        <section class="grid md:grid-cols-2 gap-8 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="card-bg p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-4">Our Mission</h2>
+                    <p class="text-gray-400 leading-relaxed">LearnFlow AI empowers African educators with multilingual quizzes, books, and videos. It celebrates every learner’s journey and builds pride through culturally resonant digital experiences.</p>
+                </div>
+            </div>
+            <div class="card-bg p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-4">Our Vision</h2>
+                    <p class="text-gray-400 leading-relaxed">To become Africa’s most trusted, inclusive, and discoverable educational platform—where every teacher and student feels seen, supported, and celebrated.</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Features Section -->
-        <section class="grid md:grid-cols-3 gap-8 text-center px-4 relative z-10">
-            <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.3s;">
-                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">🌍</div>
-                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Multilingual by Design</h2>
-                <p class="text-gray-400 leading-relaxed">From Luganda to Swahili, Yoruba to Amharic, LearnFlow AI supports African languages natively. Every piece of content reflects local culture and context—making learning feel familiar and powerful.</p>
-            </div>
-            <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.5s;">
-                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">💡</div>
-                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Content That Teaches with Heart</h2>
-                <p class="text-gray-400 leading-relaxed">We provide interactive quizzes, digital books with unlockable chapters, and educational videos curated for clarity and cultural relevance.</p>
-            </div>
-            <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.7s;">
-                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">🛡️</div>
-                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Secure & Accessible</h2>
-                <p class="text-gray-400 leading-relaxed">LearnFlow AI is distraction-free, ad-free, and optimized for low-bandwidth environments. Your learning experience is always fast, secure, and joyful.</p>
+        <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 0.5s;">
+            <h2 class="text-3xl font-bold text-white mb-8 text-center">Core Features</h2>
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Quizzes</h3>
+                    <p class="text-gray-400 text-sm">Interactive quizzes to test and reinforce knowledge.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Books</h3>
+                    <p class="text-gray-400 text-sm">Digital books with unlockable chapters and engaging content.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Videos</h3>
+                    <p class="text-gray-400 text-sm">Curated educational videos for a dynamic learning experience.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Multilingual Support</h3>
+                    <p class="text-gray-400 text-sm">Support for African languages including Luganda, Swahili, and Amharic.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Teacher Dashboards</h3>
+                    <p class="text-gray-400 text-sm">Tools for verified teachers to manage and create content.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Student Progress</h3>
+                    <p class="text-gray-400 text-sm">Track student progress and performance easily.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Secure & Ad-Free</h3>
+                    <p class="text-gray-400 text-sm">A secure, distraction-free environment for all learners.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Mobile-Friendly</h3>
+                    <p class="text-gray-400 text-sm">Optimized for low-bandwidth and mobile devices.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">AI-Powered Tools</h3>
+                    <p class="text-gray-400 text-sm">Powered by Gemini AI for summarization and assistance.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl text-center">
+                    <h3 class="text-xl font-bold text-white mb-2">Secure Login</h3>
+                    <p class="text-gray-400 text-sm">Login and verification to protect user data.</p>
+                </div>
             </div>
         </section>
 
@@ -147,6 +194,113 @@
             </div>
             <p id="error-message" class="mt-4 text-red-400 font-medium hidden"></p>
         </section>
+        
+        <!-- Key Highlights Section -->
+        <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 1.5s;">
+            <h2 class="text-3xl font-bold text-white mb-8 text-center">Key Highlights</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card-bg p-8 rounded-3xl shadow-2xl">
+                    <h3 class="text-2xl font-bold text-white mb-4">Our Values</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-400">
+                        <li>Inclusivity</li>
+                        <li>Cultural Pride</li>
+                        <li>Accessibility</li>
+                        <li>Security</li>
+                        <li>Discoverability</li>
+                        <li>Joyful Learning</li>
+                        <li>Community Empowerment</li>
+                    </ul>
+                </div>
+                <div class="card-bg p-8 rounded-3xl shadow-2xl">
+                    <h3 class="text-2xl font-bold text-white mb-4">Platforms</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-400">
+                        <li>Web</li>
+                        <li>Mobile</li>
+                        <li>WhatsApp Support</li>
+                        <li>AI Assistant Integration</li>
+                    </ul>
+                </div>
+                <div class="card-bg p-8 rounded-3xl shadow-2xl">
+                    <h3 class="text-2xl font-bold text-white mb-4">Languages Supported</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-400">
+                        <li>English</li>
+                        <li>Luganda</li>
+                        <li>Swahili</li>
+                        <li>Yoruba</li>
+                        <li>Amharic</li>
+                        <li>French (beta)</li>
+                        <li>Arabic (beta)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 1.7s;">
+            <h2 class="text-3xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+            <div class="space-y-6">
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">What is LearnFlow AI?</h3>
+                    <p class="text-gray-400">A multilingual educational platform for African educators and learners.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">How do I join?</h3>
+                    <p class="text-gray-400">Visit <a href="https://learnflow-ai-0fdz.onrender.com/register" class="text-indigo-400 hover:underline" target="_blank">https://learnflow-ai-0fdz.onrender.com/register</a> and create an account.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">Is LearnFlow AI free?</h3>
+                    <p class="text-gray-400">Yes, core features are free. Premium content may require payment or verification.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">Can I use it in Luganda or Swahili?</h3>
+                    <p class="text-gray-400">Yes, LearnFlow AI supports multiple African languages including Luganda, Swahili, Yoruba, and Amharic.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">How do I contact support?</h3>
+                    <p class="text-gray-400">You can reach us via WhatsApp at <a href="https://wa.me/256789746494" class="text-indigo-400 hover:underline" target="_blank">+256789746494</a> or email <a href="mailto:kintupeter7@gmail.com" class="text-indigo-400 hover:underline">kintupeter7@gmail.com</a>.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">Can I create my own quizzes?</h3>
+                    <p class="text-gray-400">Yes, verified teachers can create and manage quizzes through their dashboard.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">Does it work on mobile?</h3>
+                    <p class="text-gray-400">Absolutely. LearnFlow AI is optimized for mobile devices and low-bandwidth environments.</p>
+                </div>
+                <div class="card-bg p-6 rounded-2xl">
+                    <h3 class="text-lg font-semibold text-white mb-2">Is my data secure?</h3>
+                    <p class="text-gray-400">Yes. LearnFlow AI uses secure login, environment-based config management, and never shows ads.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.9s;">
+            <h2 class="text-3xl font-bold text-white mb-4 text-center">Connect with Our Team</h2>
+            <p class="text-gray-400 mb-8 leading-relaxed text-center max-w-2xl mx-auto">Get in touch with us through the channels below. We are here to help you succeed.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 text-center px-4">
+                <div class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-800 border border-gray-700 transition-transform transform hover:scale-105">
+                    <div class="text-4xl mb-4 transition-transform transform hover:scale-110">📧</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Email</h3>
+                    <a href="mailto:kintupeter7@gmail.com" class="text-indigo-400 hover:underline">kintupeter7@gmail.com</a>
+                </div>
+                <div class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-800 border border-gray-700 transition-transform transform hover:scale-105">
+                    <div class="text-4xl mb-4 transition-transform transform hover:scale-110">🟢</div>
+                    <h3 class="text-xl font-bold text-white mb-2">WhatsApp</h3>
+                    <a href="https://wa.me/256789746494" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:underline">+256789746494</a>
+                </div>
+                <div class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-800 border border-gray-700 transition-transform transform hover:scale-105">
+                    <div class="text-4xl mb-4 transition-transform transform hover:scale-110">🌐</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Website</h3>
+                    <a href="https://learnflow-ai-0fdz.onrender.com" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:underline">learnflow-ai-0fdz.onrender.com</a>
+                </div>
+                <div class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-800 border border-gray-700 transition-transform transform hover:scale-105">
+                    <div class="text-4xl mb-4 transition-transform transform hover:scale-110">🕒</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Support Hours</h3>
+                    <p class="text-gray-400">Monday–Saturday, 9am–6pm EAT</p>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script>
@@ -161,20 +315,26 @@
             const buttonText = document.getElementById('button-text');
             const errorMessage = document.getElementById('error-message');
 
-            const API_KEY = "AIzaSyD3fzGN2PfdXQrfTD4lkd0WSDCdZ87tjuo";
+            // IMPORTANT: API key must be an empty string for the Canvas environment.
+            // The runtime will automatically inject the valid key.
+            const API_KEY = ""; 
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
             
-            async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3) {
+            async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3, useSearch = true) {
                 let retries = 0;
                 while (retries < maxRetries) {
                     try {
                         const payload = {
                             contents: [{ parts: [{ text: userQuery }] }],
-                            tools: [{ "google_search": {} }],
                             systemInstruction: {
                                 parts: [{ text: systemPrompt }]
                             },
                         };
+
+                        // Conditionally add Google Search grounding for relevant queries
+                        if (useSearch) {
+                            payload.tools = [{ "google_search": {} }];
+                        }
 
                         const response = await fetch(API_URL, {
                             method: 'POST',
@@ -184,7 +344,7 @@
 
                         if (!response.ok) {
                             const errorData = await response.json();
-                            throw new Error(`API call failed with status ${response.status}: ${JSON.stringify(errorData)}`);
+                            throw new Error(`API call failed with status ${response.status}: ${errorData.error.message}`);
                         }
                         
                         const result = await response.json();
@@ -204,7 +364,7 @@
                             }
                             return { text, sources };
                         } else {
-                            throw new Error("Invalid API response structure.");
+                            throw new Error("Invalid API response structure or no text content.");
                         }
 
                     } catch (error) {
@@ -224,17 +384,21 @@
                 if (!userQuery) return;
                 
                 let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators in Africa. Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging.";
+                let useSearch = true;
+
                 if (requestType === 'summarize') {
                     systemPrompt = "You are a professional summarization tool. Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
+                    useSearch = false; // Summarization doesn't need to use search
                 }
 
                 buttonText.classList.add('hidden');
                 loader.classList.remove('hidden');
                 responseContainer.classList.add('hidden');
                 errorMessage.classList.add('hidden');
+                citationsDiv.innerHTML = '';
 
                 try {
-                    const result = await callGeminiAPI(systemPrompt, userQuery);
+                    const result = await callGeminiAPI(systemPrompt, userQuery, 3, useSearch);
                     
                     responseContent.innerHTML = result.text.replace(/\n/g, '<br>');
                     
@@ -267,6 +431,7 @@
 
             askButton.addEventListener('click', () => handleRequest('ask'));
             summarizeButton.addEventListener('click', () => handleRequest('summarize'));
+
         });
     </script>
 </body>
