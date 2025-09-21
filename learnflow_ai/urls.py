@@ -20,6 +20,7 @@ urlpatterns = [
     path('aiapp/', include('aiapp.urls')),
     path('video/', include('video.urls')),
     path('book/', include('book.urls')),
+    path('sitemap.xml', sitemap_view, name='sitemap'),
 ]
 
 # This is for serving static and media files during development.
