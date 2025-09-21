@@ -40,7 +40,11 @@
     <!-- Headline -->
     <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
     <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
-    <a href="{% url 'aiapp:why_learnflow_ai' %}" class="text-gray-300 hover:text-white transition-colors">About</a>
+    <a href="{% url 'aiapp:why_learnflow_ai' %}" 
+   class="inline-block px-5 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
+   💡 About LearnFlow AI
+</a>
+
 
     <!-- Django messages -->
     {% if messages %}
