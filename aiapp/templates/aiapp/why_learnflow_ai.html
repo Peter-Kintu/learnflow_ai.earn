@@ -99,11 +99,9 @@
                 <a href="https://learnflow-ai-0fdz.onrender.com/register" class="inline-block px-12 py-5 font-bold text-white rounded-full shadow-lg button-gradient">
                     Join the Movement
                 </a>
-
-                <a href="{% url 'video:video_list' %}" class="text-gray-300 hover:text-white transition-colors">
-                  Launch App
+                <a href="#" class="inline-block px-12 py-5 font-bold text-white rounded-full shadow-lg button-gradient">
+                    Launch App
                 </a>
-                
             </div>
         </header>
 
@@ -176,7 +174,7 @@
             <p class="text-gray-400 mb-8 leading-relaxed">Ask any question about a subject, get a summary of a text, or explore new educational topics with the help of our intelligent assistant. Powered by Gemini AI.</p>
             
             <div class="space-y-6">
-                <textarea id="ai-input" rows="5" placeholder="Ask a question or paste text to summarize..." class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <textarea id="ai-input" rows="5" placeholder="Ask a question about LearnFlow AI or a general topic..." class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 
                 <div class="flex flex-col sm:flex-row gap-4">
                     <button id="ask-button" class="flex-1 px-8 py-4 font-bold text-white rounded-full shadow-lg button-gradient flex items-center justify-center">
@@ -307,6 +305,42 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const learnflowData = {
+                "mission": "LearnFlow AI empowers African educators with multilingual quizzes, books, and videos. It celebrates every learner’s journey and builds pride through culturally resonant digital experiences.",
+                "vision": "To become Africa’s most trusted, inclusive, and discoverable educational platform—where every teacher and student feels seen, supported, and celebrated.",
+                "features": [
+                    "Quizzes", "Books", "Videos", "Multilingual Support", "Teacher Dashboards",
+                    "Student Progress Tracking", "Secure Login and Verification", "Ad-Free Learning Environment",
+                    "Mobile-Friendly Design", "AI-Powered Summarization and Assistance"
+                ],
+                "contact": {
+                    "whatsapp": "+256789746494",
+                    "email": "kintupeter7@gmail.com",
+                    "website": "https://learnflow-ai-0fdz.onrender.com",
+                    "support_hours": "Monday–Saturday, 9am–6pm EAT"
+                },
+                "faq": {
+                    "What is LearnFlow AI?": "A multilingual educational platform for African educators and learners.",
+                    "How do I join?": "Visit https://learnflow-ai-0fdz.onrender.com/register and create an account.",
+                    "Is LearnFlow AI free?": "Yes, core features are free. Premium content may require payment or verification.",
+                    "Can I use it in Luganda or Swahili?": "Yes, LearnFlow AI supports multiple African languages including Luganda, Swahili, Yoruba, and Amharic.",
+                    "How do I contact support?": "You can reach us via WhatsApp at +256789746494 or email kintupeter7@gmail.com.",
+                    "Can I create my own quizzes?": "Yes, verified teachers can create and manage quizzes through their dashboard.",
+                    "Does it work on mobile?": "Absolutely. LearnFlow AI is optimized for mobile devices and low-bandwidth environments.",
+                    "Is my data secure?": "Yes. LearnFlow AI uses secure login, environment-based config management, and never shows ads."
+                },
+                "values": [
+                    "Inclusivity", "Cultural Pride", "Accessibility", "Security", "Discoverability",
+                    "Joyful Learning", "Community Empowerment"
+                ],
+                "platforms": [
+                    "Web", "Mobile", "WhatsApp Support", "AI Assistant Integration"
+                ],
+                "languages_supported": [
+                    "English", "Luganda", "Swahili", "Yoruba", "Amharic", "French (beta)", "Arabic (beta)"
+                ]
+            };
+
             const askButton = document.getElementById('ask-button');
             const summarizeButton = document.getElementById('summarize-button');
             const inputField = document.getElementById('ai-input');
@@ -322,6 +356,36 @@
             const API_KEY = ""; 
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
             
+            function answerFromKnowledgeBase(query) {
+                const lowerQuery = query.toLowerCase();
+
+                // Check for direct matches in FAQ
+                for (const question in learnflowData.faq) {
+                    if (lowerQuery.includes(question.toLowerCase().replace('?', ''))) {
+                        return learnflowData.faq[question];
+                    }
+                }
+
+                // Check for other key sections
+                if (lowerQuery.includes("mission")) {
+                    return `Our mission is to: ${learnflowData.mission}`;
+                }
+                if (lowerQuery.includes("vision")) {
+                    return `Our vision is: ${learnflowData.vision}`;
+                }
+                if (lowerQuery.includes("features")) {
+                    return `LearnFlow AI offers a wide range of features, including: ${learnflowData.features.join(", ")}.`;
+                }
+                if (lowerQuery.includes("contact") || lowerQuery.includes("reach out") || lowerQuery.includes("support")) {
+                    return `You can contact us via WhatsApp at ${learnflowData.contact.whatsapp} or email us at ${learnflowData.contact.email}. Support hours are ${learnflowData.contact.support_hours}.`;
+                }
+                if (lowerQuery.includes("languages") || lowerQuery.includes("language support")) {
+                    return `LearnFlow AI supports a number of languages, including: ${learnflowData.languages_supported.join(", ")}.`;
+                }
+
+                return null; // No relevant answer found in the knowledge base
+            }
+
             async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3, useSearch = true) {
                 let retries = 0;
                 while (retries < maxRetries) {
@@ -332,43 +396,33 @@
                                 parts: [{ text: systemPrompt }]
                             },
                         };
-
-                        // Conditionally add Google Search grounding for relevant queries
                         if (useSearch) {
                             payload.tools = [{ "google_search": {} }];
                         }
-
                         const response = await fetch(API_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-
                         if (!response.ok) {
                             const errorData = await response.json();
                             throw new Error(`API call failed with status ${response.status}: ${errorData.error.message}`);
                         }
-                        
                         const result = await response.json();
                         const candidate = result.candidates?.[0];
-
                         if (candidate && candidate.content?.parts?.[0]?.text) {
                             const text = candidate.content.parts[0].text;
                             let sources = [];
                             const groundingMetadata = candidate.groundingMetadata;
                             if (groundingMetadata && groundingMetadata.groundingAttributions) {
                                 sources = groundingMetadata.groundingAttributions
-                                    .map(attribution => ({
-                                        uri: attribution.web?.uri,
-                                        title: attribution.web?.title,
-                                    }))
+                                    .map(attribution => ({ uri: attribution.web?.uri, title: attribution.web?.title }))
                                     .filter(source => source.uri && source.title);
                             }
                             return { text, sources };
                         } else {
                             throw new Error("Invalid API response structure or no text content.");
                         }
-
                     } catch (error) {
                         retries++;
                         if (retries < maxRetries) {
@@ -385,23 +439,32 @@
                 const userQuery = inputField.value.trim();
                 if (!userQuery) return;
                 
-                let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators in Africa. Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging.";
-                let useSearch = true;
-
-                if (requestType === 'summarize') {
-                    systemPrompt = "You are a professional summarization tool. Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
-                    useSearch = false; // Summarization doesn't need to use search
-                }
-
                 buttonText.classList.add('hidden');
                 loader.classList.remove('hidden');
                 responseContainer.classList.add('hidden');
                 errorMessage.classList.add('hidden');
                 citationsDiv.innerHTML = '';
 
+                // Try to answer from the internal knowledge base first
+                const localAnswer = answerFromKnowledgeBase(userQuery);
+                if (localAnswer) {
+                    responseContent.innerHTML = localAnswer;
+                    responseContainer.classList.remove('hidden');
+                    buttonText.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                    return;
+                }
+
+                // If no local answer, fall back to the Gemini API
+                let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators in Africa. Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging.";
+                let useSearch = true;
+                if (requestType === 'summarize') {
+                    systemPrompt = "You are a professional summarization tool. Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
+                    useSearch = false; // Summarization doesn't need to use search
+                }
+
                 try {
                     const result = await callGeminiAPI(systemPrompt, userQuery, 3, useSearch);
-                    
                     responseContent.innerHTML = result.text.replace(/\n/g, '<br>');
                     
                     if (result.sources && result.sources.length > 0) {
@@ -418,7 +481,6 @@
                     } else {
                         citationsDiv.innerHTML = '';
                     }
-
                     responseContainer.classList.remove('hidden');
                 } catch (error) {
                     errorMessage.textContent = `An error occurred: ${error.message}. Please try again.`;
@@ -433,7 +495,6 @@
 
             askButton.addEventListener('click', () => handleRequest('ask'));
             summarizeButton.addEventListener('click', () => handleRequest('summarize'));
-
         });
     </script>
 </body>
