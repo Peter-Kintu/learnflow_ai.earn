@@ -49,6 +49,18 @@
         .animate-fade-in {
             animation: fadeIn 0.8s ease-out forwards;
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 
     <!-- Structured Metadata -->
@@ -90,10 +102,10 @@
         <header class="text-center py-24 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.1s;">
             <h1 class="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6">
                 <span class="text-white">LearnFlow AI</span><br>
-                <span class="text-gradient">Inclusive Education for Africa</span>
+                <span class="text-gradient">Education for Africa</span>
             </h1>
             <p class="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-                LearnFlow AI is more than a platform—it’s a movement. Built by and for African educators, it offers a multilingual, emotionally resonant learning experience that celebrates every student’s journey.
+                A movement for African education, offering a multilingual and culturally relevant learning experience for all.
             </p>
             <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                 <a href="https://learnflow-ai-0fdz.onrender.com/register" class="inline-block px-12 py-5 font-bold text-white rounded-full shadow-lg button-gradient">
@@ -124,8 +136,35 @@
             </div>
         </section>
 
+        <!-- AI Assistant Section -->
+        <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.1s;">
+            <h2 class="text-3xl font-bold text-white mb-4">AI Assistant for Educators</h2>
+            <p class="text-gray-400 mb-8 leading-relaxed">Ask any question about a subject, get a summary of a text, or explore new educational topics with the help of our intelligent assistant. Powered by Gemini AI.</p>
+            
+            <div class="space-y-6">
+                <textarea id="ai-input" rows="5" placeholder="Ask a question or paste text to summarize..." class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="ask-button" class="flex-1 px-8 py-4 font-bold text-white rounded-full shadow-lg button-gradient flex items-center justify-center">
+                        <span id="button-text">Ask AI Assistant</span>
+                        <div id="loader" class="loader ml-3 hidden"></div>
+                    </button>
+                    <button id="summarize-button" class="flex-1 px-8 py-4 font-bold text-white rounded-full shadow-lg button-gradient">
+                        Summarize Text
+                    </button>
+                </div>
+            </div>
+            
+            <div id="ai-response-container" class="mt-8 p-6 bg-gray-800 rounded-2xl border border-gray-700 hidden">
+                <h3 class="text-xl font-bold text-white mb-4">Response:</h3>
+                <div id="ai-response-content" class="text-gray-300 leading-relaxed"></div>
+                <div id="citations" class="mt-4 text-sm text-gray-500"></div>
+            </div>
+            <p id="error-message" class="mt-4 text-red-400 font-medium hidden"></p>
+        </section>
+
         <!-- Contact Section -->
-        <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.9s;">
+        <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.3s;">
             <div class="grid lg:grid-cols-2 gap-12">
                 <div>
                     <h2 class="text-3xl font-bold text-white mb-4">Connect with Our Team</h2>
@@ -166,7 +205,6 @@
                 </div>
             </div>
         </section>
-
     </div>
 
     <!-- Footer -->
@@ -195,6 +233,125 @@
                     responseMessage.className = "mt-6 font-medium text-center text-red-400";
                     console.error('EmailJS error:', error);
                 });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const askButton = document.getElementById('ask-button');
+            const summarizeButton = document.getElementById('summarize-button');
+            const inputField = document.getElementById('ai-input');
+            const responseContainer = document.getElementById('ai-response-container');
+            const responseContent = document.getElementById('ai-response-content');
+            const citationsDiv = document.getElementById('citations');
+            const loader = document.getElementById('loader');
+            const buttonText = document.getElementById('button-text');
+            const errorMessage = document.getElementById('error-message');
+
+            const API_KEY = "";
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+            
+            async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3) {
+                let retries = 0;
+                while (retries < maxRetries) {
+                    try {
+                        const payload = {
+                            contents: [{ parts: [{ text: userQuery }] }],
+                            tools: [{ "google_search": {} }],
+                            systemInstruction: {
+                                parts: [{ text: systemPrompt }]
+                            },
+                        };
+
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`API call failed with status ${response.status}: ${JSON.stringify(errorData)}`);
+                        }
+                        
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            const text = candidate.content.parts[0].text;
+                            let sources = [];
+                            const groundingMetadata = candidate.groundingMetadata;
+                            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                                sources = groundingMetadata.groundingAttributions
+                                    .map(attribution => ({
+                                        uri: attribution.web?.uri,
+                                        title: attribution.web?.title,
+                                    }))
+                                    .filter(source => source.uri && source.title);
+                            }
+                            return { text, sources };
+                        } else {
+                            throw new Error("Invalid API response structure.");
+                        }
+
+                    } catch (error) {
+                        retries++;
+                        if (retries < maxRetries) {
+                            const delay = Math.pow(2, retries) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+            }
+
+            async function handleRequest(requestType) {
+                const userQuery = inputField.value.trim();
+                if (!userQuery) return;
+                
+                let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators in Africa. Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging.";
+                if (requestType === 'summarize') {
+                    systemPrompt = "You are a professional summarization tool. Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
+                }
+
+                buttonText.classList.add('hidden');
+                loader.classList.remove('hidden');
+                responseContainer.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+
+                try {
+                    const result = await callGeminiAPI(systemPrompt, userQuery);
+                    
+                    responseContent.innerHTML = result.text.replace(/\n/g, '<br>');
+                    
+                    if (result.sources && result.sources.length > 0) {
+                        citationsDiv.innerHTML = '<p class="mt-2 font-bold">Sources:</p>';
+                        const sourceList = document.createElement('ul');
+                        sourceList.classList.add('list-disc', 'list-inside', 'mt-1', 'space-y-1');
+                        result.sources.forEach(source => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `<a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-400">${source.title || source.uri}</a>`;
+                            sourceList.appendChild(listItem);
+                        });
+                        citationsDiv.appendChild(sourceList);
+                        citationsDiv.classList.remove('hidden');
+                    } else {
+                        citationsDiv.innerHTML = '';
+                    }
+
+                    responseContainer.classList.remove('hidden');
+                } catch (error) {
+                    errorMessage.textContent = `An error occurred: ${error.message}. Please try again.`;
+                    errorMessage.classList.remove('hidden');
+                    responseContainer.classList.add('hidden');
+                    console.error(error);
+                } finally {
+                    buttonText.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                }
+            }
+
+            askButton.addEventListener('click', () => handleRequest('ask'));
+            summarizeButton.addEventListener('click', () => handleRequest('summarize'));
         });
     </script>
 
