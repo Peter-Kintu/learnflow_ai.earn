@@ -3,6 +3,8 @@ from django.urls import path, include
 from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
+from aiapp.views import sitemap_view
+
 
 urlpatterns = [
     # The admin site URL
