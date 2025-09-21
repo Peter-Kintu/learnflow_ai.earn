@@ -609,6 +609,9 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
 
     return HttpResponse("Error generating PDF", status=500)
 
+def why_learnflow_ai(request):
+    return render(request, 'aiapp/why_learnflow_ai.html')
+
 
 def sitemap_view(request):
     base_url = "https://learnflow-ai-0fdz.onrender.com"

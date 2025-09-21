@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LearnFlow AI – Africa’s Most Inclusive Learning Platform</title>
+  <meta name="description" content="LearnFlow AI empowers educators across Africa with multilingual quizzes, books, videos, and secure learning tools. Join the movement for inclusive education.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+
+  <!-- Structured Metadata -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "LearnFlow AI",
+    "url": "https://learnflow-ai-0fdz.onrender.com",
+    "logo": "https://learnflow-ai-0fdz.onrender.com/static/logo.png",
+    "sameAs": [
+      "https://twitter.com/learnflowai",
+      "https://facebook.com/learnflowai"
+    ],
+    "description": "LearnFlow AI empowers educators across Africa with multilingual quizzes, books, and videos."
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+      "@type": "Question",
+      "name": "What is LearnFlow AI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "LearnFlow AI is a multilingual educational platform offering quizzes, books, and videos for African educators and students."
+      }
+    }]
+  }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-6 max-w-3xl mx-auto">
+
+  <h1 class="text-4xl font-bold text-indigo-600 mb-4">LearnFlow AI – Africa’s Most Inclusive Learning Platform</h1>
+
+  <p class="text-lg mb-6">LearnFlow AI is more than a platform—it’s a movement. Built by and for African educators, it offers a multilingual, emotionally resonant learning experience that celebrates every student’s journey.</p>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-2">🌍 Multilingual by Design</h2>
+  <p>From Luganda to Swahili, Yoruba to Amharic, LearnFlow AI supports African languages natively. Every quiz, book, and video reflects local culture and context—making learning feel familiar, proud, and powerful.</p>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-2">📚 Quizzes, Books, and Videos That Teach with Heart</h2>
+  <ul class="list-disc list-inside mb-4">
+    <li>Interactive quizzes for teachers and students</li>
+    <li>Digital books with unlockable chapters and guided feedback</li>
+    <li>Educational videos curated for clarity and cultural relevance</li>
+  </ul>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-2">🔒 Secure, Ad-Free, and Accessible</h2>
+  <p>LearnFlow AI is distraction-free, ad-free, and optimized for low-bandwidth environments. Whether you're in Kampala, Accra, or Nairobi, your learning experience is fast, secure, and joyful.</p>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-2">🚀 Built for Discoverability</h2>
+  <p>With structured metadata, SEO optimization, and daily language expansion, LearnFlow AI is designed to be found—by search engines, AI agents, and educators across the continent.</p>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-2">🎉 Join the Movement</h2>
+  <p>Every registration is a celebration. Every login is a step toward digital pride. LearnFlow AI isn’t just a tool—it’s a tapestry of African learning, woven with care, clarity, and community.</p>
+
+  <a href="https://learnflow-ai-0fdz.onrender.com/register" class="inline-block mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition">Join LearnFlow AI Today</a>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-12 mb-2">📞 Request a Physical Call</h2>
+  <p>If you'd prefer to speak directly with a LearnFlow AI team member, you can request a physical phone call via WhatsApp:</p>
+
+  <div class="mt-4 space-y-2">
+    <p class="font-medium text-indigo-600">
+      <a href="tel:+256789746494">Call: +256 789 746 494</a>
+    </p>
+    <a href="https://wa.me/256789746494?text=Hello%20LearnFlow%20AI%2C%20I%20would%20like%20to%20request%20a%20physical%20call%20to%20discuss%20learning%20opportunities." 
+       class="inline-block px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
+       target="_blank">
+      📲 Request a Call via WhatsApp
+    </a>
+  </div>
+
+  <h2 class="text-2xl font-semibold text-gray-700 mt-12 mb-2">📬 Send Us a Message</h2>
+  <form id="contact-form" class="space-y-4">
+    <input type="text" name="user_name" placeholder="Your Name" required class="w-full p-2 border rounded">
+    <input type="email" name="user_email" placeholder="Your Email" required class="w-full p-2 border rounded">
+    <textarea name="message" rows="5" placeholder="Your Message" required class="w-full p-2 border rounded"></textarea>
+    <label class="flex items-center">
+      <input type="checkbox" name="subscribe" class="mr-2">
+      Subscribe to our newsletter
+    </label>
+    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Send Message</button>
+  </form>
+  <p id="response-message" class="mt-4 font-medium"></p>
+
+  <script>
+    (function(){
+      emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
+    })();
+
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', this)
+        .then(function() {
+          document.getElementById('response-message').textContent = "✅ Message sent successfully!";
+          document.getElementById('contact-form').reset();
+        }, function(error) {
+          document.getElementById('response-message').textContent = "❌ Failed to send message. Please try again.";
+          console.error('EmailJS error:', error);
+        });
+    });
+  </script>
+
+</body>
+</html>
