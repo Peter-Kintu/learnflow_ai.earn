@@ -93,6 +93,7 @@
                 <a href="{% url 'video:video_list' %}" class="text-gray-300 hover:text-white transition-colors">Videos</a>
                 <a href="{% url 'aiapp:quiz_list' %}" class="text-gray-300 hover:text-white transition-colors">Quizzes</a>
                 <a href="{% url 'book:book_list' %}" class="text-gray-300 hover:text-white transition-colors">Books</a>
+                <a href="{% url 'aiapp:why_learnflow_ai' %}" class="text-gray-300 hover:text-white transition-colors">About LearnFlowAI</a>
                 
                 {% if user.is_authenticated %}
                 <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white transition-colors">My Dashboard</a>
