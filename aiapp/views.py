@@ -618,9 +618,21 @@ def sitemap_view(request):
         f"{base_url}/video/",
         f"{base_url}/book/",
     ]
-    urls += [f"{base_url}/quiz/{q.slug}/" for q in Quiz.objects.all()]
-    urls += [f"{base_url}/books/{b.slug}/" for b in Book.objects.all()]
-    urls += [f"{base_url}/video/{v.slug}/" for v in Video.objects.all()]
+
+    try:
+        urls += [f"{base_url}/quiz/{getattr(q, 'slug', q.pk)}/" for q in Quiz.objects.all()]
+    except Exception:
+        urls.append(f"{base_url}/quiz/")
+
+    try:
+        urls += [f"{base_url}/books/{getattr(b, 'slug', b.pk)}/" for b in Book.objects.all()]
+    except Exception:
+        urls.append(f"{base_url}/books/")
+
+    try:
+        urls += [f"{base_url}/video/{getattr(v, 'slug', v.pk)}/" for v in Video.objects.all()]
+    except Exception:
+        urls.append(f"{base_url}/video/")
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
