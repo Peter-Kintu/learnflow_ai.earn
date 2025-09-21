@@ -5,7 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LearnFlow AI{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+   
+     <!-- FAQ Schema for AI and Google Rich Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "What is LearnFlow AI?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "LearnFlow AI is a multilingual educational platform offering quizzes, books, and videos for African educators and students."
+        }
+      }]
+    }
+    </script>
+
+    <!-- Organization Schema for identity and discoverability -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "LearnFlow AI",
+      "url": "https://learnflow-ai-0fdz.onrender.com",
+      "logo": "https://learnflow-ai-0fdz.onrender.com/static/logo.png",
+      "sameAs": [
+        "https://twitter.com/learnflowai",
+        "https://facebook.com/learnflowai"
+      ],
+      "description": "LearnFlow AI empowers educators across Africa with multilingual quizzes, books, and videos."
+    }
+
+   </script>
+
+
     <style>
+
+        
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
