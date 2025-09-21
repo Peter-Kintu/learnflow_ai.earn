@@ -6,7 +6,6 @@
     <meta name="description" content="LearnFlow AI empowers educators across Africa with multilingual quizzes, books, videos, and secure learning tools. Join the movement for inclusive education.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
@@ -78,28 +77,14 @@
             "description": "LearnFlow AI empowers educators across Africa with multilingual quizzes, books, and videos."
         }
     </script>
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [{
-                "@type": "Question",
-                "name": "What is LearnFlow AI?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "LearnFlow AI is a multilingual educational platform offering quizzes, books, and videos for African educators and students."
-                }
-            }]
-        }
-    </script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
     <div class="fixed inset-0 -z-10 bg-pattern"></div>
 
-    <div class="max-w-7xl mx-auto w-full space-y-24">
+    <div class="max-w-7xl mx-auto w-full space-y-16">
 
         <!-- Hero Section -->
-        <header class="text-center py-24 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.1s;">
+        <header class="text-center py-16 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.1s;">
             <h1 class="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6">
                 <span class="text-white">LearnFlow AI</span><br>
                 <span class="text-gradient">Education for Africa</span>
@@ -120,18 +105,18 @@
         <!-- Features Section -->
         <section class="grid md:grid-cols-3 gap-8 text-center px-4 relative z-10">
             <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.3s;">
-                <div class="text-5xl mb-4">🌍</div>
-                <h2 class="text-2xl font-bold text-white mb-2">Multilingual by Design</h2>
+                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">🌍</div>
+                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Multilingual by Design</h2>
                 <p class="text-gray-400 leading-relaxed">From Luganda to Swahili, Yoruba to Amharic, LearnFlow AI supports African languages natively. Every piece of content reflects local culture and context—making learning feel familiar and powerful.</p>
             </div>
             <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.5s;">
-                <div class="text-5xl mb-4">💡</div>
-                <h2 class="text-2xl font-bold text-white mb-2">Content That Teaches with Heart</h2>
+                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">💡</div>
+                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Content That Teaches with Heart</h2>
                 <p class="text-gray-400 leading-relaxed">We provide interactive quizzes, digital books with unlockable chapters, and educational videos curated for clarity and cultural relevance.</p>
             </div>
             <div class="card-bg p-8 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 0.7s;">
-                <div class="text-5xl mb-4">🛡️</div>
-                <h2 class="text-2xl font-bold text-white mb-2">Secure & Accessible</h2>
+                <div class="text-5xl mb-4 transition-transform transform hover:scale-110">🛡️</div>
+                <h2 class="text-2xl font-bold text-white mb-2 transition-colors hover:text-indigo-400">Secure & Accessible</h2>
                 <p class="text-gray-400 leading-relaxed">LearnFlow AI is distraction-free, ad-free, and optimized for low-bandwidth environments. Your learning experience is always fast, secure, and joyful.</p>
             </div>
         </section>
@@ -162,79 +147,9 @@
             </div>
             <p id="error-message" class="mt-4 text-red-400 font-medium hidden"></p>
         </section>
-
-        <!-- Contact Section -->
-        <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.3s;">
-            <div class="grid lg:grid-cols-2 gap-12">
-                <div>
-                    <h2 class="text-3xl font-bold text-white mb-4">Connect with Our Team</h2>
-                    <p class="text-gray-400 mb-8 leading-relaxed">If you'd prefer to speak directly with a LearnFlow AI team member, you can request a physical phone call via WhatsApp or send us a message using the form below.</p>
-
-                    <div class="space-y-6">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-indigo-400 text-3xl">📞</span>
-                            <a href="tel:+256789746494" class="text-xl font-semibold text-indigo-400 hover:underline transition">
-                                Call: +256 789 746 494
-                            </a>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <span class="text-green-500 text-3xl">🟢</span>
-                            <a href="https://wa.me/256789746494?text=Hello%20LearnFlow%20AI%2C%20I%20would%20like%20to%20request%20a%20physical%20call%20to%20discuss%20learning%20opportunities."
-                               class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition">
-                                📲 Request a Call via WhatsApp
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h2 class="text-3xl font-bold text-white mb-4">📬 Send Us a Message</h2>
-                    <form id="contact-form" class="space-y-6">
-                        <input type="text" name="user_name" placeholder="Your Name" required class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <input type="email" name="user_email" placeholder="Your Email" required class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <textarea name="message" rows="5" placeholder="Your Message" required class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                        <div class="flex items-center">
-                            <input type="checkbox" name="subscribe" class="mr-3 h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-700 bg-gray-800">
-                            <label class="text-sm text-gray-400">
-                                Subscribe to our newsletter
-                            </label>
-                        </div>
-                        <button type="submit" class="w-full px-8 py-4 font-bold text-white rounded-full shadow-lg button-gradient">Send Message</button>
-                    </form>
-                    <p id="response-message" class="mt-6 font-medium text-center"></p>
-                </div>
-            </div>
-        </section>
     </div>
 
-    <!-- Footer -->
-    <footer class="text-center py-12 text-gray-500 mt-20">
-        <p>&copy; 2025 LearnFlow AI. All rights reserved.</p>
-    </footer>
-
     <script>
-        (function(){
-            emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
-        })();
-
-        document.getElementById('contact-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const responseMessage = document.getElementById('response-message');
-            responseMessage.textContent = "Sending...";
-            responseMessage.className = "mt-6 font-medium text-center text-gray-400";
-
-            emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', this)
-                .then(function() {
-                    responseMessage.textContent = "✅ Message sent successfully! We'll get back to you shortly.";
-                    responseMessage.className = "mt-6 font-medium text-center text-green-400";
-                    document.getElementById('contact-form').reset();
-                }, function(error) {
-                    responseMessage.textContent = "❌ Failed to send message. Please try again.";
-                    responseMessage.className = "mt-6 font-medium text-center text-red-400";
-                    console.error('EmailJS error:', error);
-                });
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             const askButton = document.getElementById('ask-button');
             const summarizeButton = document.getElementById('summarize-button');
@@ -246,7 +161,7 @@
             const buttonText = document.getElementById('button-text');
             const errorMessage = document.getElementById('error-message');
 
-            const API_KEY = "";
+            const API_KEY = "AIzaSyD3fzGN2PfdXQrfTD4lkd0WSDCdZ87tjuo";
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
             
             async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3) {
@@ -354,6 +269,5 @@
             summarizeButton.addEventListener('click', () => handleRequest('summarize'));
         });
     </script>
-
 </body>
 </html>
