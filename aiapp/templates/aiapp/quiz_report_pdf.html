@@ -25,7 +25,6 @@
         h1 {
             font-size: 2.5rem;
             font-weight: 800;
-            color: #1e293b;
             text-align: center;
             margin-bottom: 0.5rem;
         }
@@ -40,7 +39,6 @@
         h2 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #1e293b;
             border-bottom: 2px solid #3b82f6;
             padding-bottom: 0.5rem;
             margin-top: 2rem;
@@ -48,6 +46,7 @@
         }
         .summary-card {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-around;
             text-align: center;
             padding: 1.5rem;
@@ -56,7 +55,8 @@
             margin-bottom: 2rem;
         }
         .summary-item {
-            flex: 1;
+            flex: 1 1 40%;
+            margin-bottom: 1rem;
         }
         .summary-item h3 {
             font-size: 1.125rem;
@@ -64,18 +64,18 @@
             margin-bottom: 0.25rem;
         }
         .summary-item p {
-            font-size: 2.25rem;
+            font-size: 2rem;
             font-weight: 800;
             margin: 0;
         }
-        .score-correct {
-            color: #22c55e;
-        }
-        .score-incorrect {
-            color: #ef4444;
-        }
-        .score-total {
-            color: #3b82f6;
+        .score-correct { color: #22c55e; }
+        .score-incorrect { color: #ef4444; }
+        .score-total { color: #3b82f6; }
+        .performance-level {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-top: 1rem;
         }
         .question-block {
             margin-bottom: 1.5rem;
@@ -88,7 +88,6 @@
             font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            color: #1e293b;
         }
         .answer-list {
             list-style: none;
@@ -158,6 +157,18 @@
                 <p class="score-total">{{ percentage }}%</p>
             </div>
         </div>
+
+        <p class="performance-level">
+            {% if percentage >= 90 %}
+                Performance Level: <span style="color:#22c55e;">Excellent</span>
+            {% elif percentage >= 75 %}
+                Performance Level: <span style="color:#3b82f6;">Good</span>
+            {% elif percentage >= 50 %}
+                Performance Level: <span style="color:#f59e0b;">Fair</span>
+            {% else %}
+                Performance Level: <span style="color:#ef4444;">Needs Improvement</span>
+            {% endif %}
+        </p>
 
         <h2>Questions and Answers</h2>
         {% for ans in answers %}

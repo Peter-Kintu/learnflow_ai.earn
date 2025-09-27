@@ -11,6 +11,7 @@ from django.template.loader import get_template
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from docx import Document
 
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
@@ -550,6 +551,43 @@ def quiz_report_pdf_for_quiz(request, quiz_id):
 
     return HttpResponse("Error generating PDF", status=500)
 
+def build_quiz_attempt_context(attempt, request_user):
+    student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
+    score = attempt.score
+    total_questions = attempt.total_questions
+    percentage = round((score / total_questions) * 100) if total_questions else 0
+    incorrect_answers = total_questions - score
+
+    enriched_answers = []
+    for ans in student_answers:
+        correct_choice = ans.question.choices.filter(is_correct=True).first()
+        user_answer = ans.selected_choice.text if ans.selected_choice else ans.text_answer
+        correct_answer = correct_choice.text if correct_choice else "N/A"
+        is_correct = user_answer == correct_answer
+        feedback = "✅ Well done!" if is_correct else f"❌ Almost there — the correct answer was '{correct_answer}'. Keep going!"
+
+        enriched_answers.append({
+            'question_text': ans.question.text,
+            'user_answer': user_answer,
+            'correct_answer': correct_answer,
+            'is_correct': is_correct,
+            'feedback': feedback,
+        })
+
+    return {
+        'quiz': attempt.quiz,
+        'attempt': attempt,
+        'report_date': timezone.now(),
+        'request_user': request_user,
+        'score': score,
+        'total_questions': total_questions,
+        'percentage': percentage,
+        'incorrect_answers': incorrect_answers,
+        'user': attempt.user,
+        'today': timezone.now(),
+        'answers': enriched_answers,
+    }    
+
 @login_required
 def quiz_report_pdf_for_attempt(request, attempt_id):
     """Generates a PDF report for a specific quiz attempt, including correct answers and feedback."""
@@ -609,6 +647,38 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
 
     return HttpResponse("Error generating PDF", status=500)
 
+
+
+@login_required
+def quiz_report_word_for_attempt(request, attempt_id):
+    attempt = get_object_or_404(Attempt, pk=attempt_id)
+    if request.user != attempt.user and request.user != attempt.quiz.teacher:
+        raise Http404
+
+    context = build_quiz_attempt_context(attempt, request.user)
+    doc = Document()
+    doc.add_heading(f'Quiz Report - {context["quiz"].title}', 0)
+    doc.add_paragraph(f'Generated for {context["user"].username} on {context["today"].strftime("%B %d, %Y")}')
+
+    doc.add_heading('Summary', level=1)
+    doc.add_paragraph(f'Score: {context["score"]} / {context["total_questions"]}')
+    doc.add_paragraph(f'Correct: {context["score"]}')
+    doc.add_paragraph(f'Incorrect: {context["incorrect_answers"]}')
+    doc.add_paragraph(f'Percentage: {context["percentage"]}%')
+
+    doc.add_heading('Questions and Answers', level=1)
+    for i, ans in enumerate(context['answers'], start=1):
+        doc.add_paragraph(f'Question {i}: {ans["question_text"]}', style='List Number')
+        doc.add_paragraph(f'Your Answer: {ans["user_answer"]}')
+        doc.add_paragraph(f'Correct Answer: {ans["correct_answer"]}')
+        doc.add_paragraph(f'Feedback: {ans["feedback"]}')
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    filename = f"{context['quiz'].title.replace(' ', '_')}_attempt_{attempt.id}.docx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    doc.save(response)
+    return response
+
 def why_learnflow_ai(request):
     return render(request, 'aiapp/why_learnflow_ai.html')
 
@@ -644,3 +714,4 @@ def sitemap_view(request):
     xml += '</urlset>'
 
     return HttpResponse(xml, content_type='application/xml')
+

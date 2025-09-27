@@ -30,7 +30,8 @@ urlpatterns = [
     path('quizzes/report/quiz/<int:quiz_id>/', views.quiz_report_pdf_for_quiz, name='quiz_report_pdf_for_quiz'),
     # This URL is needed for the "Download Report" button on the results page.
     path('quizzes/report/attempt/<int:attempt_id>/', views.quiz_report_pdf_for_attempt, name='quiz_report_pdf_for_attempt'),
-    
+    path('quizzes/report/attempt/<int:attempt_id>/word/', views.quiz_report_word_for_attempt, name='quiz_report_word_for_attempt'),
+    path('quizzes/<int:quiz_id>/retake/', views.retake_quiz, name='retake_quiz'),
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
     path('why-learnflow-ai/', views.why_learnflow_ai, name='why_learnflow_ai'),
