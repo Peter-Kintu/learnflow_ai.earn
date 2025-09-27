@@ -129,6 +129,12 @@
             font-weight: 600;
             color: #f59e0b;
         }
+        .watermark {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 2rem;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -200,6 +206,16 @@
             <p><em>"Every answer, right or wrong, is a step toward wisdom."</em></p>
             <p>Signed by: <strong>{{ request_user.get_full_name|default:request_user.username }}</strong></p>
             <p>Report generated on {{ report_date|date:"F j, Y, g:i A" }}</p>
+
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px dashed #cbd5e1;">
+
+            <p class="watermark">
+                This report was issued by <strong>LearnFlow AI</strong> — Africa’s intelligent learning companion.<br>
+                It is digitally generated and protected. Any modification or tampering invalidates its authenticity.
+            </p>
+            <p class="watermark">
+                LearnFlow AI © {{ report_date|date:"Y" }}. All rights reserved.
+            </p>
         </footer>
     </div>
 </body>
