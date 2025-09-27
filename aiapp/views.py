@@ -715,3 +715,8 @@ def sitemap_view(request):
 
     return HttpResponse(xml, content_type='application/xml')
 
+@login_required
+def retake_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
+
