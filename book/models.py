@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils import timezone
 import uuid
 
 class Book(models.Model):
@@ -22,7 +23,7 @@ class Book(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.title)
+            base_slug = slugify(self.title) or f"book-{uuid.uuid4().hex[:6]}"
             slug_candidate = base_slug
             counter = 1
             while Book.objects.filter(slug=slug_candidate).exists():
@@ -31,9 +32,17 @@ class Book(models.Model):
             self.slug = slug_candidate
         super(Book, self).save(*args, **kwargs)
 
+    def total_earned(self):
+        return sum(tx.amount for tx in self.transactions.filter(status='paid', verified=True))
+
+    def unlock_count(self):
+        return self.transactions.filter(status='paid', verified=True).count()
+
     def __str__(self):
         return f"{self.title} by {self.uploaded_by.get_full_name() or self.uploaded_by.username}"
 
+    class Meta:
+        ordering = ['-created_at']
 
 class Transaction(models.Model):
     """
@@ -41,14 +50,16 @@ class Transaction(models.Model):
     Supports card, mobile money, and QR-triggered Airtel payments.
     Each verified transaction generates a unique access code for secure unlock.
     """
+    STATUS_CHOICES = [('pending', 'Pending'), ('paid', 'Paid')]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='UGX')
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('paid', 'Paid')])
-    reference = models.CharField(max_length=255)  # Airtel or gateway reference
-    tx_ref = models.CharField(max_length=255, blank=True, null=True)  # Internal QR transaction reference
-    payment_method = models.CharField(max_length=50, default='manual')  # e.g., 'visa', 'airtel_qr'
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    reference = models.CharField(max_length=255)
+    tx_ref = models.CharField(max_length=255, blank=True, null=True)
+    payment_method = models.CharField(max_length=50, default='manual')
     verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(blank=True, null=True)
     access_code = models.CharField(max_length=12, unique=True, blank=True, null=True)
@@ -57,9 +68,18 @@ class Transaction(models.Model):
     def save(self, *args, **kwargs):
         if self.verified and not self.access_code:
             self.access_code = uuid.uuid4().hex[:12].upper()
+            self.verified_at = self.verified_at or timezone.now()
         super(Transaction, self).save(*args, **kwargs)
+
+    def qr_url(self):
+        return f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{self.access_code}"
+
+    def whatsapp_share_url(self):
+        message = f"I just unlocked '{self.book.title}' on LearnFlow! My access code is {self.access_code}"
+        return f"https://wa.me/?text={message.replace(' ', '%20')}"
 
     def __str__(self):
         return f"{self.user.username} → {self.book.title} ({self.status})"
 
-     
+    class Meta:
+        ordering = ['-timestamp']

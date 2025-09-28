@@ -33,8 +33,16 @@ urlpatterns = [
 
     # Payment callback handler
     path('payment/callback/', views.payment_callback, name='payment_callback'),
+
+    # Airtel QR payment initiation
     path('book/airtel/callback/', views.initiate_airtel_payment, name='initiate_airtel_payment'),
 
     # Vendor earnings dashboard
     path('earnings/', views.vendor_earnings, name='vendor_earnings'),
+
+    # 🎉 Vendor analytics dashboard
+    path('vendor/dashboard/', views.vendor_dashboard, name='vendor_dashboard'),
+
+    # ⏳ Fallback for missing/incomplete books
+    path('missing/', views.book_missing, name='book_missing'),
 ]

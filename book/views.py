@@ -20,6 +20,7 @@ def book_list(request):
 def book_detail(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     has_paid = Transaction.objects.filter(user=request.user, book=book, status='paid', verified=True).exists()
+    tx = Transaction.objects.filter(user=request.user, book=book, verified=True).order_by('-verified_at').first()
 
     if request.method == 'POST':
         try:
@@ -50,7 +51,8 @@ def book_detail(request, book_id):
     return render(request, 'book/book_detail.html', {
         'book': book,
         'has_paid': has_paid,
-        'whatsapp_number': whatsapp_number
+        'whatsapp_number': whatsapp_number,
+        'tx': tx  # ✅ passed to template
     })
 
 @login_required
@@ -238,3 +240,40 @@ def download_book(request, book_id):
         messages.error(request, "🚫 You must complete payment to access this book.")
         return redirect('book:book_detail', book_id=book_id)
     return redirect(book.book_file_url)     
+
+def generate_qr_code(data_url):
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={data_url}"
+
+@login_required
+def book_missing(request):
+    messages.warning(request, "⏳ This book is being prepared. Please check back soon or contact support.")
+    return render(request, 'book/book_missing.html')
+
+@login_required
+def vendor_dashboard(request):
+    books = Book.objects.filter(uploaded_by=request.user)
+    transactions = Transaction.objects.filter(book__in=books, status='paid', verified=True)
+
+    monthly_data = {}
+    for tx in transactions:
+        month = tx.verified_at.strftime('%Y-%m')
+        monthly_data.setdefault(month, 0)
+        monthly_data[month] += tx.amount
+
+    top_books = (
+        transactions.values('book__title')
+        .annotate(total=models.Sum('amount'))
+        .order_by('-total')[:5]
+    )
+
+    return render(request, 'book/vendor_dashboard.html', {
+        'monthly_data': monthly_data,
+        'top_books': top_books,
+        'total_earned': sum(tx.amount for tx in transactions)
+    }) 
+
+def send_whatsapp_confirmation(user, book, access_code):
+    message = f"I just unlocked '{book.title}' on LearnFlow! My access code is {access_code}"
+    whatsapp_url = f"https://wa.me/{user.phone_number}?text={message}"
+    print(f"[WHATSAPP] Confirmation link: {whatsapp_url}")
+
