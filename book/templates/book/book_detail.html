@@ -82,21 +82,28 @@
             </div>
 
             <!-- QR Code for Access -->
-            {% for tx in book.transaction_set.all %}
-                {% if tx.user == request.user and tx.verified %}
+            {% with book.transaction_set.filter(user=request.user, verified=True).last as tx %}
+                {% if tx %}
                 <div class="mt-6">
                     <p class="text-gray-300 mb-2">📲 Scan to access your book:</p>
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code }}"
                          alt="QR Code for Book Access" class="rounded shadow-md">
-                    <p class="text-xs text-gray-400 mt-2">Access Code: <span class="font-semibold text-green-400">{{ tx.access_code }}</span></p>
+                    <p class="text-xs text-gray-400 mt-2">
+                        Access Code: <span class="font-semibold text-green-400">{{ tx.access_code }}</span>
+                    </p>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Or <a href="{% url 'book:download_book' book.id %}" class="underline text-indigo-400">click here to download</a>.
+                    </p>
                 </div>
                 {% endif %}
-            {% endfor %}
+            {% endwith %}
 
             <!-- Floating Toast -->
+            {% if tx %}
             <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-                🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title }}%20on%20EduVerse!" target="_blank" class="underline">Share your achievement</a>
+                🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code }}" target="_blank" class="underline">Share your achievement</a>
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>
