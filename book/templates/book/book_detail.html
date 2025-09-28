@@ -15,17 +15,18 @@
         </div>
     {% endif %}
 
+    {% if book %}
     <div class="flex flex-col md:flex-row items-start md:space-x-8">
         <!-- Book Cover Section -->
         <div class="flex-shrink-0 mb-6 md:mb-0">
             <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}"
-                 alt="{{ book.title }} Cover"
+                 alt="Cover of {{ book.title|default:'Untitled Book' }}"
                  class="w-64 h-auto rounded-lg shadow-xl">
         </div>
 
         <!-- Book Details Section -->
         <div class="flex-grow">
-            <h2 class="text-4xl font-bold text-gray-200 mb-2">{{ book.title }}</h2>
+            <h2 class="text-4xl font-bold text-gray-200 mb-2">{{ book.title|default:"Untitled Book" }}</h2>
             <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -33,13 +34,17 @@
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <span>Uploaded by {{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
+                {% if book.uploaded_by %}
+                    <span>Uploaded by {{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
+                {% else %}
+                    <span>Uploader unknown</span>
+                {% endif %}
             </div>
 
-            <p class="text-gray-400 mb-6">{{ book.description }}</p>
+            <p class="text-gray-400 mb-6">{{ book.description|default:"No description available." }}</p>
 
             <div class="flex items-center mb-6">
-                <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price }}</span>
+                <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price|default:"0" }}</span>
                 {% if has_paid %}
                     <a href="{% url 'book:download_book' book.id %}"
                        class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
@@ -59,7 +64,7 @@
                         <p class="text-gray-300 font-semibold mb-2">📲 Scan to pay via Airtel Money:</p>
                         <img src="{% static 'images/aitel.png' %}" alt="Airtel Money QR Code" class="mx-auto w-48 h-auto rounded-lg shadow-lg">
                         <p class="text-sm text-gray-400 mt-2">
-                            This payment will unlock <span class="font-semibold text-white">{{ book.title }}</span> for you.
+                            This payment will unlock <span class="font-semibold text-white">{{ book.title|default:"this book" }}</span> for you.
                         </p>
                         <p class="text-green-400 font-semibold mt-2 animate-pulse">
                             📱 Confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline">WhatsApp</a>
@@ -81,31 +86,33 @@
                 ✅ Payment confirmed. Enjoy your reading journey!
             </div>
 
-            <!-- QR Code for Access -->
             {% with book.transaction_set.filter(user=request.user, verified=True).last as tx %}
                 {% if tx %}
                 <div class="mt-6">
                     <p class="text-gray-300 mb-2">📲 Scan to access your book:</p>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code }}"
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code|default:'XXXX-XXXX' }}"
                          alt="QR Code for Book Access" class="rounded shadow-md">
                     <p class="text-xs text-gray-400 mt-2">
-                        Access Code: <span class="font-semibold text-green-400">{{ tx.access_code }}</span>
+                        Access Code: <span class="font-semibold text-green-400">{{ tx.access_code|default:"XXXX-XXXX" }}</span>
                     </p>
                     <p class="text-sm text-gray-400 mt-2">
                         Or <a href="{% url 'book:download_book' book.id %}" class="underline text-indigo-400">click here to download</a>.
                     </p>
+
+                    <!-- Floating Toast -->
+                    <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+                        🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title|default:'a book' }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code|default:'XXXX-XXXX' }}" target="_blank" class="underline">Share your achievement</a>
+                    </div>
                 </div>
                 {% endif %}
             {% endwith %}
-
-            <!-- Floating Toast -->
-            {% if tx %}
-            <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-                🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code }}" target="_blank" class="underline">Share your achievement</a>
-            </div>
-            {% endif %}
             {% endif %}
         </div>
     </div>
+    {% else %}
+    <div class="text-center text-red-500 font-bold mt-10">
+        🚫 Book not found or incomplete. Please check back later or contact support.
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
