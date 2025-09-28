@@ -226,3 +226,12 @@ def payment_callback(request):
             messages.error(request, "🚫 Payment failed or was cancelled.")
     except Exception as e:
         print(f"[ERROR] Payment callback failed for book {book_id}: {e}")
+
+@login_required
+def download_book(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    tx = Transaction.objects.filter(user=request.user, book=book, status='paid', verified=True).first()
+    if not tx:
+        messages.error(request, "🚫 You must complete payment to access this book.")
+        return redirect('book:book_detail', book_id=book_id)
+    return redirect(book.book_file_url)     
