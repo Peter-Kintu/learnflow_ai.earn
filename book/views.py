@@ -46,7 +46,7 @@ def book_detail(request, book_id):
             messages.error(request, "🚫 Something went wrong while confirming payment. Please try again or contact support.")
             return HttpResponseServerError("Internal Server Error")
 
-    whatsapp_number = "+256 774 123456"
+    whatsapp_number = "+256789746493"
     return render(request, 'book/book_detail.html', {
         'book': book,
         'has_paid': has_paid,
@@ -66,7 +66,7 @@ def pay_with_airtel_qr(request, book_id):
     )
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={payment_url}"
 
-    return render(request, 'book/airtel_qr_payment.html', {
+    return render(request, 'book/aitel.html', {
         'book': book,
         'qr_code_url': qr_code_url,
         'tx_ref': tx_ref
@@ -225,5 +225,4 @@ def payment_callback(request):
         else:
             messages.error(request, "🚫 Payment failed or was cancelled.")
     except Exception as e:
-        print(f"[ERROR] Payment callback failed: {e}")
-        messages.error(request, "🚫 Something went wrong during payment verification.")
+        print(f"[ERROR] Payment callback failed for book {book_id}: {e}")
