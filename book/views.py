@@ -61,13 +61,42 @@ def pay_with_airtel_qr(request, book_id):
         return redirect('book:book_detail', book_id=book_id)
 
     tx_ref = f"{request.user.id}-{book.id}-{int(timezone.now().timestamp())}"
-    payment_url = f"https://learnflow-ai.com/book/airtel/callback?tx_ref={tx_ref}&book_id={book.id}&user_id={request.user.id}"
+    payment_url = request.build_absolute_uri(
+        reverse('initiate_airtel_payment') + f"?tx_ref={tx_ref}&book_id={book.id}&user_id={request.user.id}"
+    )
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={payment_url}"
 
     return render(request, 'book/airtel_qr_payment.html', {
         'book': book,
         'qr_code_url': qr_code_url,
         'tx_ref': tx_ref
+    })
+
+@login_required
+def initiate_airtel_payment(request):
+    tx_ref = request.GET.get('tx_ref')
+    book_id = request.GET.get('book_id')
+    user_id = request.GET.get('user_id')
+
+    book = get_object_or_404(Book, pk=book_id)
+    user = get_object_or_404(User, pk=user_id)
+
+    Transaction.objects.get_or_create(
+        user=user,
+        book=book,
+        tx_ref=tx_ref,
+        defaults={
+            'amount': book.price,
+            'status': 'pending',
+            'reference': 'airtel-init',
+            'payment_method': 'airtel_qr'
+        }
+    )
+
+    return render(request, 'book/airtel_payment.html', {
+        'book': book,
+        'tx_ref': tx_ref,
+        'user': user
     })
 
 @login_required
@@ -81,20 +110,15 @@ def airtel_payment_callback(request):
         book = get_object_or_404(Book, pk=book_id)
         user = get_object_or_404(User, pk=user_id)
 
-        if status == 'successful':
-            tx, created = Transaction.objects.get_or_create(
-                user=user,
-                book=book,
-                defaults={
-                    'amount': book.price,
-                    'status': 'paid',
-                    'reference': tx_ref,
-                    'verified': True,
-                    'verified_at': timezone.now(),
-                    'payment_method': 'airtel_qr',
-                    'access_code': uuid.uuid4().hex[:12].upper()
-                }
-            )
+        tx = Transaction.objects.filter(user=user, book=book, tx_ref=tx_ref).first()
+        if not tx:
+            messages.error(request, "🚫 Transaction not found.")
+        elif status == 'successful':
+            tx.status = 'paid'
+            tx.verified = True
+            tx.verified_at = timezone.now()
+            tx.access_code = uuid.uuid4().hex[:12].upper()
+            tx.save()
             messages.success(request, f"✅ Airtel payment successful! Access code: {tx.access_code}")
         else:
             messages.error(request, "🚫 Airtel payment failed or cancelled.")
@@ -171,7 +195,7 @@ def pay_with_card(request, book_id):
         return redirect('book:book_detail', book_id=book_id)
 
     tx_ref = f"{request.user.id}-{book.id}-{timezone.now().timestamp()}"
-    redirect_url = request.build_absolute_uri(reverse('book:payment_callback'))
+    redirect_url = request.build_absolute_uri(reverse('payment_callback'))
     messages.info(request, "🔗 Redirecting to payment gateway...")
     return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}&book_id={book.id}")
 
@@ -199,12 +223,7 @@ def payment_callback(request):
             )
             messages.success(request, f"✅ Payment successful! Your access code: {tx.access_code}")
         else:
-            messages.error(request, "🚫 Payment failed or cancelled.")
+            messages.error(request, "🚫 Payment failed or was cancelled.")
     except Exception as e:
         print(f"[ERROR] Payment callback failed: {e}")
         messages.error(request, "🚫 Something went wrong during payment verification.")
-    return redirect('book:book_detail', book_id=book_id)
-
-@login_required
-def download_book(request, book_id):
-    book = get_object_or_404(Book, pk=book_id)

@@ -33,6 +33,7 @@ urlpatterns = [
 
     # Payment callback handler
     path('payment/callback/', views.payment_callback, name='payment_callback'),
+    path('book/airtel/callback/', views.initiate_airtel_payment, name='initiate_airtel_payment'),
 
     # Vendor earnings dashboard
     path('earnings/', views.vendor_earnings, name='vendor_earnings'),

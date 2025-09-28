@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
@@ -53,12 +54,10 @@
                         </button>
                     </form>
 
-                    <!-- Dynamic Airtel QR Code -->
-                    {% with tx_ref=request.user.id|stringformat:"s"|add:"-"|add:book.id|stringformat:"s"|add:"-"|add:book.created_at|date:"U" %}
+                    <!-- Custom Airtel QR Code -->
                     <div class="mt-6 border border-slate-600 p-4 rounded-xl bg-slate-700 shadow-md text-center">
                         <p class="text-gray-300 font-semibold mb-2">📲 Scan to pay via Airtel Money:</p>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/airtel/callback?tx_ref={{ tx_ref }}&book_id={{ book.id }}&user_id={{ request.user.id }}"
-                             alt="Airtel Money QR Code" class="mx-auto w-48 h-auto rounded-lg shadow-lg">
+                        <img src="{% static 'images/aitel.png' %}" alt="Airtel Money QR Code" class="mx-auto w-48 h-auto rounded-lg shadow-lg">
                         <p class="text-sm text-gray-400 mt-2">
                             This payment will unlock <span class="font-semibold text-white">{{ book.title }}</span> for you.
                         </p>
@@ -66,7 +65,6 @@
                             📱 Confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline">WhatsApp</a>
                         </p>
                     </div>
-                    {% endwith %}
                 {% endif %}
             </div>
 
