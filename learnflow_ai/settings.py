@@ -3,6 +3,7 @@ from pathlib import Path
 import dj_database_url
 from decouple import config
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 #  Security
@@ -100,8 +101,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+
+
 #  Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
