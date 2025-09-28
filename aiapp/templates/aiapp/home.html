@@ -4,8 +4,8 @@
 
 {% block content %}
 <style>
+    /* Styling remains mostly the same for a clean look */
     body {
-        /* Enhanced gradient for a deeper look */
         background: linear-gradient(135deg, #101725, #0a0e16); 
         font-family: 'Inter', sans-serif;
     }
@@ -36,21 +36,19 @@
         animation: fade-in-up 0.8s ease-out forwards;
     }
 
-    /* Cleaned up chat-response for dark background */
     .chat-response {
-        background: #e5e7eb; /* Light Gray */
-        color: #1f2937; /* Dark text */
+        background: #e5e7eb; 
+        color: #1f2937; 
         padding: 12px;
         border-radius: 8px;
         margin-top: 8px;
         font-family: 'Inter', sans-serif;
         font-size: 16px;
         line-height: 1.6;
-        white-space: pre-wrap; /* Preserves formatting like newlines */
+        white-space: pre-wrap; 
     }
-    /* Style for error/limit messages */
     .error-response {
-        background: #b91c1c; /* Red-700 */
+        background: #b91c1c; 
         color: #fff;
         border: 1px solid #dc2626; 
     }
@@ -103,23 +101,20 @@
 <script>
     const chatInput = document.getElementById('chatInput');
     const chatLog = document.getElementById('chatLog');
-    const responseLimit = 3; // Basic rate limit (used for display, not API limit)
+    const responseLimit = 3; 
     const username = "{{ user.username }}";
     const chatHistoryKey = `chatHistory-${username}`;
     const responseCountKey = `responseCount-${username}`;
     let responseCount = localStorage.getItem(responseCountKey) ? parseInt(localStorage.getItem(responseCountKey)) : 0;
 
     // --- API Configuration ---
-    // !!! IMPORTANT: REPLACE THIS WITH YOUR ACTUAL, WORKING GEMINI API KEY !!!
+    // ✅ API Key is correctly set from your details
     const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU"; 
     const modelName = 'gemini-2.5-flash'; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // System instruction to guide the AI's personality and output format
-    const systemInstruction = {
-        role: "system",
-        parts: [{ text: "You are LearnFlow AI, a highly intelligent, patient, and world-class educational assistant. You provide clear, concise, and in-depth answers. Use **Markdown** for formatting (e.g., bold, lists, and code blocks) to make your responses easy to read." }]
-    };
+    // ✅ System instruction is now stored as a string, ready for the correct payload field
+    const systemInstruction = "You are LearnFlow AI, a highly intelligent, patient, and world-class educational assistant. You provide clear, concise, and in-depth answers. Use **Markdown** for formatting (e.g., bold, lists, and code blocks) to make your responses easy to read.";
     // -------------------------
 
     // Load chat history from localStorage on page load
@@ -127,7 +122,6 @@
         const storedChat = localStorage.getItem(chatHistoryKey);
         if (storedChat) {
             chatLog.innerHTML = storedChat;
-            // Re-add welcome message if missing
             if (!storedChat.includes("educational assistant powered by the Gemini Flash model")) {
                  chatLog.innerHTML = `
                     <div class="chat-response">
@@ -147,10 +141,9 @@
         localStorage.setItem(responseCountKey, responseCount);
     }
 
-    // ⭐ ENHANCED Typing animation function for cleaner display
+    // Typing animation function
     function typeWriter(element, text, speed = 10) {
         let i = 0;
-        // Ensure the bot name is only added once at the start of the response element
         element.innerHTML = `<strong>LearnFlow Bot:</strong> `;
         const contentSpan = document.createElement('span');
         element.appendChild(contentSpan);
@@ -172,7 +165,7 @@
         if (e.key === 'Enter') sendChat();
     });
     
-    // ⭐ CRUCIAL FUNCTION: Extracts conversation history into Gemini-compatible format
+    // ✅ CORRECTED: Only extracts messages with 'user' or 'model' roles.
     function getConversationHistory() {
         const history = [];
         const children = Array.from(chatLog.children);
@@ -181,24 +174,23 @@
             const isUser = child.innerHTML.includes('<strong class="text-indigo-300">You:</strong>');
             const isAI = child.classList.contains('chat-response');
             
-            // Skip initial welcome message and error messages
+            // Skip welcome message and error messages
             if (child.classList.contains('error-response') || child.innerText.includes("educational assistant powered by the Gemini Flash model")) {
                 continue;
             }
 
             if (isUser) {
-                // Extract text from the user's message div
                 const text = child.innerText.replace('You:', '').trim();
                 history.push({
                     role: 'user',
                     parts: [{ text: text }]
                 });
             } else if (isAI) {
-                // Extract text from the AI's response div, removing the bold name prefix
                 const text = child.innerText.replace('LearnFlow Bot:', '').replace('LearnFlow Bot (Summary):', '').trim();
                 if (text) {
                     history.push({
-                        role: 'model',
+                        // Must be 'model' for the AI's response
+                        role: 'model', 
                         parts: [{ text: text }]
                     });
                 }
@@ -241,11 +233,12 @@
         try {
             const conversationHistory = getConversationHistory();
             
-            // Construct the final payload: system instruction + history + new user message
+            // ✅ CORRECTED PAYLOAD STRUCTURE
             const payload = {
+                // System instruction is now a top-level field (string format)
+                systemInstruction: systemInstruction, 
                 contents: [
-                    systemInstruction, // Set the AI's personality
-                    ...conversationHistory, // Existing conversation history
+                    ...conversationHistory, // Existing chat history (only 'user' and 'model' roles)
                     { role: 'user', parts: [{ text: query }] } // New user query
                 ]
             };
@@ -258,7 +251,6 @@
             
             const data = await response.json();
             
-            // 🐛 DEBUGGING: Inspect the full response in the console (F12)
             console.log("Full Gemini response:", data);
             
             const loader = document.getElementById('loader');
@@ -270,7 +262,6 @@
             aiMsgDiv.className = "chat-response";
             chatLog.appendChild(aiMsgDiv);
             
-            // ⭐ ROBUST EXTRACTION AND ERROR CHECKING
             let fullText = "No response received. Please check the console (F12) for API errors.";
             let isError = false;
 
@@ -304,7 +295,6 @@
                 loader.remove();
             }
             
-            // 🚨 VISUAL ERROR BADGE for connection issues
             const errorMsgDiv = document.createElement('div');
             errorMsgDiv.className = "chat-response error-response";
             errorMsgDiv.innerHTML = `
@@ -334,7 +324,6 @@
             </div>`;
     }
 
-    // Export function remains the same, but uses a more compatible file type
     function exportChat() {
         const plainText = chatLog.innerText;
         const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
@@ -344,7 +333,7 @@
         link.click();
     }
     
-    // Summarize function now uses conversation history extraction
+    // Summarize function now correctly uses the history
     async function summarizeChat() {
         const conversationHistory = getConversationHistory();
         
@@ -365,11 +354,12 @@
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
+        // ✅ CORRECTED PAYLOAD STRUCTURE for summary call
         const payload = {
+            systemInstruction: systemInstruction, 
             contents: [
-                systemInstruction,
-                ...conversationHistory, // Send the full chat history
-                { role: 'user', parts: [{ text: summaryPrompt }] } // Ask for a summary
+                ...conversationHistory, 
+                { role: 'user', parts: [{ text: summaryPrompt }] } 
             ]
         };
 
@@ -389,12 +379,27 @@
             aiMsgDiv.className = "chat-response";
             chatLog.appendChild(aiMsgDiv);
 
-            const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
+            let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
             
-            // Re-use the typing effect
-            typeWriter(aiMsgDiv, fullText);
+            // Ensure the bot name is explicitly added for the summary response
+            aiMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> `;
+            const contentSpan = document.createElement('span');
+            aiMsgDiv.appendChild(contentSpan);
             
-            saveChatHistory();
+            // Reuse typeWriter but manually manage the contentSpan logic to avoid double typing of the name
+            let i = 0;
+            function typeSummary() {
+                if (i < fullText.length) {
+                    contentSpan.innerHTML += fullText.charAt(i); 
+                    i++;
+                    setTimeout(typeSummary, 10);
+                } else {
+                    saveChatHistory();
+                }
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+            typeSummary();
+            
         } catch (error) {
              const loader = document.getElementById('summaryLoader');
              if (loader) { loader.remove(); }
