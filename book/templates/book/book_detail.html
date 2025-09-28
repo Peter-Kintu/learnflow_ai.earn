@@ -52,6 +52,21 @@
                             I Have Paid – Unlock Book
                         </button>
                     </form>
+
+                    <!-- Dynamic Airtel QR Code -->
+                    {% with tx_ref=request.user.id|stringformat:"s"|add:"-"|add:book.id|stringformat:"s"|add:"-"|add:book.created_at|date:"U" %}
+                    <div class="mt-6 border border-slate-600 p-4 rounded-xl bg-slate-700 shadow-md text-center">
+                        <p class="text-gray-300 font-semibold mb-2">📲 Scan to pay via Airtel Money:</p>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/airtel/callback?tx_ref={{ tx_ref }}&book_id={{ book.id }}&user_id={{ request.user.id }}"
+                             alt="Airtel Money QR Code" class="mx-auto w-48 h-auto rounded-lg shadow-lg">
+                        <p class="text-sm text-gray-400 mt-2">
+                            This payment will unlock <span class="font-semibold text-white">{{ book.title }}</span> for you.
+                        </p>
+                        <p class="text-green-400 font-semibold mt-2 animate-pulse">
+                            📱 Confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline">WhatsApp</a>
+                        </p>
+                    </div>
+                    {% endwith %}
                 {% endif %}
             </div>
 
@@ -59,17 +74,26 @@
             <div class="text-sm text-gray-400 mt-4 space-y-2">
                 <p>To access this book, you can:</p>
                 <ul class="list-disc list-inside text-gray-300">
-                    <li>Send payment via mobile money and confirm via WhatsApp</li>
+                    <li>Scan the QR code above and pay via Airtel Money</li>
                     <li>Or <a href="{% url 'book:pay_with_card' book.id %}" class="text-indigo-400 underline">pay with Visa card</a> instantly</li>
                 </ul>
-                <p class="text-green-400 font-semibold animate-pulse">
-                    📱 WhatsApp Admin: <a href="https://wa.me/256789746493" target="_blank">+256789746493</a>
-                </p>
             </div>
             {% else %}
             <div class="mt-4 text-sm text-green-400 font-semibold">
                 ✅ Payment confirmed. Enjoy your reading journey!
             </div>
+
+            <!-- QR Code for Access -->
+            {% for tx in book.transaction_set.all %}
+                {% if tx.user == request.user and tx.verified %}
+                <div class="mt-6">
+                    <p class="text-gray-300 mb-2">📲 Scan to access your book:</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code }}"
+                         alt="QR Code for Book Access" class="rounded shadow-md">
+                    <p class="text-xs text-gray-400 mt-2">Access Code: <span class="font-semibold text-green-400">{{ tx.access_code }}</span></p>
+                </div>
+                {% endif %}
+            {% endfor %}
 
             <!-- Floating Toast -->
             <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
