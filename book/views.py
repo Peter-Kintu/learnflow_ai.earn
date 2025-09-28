@@ -33,7 +33,7 @@ def book_detail(request, book_id):
                     }
                 )
                 messages.success(request, "✅ Payment confirmed! You can now access the book.")
-                return redirect('books:book_detail', book_id=book_id)
+                return redirect('book:book_detail', book_id=book_id)
             else:
                 messages.warning(request, "⚠️ Payment confirmation missing. Please try again.")
         except Exception as e:
@@ -61,7 +61,7 @@ def book_upload(request):
                 book.uploaded_by = request.user
                 book.save()
                 messages.success(request, f'🎉 "{book.title}" has been uploaded successfully!')
-                return redirect('books:teacher_book_dashboard')
+                return redirect('book:teacher_book_dashboard')
     else:
         form = BookForm()
     return render(request, 'book/book_upload.html', {'form': form})
@@ -81,7 +81,7 @@ def edit_book(request, book_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'"{book.title}" has been updated successfully!')
-            return redirect('books:teacher_book_dashboard')
+            return redirect('book:teacher_book_dashboard')
     else:
         form = BookForm(instance=book)
     return render(request, 'book/book_edit.html', {'form': form, 'book': book})
@@ -94,7 +94,7 @@ def delete_book(request, book_id):
     if request.method == 'POST':
         book.delete()
         messages.success(request, f'"{book.title}" has been deleted successfully.')
-        return redirect('books:teacher_book_dashboard')
+        return redirect('book:teacher_book_dashboard')
     return render(request, 'book/book_delete_confirm.html', {'book': book})
 
 @login_required
@@ -112,10 +112,10 @@ def pay_with_card(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     if Transaction.objects.filter(user=request.user, book=book, status='paid').exists():
         messages.info(request, "✅ You've already paid for this book.")
-        return redirect('books:book_detail', book_id=book_id)
+        return redirect('book:book_detail', book_id=book_id)
 
     tx_ref = f"{request.user.id}-{book.id}-{timezone.now().timestamp()}"
-    redirect_url = request.build_absolute_uri(reverse('books:payment_callback'))
+    redirect_url = request.build_absolute_uri(reverse('book:payment_callback'))
     messages.info(request, "🔗 Redirecting to payment gateway...")
     return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}&book_id={book.id}")
 
@@ -145,7 +145,7 @@ def payment_callback(request):
     except Exception as e:
         print(f"[ERROR] Payment callback failed: {e}")
         messages.error(request, "🚫 Something went wrong during payment verification.")
-    return redirect('books:book_detail', book_id=book_id)
+    return redirect('book:book_detail', book_id=book_id)
 
 @login_required
 def download_book(request, book_id):
