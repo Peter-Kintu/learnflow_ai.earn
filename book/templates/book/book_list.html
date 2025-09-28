@@ -19,9 +19,9 @@
         {% for book in books %}
         <div class="bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
             <a href="{% url 'book:book_detail' book.id %}">
-                <img src="{{ book.cover_image_url }}" alt="{{ book.title }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
-                <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title }}</h3>
-                <p class="text-sm text-gray-400 mb-4">{{ book.description|truncatechars:100 }}</p>
+                <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}" alt="{{ book.title|default:'Untitled' }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
+                <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title|default:"Untitled" }}</h3>
+                <p class="text-sm text-gray-400 mb-4">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
 
                 <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
                     <span class="flex items-center space-x-1">
@@ -29,7 +29,7 @@
                             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                             <circle cx="12" cy="7" r="4"/>
                         </svg>
-                        <span>{{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
+                        <span>{{ book.uploaded_by.get_full_name|default:book.uploaded_by.username|default:"Unknown" }}</span>
                     </span>
                     <span class="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days">
@@ -39,12 +39,12 @@
                             <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
                             <path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
                         </svg>
-                        <span>{{ book.created_at|date:"F j, Y" }}</span>
+                        <span>{{ book.created_at|date:"F j, Y"|default:"Unknown date" }}</span>
                     </span>
                 </div>
 
                 <div class="text-sm text-green-400 font-semibold">
-                    💰 Price: UGX {{ book.price }}
+                    💰 Price: UGX {{ book.price|default:"0.00" }}
                 </div>
                 <div class="text-xs text-gray-400 mt-1">
                     📱 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
