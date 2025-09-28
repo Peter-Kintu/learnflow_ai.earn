@@ -7,7 +7,7 @@
     {% if messages %}
         <div class="mb-6">
             {% for message in messages %}
-                <div class="px-4 py-3 rounded-lg shadow-md text-white bg-red-600 animate-pulse">
+                <div class="px-4 py-3 rounded-lg shadow-md text-white bg-green-600 animate-pulse">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -40,7 +40,7 @@
             <div class="flex items-center mb-6">
                 <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price }}</span>
                 {% if has_paid %}
-                    <a href="{{ book.book_file_url }}"
+                    <a href="{% url 'book:download_book' book.id %}"
                        class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
                         📘 Read Book
                     </a>
@@ -56,8 +56,12 @@
             </div>
 
             {% if not has_paid %}
-            <div class="text-sm text-gray-400 mt-4">
-                <p class="mb-2">To access this book, please send payment via mobile money and confirm via WhatsApp:</p>
+            <div class="text-sm text-gray-400 mt-4 space-y-2">
+                <p>To access this book, you can:</p>
+                <ul class="list-disc list-inside text-gray-300">
+                    <li>Send payment via mobile money and confirm via WhatsApp</li>
+                    <li>Or <a href="{% url 'book:pay_with_card' book.id %}" class="text-indigo-400 underline">pay with Visa card</a> instantly</li>
+                </ul>
                 <p class="text-green-400 font-semibold animate-pulse">
                     📱 WhatsApp Admin: <a href="https://wa.me/256789746493" target="_blank">+256789746493</a>
                 </p>
@@ -69,7 +73,7 @@
 
             <!-- Floating Toast -->
             <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-                🎉 Book unlocked! Happy reading.
+                🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title }}%20on%20EduVerse!" target="_blank" class="underline">Share your achievement</a>
             </div>
             {% endif %}
         </div>

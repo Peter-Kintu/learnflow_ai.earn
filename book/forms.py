@@ -3,17 +3,18 @@ from .models import Book
 
 class BookForm(forms.ModelForm):
     """
-    A form for teachers to upload and edit new books.
+    A form for teachers to upload and edit books.
 
-    This form uses the Book model and customizes the input widgets with
-    Tailwind CSS classes for a consistent look and feel.
-    Includes an upload_code field to restrict unauthorized submissions.
+    Includes Tailwind-styled widgets and an upload_code field
+    to restrict unauthorized submissions. Designed to celebrate
+    knowledge-sharing and ensure clean, secure uploads.
     """
 
     upload_code = forms.CharField(
         max_length=10,
         required=True,
         label="Upload Access Code",
+        help_text="Provided by the admin to authorize your upload.",
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
             'placeholder': 'Enter your upload access code'
@@ -22,7 +23,7 @@ class BookForm(forms.ModelForm):
 
     class Meta:
         model = Book
-        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']  # upload_code is excluded
+        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
 
         widgets = {
             'title': forms.TextInput(attrs={
@@ -58,8 +59,10 @@ class BookForm(forms.ModelForm):
         if not code.isdigit():
             raise forms.ValidationError("Upload access code must be numeric.")
 
-        # Optional: add celebratory validation logic
         if code != "123456":  # Replace with your actual admin code logic
-            raise forms.ValidationError("Hmm... that code doesn’t match our records. Please check with the admin and try again. Your story deserves to be shared.")
+            raise forms.ValidationError(
+                "Hmm... that code doesn’t match our records. Please check with the admin and try again. "
+                "Your story deserves to be shared."
+            )
 
         return code

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-7xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-gray-200">My Books Dashboard</h2>
+        <h2 class="text-3xl font-bold text-gray-200">📚 My Books Dashboard</h2>
         <a href="{% url 'books:book_upload' %}" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
                 <path d="M5 12h14"/><path d="M12 5v14"/>
@@ -12,7 +12,9 @@
         </a>
     </div>
 
-    <p class="text-gray-400 mb-8">Manage the books you have uploaded to the platform. Set prices, update details, and guide learners to access your content.</p>
+    <p class="text-gray-400 mb-8">
+        Manage the books you’ve uploaded. Set prices, update details, and guide learners to unlock your content.
+    </p>
 
     {% if messages %}
         {% for message in messages %}
@@ -22,17 +24,23 @@
         {% endfor %}
     {% endif %}
 
-    <div class="space-y-4">
+    <div class="space-y-6">
         {% for book in user_books %}
-        <div class="bg-slate-700 p-4 rounded-xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
-            <div class="flex-grow">
-                <h3 class="text-xl font-semibold text-gray-200 mb-1">{{ book.title }}</h3>
-                <p class="text-sm text-gray-400 mb-2">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
-                <div class="text-xs text-gray-500">
-                    <span>Uploaded on {{ book.created_at|date:"M d, Y" }}</span>
-                    <span class="text-indigo-400 font-bold ml-4">UGX {{ book.price }}</span>
+        <div class="bg-slate-700 p-6 rounded-xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
+            <div class="flex items-start space-x-4">
+                <img src="{{ book.cover_image_url }}" alt="{{ book.title }} Cover" class="w-20 h-auto rounded shadow">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-200 mb-1">{{ book.title }}</h3>
+                    <p class="text-sm text-gray-400 mb-2">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
+                    <div class="text-xs text-gray-500">
+                        <span>Uploaded on {{ book.created_at|date:"M d, Y" }}</span>
+                        <span class="text-indigo-400 font-bold ml-4">UGX {{ book.price }}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">
+                        📱 Learners must pay and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-green-400">WhatsApp</a><br>
+                        💳 Or pay instantly with <a href="{% url 'books:pay_with_card' book.id %}" class="underline text-indigo-400">Visa card</a>.
+                    </p>
                 </div>
-                <p class="text-xs text-gray-400 mt-1">📱 Learners must pay and confirm via <a href="https://wa.me/256774123456" target="_blank" class="underline text-green-400">WhatsApp</a> to unlock access.</p>
             </div>
             <div class="flex-shrink-0 flex items-center space-x-2">
                 <a href="{% url 'books:book_detail' book.id %}" class="px-4 py-2 bg-slate-600 text-gray-200 rounded-full hover:bg-slate-500 transition-colors shadow-sm font-semibold text-sm">View</a>
@@ -41,7 +49,7 @@
             </div>
         </div>
         {% empty %}
-        <p class="text-gray-400">You have not uploaded any books yet.</p>
+        <p class="text-gray-400">You haven’t uploaded any books yet. Start by sharing your first one!</p>
         {% endfor %}
     </div>
 

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-gray-200">Available Books</h2>
+        <h2 class="text-3xl font-bold text-gray-200">📚 Available Books</h2>
         {% if user.is_authenticated %}
         <a href="{% url 'book:book_upload' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-sm">
             Upload Book
@@ -12,13 +12,14 @@
     </div>
 
     <p class="text-gray-400 mb-8">
-        Explore a curated collection of educational books. Click on a book to view its details and unlock access after payment.
+        Explore a curated collection of educational books. Click on a book to view its details and unlock access via mobile money or Visa card.
     </p>
 
     <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {% for book in books %}
         <div class="bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
             <a href="{% url 'book:book_detail' book.id %}">
+                <img src="{{ book.cover_image_url }}" alt="{{ book.title }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
                 <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title }}</h3>
                 <p class="text-sm text-gray-400 mb-4">{{ book.description|truncatechars:100 }}</p>
 
@@ -46,7 +47,8 @@
                     💰 Price: UGX {{ book.price }}
                 </div>
                 <div class="text-xs text-gray-400 mt-1">
-                    📱 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a> to unlock access.
+                    📱 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
+                    💳 Or <a href="{% url 'book:pay_with_card' book.id %}" class="underline text-indigo-400">pay with Visa card</a> instantly.
                 </div>
             </a>
 

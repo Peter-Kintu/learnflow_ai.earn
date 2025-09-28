@@ -1,38 +1,40 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Main container for the content, centered and styled with a dark theme -->
 <div class="max-w-xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <h2 class="text-3xl font-bold text-gray-200 mb-4">Confirm Deletion</h2>
-    
-    <!-- Confirmation message displaying the book's title -->
+    <h2 class="text-3xl font-bold text-gray-200 mb-4">🗑️ Confirm Deletion</h2>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="px-4 py-3 rounded-lg shadow-md text-white bg-red-600 animate-pulse">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <p class="text-gray-400 mb-6">
         Are you sure you want to delete the book titled <span class="font-semibold text-gray-100">"{{ book.title }}"</span>?
     </p>
-    
-    <!-- Warning about the action being irreversible -->
-    <p class="text-sm text-red-400 mb-8">This action cannot be undone.</p>
-    
-    <!-- Form for the deletion action -->
+
+    <p class="text-sm text-red-400 mb-8">⚠️ This action cannot be undone.</p>
+
     <form method="post">
         {% csrf_token %}
         <div class="flex justify-start space-x-4">
-            <!-- The button to confirm and submit the deletion -->
             <button type="submit" class="px-6 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-md font-semibold">
                 Yes, Delete
             </button>
-            
-            <!-- A link to cancel the action and return to the dashboard -->
             <a href="{% url 'books:teacher_book_dashboard' %}" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-700 transition-colors shadow-md font-semibold">
                 Cancel
             </a>
         </div>
     </form>
 
-    <!-- Support and gratitude section -->
     <div class="mt-10 text-sm text-gray-400 border-t border-slate-700 pt-6">
         <p>If you need help or deleted this book by mistake, contact the admin:</p>
-        <p class="mt-2 text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256774123456" target="_blank">+256789746493</a></p>
+        <p class="mt-2 text-green-400 font-semibold">📱 WhatsApp Admin: <a href="https://wa.me/256789746493" target="_blank">+256 789 746493</a></p>
     </div>
 
     <div class="mt-6 text-center text-indigo-400 text-sm italic">

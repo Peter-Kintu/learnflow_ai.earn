@@ -1,34 +1,31 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Book
-from .forms import BookForm
 from django.http import Http404, HttpResponseServerError
+from django.core.exceptions import PermissionDenied
+from django.urls import reverse
+from django.utils import timezone
+from .models import Book, Transaction
+from .forms import BookForm
 
 @login_required
 def book_list(request):
-    """
-    Renders a list of all available books.
-    Fetches all Book objects from the database and passes them to the template.
-    """
     books = Book.objects.all().order_by('-created_at')
     return render(request, 'book/book_list.html', {'books': books})
 
 @login_required
 def book_detail(request, book_id):
-    """
-    Renders the detail page for a single book.
-
-    If the user has not paid, they will see book metadata and a prompt to contact via WhatsApp.
-    If payment is confirmed (via session), the book file URL is revealed.
-    """
     book = get_object_or_404(Book, pk=book_id)
-    has_paid = request.session.get(f'paid_for_book_{book_id}', False)
+    has_paid = Transaction.objects.filter(user=request.user, book=book, status='paid').exists()
 
     if request.method == 'POST':
         try:
             if 'confirm_payment' in request.POST:
-                request.session[f'paid_for_book_{book_id}'] = True
+                Transaction.objects.get_or_create(
+                    user=request.user,
+                    book=book,
+                    defaults={'amount': book.price, 'status': 'paid', 'reference': 'manual-confirmation'}
+                )
                 messages.success(request, "✅ Payment confirmed! You can now access the book.")
                 return redirect('books:book_detail', book_id=book_id)
             else:
@@ -38,8 +35,7 @@ def book_detail(request, book_id):
             messages.error(request, "🚫 Something went wrong while confirming payment. Please try again or contact support.")
             return HttpResponseServerError("Internal Server Error")
 
-    whatsapp_number = "+256 774 123456"  # Replace with your actual number
-
+    whatsapp_number = "+256 774 123456"
     return render(request, 'book/book_detail.html', {
         'book': book,
         'has_paid': has_paid,
@@ -48,50 +44,32 @@ def book_detail(request, book_id):
 
 @login_required
 def book_upload(request):
-    """
-    Allows a teacher to upload a new book.
-
-    Handles both GET and POST requests.
-    Validates the upload access code manually and assigns the current user as the uploader.
-    """
     if request.method == 'POST':
         form = BookForm(request.POST)
         if form.is_valid():
             code = form.cleaned_data.get('upload_code')
-
-            if code != "123456":  # Replace with your actual admin code
-                form.add_error('upload_code', "Hmm... that code doesn’t match our records. Please check with the admin and try again. Your story deserves to be shared.")
+            if code != "123456":
+                form.add_error('upload_code', "Hmm... that code doesn’t match our records. Please check with the admin and try again.")
             else:
                 book = form.save(commit=False)
                 book.uploaded_by = request.user
                 book.save()
-                messages.success(request, f'🎉 "{book.title}" has been uploaded successfully! Thank you for sharing knowledge.')
+                messages.success(request, f'🎉 "{book.title}" has been uploaded successfully!')
                 return redirect('books:teacher_book_dashboard')
     else:
         form = BookForm()
-
     return render(request, 'book/book_upload.html', {'form': form})
 
 @login_required
 def teacher_book_dashboard(request):
-    """
-    Displays a dashboard of books uploaded by the current user.
-    Filters books by the current authenticated user and renders a list for them.
-    """
     user_books = Book.objects.filter(uploaded_by=request.user).order_by('-created_at')
     return render(request, 'book/teacher_book_dashboard.html', {'user_books': user_books})
 
 @login_required
 def edit_book(request, book_id):
-    """
-    Allows a teacher to edit an existing book.
-    Verifies that the current user is the owner of the book before allowing edits.
-    """
     book = get_object_or_404(Book, pk=book_id)
-
     if book.uploaded_by != request.user:
-        raise Http404
-
+        raise PermissionDenied
     if request.method == 'POST':
         form = BookForm(request.POST, instance=book)
         if form.is_valid():
@@ -100,23 +78,64 @@ def edit_book(request, book_id):
             return redirect('books:teacher_book_dashboard')
     else:
         form = BookForm(instance=book)
-
     return render(request, 'book/book_edit.html', {'form': form, 'book': book})
 
 @login_required
 def delete_book(request, book_id):
-    """
-    Allows a teacher to delete a book.
-    Verifies that the current user is the owner before deleting.
-    """
     book = get_object_or_404(Book, pk=book_id)
-
     if book.uploaded_by != request.user:
-        raise Http404
-
+        raise PermissionDenied
     if request.method == 'POST':
         book.delete()
         messages.success(request, f'"{book.title}" has been deleted successfully.')
         return redirect('books:teacher_book_dashboard')
-
     return render(request, 'book/book_delete_confirm.html', {'book': book})
+
+@login_required
+def vendor_earnings(request):
+    books = Book.objects.filter(uploaded_by=request.user)
+    transactions = Transaction.objects.filter(book__in=books, status='paid')
+    total_earned = sum(t.amount for t in transactions)
+    return render(request, 'book/vendor_earnings.html', {
+        'transactions': transactions,
+        'total_earned': total_earned
+    })
+
+@login_required
+def pay_with_card(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    if Transaction.objects.filter(user=request.user, book=book, status='paid').exists():
+        messages.info(request, "✅ You've already paid for this book.")
+        return redirect('books:book_detail', book_id=book_id)
+
+    # Simulated payment gateway redirect (replace with actual SDK integration)
+    tx_ref = f"{request.user.id}-{book.id}-{timezone.now().timestamp()}"
+    redirect_url = request.build_absolute_uri(reverse('books:payment_callback'))
+    messages.info(request, "🔗 Redirecting to payment gateway...")
+    return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}")
+
+@login_required
+def payment_callback(request):
+    tx_ref = request.GET.get('tx_ref')
+    status = request.GET.get('status')
+    book_id = request.GET.get('book_id')
+
+    book = get_object_or_404(Book, pk=book_id)
+    if status == 'successful':
+        Transaction.objects.get_or_create(
+            user=request.user,
+            book=book,
+            defaults={'amount': book.price, 'status': 'paid', 'reference': tx_ref}
+        )
+        messages.success(request, "✅ Payment successful! Book unlocked.")
+    else:
+        messages.error(request, "🚫 Payment failed or cancelled.")
+    return redirect('books:book_detail', book_id=book.id)
+
+@login_required
+def download_book(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    has_paid = Transaction.objects.filter(user=request.user, book=book, status='paid').exists()
+    if not has_paid:
+        raise PermissionDenied
+    return redirect(book.book_file_url)
