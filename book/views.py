@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import Http404, HttpResponseServerError
+from django.http import HttpResponseServerError
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils import timezone
@@ -24,7 +24,13 @@ def book_detail(request, book_id):
                 Transaction.objects.get_or_create(
                     user=request.user,
                     book=book,
-                    defaults={'amount': book.price, 'status': 'paid', 'reference': 'manual-confirmation'}
+                    defaults={
+                        'amount': book.price,
+                        'status': 'paid',
+                        'reference': 'manual-confirmation',
+                        'verified': True,
+                        'payment_method': 'manual'
+                    }
                 )
                 messages.success(request, "✅ Payment confirmed! You can now access the book.")
                 return redirect('books:book_detail', book_id=book_id)
@@ -108,11 +114,10 @@ def pay_with_card(request, book_id):
         messages.info(request, "✅ You've already paid for this book.")
         return redirect('books:book_detail', book_id=book_id)
 
-    # Simulated payment gateway redirect (replace with actual SDK integration)
     tx_ref = f"{request.user.id}-{book.id}-{timezone.now().timestamp()}"
     redirect_url = request.build_absolute_uri(reverse('books:payment_callback'))
     messages.info(request, "🔗 Redirecting to payment gateway...")
-    return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}")
+    return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}&book_id={book.id}")
 
 @login_required
 def payment_callback(request):
@@ -120,17 +125,27 @@ def payment_callback(request):
     status = request.GET.get('status')
     book_id = request.GET.get('book_id')
 
-    book = get_object_or_404(Book, pk=book_id)
-    if status == 'successful':
-        Transaction.objects.get_or_create(
-            user=request.user,
-            book=book,
-            defaults={'amount': book.price, 'status': 'paid', 'reference': tx_ref}
-        )
-        messages.success(request, "✅ Payment successful! Book unlocked.")
-    else:
-        messages.error(request, "🚫 Payment failed or cancelled.")
-    return redirect('books:book_detail', book_id=book.id)
+    try:
+        book = get_object_or_404(Book, pk=book_id)
+        if status == 'successful':
+            Transaction.objects.get_or_create(
+                user=request.user,
+                book=book,
+                defaults={
+                    'amount': book.price,
+                    'status': 'paid',
+                    'reference': tx_ref,
+                    'verified': True,
+                    'payment_method': 'visa'
+                }
+            )
+            messages.success(request, "✅ Payment successful! Book unlocked.")
+        else:
+            messages.error(request, "🚫 Payment failed or cancelled.")
+    except Exception as e:
+        print(f"[ERROR] Payment callback failed: {e}")
+        messages.error(request, "🚫 Something went wrong during payment verification.")
+    return redirect('books:book_detail', book_id=book_id)
 
 @login_required
 def download_book(request, book_id):
