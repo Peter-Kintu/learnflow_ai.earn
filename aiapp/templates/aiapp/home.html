@@ -127,21 +127,26 @@
         color: #9ca3af;
     }
 
-    /* Updated Microphone/Record Button */
-    #recordButton {
+    /* --- ICON BUTTON Base Styling (for both mic and send) --- */
+    .action-icon-button {
         flex-shrink: 0;
-        width: 2.5rem; /* Smaller button */
-        height: 2.5rem; /* Smaller button */
-        border-radius: 50%;
-        background-color: #ef4444; /* Red when ready */
-        color: white;
+        width: 2.5rem; /* Consistent size on all screens for touch/click target */
+        height: 2.5rem; 
         border: none;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        padding: 0; /* Ensures the icon is centered perfectly */
+        font-size: 1.2rem; /* Size for the SVG inside */
+    }
+
+    /* Updated Microphone/Record Button */
+    #recordButton {
+        border-radius: 50%;
+        background-color: #ef4444; /* Red when ready */
+        color: white;
         margin-right: 0.5rem;
     }
     
@@ -166,20 +171,20 @@
         100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
     }
     
-    /* Updated Send Button */
-    .action-button.send { 
-        flex-shrink: 0; /* Don't shrink */
-        width: auto;
-        padding: 0.5rem 1.25rem; /* Adjusted padding */
-        border-radius: 0.5rem; /* Smoother radius */
+    /* 🔥 MODIFIED Send Button to use icon styling - consolidated styles 🔥 */
+    #sendChatButton {
+        border-radius: 50%; /* Make it round like the mic button */
         background-color: #4f46e5; 
         color: #fff; 
-        display: block;
-        font-weight: 600;
-        transition: background-color 0.3s, transform 0.1s;
+        margin-left: 0.5rem;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        /* Inherits size and centering from .action-icon-button */
     }
-    .action-button.send:hover { background-color: #4338ca; transform: translateY(0); } /* Remove translateY for consistent look */
+
+    #sendChatButton:hover { 
+        background-color: #4338ca; 
+        transform: translateY(0); 
+    } 
 
     /* Hide the old voice status div as it's not needed in this layout */
     #voiceStatus {
@@ -193,7 +198,6 @@
         gap: 0.75rem;
         justify-content: center;
     }
-    /* ... (rest of button-group styles are the same) ... */
     
     .action-button {
         flex: 1 1 150px; 
@@ -268,13 +272,18 @@
             <div class="integrated-input-container">
                 <input type="text" id="chatInput" placeholder="Type your question or tap the mic to speak..." onkeydown="handleKeydown(event)">
                 
-                <button id="recordButton" onclick="toggleRecording()" title="Start Recording">
+                <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/>
                     </svg>
                 </button>
                 
-                <button onclick="typeQuery()" class="action-button send" id="sendChatButton">Send</button> 
+                {# 🔥 MODIFIED: Replaced "Send" text with a Send Icon SVG and added action-icon-button class 🔥 #}
+                <button onclick="typeQuery()" class="action-button send action-icon-button" id="sendChatButton" title="Send Message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3v7l15 2-15 2v7z"/>
+                    </svg>
+                </button>
             </div>
             
             {# Old voiceStatus and old input wrapper removed. #}
@@ -460,7 +469,7 @@
             if (isRecording) {
                  recordButton.classList.remove('recording');
                  // Only reset placeholder if the transcript wasn't successful or sent
-                 if (chatInput.value === '') { 
+                 if (chatInput.value === '' || chatInput.placeholder.includes("Listening")) { 
                      chatInput.placeholder = "Tap the mic or type your question here...";
                  }
                  isRecording = false;
@@ -821,7 +830,6 @@
              errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${summaryErrorText}`;
              chatLog.appendChild(errorMsgDiv);
              saveChatHistory();
-             speakText("Could not generate summary due to a connection error."); 
         }
     }
 </script>
