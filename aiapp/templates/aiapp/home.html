@@ -53,18 +53,21 @@
     .chat-area {
         display: flex;
         flex-direction: column; /* Stacks on small screens */
-        padding: 1.5rem;
-        gap: 1.5rem;
+        /* Adjusted padding/gap for a cleaner look */
+        padding: 0; 
+        gap: 0;
     }
 
-    /* Chat log container - **Made Bigger** */
+    /* Chat log container - **Borders and Background REMOVED** */
     #chatLog {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 1rem;
-        background-color: #0a0e16;
-        border-radius: 1rem;
-        border: 1px solid #374151;
+        padding: 1.5rem; /* Only padding remains for spacing */
+        /* Removed background-color, border-radius, and border */
+        background-color: transparent; 
+        border: none;
+        border-radius: 0;
+        
         transition: all 0.3s ease-in-out;
         /* Increased height for small screens */
         min-height: 50vh; 
@@ -170,7 +173,7 @@
     .action-button.clear { background-color: #ef4444; color: #fff; }
     .action-button.clear:hover { background-color: #dc2626; transform: translateY(-2px); }
 
-    /* Responsive adjustments for large screens (md: 768px and up) - **Bigger Chat Space** */
+    /* Responsive adjustments for large screens (md: 768px and up) */
     @media (min-width: 768px) {
         .chat-container-card {
             /* Max width increased for better desktop experience */
@@ -181,7 +184,6 @@
             /* Side-by-side layout */
             flex-direction: row; 
             min-height: 80vh; /* Ensure the chat area has a minimum height */
-            padding: 0;
         }
 
         #chatLog {
@@ -190,7 +192,6 @@
             min-height: 100%; /* Fill the container height */
             max-height: 100%;
             border-radius: 0 0 0 1.5rem; /* Round only bottom-left corner */
-            margin: 0;
             padding: 1.5rem;
         }
 
@@ -216,11 +217,11 @@
         }
     }
 
-    /* Loader styling (Copied from original but centered) */
+    /* Loader styling */
     .loader {
         width: 32px;
         height: 32px;
-        border: 4px solid #4f46e5;
+        border: 4:38 pm #4f46e5;
         border-top-color: transparent;
         border-radius: 50%;
         animation: spin 1s linear infinite;
@@ -240,18 +241,18 @@
             Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
         </h1>
         <p class="text-base sm:text-lg text-gray-400 font-light">
-            You’ve joined LearnFlow AI, your powerful educational partner.
+            You’ve joined **LearnFlow AI**, your powerful educational partner.
         </p>
     </div>
 
     <div class="chat-area">
         <div id="chatLog" class="overflow-y-auto">
             <div class="chat-message ai">
-                <!-- <strong>LearnFlow Bot:</strong>
+                <strong>Ai:</strong>
                 <span class="text-gray-400">
                     Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the
                     Gemini Flash model. How can I help you learn something new today?
-                </span> -->
+                </span>
             </div>
         </div>
 
@@ -321,14 +322,30 @@
             if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai">
-                        <strong>LearnFlow Bot:</strong> 
+                        <strong>Ai:</strong> 
                         <span class="text-gray-400">
                             Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?
                         </span>
                     </div>` + chatLog.innerHTML;
+            } else {
+                 // Update the welcome message's strong tag if it still says 'LearnFlow Bot'
+                 const welcomeMsg = chatLog.querySelector('.chat-message.ai strong');
+                 if (welcomeMsg && welcomeMsg.textContent.includes('LearnFlow Bot')) {
+                    welcomeMsg.textContent = 'Ai:';
+                 }
             }
 
+
             chatLog.scrollTop = chatLog.scrollHeight;
+        } else {
+            // Add initial welcome message if no history exists
+             chatLog.innerHTML = `
+                <div class="chat-message ai">
+                    <strong>Ai:</strong> 
+                    <span class="text-gray-400">
+                        Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?
+                    </span>
+                </div>`;
         }
     });
 
@@ -338,10 +355,10 @@
         localStorage.setItem(responseCountKey, responseCount);
     }
 
-    // Typing animation function
+    // Typing animation function - **Updated prefix to 'Ai:'**
     function typeWriter(element, text, speed = 10) {
         let i = 0;
-        element.innerHTML = `<strong>LearnFlow Bot:</strong> `;
+        element.innerHTML = `<strong>Ai:</strong> `;
         const contentSpan = document.createElement('span');
         element.appendChild(contentSpan);
 
@@ -363,7 +380,7 @@
         if (e.key === 'Enter') sendChat();
     });
     
-    // Function to extract conversation history in API format
+    // Function to extract conversation history in API format - **Updated prefix cleaning**
     function getConversationHistory() {
         const history = [];
         const children = Array.from(chatLog.children);
@@ -386,8 +403,8 @@
                     parts: [{ text: text }]
                 });
             } else if (isAI) {
-                // Extract text safely and clean up the bot's name prefix
-                const text = child.textContent.replace('LearnFlow Bot:', '').replace('LearnFlow Bot (Summary):', '').trim();
+                // Extract text safely and clean up the bot's name prefix (now just 'Ai:')
+                const text = child.textContent.replace('Ai:', '').replace('Summary:', '').replace('LearnFlow Bot:', '').replace('LearnFlow Bot (Summary):', '').trim();
                 if (text) {
                     history.push({
                         // Must be 'model' for the AI's response
@@ -418,9 +435,9 @@
         if (responseCount >= responseLimit) {
             const upgradeMsg = "You've reached your free chat limit! Please upgrade for unlimited access.";
             const aiMsgDiv = document.createElement('div');
-            // Use the new error class
+            // Use the new error class and the updated 'Ai:' prefix
             aiMsgDiv.className = "chat-message ai error"; 
-            aiMsgDiv.innerHTML = `<strong>LearnFlow Bot:</strong> <span class="text-xl inline-block mr-2">🔒</span> ${upgradeMsg}`;
+            aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🔒</span> ${upgradeMsg}`;
             chatLog.appendChild(aiMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
@@ -480,7 +497,7 @@
 
             if (isError) {
                 aiMsgDiv.classList.add('error');
-                aiMsgDiv.innerHTML = `<strong>LearnFlow Bot:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${fullText}`;
+                aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${fullText}`;
                 saveChatHistory();
             } else {
                 typeWriter(aiMsgDiv, fullText);
@@ -497,10 +514,10 @@
             }
             
             const errorMsgDiv = document.createElement('div');
-            // Use the new error class
+            // Use the new error class and the updated 'Ai:' prefix
             errorMsgDiv.className = "chat-message error"; 
             errorMsgDiv.innerHTML = `
-                <strong>LearnFlow Bot:</strong> 
+                <strong>Ai:</strong> 
                 <span class="text-xl inline-block mr-2">🚨</span>
                 **Network Error.** Could not reach the server. Please check your internet connection and console (F12).
             `;
@@ -516,10 +533,10 @@
         localStorage.removeItem(chatHistoryKey);
         responseCount = 0;
         localStorage.setItem(responseCountKey, '0');
-        // Re-add the welcome message with the new class
+        // Re-add the welcome message with the new class and 'Ai:' prefix
         chatLog.innerHTML = `
             <div class="chat-message ai">
-                <strong>LearnFlow Bot:</strong> 
+                <strong>Ai:</strong> 
                 <span class="text-gray-400">
                     Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?
                 </span>
@@ -546,8 +563,9 @@
 
         if (historyForSummary.length === 0) {
             const warningMsgDiv = document.createElement('div');
+            // Use the updated 'Ai:' prefix
             warningMsgDiv.className = "chat-message error";
-            warningMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> No conversation to summarize. Start chatting!`;
+            warningMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> No conversation to summarize. Start chatting!`;
             chatLog.appendChild(warningMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
             return;
@@ -587,8 +605,8 @@
 
             let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
             
-            // Set the prefix for the summary response
-            aiMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> `;
+            // Set the prefix for the summary response to 'Ai (Summary):'
+            aiMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> `;
             const contentSpan = document.createElement('span');
             aiMsgDiv.appendChild(contentSpan);
             
@@ -610,8 +628,9 @@
              const loader = document.getElementById('summaryLoader');
              if (loader) { loader.remove(); }
              const errorMsgDiv = document.createElement('div');
+             // Use the updated 'Ai:' prefix
              errorMsgDiv.className = "chat-message error";
-             errorMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> Could not generate summary due to a connection error.`;
+             errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> Could not generate summary due to a connection error.`;
              chatLog.appendChild(errorMsgDiv);
              saveChatHistory();
         }
