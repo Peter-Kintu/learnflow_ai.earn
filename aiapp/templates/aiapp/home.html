@@ -170,6 +170,7 @@
         text-align: center;
         transition: all 0.3s ease-in-out;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
     }
     
     /* NEW: Stop Speaking Button */
@@ -224,14 +225,7 @@
 
     <div class="chat-area">
         <div id="chatLog" class="overflow-y-auto">
-            <div class="chat-message ai">
-                <strong>Ai:</strong>
-                <span class="text-gray-400">
-                    Hello, {{ user.username }}! 
-                   
-                </span>
             </div>
-        </div>
 
         <div class="chat-input-area">
             <h2 class="text-2xl font-semibold text-indigo-400 flex items-center gap-2">
@@ -249,7 +243,7 @@
                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/>
                     </svg>
                 </button>
-                <div id="voiceStatus">Tap the microphone to speak...</div>
+                <div id="voiceStatus">Initializing voice service...</div>
             </div>
 
             <input type="text" id="chatInput" placeholder="Ask LearnFlow AI a question..." style="display: none;">
@@ -275,7 +269,7 @@
     const recordButton = document.getElementById('recordButton');
     const voiceStatus = document.getElementById('voiceStatus');
 
-    const responseLimit = 3;
+    const responseLimit = 3; // Set your limit
     const username = "{{ user.username }}";
     const chatHistoryKey = `chatHistory-${username}`;
     const responseCountKey = `responseCount-${username}`;
@@ -309,8 +303,8 @@
     }
 
     function speakText(text) {
-        if (!'speechSynthesis' in window) {
-            console.warn("Speech Synthesis not supported in this browser.");
+        if (!'speechSynthesis' in window || isRecording) {
+            // Do not speak if recording is active or not supported
             return;
         }
 
@@ -321,7 +315,7 @@
 
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // Attempt to find a "Siri-like" voice
+        // Attempt to find a preferred voice
         const preferredVoices = [
             "Daniel", "Samantha", "Ting-Ting", 
             "Google US English", "Microsoft Zira" 
@@ -333,6 +327,7 @@
             if (selectedVoice) break;
         }
         
+        // Fallback to a generic English female voice
         if (!selectedVoice) {
             selectedVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.includes('en'));
         }
@@ -349,7 +344,7 @@
             stopSpeakingButton.style.display = 'none'; 
             // Ready for next input after AI finishes speaking
             if (!isRecording) {
-                 voiceStatus.textContent = "Tap the microphone to speak...";
+                voiceStatus.textContent = "Tap the microphone to speak...";
             }
         };
         
@@ -358,7 +353,7 @@
             isSpeaking = false;
             stopSpeakingButton.style.display = 'none';
              if (!isRecording) {
-                 voiceStatus.textContent = "Tap the microphone to speak...";
+                voiceStatus.textContent = "Tap the microphone to speak...";
             }
         };
 
@@ -370,6 +365,10 @@
             speechSynthesis.cancel();
             isSpeaking = false;
             stopSpeakingButton.style.display = 'none';
+            // Update status only if not currently recording
+            if (!isRecording) {
+                 voiceStatus.textContent = "Tap the microphone to speak...";
+            }
         }
     }
 
@@ -377,7 +376,7 @@
 
     function setupRecognition() {
         if (!SpeechRecognition) {
-            voiceStatus.textContent = "Voice input is not supported in this browser. Please contact support.";
+            voiceStatus.textContent = "Voice input is not supported in this browser. Please use a modern browser like Chrome or Edge.";
             recordButton.disabled = true;
             return;
         }
@@ -403,23 +402,27 @@
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            if (event.error !== 'no-speech') {
-                voiceStatus.textContent = `Error: ${event.error}. Please try again.`;
-                recordButton.classList.remove('recording');
-                isRecording = false;
+            isRecording = false; // Important to reset state
+            recordButton.classList.remove('recording');
+            
+            if (event.error === 'not-allowed') {
+                voiceStatus.textContent = "Permission denied. Please enable microphone access.";
+            } else if (event.error === 'no-speech') {
+                voiceStatus.textContent = "No speech detected. Tap the microphone to try again.";
+            } else if (event.error !== 'aborted') {
+                voiceStatus.textContent = `Error: ${event.error}. Tap the microphone to try again.`;
             } else {
-                 voiceStatus.textContent = "Didn't catch that. Tap the microphone to speak...";
-                 recordButton.classList.remove('recording');
-                 isRecording = false;
+                 voiceStatus.textContent = "Tap the microphone to speak...";
             }
         };
         
         recognition.onend = () => {
+            // Only update the UI state if the 'onresult' or 'onerror' hasn't already reset it
             if (isRecording) {
                  recordButton.classList.remove('recording');
                  // Only update status if AI isn't about to speak
                  if (!isSpeaking) {
-                    voiceStatus.textContent = "Processing your question...";
+                     voiceStatus.textContent = "Processing your question...";
                  }
                  isRecording = false;
             }
@@ -430,6 +433,8 @@
     setupRecognition();
 
     function toggleRecording() {
+        if (!recognition) return; // Prevent action if not supported
+
         if (isRecording) {
             recognition.stop();
         } else {
@@ -437,8 +442,8 @@
                 recognition.start();
             } catch (e) {
                  if (e.name !== 'InvalidStateError') {
-                    console.error("Recording error:", e);
-                    voiceStatus.textContent = "Error starting mic. Check console/permissions.";
+                     console.error("Recording error:", e);
+                     voiceStatus.textContent = "Error starting mic. Check console/permissions.";
                  }
             }
         }
@@ -462,30 +467,21 @@
 
         if (storedChat) {
             chatLog.innerHTML = storedChat;
-            // Existing logic to handle old class names... (omitted for brevity, assume it runs)
-            
-            // Re-check if the initial welcome message is missing and add it back
-            if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
-                chatLog.innerHTML = `
-                    <div class="chat-message ai">
-                        <strong>Ai:</strong> 
-                        <span class="text-gray-400">
-                            Hello, {{ user.username }}! 
-                        </span>
-                    </div>` + chatLog.innerHTML;
-            } 
-            
-            chatLog.scrollTop = chatLog.scrollHeight;
-        } else {
-             // Add initial welcome message if no history exists
-             chatLog.innerHTML = `
-                <div class="chat-message ai">
-                    <strong>Ai:</strong> 
-                    <span class="text-gray-400">
-                        Hello, {{ user.username }}! 
-                    </span>
-                </div>`;
         }
+        
+        // Ensure the initial welcome message is present, even if history was loaded/cleared
+        if (!chatLog.innerHTML.includes("Hello, {{ user.username }}!")) {
+             chatLog.innerHTML = `
+                 <div class="chat-message ai">
+                     <strong>Ai:</strong> 
+                     <span class="text-gray-400">
+                         Hello, {{ user.username }}! 
+                     </span>
+                 </div>` + chatLog.innerHTML;
+        } 
+        
+        chatLog.scrollTop = chatLog.scrollHeight;
+        voiceStatus.textContent = recognition ? "Tap the microphone to speak..." : "Voice service unavailable.";
     });
 
     function saveChatHistory() {
@@ -494,7 +490,7 @@
     }
 
     // Typing animation function - **Now calls speakText on completion**
-    function typeWriter(element, text, speed = 10) {
+    function typeWriter(element, text, speed = 15) { // Slightly faster typing
         let i = 0;
         element.innerHTML = `<strong>Ai:</strong> `;
         const contentSpan = document.createElement('span');
@@ -528,13 +524,14 @@
         
         // Rate Limit Check
         if (responseCount >= responseLimit) {
-            const upgradeMsg = "You've reached your free chat limit! Please upgrade for unlimited access.";
+            const upgradeMsg = `You've reached your free chat limit of ${responseLimit} questions! Please upgrade for unlimited access.`;
             const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = "chat-message ai error"; 
+            aiMsgDiv.className = "chat-message error"; 
             aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🔒</span> ${upgradeMsg}`;
             chatLog.appendChild(aiMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
+            voiceStatus.textContent = "Free limit reached. Clear chat or upgrade.";
             speakText(upgradeMsg); // Speak the error message
             return;
         }
@@ -544,6 +541,8 @@
         loaderDiv.className = 'loader';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
+        voiceStatus.textContent = "Getting AI response...";
+
 
         try {
             const conversationHistory = getConversationHistory();
@@ -587,13 +586,13 @@
                 aiMsgDiv.classList.add('error');
                 aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${fullText}`;
                 saveChatHistory();
+                chatLog.scrollTop = chatLog.scrollHeight;
+                voiceStatus.textContent = "Error during API call.";
                 speakText("I encountered an error. " + fullText); 
             } else {
                 typeWriter(aiMsgDiv, fullText); 
                 responseCount++;
             }
-            
-            chatLog.scrollTop = chatLog.scrollHeight;
             
         } catch (error) {
             console.error("Fetch/Network Error:", error);
@@ -602,11 +601,12 @@
             
             const errorMsgDiv = document.createElement('div');
             errorMsgDiv.className = "chat-message error"; 
-            const errorText = "**Network Error.** Could not reach the server.";
+            const errorText = "Network Error. Could not reach the server.";
             errorMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚨</span> ${errorText}`;
             chatLog.appendChild(errorMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
+            voiceStatus.textContent = "Network Error.";
             speakText("I encountered a network error.");
         }
     }
@@ -615,12 +615,17 @@
     function getConversationHistory() {
         const history = [];
         const children = Array.from(chatLog.children);
+        
+        // System instruction (only include once at the start of the whole conversation, not in every turn)
+        // For simplicity with the existing chat history structure, we'll just parse the last few turns
+        // This function is robust enough for the current use case of a stateless API call per turn.
 
         for (const child of children) {
             const isUser = child.classList.contains('user');
             const isAI = child.classList.contains('ai');
             
-            if (child.classList.contains('error') || child.id === 'loader' || child.id === 'summaryLoader' || child.innerText.includes("educational assistant powered by the Gemini Flash model")) {
+            // Skip non-message elements and initial welcome message
+            if (child.classList.contains('error') || child.id === 'loader' || child.id === 'summaryLoader') {
                 continue;
             }
 
@@ -629,14 +634,15 @@
                 history.push({ role: 'user', parts: [{ text: text }] });
             } else if (isAI) {
                 // Clean up all possible AI prefixes
-                const text = child.textContent
-                                .replace('Ai (Summary):', '')
-                                .replace('Ai:', '')
-                                .replace('Summary:', '')
-                                .replace('Ai:', '')
-                                .replace('Summary:', '')
-                                .trim();
-
+                let text = child.textContent
+                                        .replace('Ai (Summary):', '')
+                                        .replace('Ai:', '')
+                                        .replace('Summary:', '')
+                                        .trim();
+                
+                // Exclude the simple welcome message from history to save tokens
+                if (text.includes("Hello, {{ user.username }}!")) continue;
+                
                 if (text) { history.push({ role: 'model', parts: [{ text: text }] }); }
             }
         }
@@ -650,6 +656,7 @@
         localStorage.removeItem(chatHistoryKey);
         responseCount = 0;
         localStorage.setItem(responseCountKey, '0');
+        
         // Re-add the welcome message
         chatLog.innerHTML = `
             <div class="chat-message ai">
@@ -658,6 +665,7 @@
                     Hello, {{ user.username }}! 
                 </span>
             </div>`;
+        voiceStatus.textContent = "Chat cleared! Tap the microphone to speak...";
     }
 
     function exportChat() {
@@ -676,6 +684,7 @@
         
         const conversationHistory = getConversationHistory();
         
+        // Filter out summary prompts themselves to prevent recursion or confusing the model
         const historyForSummary = conversationHistory.filter(message => 
             !message.parts[0].text.includes("Please provide a concise, numbered summary of the previous conversation")
         );
@@ -696,6 +705,7 @@
         loaderDiv.className = 'loader';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
+        voiceStatus.textContent = "Generating summary...";
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
@@ -724,6 +734,7 @@
 
             let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
             
+            // Reusing the typeWriter function for the summary display
             aiMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> `;
             const contentSpan = document.createElement('span');
             aiMsgDiv.appendChild(contentSpan);
@@ -737,27 +748,30 @@
                 } else {
                     saveChatHistory();
                     speakText(fullText); // <-- Speak the summary
+                    voiceStatus.textContent = "Tap the microphone to speak...";
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
             typeSummary();
             
         } catch (error) {
+             console.error("Summary Fetch/Network Error:", error);
              const loader = document.getElementById('summaryLoader');
              if (loader) { loader.remove(); }
              const errorMsgDiv = document.createElement('div');
              errorMsgDiv.className = "chat-message error";
-             const summaryErrorText = "Could not generate summary due to a connection error.";
+             const summaryErrorText = "Could not generate summary due to a connection or API error.";
              errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${summaryErrorText}`;
              chatLog.appendChild(errorMsgDiv);
              saveChatHistory();
-             speakText("Could not generate summary due to a connection error."); 
+             voiceStatus.textContent = "Summary Error.";
+             speakText("Could not generate summary due to an error."); 
         }
     }
     
-    // Placeholder function for the old sendChat. Not strictly needed since the button is hidden, 
-    // but useful if it were to be re-enabled.
+    // Placeholder function for the old sendChat.
     function sendChat() {
+        // This function is still here for completeness but the button is hidden in CSS.
         console.error("The Send button is disabled in voice-chat mode. Use the microphone!");
     }
 
