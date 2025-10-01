@@ -154,6 +154,22 @@
         padding: 0.5rem 0;
     }
 
+    /* Added style for chatInput and modified style for send button */
+    #chatInput {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid #4b5563;
+        background-color: #374151;
+        color: #e5e7eb;
+        font-size: 1rem;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: block; /* Make the input visible */
+    }
+    #chatInput::placeholder {
+        color: #9ca3af;
+    }
+
     /* Button Group Styling */
     .button-group {
         display: flex;
@@ -182,6 +198,14 @@
     .action-button.stop-speak:hover { background-color: #d97706; transform: translateY(-2px); }
 
     /* Other buttons */
+    .action-button.send { 
+        background-color: #4f46e5; 
+        color: #fff; 
+        display: block; /* Make the send button visible */
+        flex: 1 1 100px;
+    }
+    .action-button.send:hover { background-color: #4338ca; transform: translateY(-2px); }
+
     .action-button.summarize { background-color: #10b981; color: #fff; }
     .action-button.summarize:hover { background-color: #059669; transform: translateY(-2px); }
 
@@ -191,11 +215,6 @@
     .action-button.clear { background-color: #ef4444; color: #fff; }
     .action-button.clear:hover { background-color: #dc2626; transform: translateY(-2px); }
     
-    /* Hiding the old text input and send button */
-    #chatInput, .action-button.send {
-        display: none !important;
-    }
-
     /* Responsive adjustments for large screens (md: 768px and up) */
     @media (min-width: 768px) {
         .chat-container-card { max-width: 80%; }
@@ -218,7 +237,7 @@
             Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
         </h1>
         <p class="text-base sm:text-lg text-gray-400 font-light">
-            You’ve joined **LearnFlow AI**, your powerful educational partner. **Tap the mic to start your voice chat!**
+            You’ve joined LearnFlow AI, your powerful educational partner. 
         </p>
     </div>
 
@@ -228,7 +247,7 @@
                 <strong>Ai:</strong>
                 <span class="text-gray-400">
                     Hello, {{ user.username }}! 
-                   
+                    
                 </span>
             </div>
         </div>
@@ -252,13 +271,15 @@
                 <div id="voiceStatus">Tap the microphone to speak...</div>
             </div>
 
-            <input type="text" id="chatInput" placeholder="Ask LearnFlow AI a question..." style="display: none;">
+            <div style="display: flex; gap: 0.75rem;">
+                <input type="text" id="chatInput" placeholder="Type your question here..." onkeydown="handleKeydown(event)">
+                <button onclick="typeQuery()" class="action-button send" id="sendChatButton">Send</button> 
+            </div>
             
             <div class="button-group">
                 <button onclick="stopSpeaking()" class="action-button stop-speak" id="stopSpeakingButton">
                     <span class="text-xl">🔇</span> Stop Speaking
                 </button>
-                <button onclick="sendChat()" class="action-button send" id="sendChatButton">Send</button> 
                 
                 <button onclick="summarizeChat()" class="action-button summarize">Summarize Chat</button>
                 <button onclick="exportChat()" class="action-button export">Export Chat</button>
@@ -274,6 +295,7 @@
     const stopSpeakingButton = document.getElementById('stopSpeakingButton');
     const recordButton = document.getElementById('recordButton');
     const voiceStatus = document.getElementById('voiceStatus');
+    const chatInput = document.getElementById('chatInput'); // NEW: Get the input field
 
     const responseLimit = 3;
     const username = "{{ user.username }}";
@@ -295,6 +317,20 @@
     const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU"; 
     const modelName = 'gemini-2.5-flash'; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+    /**
+     * Cleans the AI response text by removing markdown formatting.
+     * @param {string} text The raw text from the API.
+     * @returns {string} The cleaned text.
+     */
+    function cleanText(text) {
+        // Remove bold/italic markdown symbols
+        // **text**, *text*, __text__, _text_
+        let cleaned = text.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** or __ for bold
+        cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Removes * or _ for italics
+        // You can add more cleanup here if needed, e.g., for code blocks (```)
+        return cleaned;
+    }
 
 
     // ## TTS Functions ##
@@ -319,7 +355,10 @@
         isSpeaking = true;
         stopSpeakingButton.style.display = 'block'; 
 
-        const utterance = new SpeechSynthesisUtterance(text);
+        // CLEAN TEXT BEFORE SPEAKING
+        const cleanedText = cleanText(text); 
+
+        const utterance = new SpeechSynthesisUtterance(cleanedText);
         
         // Attempt to find a "Siri-like" voice
         const preferredVoices = [
@@ -398,7 +437,7 @@
             const last = event.results.length - 1;
             const transcript = event.results[last][0].transcript;
             console.log("Transcript:", transcript);
-            sendTranscription(transcript);
+            transcriptQuery(transcript);
         };
 
         recognition.onerror = (event) => {
@@ -437,85 +476,42 @@
                 recognition.start();
             } catch (e) {
                  if (e.name !== 'InvalidStateError') {
-                    console.error("Recording error:", e);
-                    voiceStatus.textContent = "Error starting mic. Check console/permissions.";
+                     console.error("Recording error:", e);
+                     voiceStatus.textContent = "Error starting mic. Check console/permissions.";
                  }
             }
         }
     }
     
-    function sendTranscription(query) {
-        if (query.trim()) {
-            transcriptQuery(query.trim());
+    // NEW: Function to handle text input submission
+    function typeQuery() {
+        const query = chatInput.value.trim();
+        if (query) {
+            transcriptQuery(query);
+            chatInput.value = ''; // Clear the input after sending
         } else {
-            voiceStatus.textContent = "Empty recording. Tap the microphone to speak...";
+            console.warn("Input field is empty.");
         }
     }
 
-
-    // ## Core Chat/API Functions ##
-
-    // Load chat history from localStorage on page load
+    // NEW: Function to handle 'Enter' key press on the input field
+    function handleKeydown(event) {
+        if (event.key === 'Enter') {
+            typeQuery();
+            event.preventDefault(); // Prevents default form submission behavior
+        }
+    }
+    // Attach the keydown listener to the input field on load
     document.addEventListener('DOMContentLoaded', () => {
-        const storedChat = localStorage.getItem(chatHistoryKey);
-        stopSpeakingButton.style.display = 'none';
-
-        if (storedChat) {
-            chatLog.innerHTML = storedChat;
-            // Existing logic to handle old class names... (omitted for brevity, assume it runs)
-            
-            // Re-check if the initial welcome message is missing and add it back
-            if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
-                chatLog.innerHTML = `
-                    <div class="chat-message ai">
-                        <strong>Ai:</strong> 
-                        <span class="text-gray-400">
-                            Hello, {{ user.username }}! 
-                        </span>
-                    </div>` + chatLog.innerHTML;
-            } 
-            
-            chatLog.scrollTop = chatLog.scrollHeight;
-        } else {
-             // Add initial welcome message if no history exists
-             chatLog.innerHTML = `
-                <div class="chat-message ai">
-                    <strong>Ai:</strong> 
-                    <span class="text-gray-400">
-                        Hello, {{ user.username }}! 
-                    </span>
-                </div>`;
-        }
+        chatInput.addEventListener('keydown', handleKeydown);
     });
-
-    function saveChatHistory() {
-        localStorage.setItem(chatHistoryKey, chatLog.innerHTML);
-        localStorage.setItem(responseCountKey, responseCount);
-    }
-
-    // Typing animation function - **Now calls speakText on completion**
-    function typeWriter(element, text, speed = 10) {
-        let i = 0;
-        element.innerHTML = `<strong>Ai:</strong> `;
-        const contentSpan = document.createElement('span');
-        element.appendChild(contentSpan);
-
-        function type() {
-            if (i < text.length) {
-                contentSpan.textContent += text.charAt(i); 
-                i++;
-                setTimeout(type, speed);
-            } else {
-                saveChatHistory();
-                speakText(text); // <-- Speak the text after typing
-            }
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }
-        type();
-    }
-    
-    // Renamed sendChat to transcriptQuery for voice input workflow
+    // OLD: Renamed sendChat to transcriptQuery for voice input workflow, now handles text input too
     async function transcriptQuery(query) {
+        if (!query.trim()) {
+            voiceStatus.textContent = "Empty input. Tap the microphone or type to speak...";
+            return;
+        }
+
         stopSpeaking(); // Ensure AI stops speaking if user interrupts
         
         // Display user message
@@ -583,13 +579,17 @@
                  isError = true;
             }
 
+            // CLEAN THE TEXT BEFORE TYPING
+            const displayAndSpeakText = cleanText(fullText);
+
             if (isError) {
                 aiMsgDiv.classList.add('error');
-                aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${fullText}`;
+                aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${displayAndSpeakText}`;
                 saveChatHistory();
-                speakText("I encountered an error. " + fullText); 
+                speakText("I encountered an error. " + displayAndSpeakText); 
             } else {
-                typeWriter(aiMsgDiv, fullText); 
+                // Pass the cleaned text to typeWriter
+                typeWriter(aiMsgDiv, displayAndSpeakText); 
                 responseCount++;
             }
             
@@ -602,13 +602,74 @@
             
             const errorMsgDiv = document.createElement('div');
             errorMsgDiv.className = "chat-message error"; 
-            const errorText = "**Network Error.** Could not reach the server.";
+            const errorText = "Network Error. Could not reach the server.";
             errorMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚨</span> ${errorText}`;
             chatLog.appendChild(errorMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
             speakText("I encountered a network error.");
         }
+    }
+
+    // ## Core Chat/API Functions ##
+
+    // Load chat history from localStorage on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedChat = localStorage.getItem(chatHistoryKey);
+        stopSpeakingButton.style.display = 'none';
+
+        if (storedChat) {
+            chatLog.innerHTML = storedChat;
+            // Existing logic to handle old class names... (omitted for brevity, assume it runs)
+            
+            // Re-check if the initial welcome message is missing and add it back
+            if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
+                chatLog.innerHTML = `
+                    <div class="chat-message ai">
+                        <strong>Ai:</strong> 
+                        <span class="text-gray-400">
+                            Hello, {{ user.username }}! 
+                        </span>
+                    </div>` + chatLog.innerHTML;
+            } 
+            
+            chatLog.scrollTop = chatLog.scrollHeight;
+        } else {
+             // Add initial welcome message if no history exists
+             chatLog.innerHTML = `
+                 <div class="chat-message ai">
+                     <strong>Ai:</strong> 
+                     <span class="text-gray-400">
+                         Hello, {{ user.username }}! 
+                     </span>
+                 </div>`;
+        }
+    });
+
+    function saveChatHistory() {
+        localStorage.setItem(chatHistoryKey, chatLog.innerHTML);
+        localStorage.setItem(responseCountKey, responseCount);
+    }
+
+    // Typing animation function - **Now calls speakText on completion with CLEANED text**
+    function typeWriter(element, text, speed = 10) {
+        let i = 0;
+        element.innerHTML = `<strong>Ai:</strong> `;
+        const contentSpan = document.createElement('span');
+        element.appendChild(contentSpan);
+
+        function type() {
+            if (i < text.length) {
+                contentSpan.textContent += text.charAt(i); 
+                i++;
+                setTimeout(type, speed);
+            } else {
+                saveChatHistory();
+                speakText(text); // <-- Speak the already cleaned text after typing
+            }
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+        type();
     }
     
     // Function to extract conversation history in API format
@@ -630,14 +691,15 @@
             } else if (isAI) {
                 // Clean up all possible AI prefixes
                 const text = child.textContent
-                                .replace('Ai (Summary):', '')
-                                .replace('Ai:', '')
-                                .replace('Summary:', '')
-                                .replace('Ai:', '')
-                                .replace('Summary:', '')
-                                .trim();
+                                     .replace('Ai (Summary):', '')
+                                     .replace('Ai:', '')
+                                     .replace('Summary:', '')
+                                     .trim();
+                                     
+                // Remove formatting from the content being sent back to the API for context
+                const cleanedTextForAPI = cleanText(text);
 
-                if (text) { history.push({ role: 'model', parts: [{ text: text }] }); }
+                if (cleanedTextForAPI) { history.push({ role: 'model', parts: [{ text: cleanedTextForAPI }] }); }
             }
         }
         return history;
@@ -652,12 +714,12 @@
         localStorage.setItem(responseCountKey, '0');
         // Re-add the welcome message
         chatLog.innerHTML = `
-            <div class="chat-message ai">
-                <strong>Ai:</strong> 
-                <span class="text-gray-400">
-                    Hello, {{ user.username }}! 
-                </span>
-            </div>`;
+             <div class="chat-message ai">
+                 <strong>Ai:</strong> 
+                 <span class="text-gray-400">
+                     Hello, {{ user.username }}! 
+                 </span>
+             </div>`;
     }
 
     function exportChat() {
@@ -670,7 +732,7 @@
         link.click();
     }
     
-    // Summarize function - **Now calls speakText on completion**
+    // Summarize function - **Now uses cleanText on completion**
     async function summarizeChat() {
         stopSpeaking(); 
         
@@ -724,19 +786,22 @@
 
             let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
             
+            // CLEAN THE TEXT BEFORE TYPING AND SPEAKING
+            const displayAndSpeakText = cleanText(fullText);
+
             aiMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> `;
             const contentSpan = document.createElement('span');
             aiMsgDiv.appendChild(contentSpan);
             
             let i = 0;
             function typeSummary() {
-                if (i < fullText.length) {
-                    contentSpan.textContent += fullText.charAt(i); 
+                if (i < displayAndSpeakText.length) {
+                    contentSpan.textContent += displayAndSpeakText.charAt(i); 
                     i++;
                     setTimeout(typeSummary, 10);
                 } else {
                     saveChatHistory();
-                    speakText(fullText); // <-- Speak the summary
+                    speakText(displayAndSpeakText); // <-- Speak the cleaned summary
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
@@ -754,12 +819,5 @@
              speakText("Could not generate summary due to a connection error."); 
         }
     }
-    
-    // Placeholder function for the old sendChat. Not strictly needed since the button is hidden, 
-    // but useful if it were to be re-enabled.
-    function sendChat() {
-        console.error("The Send button is disabled in voice-chat mode. Use the microphone!");
-    }
-
 </script>
 {% endblock %}
