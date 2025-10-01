@@ -4,246 +4,272 @@
 
 {% block content %}
 <style>
-    /* Clean, modern dark theme background */
+    /* Base styling for a clean dark theme */
     body {
-        background: linear-gradient(135deg, #101725, #192136 70%, #1c2230 100%);
-        font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #101725, #0a0e16);
+        font-family: 'Inter', sans-serif;
+        color: #e5e7eb;
     }
 
-    /* Loader styling */
-    .loader {
-        border-top-color: #4f46e5;
-        animation: spinner 1s linear infinite;
-        border: 4px solid #ccc;
-        border-radius: 50%;
-        width: 28px;
-        height: 28px;
-    }
-    @keyframes spinner {
-        0% { transform: rotate(0deg);}
-        100% { transform: rotate(360deg);}
-    }
-
-    /* Button hover and focus effects */
-    .button-hover-effect {
-        transition: transform 0.16s cubic-bezier(.4,0,.2,1), box-shadow 0.16s cubic-bezier(.4,0,.2,1);
-    }
-    .button-hover-effect:hover, .button-hover-effect:focus {
-        transform: translateY(-2px) scale(1.03);
-        box-shadow: 0 6px 24px rgba(80, 87, 255, 0.14);
-        outline: none;
-    }
-
-    /* Animated fade-in for main content */
-    @keyframes fade-in-up {
-        from { opacity: 0; transform: translateY(24px);}
-        to { opacity: 1; transform: translateY(0);}
-    }
-    .animate-fade-in-up {
-        animation: fade-in-up 0.7s cubic-bezier(.4,0,.2,1) forwards;
-    }
-
-    /* Enhanced chat area */
-    .chat-outer-container {
-        background: linear-gradient(120deg, #1d2235 0%, #232940 100%);
-        border-radius: 2rem;
-        box-shadow: 0 14px 40px 0 rgba(0,0,0,.36), 0 2px 6px 0 rgba(44,53,71,.14);
-        border: 1.5px solid #262e47;
+    /* General container and card styling - Wider on all screens */
+    .chat-container-card {
+        /* Increased max-width to 90% on small and 80% on large screens */
+        max-width: 90%; 
+        margin: 2rem auto;
+        background-color: #1f2937;
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid #374151;
         overflow: hidden;
-    }
-    .chat-header {
-        background: linear-gradient(100deg, #161a29 0%, #232940 100%);
-        border-bottom: 1.5px solid #232940;
-        padding-top: 2.25rem !important;
-        padding-bottom: 2.25rem !important;
-    }
-    .chat-user-welcome {
-        font-weight: 900;
-        letter-spacing: -1px;
+        transition: all 0.5s ease-in-out;
     }
 
+    /* Header styling */
+    .chat-header {
+        background: linear-gradient(135deg, #2d3748, #1f2937);
+        padding: 2.5rem 1.5rem;
+        border-bottom: 1px solid #374151;
+        text-align: center;
+    }
+
+    .chat-header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.05em;
+        line-height: 1.1;
+    }
+
+    .chat-header p {
+        font-size: 1.125rem;
+        color: #9ca3af;
+        margin-top: 0.5rem;
+        max-width: 32rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Main chat area layout */
     .chat-area {
         display: flex;
-        flex-direction: column;
-        height: 82vh;
-        min-height: 500px;
-        max-height: 82vh;
-        background: #191e2e;
-        border-radius: 1.5rem;
-        margin: 0.5rem 0;
-        border: 1.5px solid #232940;
-        box-shadow: 0 2px 8px rgba(56,64,110,.06);
-        overflow: hidden;
+        flex-direction: column; /* Stacks on small screens */
+        padding: 1.5rem;
+        gap: 1.5rem;
     }
-    .chat-log {
-        flex: 1 1 0%;
+
+    /* Chat log container - **Made Bigger** */
+    #chatLog {
+        flex-grow: 1;
         overflow-y: auto;
-        padding: 2.2rem 1.7rem 2.2rem 1.7rem;
-        background: #171c28;
-        font-size: 1.14rem;
-        color: #e3e8f7;
-        scroll-behavior: smooth;
-        line-height: 1.78;
-        border-radius: 1.1rem;
-        margin: 1rem;
-        box-shadow: 0 1.5px 12px rgba(43,51,90,.05);
+        padding: 1rem;
+        background-color: #0a0e16;
+        border-radius: 1rem;
+        border: 1px solid #374151;
+        transition: all 0.3s ease-in-out;
+        /* Increased height for small screens */
+        min-height: 50vh; 
+        max-height: 70vh;
     }
 
-    /* Custom scrollbar for chat */
-    .chat-log::-webkit-scrollbar {
-        width: 8px;
-        background: #1c2133;
-        border-radius: 6px;
-    }
-    .chat-log::-webkit-scrollbar-thumb {
-        background: #232940;
-        border-radius: 6px;
-    }
-
-    /* User and AI message bubbles */
-    .chat-msg-user {
-        background: linear-gradient(100deg, #3341a8 0%, #4f46e5 100%);
-        color: #fff;
-        border-radius: 1.2rem 1.2rem 0.5rem 1.2rem;
-        padding: 1rem 1.3rem;
-        margin: 0.75rem 0 0.5rem auto;
-        max-width: 78%;
-        word-break: break-word;
-        box-shadow: 0 2px 12px 0 rgba(79,70,229,.08);
-        font-weight: 500;
-        font-size: 1.05rem;
-        position: relative;
-    }
-    .chat-msg-user strong {
-        color: #b3bcff;
-    }
-    .chat-msg-ai {
-        background: linear-gradient(110deg, #222844 0%, #272e53 100%);
-        color: #dbe5ff;
-        border-radius: 1.2rem 1.2rem 1.2rem 0.5rem;
-        padding: 1rem 1.3rem;
-        margin: 0.5rem auto 0.75rem 0;
-        max-width: 82%;
-        word-break: break-word;
-        font-size: 1.06rem;
-        font-weight: 500;
-        box-shadow: 0 1.5px 12px 0 rgba(44,53,71,0.08);
-        position: relative;
-    }
-    .chat-msg-ai strong {
-        color: #94a3ff;
-    }
-    .chat-msg-ai code, .chat-msg-user code {
-        background: #15192a;
-        color: #facc15;
-        padding: 2px 6px;
-        border-radius: 0.4em;
-        font-size: 98%;
-        font-family: 'JetBrains Mono', 'Fira Mono', 'Menlo', monospace;
-    }
-    .chat-msg-ai pre, .chat-msg-user pre {
-        background: #15192a;
-        color: #facc15;
-        border-radius: 0.5em;
-        padding: 1em;
-        overflow-x: auto;
-        margin: 0.7em 0;
-        font-size: 0.98em;
+    /* Styling for individual chat messages (message bubbles) */
+    .chat-message {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-width: 95%; /* Make messages fill most of the space */
+        line-height: 1.5;
+        font-size: 1rem;
     }
 
-    /* Welcome and error messages */
-    .chat-welcome, .chat-summary {
-        background: linear-gradient(92deg, #21263b 0%, #222844 100%);
-        color: #b5bddf;
-        border-radius: 1.3rem;
-        padding: 1.1rem 1.5rem;
-        margin: 0.9rem auto 0.9rem auto;
-        max-width: 78%;
-        font-size: 1.08rem;
-        box-shadow: 0 2px 12px 0 rgba(79,70,229,.07);
-        border: 1px solid #2e3656;
-        font-weight: 500;
-    }
-    .chat-error {
-        background: #b91c1c !important;
-        color: #fff !important;
-        border: 1.5px solid #dc2626 !important;
-        border-radius: 1.2rem;
-        font-weight: 600;
-        font-size: 1.06rem;
-        padding: 1rem 1.3rem;
-        margin: 1rem auto;
-        max-width: 82%;
-        box-shadow: 0 2px 12px 0 rgba(185,28,28,.08);
+    .chat-message strong {
+        font-weight: 700;
+        margin-right: 0.5rem;
+        min-width: fit-content;
     }
 
-    /* Chat input area */
+    /* User Message Bubble */
+    .chat-message.user {
+        justify-content: flex-end;
+        align-self: flex-end; /* Push user message to the right */
+        background-color: #4338ca; /* Indigo for user messages */
+        color: #e0e7ff;
+    }
+
+    /* AI Message Bubble */
+    .chat-message.ai {
+        justify-content: flex-start;
+        align-self: flex-start; /* Keep AI message on the left */
+        background-color: #2d3748; /* Dark grey for AI messages */
+        color: #e5e7eb;
+    }
+    
+    /* Error Message Bubble */
+    .chat-message.error {
+        background-color: #b91c1c;
+        color: #ffffff;
+        border: 1px solid #dc2626;
+    }
+
+    /* Input and button area */
     .chat-input-area {
-        background: linear-gradient(100deg, #1c2133 0%, #21263b 100%);
-        padding: 2rem 2.2rem;
-        border-top: 1.5px solid #232940;
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
-    }
-    .chat-input-row {
-        display: flex;
         gap: 1rem;
-        flex-wrap: wrap;
-    }
-    .chat-input {
-        flex: 1 1 0%;
-        background: #232940;
-        color: #e5e7eb;
-        border: 1.5px solid #334155;
-        border-radius: 1rem;
-        padding: 1.1rem 1.2rem;
-        font-size: 1.08rem;
-        font-family: inherit;
-        transition: border-color 0.18s;
-        outline: none;
-    }
-    .chat-input:focus {
-        border-color: #4f46e5;
-        background: #232940;
-        color: #fff;
-        box-shadow: 0 2px 16px 0 rgba(79,70,229,0.12);
+        padding: 1.5rem;
+        border-top: 1px solid #374151;
+        background-color: #1f2937;
     }
 
-    /* Responsive design */
-    @media (max-width: 800px) {
-        .chat-area, .chat-log { min-height: 350px; height: 68vh; }
-        .chat-input-area { padding: 1.2rem 1rem; }
+    #chatInput {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border-radius: 1.5rem;
+        background-color: #374151;
+        color: #e5e7eb;
+        border: 1px solid #4b5563;
+        font-size: 1rem;
+        transition: all 0.3s ease;
     }
-    @media (max-width: 620px) {
-        .chat-area, .chat-log { min-height: 250px; height: 58vh; }
-        .chat-input-area { padding: 0.7rem 0.3rem; }
-        .chat-header { padding-top: 1.1rem !important; padding-bottom: 1.1rem !important; }
+
+    #chatInput:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+    }
+
+    .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .action-button {
+        flex: 1 1 150px; /* Allows buttons to wrap nicely on small screens */
+        padding: 0.75rem 1.5rem;
+        border-radius: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-button.send { background-color: #4f46e5; color: #fff; }
+    .action-button.send:hover { background-color: #6366f1; transform: translateY(-2px); }
+
+    .action-button.summarize { background-color: #10b981; color: #fff; }
+    .action-button.summarize:hover { background-color: #059669; transform: translateY(-2px); }
+
+    .action-button.export { background-color: #3b82f6; color: #fff; }
+    .action-button.export:hover { background-color: #2563eb; transform: translateY(-2px); }
+
+    .action-button.clear { background-color: #ef4444; color: #fff; }
+    .action-button.clear:hover { background-color: #dc2626; transform: translateY(-2px); }
+
+    /* Responsive adjustments for large screens (md: 768px and up) - **Bigger Chat Space** */
+    @media (min-width: 768px) {
+        .chat-container-card {
+            /* Max width increased for better desktop experience */
+            max-width: 80%; 
+        }
+
+        .chat-area {
+            /* Side-by-side layout */
+            flex-direction: row; 
+            min-height: 80vh; /* Ensure the chat area has a minimum height */
+            padding: 0;
+        }
+
+        #chatLog {
+            /* Chat log takes up 65% of the side-by-side area */
+            width: 65%; 
+            min-height: 100%; /* Fill the container height */
+            max-height: 100%;
+            border-radius: 0 0 0 1.5rem; /* Round only bottom-left corner */
+            margin: 0;
+            padding: 1.5rem;
+        }
+
+        .chat-input-area {
+            /* Input area takes up 35% of the side-by-side area */
+            width: 35%;
+            border-top: none;
+            border-left: 1px solid #374151;
+            border-radius: 0 0 1.5rem 0; /* Round only bottom-right corner */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .button-group {
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 1rem;
+        }
+        
+        .action-button {
+            flex: none; /* Do not grow in the column layout */
+            width: 100%;
+        }
+    }
+
+    /* Loader styling (Copied from original but centered) */
+    .loader {
+        width: 32px;
+        height: 32px;
+        border: 4px solid #4f46e5;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 1.5rem auto;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 </style>
 
-<div class="max-w-5xl mx-auto my-8 md:my-14 chat-outer-container animate-fade-in-up">
-    <div class="chat-header p-6 text-center">
-        <h1 class="text-4xl sm:text-5xl chat-user-welcome text-white mb-2">
-            Welcome, {{ user.username }} <span class="wave-emoji">👋</span>
+<div class="chat-container-card">
+    <div class="chat-header">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+            Welcome, {{ user.username }} <span class="wave-emoji inline-block">👋</span>
         </h1>
-        <p class="text-base sm:text-lg text-gray-300 font-light max-w-lg mx-auto">
-            You’ve joined <span class="text-indigo-400 font-semibold">LearnFlow AI</span>, the <span class="font-bold text-white">smartest</span> in the world.
+        <p class="text-base sm:text-lg text-gray-400 font-light">
+            You’ve joined **LearnFlow AI**, your powerful educational partner.
         </p>
     </div>
-    <div class="p-0 sm:p-3">
-        <div class="chat-area">
-            <div id="chatLog" class="chat-log">
-                <!-- Chat content is dynamically injected here -->
+
+    <div class="chat-area">
+        <div id="chatLog" class="overflow-y-auto">
+            <div class="chat-message ai">
+                <!-- <strong>LearnFlow Bot:</strong>
+                <span class="text-gray-400">
+                    Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the
+                    Gemini Flash model. How can I help you learn something new today?
+                </span> -->
             </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Ask LearnFlow AI anything..." class="chat-input" autocomplete="off">
-                <div class="chat-input-row">
-                    <button onclick="exportChat()" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-md button-hover-effect">Export Chat</button>
-                    <button onclick="sendChat()" class="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-md button-hover-effect">Send</button>
-                    <button onclick="summarizeChat()" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md button-hover-effect">Summarize Chat</button>
-                    <button onclick="clearChat()" class="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-md button-hover-effect">Clear Chat</button>
-                </div>
+        </div>
+
+        <div class="chat-input-area">
+            <h2 class="text-2xl font-semibold text-indigo-400 flex items-center gap-2">
+                <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
+                </svg>
+                Ask LearnFlow AI 
+            </h2>
+            <input type="text" id="chatInput" placeholder="Ask LearnFlow AI a question...">
+            <div class="button-group">
+                <button onclick="sendChat()" class="action-button send">Send</button>
+                <button onclick="summarizeChat()" class="action-button summarize">Summarize Chat</button>
+                <button onclick="exportChat()" class="action-button export">Export Chat</button>
+                <button onclick="clearChat()" class="action-button clear">Clear Chat</button>
             </div>
         </div>
     </div>
@@ -259,38 +285,50 @@
     let responseCount = localStorage.getItem(responseCountKey) ? parseInt(localStorage.getItem(responseCountKey)) : 0;
 
     // --- API Configuration ---
-    const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU";
-    const modelName = 'gemini-2.5-flash';
+    // NOTE: Replace the placeholder with your actual Gemini API key.
+    const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU"; 
+    const modelName = 'gemini-2.5-flash'; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-    // -------------------------
-    // Helper to render message as a bubble (consistent style)
-    function makeMsgBubble(role, content, isError=false, isSummary=false) {
-        if (isError) return `<div class="chat-error"><strong>LearnFlow Bot:</strong> ${content}</div>`;
-        if (isSummary) return `<div class="chat-summary"><strong>LearnFlow Bot (Summary):</strong> ${content}</div>`;
-        if (role === "user") return `<div class="chat-msg-user"><strong class="text-indigo-200">You:</strong> ${content}</div>`;
-        if (role === "ai") return `<div class="chat-msg-ai"><strong>LearnFlow Bot:</strong> ${content}</div>`;
-        if (role === "welcome") return `<div class="chat-welcome"><strong>LearnFlow Bot:</strong> ${content}</div>`;
-        return `<div>${content}</div>`;
-    }
 
-    // Load chat history
+    // Load chat history from localStorage on page load
     document.addEventListener('DOMContentLoaded', () => {
         const storedChat = localStorage.getItem(chatHistoryKey);
         if (storedChat) {
+            // Use the stored HTML directly as the old messages used the old class
             chatLog.innerHTML = storedChat;
-            // Check if the initial welcome message is missing and add it back
-            if (!storedChat.includes("educational assistant powered by the Gemini Flash model")) {
-                chatLog.innerHTML = makeMsgBubble(
-                    "welcome",
-                    `Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?`
-                ) + storedChat;
+            
+            // CONVERSION LOGIC: Convert old chat-response/user divs to the new chat-message classes
+            const children = Array.from(chatLog.children);
+            for (const child of children) {
+                // Check for the old structure for conversion
+                if (child.classList.contains('chat-response')) {
+                    // This is an old AI message
+                    child.classList.remove('chat-response');
+                    child.classList.add('chat-message', 'ai');
+                    if (child.innerHTML.includes("upgrade for unlimited access")) {
+                        child.classList.add('error');
+                    }
+                } else if (!child.classList.contains('chat-message')) {
+                    // This is an old user message wrapped in a simple div
+                    if (child.innerHTML.includes('<strong class="text-indigo-300">You:</strong>')) {
+                        child.classList.add('chat-message', 'user');
+                    }
+                }
             }
+
+
+            // Re-check if the initial welcome message is missing and add it back
+            if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
+                chatLog.innerHTML = `
+                    <div class="chat-message ai">
+                        <strong>LearnFlow Bot:</strong> 
+                        <span class="text-gray-400">
+                            Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?
+                        </span>
+                    </div>` + chatLog.innerHTML;
+            }
+
             chatLog.scrollTop = chatLog.scrollHeight;
-        } else {
-            chatLog.innerHTML = makeMsgBubble(
-                "welcome",
-                `Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?`
-            );
         }
     });
 
@@ -300,8 +338,8 @@
         localStorage.setItem(responseCountKey, responseCount);
     }
 
-    // Typing animation for AI
-    function typeWriter(element, text, speed = 9) {
+    // Typing animation function
+    function typeWriter(element, text, speed = 10) {
         let i = 0;
         element.innerHTML = `<strong>LearnFlow Bot:</strong> `;
         const contentSpan = document.createElement('span');
@@ -309,7 +347,8 @@
 
         function type() {
             if (i < text.length) {
-                contentSpan.textContent += text.charAt(i);
+                // Using textContent for safety when handling external content
+                contentSpan.textContent += text.charAt(i); 
                 i++;
                 setTimeout(type, speed);
             } else {
@@ -323,37 +362,66 @@
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendChat();
     });
-
-    // Extract conversation history for API
+    
+    // Function to extract conversation history in API format
     function getConversationHistory() {
         const history = [];
-        Array.from(chatLog.children).forEach(child => {
-            if (child.className.includes("chat-welcome") || child.className.includes("chat-summary")) return;
-            if (child.className.includes("chat-error")) return;
-            if (child.className.includes("chat-msg-user")) {
-                const text = child.textContent.replace('You:', '').trim();
-                history.push({ role: 'user', parts: [{ text }] });
+        const children = Array.from(chatLog.children);
+
+        for (const child of children) {
+            // Use the new class names for extraction
+            const isUser = child.classList.contains('user');
+            const isAI = child.classList.contains('ai');
+            
+            // Skip error messages, loaders, and the welcome message
+            if (child.classList.contains('error') || child.id === 'loader' || child.id === 'summaryLoader' || child.innerText.includes("educational assistant powered by the Gemini Flash model")) {
+                continue;
             }
-            else if (child.className.includes("chat-msg-ai")) {
-                const text = child.textContent.replace('LearnFlow Bot:', '').trim();
-                if (text)
-                    history.push({ role: 'model', parts: [{ text }] });
+
+            if (isUser) {
+                // Extract text safely using textContent, then clean it
+                const text = child.textContent.replace('You:', '').trim(); 
+                history.push({
+                    role: 'user',
+                    parts: [{ text: text }]
+                });
+            } else if (isAI) {
+                // Extract text safely and clean up the bot's name prefix
+                const text = child.textContent.replace('LearnFlow Bot:', '').replace('LearnFlow Bot (Summary):', '').trim();
+                if (text) {
+                    history.push({
+                        // Must be 'model' for the AI's response
+                        role: 'model', 
+                        parts: [{ text: text }]
+                    });
+                }
             }
-        });
+        }
         return history;
     }
+
 
     async function sendChat() {
         const query = chatInput.value.trim();
         if (!query) return;
-        chatLog.innerHTML += makeMsgBubble("user", query);
+
+        // Display user message with the new class
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.className = "chat-message user";
+        userMsgDiv.innerHTML = `<strong>You:</strong> ${query}`;
+        chatLog.appendChild(userMsgDiv);
         chatInput.value = '';
         chatLog.scrollTop = chatLog.scrollHeight;
         saveChatHistory();
-
-        // Rate Limit
+        
+        // Rate Limit Check
         if (responseCount >= responseLimit) {
-            chatLog.innerHTML += makeMsgBubble("ai", `<span class="text-xl mr-2">🔒</span> You've reached your free chat limit! Please upgrade for unlimited access.`, true);
+            const upgradeMsg = "You've reached your free chat limit! Please upgrade for unlimited access.";
+            const aiMsgDiv = document.createElement('div');
+            // Use the new error class
+            aiMsgDiv.className = "chat-message ai error"; 
+            aiMsgDiv.innerHTML = `<strong>LearnFlow Bot:</strong> <span class="text-xl inline-block mr-2">🔒</span> ${upgradeMsg}`;
+            chatLog.appendChild(aiMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
             return;
@@ -361,64 +429,101 @@
 
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loader';
-        loaderDiv.className = 'loader my-3 mx-auto';
+        loaderDiv.className = 'loader';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
             const conversationHistory = getConversationHistory();
-            const payload = { contents: [...conversationHistory, { role: 'user', parts: [{ text: query }] }] };
+            
+            const payload = {
+                contents: [
+                    ...conversationHistory, 
+                    { role: 'user', parts: [{ text: query }] } 
+                ]
+            };
 
             const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
-
+            
             const data = await response.json();
-            document.getElementById('loader')?.remove();
-
+            
+            console.log("Full Gemini response:", data);
+            
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+            
+            // Use the new AI message class
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = "chat-message ai"; 
+            chatLog.appendChild(aiMsgDiv);
+            
             let fullText = "No response received. Please check the console (F12) for API errors.";
             let isError = false;
 
             if (data?.candidates?.[0]?.content?.parts?.length) {
                 fullText = data.candidates[0].content.parts.map(p => p.text).join("\n\n");
             } else if (data.error) {
-                fullText = `API Error: ${data.error.message || "An unknown API error occurred."}`;
-                isError = true;
+                 // API key errors, quota errors, etc.
+                 fullText = `API Error: ${data.error.message || "An unknown API error occurred."}`;
+                 isError = true;
             } else if (data.promptFeedback?.blockReason) {
-                fullText = `Response blocked. Reason: ${data.promptFeedback.blockReason}`;
-                isError = true;
+                 // Safety or content blocks
+                 fullText = `Response blocked. Reason: ${data.promptFeedback.blockReason}`;
+                 isError = true;
             }
 
-            const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = isError ? "chat-error" : "chat-msg-ai";
-            chatLog.appendChild(aiMsgDiv);
-
             if (isError) {
-                aiMsgDiv.innerHTML = `<strong>LearnFlow Bot:</strong> <span class="text-xl mr-2">🚫</span> ${fullText}`;
+                aiMsgDiv.classList.add('error');
+                aiMsgDiv.innerHTML = `<strong>LearnFlow Bot:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${fullText}`;
                 saveChatHistory();
             } else {
                 typeWriter(aiMsgDiv, fullText);
                 responseCount++;
             }
+            
             chatLog.scrollTop = chatLog.scrollHeight;
+            
         } catch (error) {
-            document.getElementById('loader')?.remove();
-            chatLog.innerHTML += makeMsgBubble("ai", `<span class="text-xl mr-2">🚨</span> **Network Error.** Could not reach the server. Please check your internet connection and console (F12).`, true);
+            console.error("Fetch/Network Error:", error);
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+            
+            const errorMsgDiv = document.createElement('div');
+            // Use the new error class
+            errorMsgDiv.className = "chat-message error"; 
+            errorMsgDiv.innerHTML = `
+                <strong>LearnFlow Bot:</strong> 
+                <span class="text-xl inline-block mr-2">🚨</span>
+                **Network Error.** Could not reach the server. Please check your internet connection and console (F12).
+            `;
+            chatLog.appendChild(errorMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
         }
     }
 
+    // Function to clear the chat history and the chat log display
     function clearChat() {
-        chatLog.innerHTML = makeMsgBubble(
-            "welcome",
-            `Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?`
-        );
+        chatLog.innerHTML = '';
         localStorage.removeItem(chatHistoryKey);
         responseCount = 0;
         localStorage.setItem(responseCountKey, '0');
+        // Re-add the welcome message with the new class
+        chatLog.innerHTML = `
+            <div class="chat-message ai">
+                <strong>LearnFlow Bot:</strong> 
+                <span class="text-gray-400">
+                    Hello, {{ user.username }}! I am LearnFlow AI, your dedicated educational assistant powered by the Gemini Flash model. How can I help you learn something new today?
+                </span>
+            </div>`;
     }
 
     function exportChat() {
@@ -426,32 +531,41 @@
         const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'LearnFlow_Chat_Transcript.txt';
+        link.download = 'LearnFlow_Chat_Transcript.txt'; 
         link.click();
     }
-
+    
+    // Summarize function now correctly uses the history
     async function summarizeChat() {
         const conversationHistory = getConversationHistory();
+        
         // Exclude the last user message which is the summary prompt itself
-        const historyForSummary = conversationHistory.filter(message =>
+        const historyForSummary = conversationHistory.filter(message => 
             !message.parts[0].text.includes("Please provide a concise, numbered summary of the previous conversation")
         );
 
         if (historyForSummary.length === 0) {
-            chatLog.innerHTML += makeMsgBubble("ai", `<span class="text-xl mr-2">⚠️</span> No conversation to summarize. Start chatting!`, true, true);
+            const warningMsgDiv = document.createElement('div');
+            warningMsgDiv.className = "chat-message error";
+            warningMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> No conversation to summarize. Start chatting!`;
+            chatLog.appendChild(warningMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
             return;
         }
 
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'summaryLoader';
-        loaderDiv.className = 'loader my-3 mx-auto';
+        loaderDiv.className = 'loader';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
+
         const payload = {
-            contents: [...historyForSummary, { role: 'user', parts: [{ text: summaryPrompt }] }]
+            contents: [
+                ...historyForSummary, // Send the full conversation history
+                { role: 'user', parts: [{ text: summaryPrompt }] } // Add the summary request
+            ]
         };
 
         try {
@@ -462,30 +576,46 @@
             });
 
             const data = await response.json();
-            document.getElementById('summaryLoader')?.remove();
 
-            let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
+            const loader = document.getElementById('summaryLoader');
+            if (loader) { loader.remove(); }
+
+            // Use the new AI message class
             const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = "chat-summary";
+            aiMsgDiv.className = "chat-message ai";
             chatLog.appendChild(aiMsgDiv);
 
+            let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
+            
+            // Set the prefix for the summary response
+            aiMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> `;
+            const contentSpan = document.createElement('span');
+            aiMsgDiv.appendChild(contentSpan);
+            
+            // Reuse typeWriter logic for smooth summary typing
             let i = 0;
             function typeSummary() {
                 if (i < fullText.length) {
-                    aiMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> ` + fullText.slice(0, i + 1);
+                    contentSpan.textContent += fullText.charAt(i); 
                     i++;
-                    setTimeout(typeSummary, 9);
+                    setTimeout(typeSummary, 10);
                 } else {
                     saveChatHistory();
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
             typeSummary();
+            
         } catch (error) {
-            document.getElementById('summaryLoader')?.remove();
-            chatLog.innerHTML += makeMsgBubble("ai", `<span class="text-xl mr-2">🚨</span> Could not generate summary due to a connection error.`, true, true);
-            saveChatHistory();
+             const loader = document.getElementById('summaryLoader');
+             if (loader) { loader.remove(); }
+             const errorMsgDiv = document.createElement('div');
+             errorMsgDiv.className = "chat-message error";
+             errorMsgDiv.innerHTML = `<strong>LearnFlow Bot (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> Could not generate summary due to a connection error.`;
+             chatLog.appendChild(errorMsgDiv);
+             saveChatHistory();
         }
     }
+
 </script>
 {% endblock %}
