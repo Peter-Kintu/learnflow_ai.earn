@@ -97,65 +97,79 @@
         background-color: #1f2937;
     }
     
-    /* 🔥 NEW: Integrated Input Container 🔥 */
+    /* 🔥 UPDATED: Integrated Input Container for a cleaner look 🔥 */
     .integrated-input-container {
         display: flex;
-        align-items: center;
+        align-items: flex-end; /* Align items to the bottom, useful for growing textarea */
         width: 100%;
-        background-color: #374151;
-        border-radius: 0.75rem; /* Smoother border than old voice container */
+        background-color: #0a0e16; /* Darker background for more contrast */
+        border-radius: 1rem; 
         border: 1px solid #4b5563;
-        padding: 0.5rem; /* Padding for the entire container */
+        padding: 0.75rem; /* Increased padding */
+        min-height: 4.5rem; /* Ensure minimum height for a good look */
     }
 
-    /* Modified chatInput to fit into the container */
+    /* 🔥 MODIFIED: Changed #chatInput to use <textarea> and updated styles 🔥 */
     #chatInput {
-        flex-grow: 1; /* Take up available space */
+        flex-grow: 1; 
         width: 100%;
-        padding: 0.5rem 1rem; /* Adjust padding to fit visually */
+        padding: 0.25rem 0.5rem; /* Less internal padding to make it look part of the container */
         border-radius: 0;
-        border: none; /* Remove border */
-        background-color: transparent; /* Transparent background */
+        border: none;
+        background-color: transparent; 
         color: #e5e7eb;
-        font-size: 1rem;
-        box-shadow: none; /* Remove box shadow */
+        font-size: 1.1rem; /* Slightly larger font */
+        box-shadow: none; 
         display: block;
         margin: 0;
-        resize: none; /* Prevent resizing for cleaner look */
+        resize: none; 
+        overflow: auto; /* Allow scrolling if it grows beyond max-height */
+        min-height: 1.5rem; /* Min height of one line */
+        max-height: 10rem; /* Limit max height to prevent takeover */
     }
+
     #chatInput::placeholder {
         color: #9ca3af;
+        text-align: left; /* Ensure placeholder aligns properly */
+    }
+    
+    #chatInput:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #4f46e5; /* Subtle blue focus glow on the container */
+        /* Note: The focus style is often better applied to the *container* but is left here for simplicity */
     }
 
     /* --- ICON BUTTON Base Styling (for both mic and send) --- */
     .action-icon-button {
         flex-shrink: 0;
-        width: 2.5rem; /* Consistent size on all screens for touch/click target */
-        height: 2.5rem; 
+        width: 3rem; /* Slightly larger for better tap/click target */
+        height: 3rem; 
         border: none;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0; /* Ensures the icon is centered perfectly */
-        font-size: 1.2rem; /* Size for the SVG inside */
+        padding: 0; 
+        font-size: 1.5rem; /* Larger icon size */
+        border-radius: 50%; /* Uniformly round buttons */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Deeper shadow */
     }
 
     /* Updated Microphone/Record Button */
     #recordButton {
-        border-radius: 50%;
-        background-color: #ef4444; /* Red when ready */
+        background-color: #ef4444; 
         color: white;
-        margin-right: 0.5rem;
+        margin-right: 0.75rem; /* Increased separation */
     }
     
     #recordButton:hover {
         background-color: #dc2626;
+        transform: scale(1.05);
     }
 
     #recordButton.recording {
-        background-color: #10b981; /* Green when recording */
+        background-color: #10b981; 
         animation: pulse 1.5s infinite;
     }
     
@@ -163,6 +177,7 @@
         background-color: #4b5563;
         cursor: not-allowed;
         animation: none;
+        transform: none;
     }
 
     @keyframes pulse {
@@ -171,21 +186,18 @@
         100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
     }
     
-    /* 🔥 MODIFIED Send Button to use icon styling - consolidated styles 🔥 */
+    /* 🔥 MODIFIED Send Button: Primary action, brighter color 🔥 */
     #sendChatButton {
-        border-radius: 50%; /* Make it round like the mic button */
         background-color: #4f46e5; 
         color: #fff; 
-        margin-left: 0.5rem;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        /* Inherits size and centering from .action-icon-button */
+        margin-left: 0.75rem;
     }
 
     #sendChatButton:hover { 
         background-color: #4338ca; 
-        transform: translateY(0); 
+        transform: scale(1.05); 
     } 
-
+    
     /* Hide the old voice status div as it's not needed in this layout */
     #voiceStatus {
         display: none;
@@ -268,17 +280,16 @@
                 Ask LearnFlow AI 
             </h2>
             
-            {# 🔥 MODIFIED: Combined Input Field and Buttons 🔥 #}
+            {# 🔥 MODIFIED: Changed input to TEXTAREA and buttons are larger 🔥 #}
             <div class="integrated-input-container">
-                <input type="text" id="chatInput" placeholder="Type your question or tap the mic to speak..." onkeydown="handleKeydown(event)">
-                
                 <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/>
                     </svg>
                 </button>
                 
-                {# 🔥 MODIFIED: Replaced "Send" text with a Send Icon SVG and added action-icon-button class 🔥 #}
+                <textarea id="chatInput" placeholder="Type your question or tap the mic to speak..." onkeydown="handleKeydown(event)"></textarea>
+                
                 <button onclick="typeQuery()" class="action-button send action-icon-button" id="sendChatButton" title="Send Message">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3v7l15 2-15 2v7z"/>
@@ -502,6 +513,8 @@
             transcriptQuery(query);
             chatInput.value = ''; // Clear the input after sending
             chatInput.placeholder = "Tap the mic or type your question here..."; // Reset placeholder
+            // Reset textarea height after clearing (important for auto-growing textarea)
+            chatInput.style.height = 'auto'; 
         } else {
             console.warn("Input field is empty.");
         }
@@ -509,14 +522,27 @@
 
     // NEW: Function to handle 'Enter' key press on the input field
     function handleKeydown(event) {
-        if (event.key === 'Enter') {
+        // If shift or ctrl is pressed, allow for a new line instead of sending
+        if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey) {
             typeQuery();
             event.preventDefault(); 
+        } else if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey)) {
+            // Allows Shift+Enter or Ctrl+Enter for a new line
+            // The auto-growing textarea handles the height change
         }
     }
-    // Attach the keydown listener to the input field on load
+    
+    // Function to handle auto-growing textarea
+    function autoGrowTextarea() {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = chatInput.scrollHeight + 'px';
+    }
+
+    // Attach listeners on load
     document.addEventListener('DOMContentLoaded', () => {
         chatInput.addEventListener('keydown', handleKeydown);
+        chatInput.addEventListener('input', autoGrowTextarea); // Attach autogrow listener
+        autoGrowTextarea(); // Set initial height
     });
     
     // OLD: Renamed sendChat to transcriptQuery for voice input workflow, now handles text input too (UNCHANGED logic)
@@ -640,7 +666,7 @@
             if (!chatLog.innerHTML.includes("educational assistant powered by the Gemini Flash model")) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai">
-                        <strong>Ai:</strong> 
+                        <strong>Ai:</strong>
                         <span class="text-gray-400">
                             Hello, {{ user.username }}! 
                         </span>
@@ -653,9 +679,9 @@
              chatLog.innerHTML = `
                  <div class="chat-message ai">
                      <strong>Ai:</strong> 
-                     <span class="text-gray-400">
-                         Hello, {{ user.username }}! 
-                     </span>
+                 <span class="text-gray-400">
+                     Hello, {{ user.username }}! 
+                 </span>
                  </div>`;
         }
     });
