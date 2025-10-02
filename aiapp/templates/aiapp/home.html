@@ -97,49 +97,67 @@
         background-color: #1f2937;
     }
     
-    /* 🔥 NEW: Integrated Input Container 🔥 */
-    .integrated-input-container {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        background-color: #374151;
-        border-radius: 0.75rem; /* Smoother border than old voice container */
-        border: 1px solid #4b5563;
-        padding: 0.5rem; /* Padding for the entire container */
-    }
+    /* 🔧 Improved Integrated Input Container */
+.integrated-input-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background-color: #374151;
+    border-radius: 0.75rem;
+    border: 1px solid #4b5563;
+    padding: 0.5rem 0.75rem; /* Slightly tighter horizontal padding */
+    gap: 0.5rem; /* Add spacing between input and buttons */
+    align-items: stretch;
+}
 
-    /* Modified chatInput to fit into the container */
-    #chatInput {
-        flex-grow: 1; /* Take up available space */
-        width: 100%;
-        padding: 0.5rem 1rem; /* Adjust padding to fit visually */
-        border-radius: 0;
-        border: none; /* Remove border */
-        background-color: transparent; /* Transparent background */
-        color: #e5e7eb;
-        font-size: 1rem;
-        box-shadow: none; /* Remove box shadow */
-        display: block;
-        margin: 0;
-        resize: none; /* Prevent resizing for cleaner look */
-    }
+
+   /* ✨ Enhanced Chat Input Field */
+#chatInput {
+    flex-grow: 1;
+    padding: 0.6rem 1rem;
+    height: 2.75rem; /* match button height */
+    line-height: 2.75rem;
+    border: none;
+    background-color: transparent;
+    color: #e5e7eb;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.5rem;
+    outline: none;
+    box-shadow: none;
+}
+    #chatInput:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+    #chatInput:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
     #chatInput::placeholder {
         color: #9ca3af;
+        border-radius: 0.5rem;
+        margin: 0; /* Prevent accidental spacing */
+
     }
 
-    /* --- ICON BUTTON Base Styling (for both mic and send) --- */
-    .action-icon-button {
-        flex-shrink: 0;
-        width: 2.5rem; /* Consistent size on all screens for touch/click target */
-        height: 2.5rem; 
-        border: none;
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.1s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0; /* Ensures the icon is centered perfectly */
-        font-size: 1.2rem; /* Size for the SVG inside */
+    /* 🎯 Unified Icon Button Styling */
+.action-icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    height: 100%; /* Match input height */
+    aspect-ratio: 1 / 1; /* Keeps them perfectly round */
+    padding: 0.5rem;
+}
+    .action-icon-button:hover {
+        transform: translateY(-2px);
     }
 
     /* Updated Microphone/Record Button */
@@ -150,20 +168,36 @@
         margin-right: 0.5rem;
     }
     
-    #recordButton:hover {
-        background-color: #dc2626;
-    }
-
-    #recordButton.recording {
-        background-color: #10b981; /* Green when recording */
-        animation: pulse 1.5s infinite;
-    }
     
-    #recordButton:disabled {
-        background-color: #4b5563;
-        cursor: not-allowed;
-        animation: none;
-    }
+/* 🎙️ Microphone Button */
+#recordButton {
+    background-color: #ef4444;
+    color: white;
+}
+#recordButton:hover {
+    background-color: #dc2626;
+}
+
+#recordButton.recording {
+    background-color: #10b981;
+    animation: pulse 1.5s infinite;
+}
+#recordButton:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+    animation: none;
+}
+
+/* 📤 Send Button */
+#sendChatButton {
+    background-color: #4f46e5;
+    color: white;
+}
+#sendChatButton:hover {
+    background-color: #4338ca;
+    transform: scale(1.05);
+}
+
 
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
@@ -171,20 +205,6 @@
         100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
     }
     
-    /* 🔥 MODIFIED Send Button to use icon styling - consolidated styles 🔥 */
-    #sendChatButton {
-        border-radius: 50%; /* Make it round like the mic button */
-        background-color: #4f46e5; 
-        color: #fff; 
-        margin-left: 0.5rem;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        /* Inherits size and centering from .action-icon-button */
-    }
-
-    #sendChatButton:hover { 
-        background-color: #4338ca; 
-        transform: translateY(0); 
-    } 
 
     /* Hide the old voice status div as it's not needed in this layout */
     #voiceStatus {
