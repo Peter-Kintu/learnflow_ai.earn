@@ -51,7 +51,7 @@
     /* Main chat area layout */
     .chat-area {
         display: flex;
-        flex-direction: column; /* Stacks on small screens */
+        flex-direction: column; /* Stacks on all screens now */
         padding: 0; 
         gap: 0;
     }
@@ -66,7 +66,7 @@
         border-radius: 0;
         transition: all 0.3s ease-in-out;
         min-height: 50vh; 
-        max-height: 70vh;
+        max-height: 70vh; /* Base height for small screens */
     }
 
     /* Message styling (same) */
@@ -97,7 +97,7 @@
         background-color: #1f2937;
     }
     
-    /* 🔥 UPDATED: Integrated Input Container - Reduced Padding 🔥 */
+    /* MODIFIED: Integrated Input Container - Tighter vertical padding */
     .integrated-input-container {
         display: flex;
         align-items: center; 
@@ -105,7 +105,7 @@
         background-color: #0a0e16; 
         border-radius: 1rem; 
         border: 1px solid #4b5563;
-        padding: 0.75rem 0.5rem; /* Reduced horizontal padding for more space */
+        padding: 0.5rem 0.5rem; /* Reduced vertical padding for more space for input field */
         transition: border-color 0.3s, box-shadow 0.3s; 
     }
     
@@ -115,11 +115,11 @@
         box-shadow: 0 0 0 2px #4f46e5;
     }
 
-    /* 🔥 MODIFIED: Changed #chatInput - REMOVED PADDING 🔥 */
+    /* MODIFIED: #chatInput - Still no padding, maximizes space */
     #chatInput {
         flex-grow: 1; 
         width: 100%;
-        padding: 0; /* Maximize space for text by removing internal padding */
+        padding: 0; 
         border-radius: 0;
         border: none;
         background-color: transparent; 
@@ -144,11 +144,11 @@
         box-shadow: none;
     }
 
-    /* --- ICON BUTTON Base Styling (for both mic and send) --- */
+    /* 🔥 MODIFIED: ICON BUTTON Base Styling - Reduced size for more input space 🔥 */
     .action-icon-button {
         flex-shrink: 0; 
-        width: 3rem; 
-        height: 3rem; 
+        width: 2.5rem; /* Reduced from 3rem */
+        height: 2.5rem; /* Reduced from 3rem */
         border: none;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
@@ -156,7 +156,7 @@
         align-items: center;
         justify-content: center;
         padding: 0; 
-        font-size: 1.5rem; 
+        font-size: 1.2rem; /* Reduced icon size slightly */
         border-radius: 50%; 
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); 
     }
@@ -165,7 +165,7 @@
     #recordButton {
         background-color: #ef4444; 
         color: white;
-        margin-right: 0.5rem; 
+        margin-right: 0.25rem; /* Reduced from 0.5rem */
     }
     
     #recordButton:hover {
@@ -195,7 +195,7 @@
     #sendChatButton {
         background-color: #4f46e5; 
         color: #fff; 
-        margin-left: 0.5rem;
+        margin-left: 0.25rem; /* Reduced from 0.5rem */
     }
 
     #sendChatButton:hover { 
@@ -239,17 +239,40 @@
     .action-button.clear { background-color: #ef4444; color: #fff; }
     .action-button.clear:hover { background-color: #dc2626; transform: translateY(-2px); }
     
-    /* Responsive adjustments for large screens (md: 768px and up) */
+    /* 🔥 MODIFIED: Responsive adjustments for large screens (md: 768px and up) 🔥 */
     @media (min-width: 768px) {
         .chat-container-card { max-width: 80%; }
-        .chat-area { flex-direction: row; min-height: 80vh; }
-        /* 🔥 MODIFIED: Changed width to 60% to give input area more space */
-        #chatLog { width: 60%; min-height: 100%; max-height: 100%; border-radius: 0 0 0 1.5rem; padding: 1.5rem; }
-        /* 🔥 MODIFIED: Changed width to 40% to give input area more space */
-        .chat-input-area { width: 40%; border-top: none; border-left: 1px solid #374151; border-radius: 0 0 1.5rem 0; flex-direction: column; justify-content: flex-start; }
-        .button-group { flex-direction: column; gap: 1rem; }
-        .action-button { flex: none; width: 100%; }
-        .action-button.stop-speak { flex: none; width: 100%; }
+        /* REMOVED two-column layout: */
+        /* .chat-area { flex-direction: row; min-height: 80vh; } */
+        
+        #chatLog { 
+            width: auto; /* Full width */
+            min-height: 60vh; 
+            max-height: 60vh; /* Constrain log height */
+            border-radius: 0; /* Reset */
+            padding: 1.5rem; 
+        }
+        
+        /* Input area now spans full width at the bottom: */
+        .chat-input-area { 
+            width: auto; 
+            border-top: 1px solid #374151; /* Restore border */
+            border-left: none; /* Remove side border */
+            border-radius: 0 0 1.5rem 1.5rem; /* Rounded bottom corners */
+            flex-direction: column; 
+            justify-content: flex-start; 
+        }
+
+        /* Adjusted button group layout for larger screens: */
+        .button-group { 
+            flex-direction: row; /* Buttons are side-by-side */
+            gap: 1rem; 
+        }
+        .action-button { 
+            flex: 1; /* Equal width */
+            max-width: 25%; 
+        }
+        .action-button.stop-speak { flex: 1; max-width: 25%; }
     }
 
     /* Loader styling (same) */
@@ -287,7 +310,7 @@
                 Ask LearnFlow AI 
             </h2>
             
-            {# 🔥 MODIFIED: Changed input to TEXTAREA and buttons are larger 🔥 #}
+            {# MODIFIED: Buttons are now smaller, input area is wider #}
             <div class="integrated-input-container">
                 <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
