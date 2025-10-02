@@ -97,17 +97,16 @@
         background-color: #1f2937;
     }
     
-    /* 🔥 UPDATED: Integrated Input Container for cleaner alignment and focus 🔥 */
+    /* 🔥 UPDATED: Integrated Input Container - Reduced Padding 🔥 */
     .integrated-input-container {
         display: flex;
-        align-items: center; /* ALIGN TO CENTER for a balanced look */
+        align-items: center; 
         width: 100%;
-        background-color: #0a0e16; /* Darker background for more contrast */
+        background-color: #0a0e16; 
         border-radius: 1rem; 
         border: 1px solid #4b5563;
-        padding: 1rem 0.75rem; /* Increased vertical padding for single-line centering */
-        transition: border-color 0.3s, box-shadow 0.3s; /* Add transition for focus effect */
-        /* Removed min-height to let content (textarea) drive height */
+        padding: 0.75rem 0.5rem; /* Reduced horizontal padding for more space */
+        transition: border-color 0.3s, box-shadow 0.3s; 
     }
     
     /* NEW: Add a visual focus state to the container */
@@ -116,39 +115,39 @@
         box-shadow: 0 0 0 2px #4f46e5;
     }
 
-    /* 🔥 MODIFIED: Changed #chatInput to use <textarea> and updated styles 🔥 */
+    /* 🔥 MODIFIED: Changed #chatInput - REMOVED PADDING 🔥 */
     #chatInput {
         flex-grow: 1; 
         width: 100%;
-        padding: 0.5rem 0.5rem; /* Slightly more vertical padding for comfort */
+        padding: 0; /* Maximize space for text by removing internal padding */
         border-radius: 0;
         border: none;
         background-color: transparent; 
         color: #e5e7eb;
-        font-size: 1.1rem; /* Slightly larger font */
+        font-size: 1.1rem; 
         box-shadow: none; 
         display: block;
         margin: 0;
         resize: none; 
-        overflow: auto; /* Allow scrolling if it grows beyond max-height */
-        min-height: 1.5rem; /* Min height of one line */
-        max-height: 10rem; /* Limit max height to prevent takeover */
+        overflow: auto; 
+        min-height: 1.5rem; 
+        max-height: 10rem; 
     }
 
     #chatInput::placeholder {
         color: #9ca3af;
-        text-align: left; /* Ensure placeholder aligns properly */
+        text-align: left; 
     }
     
     #chatInput:focus {
-        outline: none; /* Remove focus ring from textarea, use :focus-within on container */
+        outline: none; 
         box-shadow: none;
     }
 
     /* --- ICON BUTTON Base Styling (for both mic and send) --- */
     .action-icon-button {
-        flex-shrink: 0;
-        width: 3rem; /* Slightly larger for better tap/click target */
+        flex-shrink: 0; 
+        width: 3rem; 
         height: 3rem; 
         border: none;
         cursor: pointer;
@@ -157,16 +156,16 @@
         align-items: center;
         justify-content: center;
         padding: 0; 
-        font-size: 1.5rem; /* Larger icon size */
-        border-radius: 50%; /* Uniformly round buttons */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Deeper shadow */
+        font-size: 1.5rem; 
+        border-radius: 50%; 
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); 
     }
 
     /* Updated Microphone/Record Button */
     #recordButton {
         background-color: #ef4444; 
         color: white;
-        margin-right: 0.5rem; /* Reduced separation to tighten layout */
+        margin-right: 0.5rem; 
     }
     
     #recordButton:hover {
@@ -192,7 +191,7 @@
         100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
     }
     
-    /* 🔥 MODIFIED Send Button: Primary action, brighter color and reduced margin 🔥 */
+    /* MODIFIED Send Button */
     #sendChatButton {
         background-color: #4f46e5; 
         color: #fff; 
@@ -244,8 +243,10 @@
     @media (min-width: 768px) {
         .chat-container-card { max-width: 80%; }
         .chat-area { flex-direction: row; min-height: 80vh; }
-        #chatLog { width: 65%; min-height: 100%; max-height: 100%; border-radius: 0 0 0 1.5rem; padding: 1.5rem; }
-        .chat-input-area { width: 35%; border-top: none; border-left: 1px solid #374151; border-radius: 0 0 1.5rem 0; flex-direction: column; justify-content: flex-start; }
+        /* 🔥 MODIFIED: Changed width to 60% to give input area more space */
+        #chatLog { width: 60%; min-height: 100%; max-height: 100%; border-radius: 0 0 0 1.5rem; padding: 1.5rem; }
+        /* 🔥 MODIFIED: Changed width to 40% to give input area more space */
+        .chat-input-area { width: 40%; border-top: none; border-left: 1px solid #374151; border-radius: 0 0 1.5rem 0; flex-direction: column; justify-content: flex-start; }
         .button-group { flex-direction: column; gap: 1rem; }
         .action-button { flex: none; width: 100%; }
         .action-button.stop-speak { flex: none; width: 100%; }
