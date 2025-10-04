@@ -375,15 +375,34 @@
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     /**
-     * Cleans the AI response text by removing markdown formatting.
+     * Cleans the AI response text by removing markdown formatting and disruptive symbols 
+     * before text-to-speech conversion.
      * @param {string} text The raw text from the API.
      * @returns {string} The cleaned text.
      */
     function cleanText(text) {
-        // Remove bold/italic markdown symbols
-        let cleaned = text.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** or __ for bold
-        cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Removes * or _ for italics
-        return cleaned;
+        let cleaned = text;
+        
+        // 1. Remove link/citation brackets and their content
+        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content inside brackets, remove brackets themselves (e.g. for [text](link))
+
+        // 2. Remove common markdown bold/italic/strikethrough symbols (**, *, __, _, ~~).
+        cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** and __ for bold/strong
+        cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Removes * and _ for italics/emphasis
+        cleaned = cleaned.replace(/~~(.*?)~~/g, '$1'); // Removes ~~ for strikethrough
+
+        // 3. Remove list markers, headings, and specific disruptive punctuation (like " and lone *)
+        cleaned = cleaned.replace(/^\s*[-*]+\s+/gm, ''); // Removes list markers: -, *, --, etc. at the start of a line
+        cleaned = cleaned.replace(/#+\s*/g, ''); // Removes heading symbols (e.g., #, ##, ###)
+        cleaned = cleaned.replace(/"/g, '');      // Remove all double quotes (user requested)
+        cleaned = cleaned.replace(/---/g, ' ');   // Remove triple dashes (horizontal rule)
+        cleaned = cleaned.replace(/--/g, ' ');    // Remove double dashes (en/em dashes)
+        cleaned = cleaned.replace(/-/g, ' ');     // Remove remaining single hyphens (user requested, replace with space)
+
+        // 4. Clean up excessive whitespace that might result from removals
+        cleaned = cleaned.replace(/\s\s+/g, ' '); // Replace multiple spaces with a single space
+        
+        return cleaned.trim(); // Trim leading/trailing whitespace
     }
 
 
