@@ -384,7 +384,7 @@
         let cleaned = text;
         
         // 1. Remove link/citation brackets and their content
-        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content inside brackets, remove brackets themselves (e.g. for [text](link))
+        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content content inside brackets, remove brackets themselves (e.g. for [text](link))
 
         // 2. Remove common markdown bold/italic/strikethrough symbols (**, *, __, _, ~~).
         cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** and __ for bold/strong
@@ -428,9 +428,9 @@
         isSpeaking = true;
         stopSpeakingButton.style.display = 'block'; 
 
-        const cleanedText = cleanText(text); 
-
-        const utterance = new SpeechSynthesisUtterance(cleanedText);
+        // NOTE: The text passed to this function should already be cleaned
+        // The cleaning happens in typeWriter/transcriptQuery/summarizeChat before this call
+        const utterance = new SpeechSynthesisUtterance(text);
         
         const preferredVoices = [
             "Daniel", "Samantha", "Ting-Ting", 
@@ -620,7 +620,7 @@
             chatLog.appendChild(aiMsgDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
-            speakText(upgradeMsg); // Speak the error message
+            speakText(cleanText(upgradeMsg)); // Speak the CLEANED error message
             return;
         }
 
@@ -668,17 +668,18 @@
                  isError = true;
             }
 
-            // CLEAN THE TEXT BEFORE TYPING
-            const displayAndSpeakText = cleanText(fullText);
+            // 🔥 FIX: Use the raw fullText for DISPLAY (no cleanText here) 🔥
+            const displayText = fullText;
 
             if (isError) {
+                const speakableText = cleanText(fullText); // Clean error text for speaking
                 aiMsgDiv.classList.add('error');
-                aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${displayAndSpeakText}`;
+                aiMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚫</span> ${speakableText}`;
                 saveChatHistory();
-                speakText("I encountered an error. " + displayAndSpeakText); 
+                speakText("I encountered an error. " + speakableText); 
             } else {
-                // Pass the cleaned text to typeWriter
-                typeWriter(aiMsgDiv, displayAndSpeakText); 
+                // Pass the ORIGINAL uncleaned text to typeWriter for display
+                typeWriter(aiMsgDiv, displayText); 
                 responseCount++;
             }
             
@@ -692,9 +693,9 @@
             const errorMsgDiv = document.createElement('div');
             errorMsgDiv.className = "chat-message error"; 
             const errorText = "Network Error. Could not reach the server.";
-            errorMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚨</span> ${errorText}`;
-            chatLog.appendChild(errorMsgDiv);
+            errorMsgDiv.innerHTML = `<strong>Ai:</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(errorText)}`;
             saveChatHistory();
+            chatLog.appendChild(errorMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
             speakText("I encountered a network error.");
         }
@@ -754,7 +755,9 @@
                 setTimeout(type, speed);
             } else {
                 saveChatHistory();
-                speakText(text); // <-- Speak the already cleaned text after typing
+                // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
+                const speakableText = cleanText(text);
+                speakText(speakableText); 
             }
             chatLog.scrollTop = chatLog.scrollHeight;
         }
@@ -835,10 +838,10 @@
             const warningMsgDiv = document.createElement('div');
             const noSummaryText = "No conversation to summarize. Start chatting!";
             warningMsgDiv.className = "chat-message error";
-            warningMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> ${noSummaryText}`;
+            warningMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> ${cleanText(noSummaryText)}`;
             chatLog.appendChild(warningMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
-            speakText(noSummaryText); 
+            speakText(cleanText(noSummaryText)); 
             return;
         }
 
@@ -875,8 +878,8 @@
 
             let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary available. Check console for API errors.";
             
-            // CLEAN THE TEXT BEFORE TYPING AND SPEAKING
-            const displayAndSpeakText = cleanText(fullText);
+            // 🔥 FIX: Use the raw fullText for DISPLAY (no cleanText here) 🔥
+            const displayText = fullText;
 
             aiMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> `;
             const contentSpan = document.createElement('span');
@@ -884,13 +887,15 @@
             
             let i = 0;
             function typeSummary() {
-                if (i < displayAndSpeakText.length) {
-                    contentSpan.textContent += displayAndSpeakText.charAt(i); 
+                if (i < displayText.length) { // Use uncleaned text for display
+                    contentSpan.textContent += displayText.charAt(i); 
                     i++;
                     setTimeout(typeSummary, 10);
                 } else {
                     saveChatHistory();
-                    speakText(displayAndSpeakText); // <-- Speak the cleaned summary
+                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
+                    const speakableText = cleanText(displayText);
+                    speakText(speakableText); 
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
@@ -902,9 +907,10 @@
              const errorMsgDiv = document.createElement('div');
              errorMsgDiv.className = "chat-message error";
              const summaryErrorText = "Could not generate summary due to a connection error.";
-             errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${summaryErrorText}`;
+             errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(summaryErrorText)}`;
              chatLog.appendChild(errorMsgDiv);
              saveChatHistory();
+             speakText("I encountered an error while generating the summary.");
         }
     }
 </script>
