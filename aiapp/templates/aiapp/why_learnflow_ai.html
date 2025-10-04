@@ -71,7 +71,6 @@
         }
     </style>
 
-    <!-- Structured Metadata -->
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -92,7 +91,6 @@
 
     <div class="max-w-7xl mx-auto w-full space-y-16">
 
-        <!-- Hero Section -->
         <header class="text-center py-16 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.1s;">
             <h1 class="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6">
                 <span class="text-white">LearnFlow AI</span><br>
@@ -111,7 +109,6 @@
             </div>
         </header>
 
-        <!-- Mission & Vision Section -->
         <section class="grid md:grid-cols-2 gap-8 px-4 relative z-10 animate-fade-in" style="animation-delay: 0.3s;">
             <div class="card-bg p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
                 <div>
@@ -127,7 +124,6 @@
             </div>
         </section>
 
-        <!-- Features Section -->
         <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 0.5s;">
             <h2 class="text-3xl font-bold text-white mb-8 text-center">Core Features</h2>
             <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -174,7 +170,6 @@
             </div>
         </section>
 
-        <!-- AI Assistant Section -->
         <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.1s;">
             <h2 class="text-3xl font-bold text-white mb-4">AI Assistant for Educators</h2>
             <p class="text-gray-400 mb-8 leading-relaxed">Ask any question about a subject, get a summary of a text, or explore new educational topics with the help of our intelligent assistant.</p>
@@ -201,7 +196,6 @@
             <p id="error-message" class="mt-4 text-red-400 font-medium hidden"></p>
         </section>
         
-        <!-- Key Highlights Section -->
         <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 1.5s;">
             <h2 class="text-3xl font-bold text-white mb-8 text-center">Key Highlights</h2>
             <div class="grid md:grid-cols-3 gap-8">
@@ -230,7 +224,6 @@
             </div>
         </section>
 
-        <!-- FAQ Section -->
         <section class="px-4 relative z-10 animate-fade-in" style="animation-delay: 1.7s;">
             <h2 class="text-3xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
             <div class="space-y-6">
@@ -269,7 +262,6 @@
             </div>
         </section>
 
-        <!-- Contact Section -->
         <section class="card-bg p-8 sm:p-12 rounded-3xl shadow-2xl animate-fade-in" style="animation-delay: 1.9s;">
             <h2 class="text-3xl font-bold text-white mb-4 text-center">Connect with Our Team</h2>
             <p class="text-gray-400 mb-8 leading-relaxed text-center max-w-2xl mx-auto">Get in touch with us through the channels below. We are here to help you succeed.</p>
@@ -460,10 +452,12 @@
                 }
 
                 // If no local answer, fall back to the Gemini API
-                let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators. Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging.";
+                // *** UPDATED systemPrompt FOR MULTILINGUAL SUPPORT ***
+                let systemPrompt = "You are a friendly and knowledgeable AI assistant for educators. **Your core directive is to detect the language of the user's query (e.g., French, Swahili, English, Yoruba, Spanish, Luganda, Amharic) and respond fluently in that exact language.** Provide concise, clear, and culturally relevant answers to questions. Use simple language and cite your sources. Your responses should be helpful and encouraging, and cover a wide range of global and African languages.";
                 let useSearch = true;
                 if (requestType === 'summarize') {
-                    systemPrompt = "You are a professional summarization tool. Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
+                    // *** UPDATED systemPrompt FOR MULTILINGUAL SUMMARIZATION ***
+                    systemPrompt = "You are a professional summarization tool. **Detect the language of the text provided and deliver the summary in that same language.** Your goal is to take a piece of text and condense it into a clear, single-paragraph summary. Maintain the key points and context from the original text. The summary should be concise and easy to understand for an educational context.";
                     useSearch = false; // Summarization doesn't need to use search
                 }
 
