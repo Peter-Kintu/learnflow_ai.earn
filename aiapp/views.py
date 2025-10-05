@@ -603,21 +603,35 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
 
     enriched_answers = []
     for ans in student_answers:
-        correct_choice = ans.question.choices.filter(is_correct=True).first()
         user_answer = ans.selected_choice.text if ans.selected_choice else ans.text_answer
-        correct_answer = correct_choice.text if correct_choice else "N/A"
-        is_correct = user_answer == correct_answer
+        
+        # 1. New variable for correct answer text
+        correct_answer_text_for_display = ""
+        
+        # 2. Conditional logic for correct_answer_text_for_display
+        if ans.question.question_type == 'MC':
+            correct_choice = ans.question.choices.filter(is_correct=True).first()
+            correct_answer_text_for_display = correct_choice.text if correct_choice else "N/A (No correct choice defined)"
+        elif ans.question.question_type == 'SA':
+            correct_answer_text_for_display = ans.question.correct_answer_text if ans.question.correct_answer_text else "N/A (No correct answer defined)"
+        else:
+            correct_answer_text_for_display = "N/A (Unknown question type)"
+        
+        # 3. Direct use of ans.is_correct
+        is_correct = ans.is_correct 
 
+        # 4. Updated feedback message
         feedback = (
             "✅ Well done!" if is_correct else
-            f"❌ Almost there — the correct answer was '{correct_answer}'. Keep going!"
+            f"❌ Almost there — the correct answer was '{correct_answer_text_for_display}'. Keep going!"
         )
 
+        # 5. Update in the enriched_answers dictionary
         enriched_answers.append({
             'question_text': ans.question.text,
             'user_answer': user_answer,
-            'correct_answer': correct_answer,
-            'is_correct': is_correct,
+            'correct_answer': correct_answer_text_for_display, # Use the correctly determined text
+            'is_correct': is_correct, # Add this flag for potential template use
             'feedback': feedback,
         })
 
@@ -648,6 +662,61 @@ def quiz_report_pdf_for_attempt(request, attempt_id):
     return HttpResponse("Error generating PDF", status=500)
 
 
+def build_quiz_attempt_context(attempt, request_user):
+    student_answers = StudentAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_choice')
+    score = attempt.score
+    total_questions = attempt.total_questions
+    percentage = round((score / total_questions) * 100) if total_questions else 0
+    incorrect_answers = total_questions - score
+
+    enriched_answers = []
+    for ans in student_answers:
+        user_answer = ans.selected_choice.text if ans.selected_choice else ans.text_answer
+        
+        # 1. New variable for correct answer text
+        correct_answer_text_for_display = ""
+        
+        # 2. Conditional logic for correct_answer_text_for_display
+        if ans.question.question_type == 'MC':
+            correct_choice = ans.question.choices.filter(is_correct=True).first()
+            correct_answer_text_for_display = correct_choice.text if correct_choice else "N/A (No correct choice defined)"
+        elif ans.question.question_type == 'SA':
+            correct_answer_text_for_display = ans.question.correct_answer_text if ans.question.correct_answer_text else "N/A (No correct answer defined)"
+        else:
+            correct_answer_text_for_display = "N/A (Unknown question type)"
+        
+        # 3. Direct use of ans.is_correct
+        is_correct = ans.is_correct 
+
+        # 4. Updated feedback message
+        feedback = (
+            "✅ Well done!" if is_correct else
+            f"❌ Almost there — the correct answer was '{correct_answer_text_for_display}'. Keep going!"
+        )
+
+        # 5. Update in the enriched_answers dictionary
+        enriched_answers.append({
+            'question_text': ans.question.text,
+            'user_answer': user_answer,
+            'correct_answer': correct_answer_text_for_display,
+            'is_correct': is_correct,
+            'feedback': feedback,
+        })
+
+    return {
+        'quiz': attempt.quiz,
+        'attempt': attempt,
+        'report_date': timezone.now(),
+        'request_user': request_user,
+        'score': score,
+        'total_questions': total_questions,
+        'percentage': percentage,
+        'incorrect_answers': incorrect_answers,
+        'user': attempt.user,
+        'today': timezone.now(),
+        'answers': enriched_answers,
+    }    
+# ----------------------------------------------------------------------
 
 @login_required
 def quiz_report_word_for_attempt(request, attempt_id):
@@ -655,7 +724,9 @@ def quiz_report_word_for_attempt(request, attempt_id):
     if request.user != attempt.user and request.user != attempt.quiz.teacher:
         raise Http404
 
+    # This call now returns the context with correctly determined correct_answer and is_correct flags
     context = build_quiz_attempt_context(attempt, request.user)
+    
     doc = Document()
     doc.add_heading(f'Quiz Report - {context["quiz"].title}', 0)
     doc.add_paragraph(f'Generated for {context["user"].username} on {context["today"].strftime("%B %d, %Y")}')
@@ -670,7 +741,9 @@ def quiz_report_word_for_attempt(request, attempt_id):
     for i, ans in enumerate(context['answers'], start=1):
         doc.add_paragraph(f'Question {i}: {ans["question_text"]}', style='List Number')
         doc.add_paragraph(f'Your Answer: {ans["user_answer"]}')
+        # This key now contains the correct text for MC or SA questions
         doc.add_paragraph(f'Correct Answer: {ans["correct_answer"]}')
+        # This key contains the correct feedback string
         doc.add_paragraph(f'Feedback: {ans["feedback"]}')
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')

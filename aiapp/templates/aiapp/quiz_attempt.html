@@ -13,7 +13,7 @@
             <span class="text-gray-400 font-medium">Time Remaining:</span>
         </div>
         <div id="countdown-timer" class="text-2xl font-bold text-indigo-400">
-            10:00
+            30:00
         </div>
     </div>
     <form id="quiz-form" method="post" action="{% url 'aiapp:quiz_attempt' quiz.id %}">
@@ -65,8 +65,8 @@
         const timerWarning = document.createElement('div');
         timerWarning.className = 'text-center text-sm font-medium mt-4';
 
-        // Set the quiz duration in seconds (10 minutes)
-        let timeLeft = 10 * 60; 
+        // Set the quiz duration in seconds (30 minutes)
+        let timeLeft = 30 * 60;
 
         // Function to format time as MM:SS
         function formatTime(seconds) {
