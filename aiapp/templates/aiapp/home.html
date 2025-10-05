@@ -645,17 +645,16 @@
         try {
             const conversationHistory = getConversationHistory();
             
-            // 🔥 CORRECTED PAYLOAD STRUCTURE: Using role: "system" as the first message 🔥
-            const systemMessage = {
-                role: "system",
-                parts: [{ text: systemInstruction }]
-            };
+            // 🔥 FINAL FIX: Inject the system instruction into the current user message's text
+            // This avoids the "Invalid role: system" API error.
+            const finalUserMessageText = `${systemInstruction}\n\n[USER INPUT]: ${query}`;
 
             const payload = {
                 contents: [
-                    systemMessage, // Inject the system instruction here
-                    ...conversationHistory, 
-                    { role: 'user', parts: [{ text: query }] } 
+                    // Note: If conversationHistory is empty, this starts with the user message, which is fine.
+                    // If it is not empty, it contains alternating user/model turns.
+                    ...conversationHistory, // Previous user/model turns
+                    { role: 'user', parts: [{ text: finalUserMessageText }] } // Current turn with system instruction injected
                 ]
             };
 
@@ -795,11 +794,13 @@
             const isUser = child.classList.contains('user');
             const isAI = child.classList.contains('ai');
             
+            // Filter out system messages, loaders, and internal messages
             if (child.classList.contains('error') || child.id === 'loader' || child.id === 'summaryLoader' || child.innerText.includes("educational assistant powered by the Gemini Flash model")) {
                 continue;
             }
 
             if (isUser) {
+                // Extract only the text displayed to the user
                 const text = child.textContent.replace('You:', '').trim(); 
                 history.push({ role: 'user', parts: [{ text: text }] });
             } else if (isAI) {
@@ -813,7 +814,7 @@
                 // Remove formatting from the content being sent back to the API for context
                 const cleanedTextForAPI = cleanText(text);
 
-                // Note: The role for AI responses in the history is 'model', not 'assistant'
+                // Note: The role for AI responses in the history is 'model'
                 if (cleanedTextForAPI) { history.push({ role: 'model', parts: [{ text: cleanedTextForAPI }] }); }
             }
         }
@@ -847,7 +848,7 @@
         link.click();
     }
     
-    // Summarize function - **Now uses role: "system"**
+    // Summarize function - **Now uses text injection to avoid role: "system"**
     async function summarizeChat() {
         stopSpeaking(); 
         
@@ -860,7 +861,7 @@
         if (historyForSummary.length === 0) {
             const warningMsgDiv = document.createElement('div');
             const noSummaryText = "No conversation to summarize. Start chatting!";
-            warningMsgDiv.className = "chat-message error";
+            warningMsgMsgDiv.className = "chat-message error";
             warningMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> ${cleanText(noSummaryText)}`;
             chatLog.appendChild(warningMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
@@ -876,17 +877,13 @@
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
-        // 🔥 CORRECTED PAYLOAD STRUCTURE: Using role: "system" as the first message 🔥
-        const systemMessage = {
-            role: "system",
-            parts: [{ text: systemInstruction }]
-        };
+        // 🔥 FINAL FIX: Inject the system instruction into the summary prompt text
+        const finalSummaryPrompt = `${systemInstruction}\n\n[SUMMARY REQUEST]: ${summaryPrompt}`;
 
         const payload = {
             contents: [
-                systemMessage, // Inject the system instruction here
-                ...historyForSummary, 
-                { role: 'user', parts: [{ text: summaryPrompt }] } 
+                ...historyForSummary, // The clean history
+                { role: 'user', parts: [{ text: finalSummaryPrompt }] } // Summary request with system instruction injected
             ]
         };
 
