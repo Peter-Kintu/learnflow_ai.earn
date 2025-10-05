@@ -645,12 +645,15 @@
         try {
             const conversationHistory = getConversationHistory();
             
-            // 🔥 CORRECTED: Changed 'config' to 'generationConfig' to resolve API error 🔥
+            // 🔥 CORRECTED PAYLOAD STRUCTURE: Using role: "system" as the first message 🔥
+            const systemMessage = {
+                role: "system",
+                parts: [{ text: systemInstruction }]
+            };
+
             const payload = {
-                generationConfig: {
-                    systemInstruction: systemInstruction 
-                },
                 contents: [
+                    systemMessage, // Inject the system instruction here
                     ...conversationHistory, 
                     { role: 'user', parts: [{ text: query }] } 
                 ]
@@ -780,7 +783,10 @@
         type();
     }
     
-    // Function to extract conversation history in API format
+    /**
+     * Extracts conversation history, excluding errors and the system instruction,
+     * in the format required for the Gemini API contents array.
+     */
     function getConversationHistory() {
         const history = [];
         const children = Array.from(chatLog.children);
@@ -807,6 +813,7 @@
                 // Remove formatting from the content being sent back to the API for context
                 const cleanedTextForAPI = cleanText(text);
 
+                // Note: The role for AI responses in the history is 'model', not 'assistant'
                 if (cleanedTextForAPI) { history.push({ role: 'model', parts: [{ text: cleanedTextForAPI }] }); }
             }
         }
@@ -840,7 +847,7 @@
         link.click();
     }
     
-    // Summarize function - **Now uses cleanText on completion**
+    // Summarize function - **Now uses role: "system"**
     async function summarizeChat() {
         stopSpeaking(); 
         
@@ -869,12 +876,15 @@
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
-        // 🔥 CORRECTED: Changed 'config' to 'generationConfig' to resolve API error 🔥
+        // 🔥 CORRECTED PAYLOAD STRUCTURE: Using role: "system" as the first message 🔥
+        const systemMessage = {
+            role: "system",
+            parts: [{ text: systemInstruction }]
+        };
+
         const payload = {
-            generationConfig: {
-                systemInstruction: systemInstruction 
-            },
             contents: [
+                systemMessage, // Inject the system instruction here
                 ...historyForSummary, 
                 { role: 'user', parts: [{ text: summaryPrompt }] } 
             ]
