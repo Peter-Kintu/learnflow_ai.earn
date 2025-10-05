@@ -645,9 +645,9 @@
         try {
             const conversationHistory = getConversationHistory();
             
-            // 🔥 MODIFIED: Include the system instruction in the payload 🔥
+            // 🔥 CORRECTED: Changed 'config' to 'generationConfig' to resolve API error 🔥
             const payload = {
-                config: {
+                generationConfig: {
                     systemInstruction: systemInstruction 
                 },
                 contents: [
@@ -869,9 +869,9 @@
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
-        // 🔥 MODIFIED: Include the system instruction in the payload 🔥
+        // 🔥 CORRECTED: Changed 'config' to 'generationConfig' to resolve API error 🔥
         const payload = {
-            config: {
+            generationConfig: {
                 systemInstruction: systemInstruction 
             },
             contents: [
