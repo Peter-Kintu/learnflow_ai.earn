@@ -367,12 +367,20 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let isRecording = false;
+    
+    // 🔥 NEW CONSTANT: Set the African Language Code for Speech Recognition (STT) 🔥
+    // Swahili (Tanzania) is generally the most robust African language supported by Chrome/browser STT.
+    // Try other codes like 'ha-NG' (Hausa) or 'zu-ZA' (Zulu) if you prefer.
+    const africanLanguageCode = 'sw-TZ'; 
 
     // --- API Configuration ---
     // NOTE: Replace the placeholder with your actual Gemini API key.
     const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU"; 
     const modelName = 'gemini-2.5-flash'; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    
+    // 🔥 NEW CONSTANT: System instruction to force the AI to understand African languages 🔥
+    const systemInstruction = `You are LearnFlow AI, an educational partner. Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including **Luganda**, Swahili, Hausa, Yoruba, Zulu, and others. Always respond in the language the user is using, maintaining context and educational quality.`;
 
     /**
      * Cleans the AI response text by removing markdown formatting and disruptive symbols 
@@ -482,7 +490,7 @@
         }
     }
 
-    // ## STT Functions (MODIFIED: recognition.onresult) ##
+    // ## STT Functions (MODIFIED: recognition.lang) ##
 
     function setupRecognition() {
         if (!SpeechRecognition) {
@@ -495,7 +503,8 @@
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.lang = 'en-US';
+        // 🔥 MODIFIED: Set the language code to a supported African language 🔥
+        recognition.lang = africanLanguageCode; 
 
         recognition.onstart = () => {
             isRecording = true;
@@ -606,7 +615,10 @@
         // Display user message
         const userMsgDiv = document.createElement('div');
         userMsgDiv.className = "chat-message user";
-        userMsgDiv.innerHTML = `<strong>You:</strong> ${query}`;
+        // SECURITY FIX: Prevent HTML injection by appending the query as a text node,
+        // which automatically escapes HTML characters.
+        userMsgDiv.innerHTML = `<strong>You:</strong> `; 
+        userMsgDiv.appendChild(document.createTextNode(query));
         chatLog.appendChild(userMsgDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
         saveChatHistory();
@@ -633,7 +645,11 @@
         try {
             const conversationHistory = getConversationHistory();
             
+            // 🔥 MODIFIED: Include the system instruction in the payload 🔥
             const payload = {
+                config: {
+                    systemInstruction: systemInstruction 
+                },
                 contents: [
                     ...conversationHistory, 
                     { role: 'user', parts: [{ text: query }] } 
@@ -853,7 +869,11 @@
 
         const summaryPrompt = "Please provide a concise, numbered summary of the previous conversation. Focus on the main topics and conclusions. Address the user directly as 'you'.";
 
+        // 🔥 MODIFIED: Include the system instruction in the payload 🔥
         const payload = {
+            config: {
+                systemInstruction: systemInstruction 
+            },
             contents: [
                 ...historyForSummary, 
                 { role: 'user', parts: [{ text: summaryPrompt }] } 
