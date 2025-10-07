@@ -4,13 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Results - {{ quiz.title }}</title>
+
+    <!-- Tailwind & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Open Graph Meta -->
     <meta property="og:title" content="Quiz Results - {{ quiz.title }}">
     <meta property="og:description" content="I scored {{ score }} out of {{ total_questions }} on '{{ quiz.title }}'.">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:type" content="article">
     <meta property="og:image" content="{{ quiz.cover_image.url|default:'https://yourdomain.com/static/default-quiz.png' }}">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({
+            google_ad_client: "ca-pub-9564790727166506",
+            enable_page_level_ads: true
+        });
+    </script>
+
+    <!-- Google CMP Consent Script -->
+    <script async src="https://fundingchoicesmessages.google.com/i/pub-9564790727166506?fc_cmp_id=9649739487"></script>
+    <script>
+        window.__fundingChoicesConfig = {
+            ui: {
+                locale: 'en'
+            }
+        };
+    </script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
