@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; // Updated with your active API key
+const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; // Your active API key
 
 function speakText(text) {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -118,8 +118,18 @@ async function generateQuiz() {
         });
 
         const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No quiz generated.";
-        const questions = text.split("\n\n");
+        console.log("Gemini response:", data); // ADDED: Logging for Debugging
+
+        // START OF FIX: Correctly access the nested text and check for content
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text || text.trim() === "") {
+            status.textContent = "LearnFlow AI did not return any quiz content. Check console for API errors.";
+            return;
+        }
+
+        const questions = text.split(/\n{2,}/); // Using RegEx to reliably split by 2 or more newlines
+        // END OF FIX
 
         questions.forEach(q => {
             const block = document.createElement("div");
@@ -133,9 +143,10 @@ async function generateQuiz() {
         });
 
         output.classList.remove("hidden");
+        status.textContent = "Quiz generated successfully!"; // Added success message
     } catch (error) {
-        status.textContent = "Error generating quiz.";
-        console.error(error);
+        status.textContent = "Error generating quiz. See console for details.";
+        console.error("Quiz Generation Error:", error);
     }
 }
 </script>
