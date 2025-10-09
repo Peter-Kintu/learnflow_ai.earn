@@ -11,17 +11,30 @@
     Select a quiz to begin your practice or assessment.
 </p>
 
-<!-- Google AdSense Ad Unit -->
 <div class="flex justify-center mb-8">
     <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-9564790727166506"
-         data-ad-slot="1234567890"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
+          style="display:block"
+          data-ad-client="ca-pub-9564790727166506"
+          data-ad-slot="1234567890"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
     <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
     </script>
+</div>
+
+<div class="bg-slate-700 p-6 rounded-xl shadow-inner mb-10">
+  <h3 class="text-xl font-semibold text-gray-200 mb-4 text-center">Generate a Quiz with LearnFlow AI</h3>
+  <div class="flex flex-col md:flex-row items-center gap-4">
+    <input type="text" id="aiTopicInput" placeholder="Enter a topic (e.g. Photosynthesis)" class="flex-1 px-4 py-2 rounded-lg bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <button onclick="generateQuiz()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">Generate</button>
+  </div>
+  <p id="aiStatus" class="text-sm text-gray-400 mt-4 text-center"></p>
+</div>
+
+<div id="aiQuizOutput" class="hidden bg-slate-700 p-6 rounded-xl shadow-inner mb-10">
+  <h4 class="text-lg font-semibold text-indigo-400 mb-4">LearnFlow AI-Generated Quiz</h4>
+  <div id="quizContent" class="space-y-4 text-gray-300"></div>
 </div>
 
 {% if messages %}
@@ -69,4 +82,62 @@
 </div>
 
 </div>
+
+<script>
+const GEMINI_API_KEY = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo"; // Replace with your actual Gemini API key
+
+function speakText(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    speechSynthesis.speak(utterance);
+}
+
+async function generateQuiz() {
+    const topic = document.getElementById("aiTopicInput").value.trim();
+    const status = document.getElementById("aiStatus");
+    const output = document.getElementById("aiQuizOutput");
+    const content = document.getElementById("quizContent");
+
+    if (!topic) {
+        status.textContent = "Please enter a topic.";
+        return;
+    }
+
+    status.textContent = "LearnFlow AI is preparing your quiz...";
+    output.classList.add("hidden");
+    content.innerHTML = "";
+
+    try {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `You are LearnFlow AI. Create a 5-question multiple choice quiz on the topic: ${topic}. Include options and correct answers.` }] }]
+            })
+        });
+
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No quiz generated.";
+        const questions = text.split("\n\n");
+
+        questions.forEach(q => {
+            const block = document.createElement("div");
+            block.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
+            block.innerHTML = `
+                <pre class="whitespace-pre-wrap text-sm mb-2">${q}</pre>
+                <button onclick="speakText(\`${q.replace(/`/g, "\\`")}\`)" class="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">🔊 Read Aloud</button>
+                `;
+
+            content.appendChild(block);
+        });
+
+        output.classList.remove("hidden");
+    } catch (error) {
+        status.textContent = "Error generating quiz.";
+        console.error(error);
+    }
+}
+</script>
+
 {% endblock %}
