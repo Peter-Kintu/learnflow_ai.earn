@@ -182,7 +182,7 @@
 </div>
 
 <script>
-// --- UPDATED: Define keys for specific roles ---
+// --- Define keys for specific roles ---
 const API_KEYS = {
     OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
     DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
@@ -190,22 +190,26 @@ const API_KEYS = {
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
- * Cleans text by removing all Markdown symbols for clearer speech output.
+ * NEW IMPROVED FUNCTION: Cleans text by aggressively removing ALL Markdown symbols for clearer speech output.
  */
 function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
     
-    // 1. Aggressively clean ALL potential Markdown symbols for voice
+    // 1. Aggressively strip ALL Markdown/code symbols.
     let cleanText = text
-        .replace(/##/g, 'Section')      // Replace headings
-        .replace(/\*/g, '')             // Remove all asterisks (* and **)
-        .replace(/_/g, '')              // Remove underscores
-        .replace(/- /gm, '. ')          // Replace list hyphens
+        .replace(/#+/g, '')             // Remove all heading markers (e.g., ###)
+        .replace(/\*\*/g, '')           // Remove double asterisks (bold)
+        .replace(/\*/g, '')             // Remove single asterisks
+        .replace(/__/g, '')             // Remove double underscores (bold/italic)
+        .replace(/_/g, '')              // Remove single underscores
+        .replace(/^- /gm, '. ')         // Replace list hyphens
+        .replace(/\d\.\s/g, '. ')       // Remove numbered list digits/markers
         .replace(/:\s/g, '. ')          // Replace colons
         .replace(/\//g, ' or ')         // Replace slashes
-        .replace(/\d\.\s/g, '. ')       // Remove numbered list digits
+        .replace(/\[.*?\]/g, '')        // Remove anything in brackets (if used for notes)
         .replace(/(\r\n|\n|\r)/gm, ' ') // Replace newlines with spaces
-        .replace(/ +/g, ' ');           // Reduce multiple spaces
+        .replace(/ +/g, ' ')            // Reduce multiple spaces
+        .trim();                        // Trim any leading/trailing space
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = selectedLang;
@@ -232,12 +236,25 @@ function markdownToHtml(text) {
     // Convert bulleted lists
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-            const listItemText = trimmedLine.substring(2).trim();
-            if (listItemText.match(/^<li/)) {
-                 return line; 
+        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || trimmedLine.match(/^\d+\./)) {
+            let listItemText = trimmedLine;
+             if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+                listItemText = trimmedLine.substring(2).trim();
+            } else if (trimmedLine.match(/^\d+\./)) {
+                // Handle numbered lists without interfering with question numbering
+                listItemText = trimmedLine.replace(/^\d+\.\s*/, '').trim();
             }
-            return `<li>${listItemText}</li>`;
+
+            // Prevent wrapping the explicit "1." and "2." of the assessment questions if possible, 
+            // though the prompt aims to minimize this issue. We will rely on the general list wrapping.
+            
+            // If it's not starting with a question number (1. or 2.), treat it as a list item
+             if (!trimmedLine.match(/^(1|2)\.\s*Self-Assessment Questions/i) && !trimmedLine.match(/^(1|2)\.\s*What is/i)) {
+                 if (listItemText.match(/^<li/)) {
+                     return line; 
+                 }
+                 return `<li>${listItemText}</li>`;
+            }
         }
         return line;
     }).join('\n');
@@ -284,7 +301,7 @@ function generatePdf(elementId) {
 }
 
 
-// --- UPDATED: AI Fetch Function to accept a specific key type ---
+// --- AI Fetch Function ---
 async function fetchAiContent(prompt, keyType, model = 'gemini-2.5-flash') {
     const apiKey = API_KEYS[keyType];
     
@@ -411,7 +428,7 @@ function displayOutline(topic, level, markdownText) {
         const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
         const briefContentHtml = markdownToHtml(`## ${stepContent}`);
 
-        // The prompt for the detailed content/quiz remains the same
+        // The prompt for the detailed content/quiz
         const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms. After the lesson, create two "Self-Assessment Questions" (one multiple choice, one fill-in-the-blank) based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
                         STRICTLY format the output as: 
                         1. A **H3** heading for the detailed title.
@@ -484,7 +501,7 @@ async function displayDetailedLesson(element) {
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
-        // Optional: Speak the lesson content
+        // --- FIXED: Now correctly triggers voice with clean text ---
         speakText(generatedDetail);
 
     } catch (error) {
