@@ -10,20 +10,27 @@
         body {
             background-color: #1e293b; /* slate-800 equivalent background */
         }
-        /* Style for the rendered Markdown */
+        /* Style for the rendered Markdown (Adjusted to handle cleaner AI text) */
         .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #a5b4fc; margin-top: 1.5rem; border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
         .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #c7d2fe; margin-top: 1rem; }
         .markdown-output p { margin-bottom: 0.75rem; }
         .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
         .markdown-output li { margin-bottom: 0.25rem; }
-        .quiz-input-container { margin-top: 1rem; }
-        .quiz-input-container label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #cbd5e1; }
-        .quiz-input-container input { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #475569; color: #fff; }
 
         /* Quiz/Lesson Modal Specific Styles */
         .question-block { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #475569; }
         .quiz-question { font-weight: bold; color: #f9fafb; margin-bottom: 0.75rem; }
         .fill-in-box { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #6366f1; color: #fff; margin-top: 0.5rem; }
+        
+        /* Rised Container Style for Clickable Steps */
+        .clickable-step {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1); /* Subtle shadow for "raised" effect */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .clickable-step:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.3), 0 6px 8px -2px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -34,7 +41,7 @@
         <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Generate AI-Powered Learning Paths</h2>
         <p class="text-xl text-gray-400 max-w-2xl mx-auto">
             Create personalized courses for tech skills, digital marketing, or language learning!
-            <div class="text-yellow-400 text-sm mt-2">🌍 Multilingual Remix Mode Activated</div>
+            <div class="text-yellow-400 text-sm mt-2">🌍 Dynamic Content Mode Activated</div>
         </p>
     </div>
 
@@ -179,23 +186,23 @@
 const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; 
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
-// --- Utility Functions (Speak, Markdown, PDF) remain the same ---
-
 /**
- * Cleans Markdown symbols and uses the Web Speech API.
+ * Cleans text by removing all Markdown symbols for clearer speech output.
  */
 function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
     
-    // 1. Clean Markdown symbols and flow disruptors for clearer speech
+    // 1. Aggressively clean ALL potential Markdown symbols for voice
     let cleanText = text
-        .replace(/##/g, 'Section')      
-        .replace(/\*\*/g, '')           
-        .replace(/- /gm, '. ')          
-        .replace(/:\s/g, '.\n')         
-        .replace(/\//g, ' or ')         
-        .replace(/(\r\n|\n|\r)/gm, ' ') 
-        .replace(/ +/g, ' ');           
+        .replace(/##/g, 'Section')      // Replace headings
+        .replace(/\*/g, '')             // Remove all asterisks (* and **)
+        .replace(/_/g, '')              // Remove underscores
+        .replace(/- /gm, '. ')          // Replace list hyphens
+        .replace(/:\s/g, '. ')          // Replace colons
+        .replace(/\//g, ' or ')         // Replace slashes
+        .replace(/\d\.\s/g, '. ')       // Remove numbered list digits
+        .replace(/(\r\n|\n|\r)/gm, ' ') // Replace newlines with spaces
+        .replace(/ +/g, ' ');           // Reduce multiple spaces
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = selectedLang;
@@ -205,25 +212,53 @@ function speakText(text) {
     speechSynthesis.speak(utterance);
 }
 
-// Placeholder for full Markdown to HTML converter (simplified here)
-function markdownToHtml(markdown) {
-    let html = markdown;
+/**
+ * Converts AI text to HTML. Since the AI is instructed to use minimal Markdown,
+ * this function focuses on list and paragraph creation.
+ */
+function markdownToHtml(text) {
+    let html = text;
+    
+    // Simple replacements for common headings, assuming AI uses them for structure
     html = html.replace(/^## (.*)$/gim, '<h3>$1</h3>');
     html = html.replace(/^# (.*)$/gim, '<h2>$1</h2>');
+    
+    // Replace bold syntax if present (for robustness)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-    
-    // Simple list rendering - requires proper splitting for clean output
+
+    // Convert bulleted lists (handles hyphens or asterisks, which we clean for voice)
     html = html.split('\n').map(line => {
-        if (line.startsWith('- ')) return `<li>${line.substring(2).trim()}</li>`;
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+            // Check for list item
+            const listItemText = trimmedLine.substring(2).trim();
+            // Check if it's already a list item from the previous iteration
+            if (listItemText.match(/^<li/)) {
+                 return line; 
+            }
+            return `<li>${listItemText}</li>`;
+        }
         return line;
     }).join('\n');
     
-    // Add paragraph tags if not a list or heading (simplified)
-    html = html.replace(/([^\n])\n(?!<h|<u|<l)/g, '$1\n\n')
-               .replace(/([^\n])\n\n(?!<h|<u|<l)/g, '<p>$1</p>')
-               .replace(/<li>.*<\/li>/gs, (match) => `<ul>${match}</ul>`);
+    // Wrap consecutive list items in <ul>
+    html = html.replace(/(<li>.*?<\/li>[\s\n]*)+/gs, (match) => `<ul>${match}</ul>`);
 
+    // Basic paragraph wrapping: treat any line not starting with a tag as a paragraph
+    html = html.split('\n').map(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p)/i)) {
+            return line; // Skip empty lines, headings, or lists/paragraphs
+        }
+        // If it's a line of text, wrap it in a paragraph
+        return `<p>${trimmedLine}</p>`;
+    }).join('\n');
+    
+    // Clean up empty tags and repeated newlines from previous steps
+    html = html.replace(/<p><\/p>/g, '')
+               .replace(/(\n\s*){3,}/g, '\n\n');
+    
     return html;
 }
 
@@ -261,7 +296,6 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash') {
                 parts: [{ text: prompt }] 
             }]
         };
-        // NOTE: We intentionally remove generationConfig to avoid the 400 error.
         
         const response = await fetch(endpoint, {
             method: "POST",
@@ -290,7 +324,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash') {
 
 
 /**
- * Main function to generate the course outline, using caching and OFFLINE fallback on failure.
+ * Main function to generate the course outline.
  */
 async function generateCourseOutline(forceRegenerate = false) {
     const topic = document.getElementById("subjectMastery").value.trim();
@@ -309,20 +343,14 @@ async function generateCourseOutline(forceRegenerate = false) {
         return;
     }
     
-    // Set quiz prompt input for reference
     document.getElementById("quizPromptInput").value = `${topic} (${level})`;
 
     // 1. Check Cache
     if (!forceRegenerate) {
         const cachedText = localStorage.getItem(cacheKey);
-        if (cachedText && cachedText.startsWith('AI_OUTPUT:')) {
-            displayOutline(topic, cachedText.replace('AI_OUTPUT:', ''), false); 
+        if (cachedText && cachedText.startsWith('AI_OUTLINE:')) {
+            displayOutline(topic, level, cachedText.replace('AI_OUTLINE:', '')); 
             status.textContent = "💾 Loaded personalized learning path from local cache.";
-            return;
-        } else if (cachedText && cachedText.startsWith('OFFLINE_OUTPUT:')) {
-            content.innerHTML = cachedText.replace('OFFLINE_OUTPUT:', '');
-            displayOutline(topic, content.innerHTML, true);
-            status.innerHTML = `💾 Loaded **Offline Remix** path from cache. <span class="text-yellow-400">🎉 Remix Mode Active!</span>`;
             return;
         }
     }
@@ -336,34 +364,23 @@ async function generateCourseOutline(forceRegenerate = false) {
     content.innerHTML = "";
 
     try {
+        // NOTE: Requesting clean, minimal Markdown (H2 for title, bullet points for concepts)
         const prompt = `You are LearnFlow AI Course Generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. Create a 5-step learning path outline for the subject: "${topic}". 
                         The user's current level is "${level}" and their goals are: "${goals}". 
-                        For each step, include a title using a H2 heading (##), a brief goal, and a list of 3-4 key concepts or lessons using bullet points (-). DO NOT include any introductory or concluding remarks, only the formatted outline.`;
+                        For each step, include a title using a H2 heading (##), a brief goal, and a list of 3-4 key concepts or lessons using bullet points (-). DO NOT include any introductory or concluding remarks, only the formatted outline. Minimize the use of special symbols or complex markdown besides H2 and bullet points.`;
 
         const generatedText = await fetchAiContent(prompt, 'gemini-2.5-flash');
 
-        // 3. Save AI Output to Cache and Display
-        localStorage.setItem(cacheKey, 'AI_OUTPUT:' + generatedText);
-        displayOutline(topic, generatedText, false); 
+        // 3. Save AI Outline to Cache and Display
+        localStorage.setItem(cacheKey, 'AI_OUTLINE:' + generatedText);
+        displayOutline(topic, level, generatedText); 
         status.textContent = "✅ Your personalized learning path is ready! (Outline is cached locally)";
 
     } catch (error) {
-        // --- OFFLINE FALLBACK / REMIX MODE ACTIVATED ---
-        console.error("Gemini API Error (Activating Offline Fallback):", error);
-        
-        // Use the Digital Marketing Outline as the new fixed fallback
-        const offlineContent = generateOfflineCourse(topic, level, goals, selectedLang);
-        
-        // Save Offline content to Cache
-        localStorage.setItem(cacheKey, 'OFFLINE_OUTPUT:' + offlineContent);
-
-        content.innerHTML = offlineContent; 
-        displayOutline(topic, content.innerHTML, true); 
-
-        status.innerHTML = `❌ Quiz generation failed: ${error.message}. <span class="text-yellow-400">🎉 Remix Mode Activated (Using Fixed Digital Marketing Path)!</span>`;
-        speakText(`Remix mode activated. Here's your fixed learning path.`);
+        console.error("Gemini API Error:", error);
+        status.innerHTML = `❌ Outline generation failed: ${error.message}. Please check your API Key or try again.`;
     } finally {
-        // 5. Reset Button State
+        // 4. Reset Button State
         generateButton.disabled = false;
         generateButton.classList.remove('bg-indigo-800/70', 'cursor-not-allowed');
         generateButton.classList.add('hover:bg-indigo-700');
@@ -371,233 +388,108 @@ async function generateCourseOutline(forceRegenerate = false) {
 }
 
 /**
- * Helper function to inject generated text into the DOM.
+ * Helper function to inject generated text into the DOM, making each step clickable.
  */
-function displayOutline(topic, text, isHtmlMode = false) {
+function displayOutline(topic, level, markdownText) {
     const output = document.getElementById("aiCourseOutput");
     const content = document.getElementById("courseContent");
+    const selectedLang = document.getElementById("languageSelect").value;
     
     document.querySelector('#aiCourseOutput h4').textContent = `Generated Learning Path Outline for: ${topic}`;
 
     content.innerHTML = ''; // Clear previous content
     
-    const outlineBlock = document.createElement("div");
-    outlineBlock.className = "p-4 rounded-lg mb-4 markdown-output";
-
-    if (isHtmlMode) {
-        // Offline mode: content is already structured HTML with onclick handlers
-        outlineBlock.innerHTML = text;
-    } else {
-        // AI mode: content is raw markdown/text, convert and display as HTML. 
-        // NOTE: AI output is NOT yet designed for click-to-expand, it shows a static outline.
-        const htmlContent = markdownToHtml(text);
-        outlineBlock.innerHTML = htmlContent;
-    }
+    const steps = markdownText.split('##').filter(s => s.trim().length > 0);
     
-    // Add Read Aloud button (for both modes)
+    steps.forEach((stepContent, index) => {
+        const stepTitleMatch = stepContent.match(/([^\n]+)/);
+        const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
+        const briefContentHtml = markdownToHtml(`## ${stepContent}`);
+
+        // Construct the detailed content prompt
+        // NOTE: We explicitly request clean, simple formatting: H3, bold for keywords, and an "Assessment Questions" heading.
+        const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms. After the lesson, create two "Self-Assessment Questions" (one multiple choice, one fill-in-the-blank) based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
+                        STRICTLY format the output as: 
+                        1. A **H3** heading for the detailed title.
+                        2. The detailed lesson content (in paragraphs, using **bold** for keywords).
+                        3. A **H3** heading titled "Self-Assessment Questions".
+                        4. The two questions, using simple numbering (1. and 2.). 
+                        DO NOT include any special symbols like asterisks (*), hyphens (-), or extra markdown for the question/answer structure.`;
+
+        const stepDiv = document.createElement("div");
+        stepDiv.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4 cursor-pointer hover:bg-slate-700/70 transition-colors clickable-step";
+        // Store the title, topic, and prompt
+        stepDiv.setAttribute('data-step-title', stepTitle.replace(/'/g, "\\'"));
+        stepDiv.setAttribute('data-topic', topic.replace(/'/g, "\\'"));
+        stepDiv.setAttribute('data-detail-prompt', detailPrompt);
+        // The click handler passes 'this' (the element) to displayDetailedLesson
+        stepDiv.setAttribute('onclick', `displayDetailedLesson(this)`);
+        
+        stepDiv.innerHTML = briefContentHtml;
+        content.appendChild(stepDiv);
+    });
+    
+    // Add Read Aloud button
     const readAloudButton = document.createElement('button');
     readAloudButton.className = "mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
     readAloudButton.textContent = "🔊 Read Aloud Outline";
-    readAloudButton.onclick = () => speakText(isHtmlMode ? outlineBlock.innerText : text); 
-    outlineBlock.appendChild(readAloudButton);
-    
-    content.appendChild(outlineBlock);
+    readAloudButton.onclick = () => speakText(markdownText); 
+    content.appendChild(readAloudButton);
+
     output.classList.remove("hidden");
 }
 
 
-// --- OFFLINE FALLBACK COURSE FUNCTION (NEW IMPLEMENTATION) ---
-function generateOfflineCourse(topic, level, goals, langCode) {
-    // Fixed outline based on user request (Digital Marketing)
-    let steps = [
-        {
-            title: "Step 1: Understanding the Digital Landscape & Your Online Footprint",
-            goal: "Grasp the core components of digital marketing and establish foundational online presences.",
-            lessons: [
-                "What is Digital Marketing? (Channels, benefits, vs. traditional)",
-                "Identifying Your Target Audience & Customer Journey Basics",
-                "Setting Up Essential Online Profiles (e.g., Google My Business, basic social media page)",
-                "Introduction to Marketing Funnels (Awareness, Consideration, Conversion)"
-            ],
-            detail: `
-                <h4 class="text-xl font-bold text-indigo-400 mb-3">Understanding the Digital Landscape</h4>
-                <p class="text-gray-300 mb-4">
-                    **Digital marketing** uses electronic channels (like search engines, social media, email) to promote products or services. It is measurable, cost-effective, and highly targeted, giving it a massive edge over traditional methods.
-                </p>
-                <p class="text-gray-300 mb-4">
-                    Before any campaign, you must define your **Target Audience**. Understand their demographics, pain points, and where they spend time online. This informs their **Customer Journey**—the path from awareness to purchase. Setting up your basic online presence (GMB, core social media) is the first physical step into the digital landscape.
-                </p>
-                <div class="p-4 bg-slate-600/50 rounded-lg mt-6">
-                    <h5 class="text-lg font-bold text-yellow-300 mb-3">Self-Assessment Questions</h5>
-                    <p class="text-gray-300">
-                        <strong>Q1.</strong> Name three digital marketing channels. (Answer: SEO/Search, Social Media, Email, Paid Ads).
-                    </p>
-                    <p class="text-gray-300 mt-2">
-                        <strong>Q2.</strong> What are the three core stages of the Marketing Funnel? (Answer: Awareness, Consideration, Conversion).
-                    </p>
-                </div>
-            `
-        },
-        {
-            title: "Step 2: Website Essentials & Search Engine Optimization (SEO) Kickstart",
-            goal: "Understand the role of a website and implement basic strategies to get found online.",
-            lessons: [
-                "The Importance of a Website or Landing Page",
-                "Introduction to Search Engine Optimization (SEO) & How Search Engines Work",
-                "Practical Keyword Research for Beginners (identifying what people search for)",
-                "On-Page SEO Fundamentals (titles, descriptions, content structure, basic linking)"
-            ],
-            detail: `
-                <h4 class="text-xl font-bold text-indigo-400 mb-3">SEO Kickstart</h4>
-                <p class="text-gray-300 mb-4">
-                    Your **website** is your central digital hub. **SEO** is the practice of increasing the quantity and quality of traffic to your website through organic (non-paid) search engine results. Search engines use complex algorithms to crawl, index, and rank content based on relevance and authority.
-                </p>
-                <p class="text-gray-300 mb-4">
-                    **Keyword Research** is the process of finding the words and phrases your target audience uses in search engines. You use these keywords strategically in your **On-Page SEO**: page titles, meta descriptions, and header tags (&lt;h1&gt;, &lt;h2&gt;).
-                </p>
-                <div class="p-4 bg-slate-600/50 rounded-lg mt-6">
-                    <h5 class="text-lg font-bold text-yellow-300 mb-3">Self-Assessment Questions</h5>
-                    <p class="text-gray-300">
-                        <strong>Q1.</strong> What is the difference between On-Page and Off-Page SEO? (Answer: On-Page refers to elements you control on your site; Off-Page refers to external signals, like backlinks).
-                    </p>
-                    <p class="text-gray-300 mt-2">
-                        <strong>Q2.</strong> Why are Title Tags important for SEO? (Answer: They are the main headline shown in search results and a primary signal to search engines about the page's content).
-                    </p>
-                </div>
-            `
-        },
-        {
-            title: "Step 3: Engaging with Content & Social Media Marketing",
-            goal: "Learn to create simple, effective content and leverage social media for audience engagement.",
-            lessons: [
-                "Fundamentals of Content Marketing (blogs, videos, images)",
-                "Crafting Compelling Social Media Posts (text, visuals, calls to action)",
-                "Choosing the Right Social Media Platforms for Your Goals",
-                "Basic Social Media Analytics & Engagement Metrics"
-            ],
-            detail: `
-                <h4 class="text-xl font-bold text-indigo-400 mb-3">Content & Social Media Strategy</h4>
-                <p class="text-gray-300 mb-4">
-                    **Content Marketing** is creating and distributing valuable, relevant, and consistent content (blogs, video, infographics) to attract and retain a clearly defined audience. **Social Media Marketing** is about promoting your content and engaging directly with your audience on platforms like Facebook, Instagram, or LinkedIn.
-                </p>
-                <p class="text-gray-300 mb-4">
-                    Each post needs a clear **Call to Action (CTA)**. Metrics like **Engagement Rate** (likes, comments, shares divided by reach) are crucial to understanding if your content is resonating. Always choose platforms where your target audience is most active.
-                </p>
-                <div class="p-4 bg-slate-600/50 rounded-lg mt-6">
-                    <h5 class="text-lg font-bold text-yellow-300 mb-3">Self-Assessment Questions</h5>
-                    <p class="text-gray-300">
-                        <strong>Q1.</strong> What does "CTA" stand for and what is its purpose? (Answer: Call to Action; to prompt the user to take a specific next step).
-                    </p>
-                    <p class="text-gray-300 mt-2">
-                        <strong>Q2.</strong> Give an example of an Engagement Metric. (Answer: Likes, Comments, Shares, Saves).
-                    </p>
-                </div>
-            `
-        },
-        {
-            title: "Step 4: Email Marketing & Introduction to Paid Advertising",
-            goal: "Discover how to communicate directly with your audience and explore paid promotional channels.",
-            lessons: [
-                "Building a Basic Email List & Email Marketing Best Practices",
-                "Crafting Effective Email Campaigns (subject lines, content, simple automation)",
-                "Introduction to Paid Search Advertising (e.g., Google Ads concepts, ad structure)",
-                "Introduction to Social Media Advertising (e.g., Facebook/Instagram Ads concepts, targeting)"
-            ],
-            detail: `
-                <h4 class="text-xl font-bold text-indigo-400 mb-3">Email and Paid Channels</h4>
-                <p class="text-gray-300 mb-4">
-                    **Email marketing** is one of the highest ROI channels. **Best practices** include double opt-in, segmenting your list, and crafting clear, concise subject lines. **Automation** allows you to send emails based on user behavior (e.g., welcome series).
-                </p>
-                <p class="text-gray-300 mb-4">
-                    **Paid Advertising** provides instant visibility. **Google Ads** targets users based on their search intent (keywords), while **Social Media Ads** (Facebook, Instagram) target users based on demographics, interests, and behaviors. Effective targeting is key to minimizing costs.
-                </p>
-                <div class="p-4 bg-slate-600/50 rounded-lg mt-6">
-                    <h5 class="text-lg font-bold text-yellow-300 mb-3">Self-Assessment Questions</h5>
-                    <p class="text-gray-300">
-                        <strong>Q1.</strong> What is the main benefit of using Email Automation? (Answer: It saves time and ensures timely, relevant messages are sent to users based on triggers).
-                    </p>
-                    <p class="text-gray-300 mt-2">
-                        <strong>Q2.</strong> What is the primary difference in targeting between Google Search Ads and Facebook Ads? (Answer: Google Ads targets search intent (what users are looking for); Facebook Ads targets user profile and interests (who the users are)).
-                    </p>
-                </div>
-            `
-        },
-        {
-            title: "Step 5: Measuring Success & Developing a Practical Plan",
-            goal: "Understand how to track performance, make data-driven decisions, and outline a simple digital marketing plan.",
-            lessons: [
-                "Basic Web Analytics with Google Analytics (understanding traffic, bounce rate, conversions)",
-                "Setting SMART Goals for Digital Marketing Campaigns",
-                "Creating a Simple Digital Marketing Strategy & Content Calendar",
-                "Practical Exercise: Develop a Mini-Campaign Plan for a Hypothetical Business"
-            ],
-            detail: `
-                <h4 class="text-xl font-bold text-indigo-400 mb-3">Measurement and Strategy</h4>
-                <p class="text-gray-300 mb-4">
-                    You can't manage what you don't measure. **Web Analytics** (like Google Analytics) helps you understand visitor behavior: where they come from (traffic), how long they stay (bounce rate), and if they complete a desired action (**conversions**).
-                </p>
-                <p class="text-gray-300 mb-4">
-                    All goals should be **SMART**: **S**pecific, **M**easurable, **A**chievable, **R**elevant, **T**ime-bound. Once goals are set, you can build a **Digital Marketing Strategy**—a roadmap for all your channels—and organize it with a **Content Calendar**.
-                </p>
-                <div class="p-4 bg-slate-600/50 rounded-lg mt-6">
-                    <h5 class="text-lg font-bold text-yellow-300 mb-3">Self-Assessment Questions</h5>
-                    <p class="text-gray-300">
-                        <strong>Q1.</strong> What does the "M" in the SMART goal framework stand for? (Answer: Measurable).
-                    </p>
-                    <p class="text-gray-300 mt-2">
-                        <strong>Q2.</strong> Give one example of a key metric you would track in a web analytics tool. (Answer: Traffic, Conversions, Bounce Rate, or Time on Page).
-                    </p>
-                </div>
-            `
-        }
-    ];
-
-    // Store the steps globally in the DOM for easy retrieval when clicking.
-    document.body.dataset.offlineSteps = JSON.stringify(steps);
-
-    // Generate the outline HTML
-    let output = '';
-    steps.forEach((step, index) => {
-        output += `
-            <div class="bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4 cursor-pointer hover:bg-slate-700/70 transition-colors"
-                 onclick="displayDetailedLesson(${index}, '${topic}')">
-                <h5 class="text-indigo-300 font-bold mb-2">${step.title}</h5>
-                <p class="text-gray-400 mb-2"><strong>Goal:</strong> ${step.goal}</p>
-                <ul class="list-disc list-inside text-gray-300">
-                    ${step.lessons.map(lesson => `<li>${lesson}</li>`).join("")}
-                </ul>
-                <p class="text-sm text-yellow-400 mt-2">👉 Click to view detailed lesson and self-quiz</p>
-            </div>
-        `;
-    });
-    return output;
-}
-
 /**
- * NEW FUNCTION: Displays the detailed lesson content and non-interactive quiz.
+ * Makes the second API call to get the detailed lesson content and quiz.
+ * It is now solely focused on AI content (live or cached).
  */
-function displayDetailedLesson(index, topic) {
-    const steps = JSON.parse(document.body.dataset.offlineSteps);
-    const step = steps[index];
-
+async function displayDetailedLesson(element) {
+    const prompt = element.getAttribute('data-detail-prompt');
+    const stepTitle = element.getAttribute('data-step-title');
+    const topic = element.getAttribute('data-topic');
+    const selectedLang = document.getElementById("languageSelect").value;
+    const cacheKey = CACHE_KEY_PREFIX + selectedLang + "_" + topic.toLowerCase().replace(/\s/g, '_') + "_" + stepTitle.toLowerCase().replace(/\s/g, '_');
+    
     const quizModal = document.getElementById("quizModal");
     const quizContentDiv = document.getElementById("quizContent");
     const quizStatusDiv = document.getElementById("quizStatus");
-
-    // 1. Configure Modal for Lesson Content
-    document.querySelector('#quizModal h3').textContent = `Lesson: ${step.title}`;
-    quizContentDiv.innerHTML = step.detail;
-    quizStatusDiv.textContent = `Lesson details for ${topic}. This content is available offline. Use the questions to test yourself.`;
     
-    // 2. Show Modal
+    // 1. Show Loading State in Modal
+    document.querySelector('#quizModal h3').textContent = `Lesson: ${stepTitle}`;
+    quizContentDiv.innerHTML = `<p class="text-center py-8 text-indigo-400 animate-pulse">Loading detailed lesson and quiz from AI...</p>`;
+    quizStatusDiv.textContent = `Generating content for "${stepTitle}"...`;
     quizModal.classList.remove('hidden');
-    
-    // Optional: Speak the title
-    speakText(step.title);
+
+    try {
+        // 2. Check cache for detailed content
+        const cachedDetail = localStorage.getItem(cacheKey);
+        let generatedDetail = '';
+        
+        if (cachedDetail && cachedDetail.startsWith('AI_DETAIL:')) {
+            generatedDetail = cachedDetail.replace('AI_DETAIL:', '');
+            quizStatusDiv.textContent = `💾 Loaded detailed lesson from cache.`;
+        } else {
+            // 3. Fetch detailed content from AI
+            generatedDetail = await fetchAiContent(prompt, 'gemini-2.5-flash');
+            
+            // 4. Save to cache
+            localStorage.setItem(cacheKey, 'AI_DETAIL:' + generatedDetail);
+            quizStatusDiv.textContent = `✅ Detailed lesson for "${stepTitle}" is ready.`;
+        }
+
+        // 5. Display content
+        quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
+
+        // Optional: Speak the lesson content
+        speakText(generatedDetail);
+
+    } catch (error) {
+        console.error("Detailed Lesson API Error:", error);
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your API Key or try again.</p>`;
+        quizStatusDiv.textContent = "❌ Failed to load lesson content.";
+    }
 }
-
-// NOTE: All previously failed/unnecessary quiz functions (displayInteractiveQuiz, submitQuiz, generateQuiz, generateOfflineQuiz) have been removed or commented out for a cleaner, more reliable codebase focusing on the new interactive outline.
-
 </script>
 </body>
 </html>
