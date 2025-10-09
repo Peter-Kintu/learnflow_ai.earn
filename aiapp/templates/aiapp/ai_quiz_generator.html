@@ -36,7 +36,6 @@
             </p>
 
             <form id="learningPathForm" class="space-y-6">
-                <!-- New Language Selector -->
                 <div>
                     <label for="languageSelect" class="block text-lg font-medium text-gray-200 mb-2">Choose Course Output Language 🌐</label>
                     <select id="languageSelect" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -51,13 +50,11 @@
                     </select>
                 </div>
                 
-                <!-- Subject Input -->
                 <div>
                     <label for="subjectMastery" class="block text-lg font-medium text-gray-200 mb-2">What subject do you want to master? *</label>
                     <input type="text" id="subjectMastery" placeholder="e.g. Learning Swahili Grammar" required class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
 
-                <!-- Updated Popular Suggestions -->
                 <div class="text-sm text-gray-400">
                     <p class="font-semibold mb-2">💡 Popular subjects:</p>
                     <div class="flex flex-wrap gap-2">
@@ -154,71 +151,173 @@
 </div>
 
 <script>
-// API Key is automatically provided by the environment when left blank.
+// API Key for Gemini 
 const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; 
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
- * Handles the actual API call to the Gemini models with a fallback mechanism.
- * @param {string} prompt - The AI prompt.
- * @param {string} model - The primary model name (e.g., 'gemini-pro').
- * @returns {Promise<string>} The generated text content.
+ * --- START: OFFLINE FALLBACK FUNCTION ---
+ * Generates a structured learning path entirely using client-side JavaScript, 
+ * with specialized content for African languages, French, and English.
  */
-async function fetchAiOutline(prompt, primaryModel) {
-    const fallbackModel = 'gemini-pro-vision'; // Fallback model for resilience
+function generateOfflineCourse(topic, level, goals, langCode) {
+    let steps;
 
-    for (const model of [primaryModel, fallbackModel]) {
-        try {
-            const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
-            
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ 
-                        role: "user",
-                        parts: [{ text: prompt }] 
-                    }]
-                })
-            });
-
-            if (!response.ok) {
-                if (model === primaryModel) {
-                    console.warn(`Primary model (${primaryModel}) failed with status ${response.status}. Trying fallback...`);
-                    continue; // Go to fallback model
-                } else {
-                    const errorData = await response.json().catch(() => ({ error: { message: "Unknown error." } }));
-                    throw new Error(`Fallback model (${model}) failed: ` + (errorData.error.message || "No message provided."));
-                }
+    // Specialized Language Paths
+    if (langCode === 'fr-FR') {
+        steps = [
+            {
+                title: "Étape 1 : Les Salutations et Phrases de Base (Greetings and Basic Phrases)",
+                goal: "Maîtriser les présentations et les phrases quotidiennes.",
+                lessons: ["Prononciation des voyelles et des consonnes", "Dire bonjour, au revoir, et merci", "Les pronoms personnels (je, tu, il, elle...)"]
+            },
+            {
+                title: "Étape 2 : La Grammaire Fondamentale (Fundamental Grammar)",
+                goal: "Comprendre la structure de base des phrases.",
+                lessons: ["Le genre des noms (masculin/féminin)", "L'accord des adjectifs", "Conjugaison du présent (verbes en -er)"]
+            },
+            {
+                title: "Étape 3 : Le Vocabulaire Essentiel et la Culture (Essential Vocabulary and Culture)",
+                goal: "Acquérir le vocabulaire de survie et des connaissances culturelles.",
+                lessons: ["Les nombres, les couleurs, et les jours de la semaine", "La politesse française (le vouvoiement)", "Nourriture et boissons (au restaurant)"]
+            },
+            {
+                title: "Étape 4 : Le Passé et le Futur Proche (Past and Near Future)",
+                goal: "Exprimer des actions passées et futures.",
+                lessons: ["Le Passé Composé (être vs. avoir)", "Le Futur Proche (aller + infinitif)", "Poser des questions simples"]
+            },
+            {
+                title: "Étape 5 : Conversation et Immersion (Conversation and Immersion)",
+                goal: "Être capable de tenir une courte conversation.",
+                lessons: ["Exercices de dialogue avec des locuteurs natifs (si possible)", "Ressources audio et vidéo francophones", "Projet : Écrire un e-mail ou une carte postale en français"]
             }
-
-            const data = await response.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (text && text.trim() !== "") {
-                return text;
-            } else {
-                if (model === primaryModel) {
-                    console.warn(`Primary model (${primaryModel}) returned empty content. Trying fallback...`);
-                    continue; // Go to fallback model
-                } else {
-                    throw new Error(`Fallback model (${model}) returned empty content.`);
-                }
+        ];
+    } else if (['sw', 'yo', 'zu'].includes(langCode)) {
+        // African Languages General Template
+        const langName = { 'sw': 'Swahili', 'yo': 'Yoruba', 'zu': 'Zulu' }[langCode];
+        steps = [
+            {
+                title: `Step 1: Introduction to ${langName} Sounds`,
+                goal: `Master the unique sounds and basic greetings of ${langName}.`,
+                lessons: ["Tones and/or stress patterns", "The 5 most essential greetings", "Personal pronouns (I, you, he/she)"]
+            },
+            {
+                title: "Step 2: Noun Classes and Agreement",
+                goal: "Understand the core structure of nouns and their impact on verbs/adjectives.",
+                lessons: ["The 3-4 most common noun classes", "Simple sentence formation (Subject-Verb-Object)", "Asking simple 'what is this?' questions"]
+            },
+            {
+                title: "Step 3: Verbs and Tenses (Present)",
+                goal: "Learn to describe actions happening now.",
+                lessons: ["Conjugating the present tense (e.g., the 'na' infix in Swahili)", "Common action verbs (to go, to eat, to read)", "Practice describing daily routines"]
+            },
+            {
+                title: "Step 4: Building Vocabulary & Community",
+                goal: "Expand functional vocabulary and use it in a local context.",
+                lessons: ["Vocabulary for family and marketplace", "Cultural context and etiquette", "Writing a simple note or short story in the language"]
+            },
+            {
+                title: "Step 5: Practice & Resilience",
+                goal: "Develop confidence in sustained conversation.",
+                lessons: ["Role-play: buying something or giving directions", "Listening to a short song or folk tale", "Final challenge: Introduce yourself and your family in the language"]
             }
-
-        } catch (error) {
-            console.error(`Attempt with ${model} failed.`, error.message);
-            if (model === fallbackModel) {
-                throw error;
+        ];
+    } else {
+        // Default Tech/English/General Path
+        steps = [
+            {
+                title: "Step 1: Foundational Concepts",
+                goal: `Understand the basics of ${topic}`,
+                lessons: ["Key terms and definitions", "Why this subject matters (motivation)", "Basic real-world examples and tools"]
+            },
+            {
+                title: "Step 2: Core Techniques",
+                goal: `Explore foundational principles for ${level} learners`,
+                lessons: ["Essential techniques and practices", "Common mistakes to avoid", "Small, guided practice tasks"]
+            },
+            {
+                title: "Step 3: Practical Application",
+                goal: "Put theory into practice",
+                lessons: ["A structured mini-project", "Self-assessment checklist", "Recommended resources for further reading"]
+            },
+            {
+                title: "Step 4: Advanced Scenarios",
+                goal: "Advance your understanding",
+                lessons: ["Advanced strategies and concepts", "Detailed case studies or examples", "Expert tips for optimization/mastery"]
+            },
+            {
+                title: "Step 5: Capstone Project & Review",
+                goal: "Demonstrate your mastery",
+                lessons: ["Final project or portfolio piece", "Presentation/summary practice", "Reflection journal on the learning journey"]
             }
-        }
+        ];
     }
-    throw new Error("All AI models failed to generate content.");
+
+    let output = '';
+
+    // Generate the outline HTML
+    steps.forEach(step => {
+        output += `
+            <div class="bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4">
+                <h5 class="text-indigo-300 font-bold mb-2">${step.title}</h5>
+                <p class="text-gray-400 mb-2"><strong>Goal:</strong> ${step.goal}</p>
+                <ul class="list-disc list-inside text-gray-300">
+                    ${step.lessons.map(lesson => `<li>${lesson}</li>`).join("")}
+                </ul>
+            </div>
+        `;
+    });
+
+    return output;
+}
+/**
+ * --- END: OFFLINE FALLBACK FUNCTION ---
+ */
+
+
+/**
+ * Handles the actual API call to the Gemini models. Now only attempts the primary model.
+ */
+async function fetchAiOutline(prompt, model) {
+    // Only attempt the single provided model
+    try {
+        const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
+        
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ 
+                    role: "user",
+                    parts: [{ text: prompt }] 
+                }]
+            })
+        });
+
+        if (!response.ok) {
+             const errorData = await response.json().catch(() => ({ error: { message: `Request failed with status ${response.status}.` } }));
+            // Throw error to be caught by generateCourseOutline, which will activate Remix Mode
+            throw new Error(`API call failed with status ${response.status}. Message: ${errorData.error.message || "No message provided."}`);
+        }
+
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (text && text.trim() !== "") {
+            return text; // Success
+        } else {
+             // Throw error for empty response or blocked content
+             throw new Error(`Model (${model}) returned empty content or was blocked.`);
+        }
+
+    } catch (error) {
+        // Re-throw any error caught here (including network issues) to be handled by generateCourseOutline
+        throw error;
+    }
 }
 
 /**
- * Main function to generate the course outline, using caching and AI fallback.
- * @param {boolean} forceRegenerate - If true, skips cache check.
+ * Main function to generate the course outline, using caching and OFFLINE fallback on failure.
  */
 async function generateCourseOutline(forceRegenerate = false) {
     const topic = document.getElementById("subjectMastery").value.trim();
@@ -237,12 +336,17 @@ async function generateCourseOutline(forceRegenerate = false) {
         return;
     }
 
-    // 1. Check Cache (Cache key now includes language)
+    // 1. Check Cache
     if (!forceRegenerate) {
         const cachedText = localStorage.getItem(cacheKey);
-        if (cachedText) {
-            displayOutline(topic, cachedText);
+        if (cachedText && cachedText.startsWith('AI_OUTPUT:')) {
+            displayOutline(topic, cachedText.replace('AI_OUTPUT:', ''));
             status.textContent = "💾 Loaded personalized learning path from local cache.";
+            return;
+        } else if (cachedText && cachedText.startsWith('OFFLINE_OUTPUT:')) {
+            content.innerHTML = cachedText.replace('OFFLINE_OUTPUT:', '');
+            displayOutline(topic, content.innerHTML, true);
+            status.innerHTML = `💾 Loaded **Offline Remix** path from cache. <span class="text-yellow-400">🎉 Remix Mode Active!</span>`;
             return;
         }
     }
@@ -258,19 +362,32 @@ async function generateCourseOutline(forceRegenerate = false) {
     try {
         const prompt = `You are LearnFlow AI Course Generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. Create a 5-step learning path outline for the subject: "${topic}". 
                         The user's current level is "${level}" (use this to tailor the course difficulty and content depth) and their goals are: "${goals}". 
-                        For each step, include a title, a brief goal, and a list of 3-4 key concepts or lessons.`;
+                        For each step, include a title, a brief goal, and a list of 3-4 key concepts or lessons. Use Markdown formatting for a clean, readable outline.`;
 
-        const generatedText = await fetchAiOutline(prompt, 'gemini-pro');
+        // Only trying gemini-2.5-flash
+        const generatedText = await fetchAiOutline(prompt, 'gemini-2.5-flash');
 
-        // 3. Save to Cache and Display
-        localStorage.setItem(cacheKey, generatedText);
-        displayOutline(topic, generatedText);
+        // 3. Save AI Output to Cache and Display
+        localStorage.setItem(cacheKey, 'AI_OUTPUT:' + generatedText);
+        displayOutline(topic, generatedText, false);
         status.textContent = "✅ Your personalized learning path is ready! (Outline is cached locally)";
 
     } catch (error) {
-        // 4. Error Feedback
-        status.textContent = `❌ Error creating learning path: ${error.message || "Unknown error occurred."}`;
-        console.error("Course Generation Error:", error);
+        // --- OFFLINE FALLBACK / REMIX MODE ACTIVATED ---
+        console.error("Gemini API Error (Activating Offline Fallback):", error);
+        
+        // Pass the language code to the offline generator for specialization
+        const offlineContent = generateOfflineCourse(topic, level, goals, selectedLang);
+        
+        // Save Offline content to Cache
+        localStorage.setItem(cacheKey, 'OFFLINE_OUTPUT:' + offlineContent);
+
+        // Display Offline content (using the HTML structure generated by generateOfflineCourse)
+        content.innerHTML = offlineContent; 
+        displayOutline(topic, content.innerHTML, true); // Pass true to use HTML mode for offline content
+
+        status.innerHTML = `❌ Gemini failed: ${error.message}. <span class="text-yellow-400">🎉 Remix Mode Activated!</span>`;
+        speakText(`Remix mode activated. Here's your offline learning path for ${topic}.`);
     } finally {
         // 5. Reset Button State
         generateButton.disabled = false;
@@ -282,20 +399,35 @@ async function generateCourseOutline(forceRegenerate = false) {
 /**
  * Helper function to inject generated text into the DOM.
  */
-function displayOutline(topic, text) {
+function displayOutline(topic, text, isHtmlMode = false) {
     const output = document.getElementById("aiCourseOutput");
     const content = document.getElementById("courseContent");
     
     document.querySelector('#aiCourseOutput h4').textContent = `Generated Learning Path Outline for: ${topic}`;
 
-    const outlineBlock = document.createElement("div");
-    outlineBlock.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
-    outlineBlock.innerHTML = `
-        <pre class="whitespace-pre-wrap text-sm mb-2 text-gray-200">${text}</pre>
-        <button onclick="speakText(\`${text.replace(/`/g, "\\`")}\`)" class="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">🔊 Read Aloud</button>
-        `;
     content.innerHTML = ''; // Clear previous content
-    content.appendChild(outlineBlock);
+    
+    if (isHtmlMode) {
+        // Offline mode: content is already structured HTML
+        content.innerHTML = text;
+        // Re-append the read aloud button for the entire content 
+        const readAloudButton = document.createElement('button');
+        readAloudButton.className = "mt-4 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
+        readAloudButton.textContent = "🔊 Read Aloud Summary";
+        readAloudButton.onclick = () => speakText(`Remix mode outline for ${topic} is now displayed.`); // Simple audio cue for offline content
+        content.appendChild(readAloudButton);
+
+    } else {
+        // AI mode: content is raw markdown/text, display in <pre>
+        const outlineBlock = document.createElement("div");
+        outlineBlock.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
+        outlineBlock.innerHTML = `
+            <pre class="whitespace-pre-wrap text-sm mb-2 text-gray-200">${text}</pre>
+            <button onclick="speakText(\`${text.replace(/`/g, "\\`")}\`)" class="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">🔊 Read Aloud</button>
+        `;
+        content.appendChild(outlineBlock);
+    }
+    
     output.classList.remove("hidden");
 }
 
@@ -310,6 +442,8 @@ function speakText(text) {
     utterance.lang = selectedLang;
     utterance.rate = 0.95;
     
+    // Stop any existing speech before starting a new one
+    speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
 }
 
