@@ -26,6 +26,10 @@ urlpatterns = [
     path('quizzes/create/', views.create_quiz, name='create_quiz'),
     path('quizzes/<int:quiz_id>/edit/', views.edit_quiz, name='edit_quiz'),
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
+
+     # AI Quiz Generator URL - FIXED
+    path('ai_quiz_generator/', views.ai_quiz_generator, name='ai_quiz_generator'),
+    
     # This URL for the quiz report now correctly expects a quiz ID.
     path('quizzes/report/quiz/<int:quiz_id>/', views.quiz_report_pdf_for_quiz, name='quiz_report_pdf_for_quiz'),
     # This URL is needed for the "Download Report" button on the results page.
@@ -35,6 +39,5 @@ urlpatterns = [
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
     path('why-learnflow-ai/', views.why_learnflow_ai, name='why_learnflow_ai'),
-     # AI Quiz Generator URL - FIXED
-    path('ai_quiz_generator/', views.ai_quiz_generator, name='ai_quiz_generator'),
+    
 ]

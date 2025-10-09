@@ -756,6 +756,9 @@ def quiz_report_word_for_attempt(request, attempt_id):
 def why_learnflow_ai(request):
     return render(request, 'aiapp/why_learnflow_ai.html')
 
+def ai_quiz_generator(request):
+    return render(request, 'aiapp/ai_quiz_generator.html')
+
 
 def sitemap_view(request):
     base_url = "https://learnflow-ai-0fdz.onrender.com"
@@ -795,6 +798,3 @@ def retake_quiz(request, quiz_id):
     return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
 
 
-
-def ai_quiz_generator(request):
-    return render(request, 'aiapp/ai_quiz_generator.html')
