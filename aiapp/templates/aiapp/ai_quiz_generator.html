@@ -10,6 +10,15 @@
         body {
             background-color: #1e293b; /* slate-800 equivalent background */
         }
+        /* Style for the rendered Markdown */
+        .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #a5b4fc; margin-top: 1.5rem; border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
+        .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #c7d2fe; margin-top: 1rem; }
+        .markdown-output p { margin-bottom: 0.75rem; }
+        .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .markdown-output li { margin-bottom: 0.25rem; }
+        .quiz-input-container { margin-top: 1rem; }
+        .quiz-input-container label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #cbd5e1; }
+        .quiz-input-container input { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #475569; color: #fff; }
     </style>
 </head>
 <body>
@@ -132,6 +141,12 @@
         <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Generated Learning Path Outline</h4>
         <div id="courseContent" class="space-y-4 text-gray-300">
             </div>
+        
+        <div class="quiz-input-container">
+            <label for="quizPromptInput" class="text-sm">Customize Quiz Topic/Level (Optional):</label>
+            <input type="text" id="quizPromptInput" placeholder="e.g., 'Grade 2 ICT questions' or 'Advanced JavaScript Closure concepts'" value="" class="mt-1">
+        </div>
+
         <div class="text-center mt-6 flex flex-wrap justify-center items-center gap-4">
             <button onclick="generateCourseOutline(true)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm">
                 🔄 Regenerate
@@ -139,11 +154,24 @@
             <button onclick="generatePdf('courseContent')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm">
                 ⬇️ Download TXT
             </button>
-            <button onclick="generateQuiz()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-semibold text-sm">
-                ❓ Create Quiz
+            <button onclick="generateQuiz()" id="quizButton" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-semibold text-sm">
+                ❓ Create Specialized Quiz
             </button>
             <button class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:bg-green-800" disabled>
                 Enroll in Course (Coming Soon)
+            </button>
+        </div>
+    </div>
+    
+    <div id="quizModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-700 p-8 rounded-xl max-w-2xl w-full shadow-2xl relative">
+            <button onclick="document.getElementById('quizModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">×</button>
+            <h3 class="text-2xl font-bold text-yellow-400 mb-4">Quiz Time! 🧠</h3>
+            <div id="quizContent" class="text-gray-300 space-y-4 max-h-96 overflow-y-auto pr-2 markdown-output">
+                </div>
+            <div id="quizStatus" class="text-sm text-center mt-4 text-indigo-300"></div>
+            <button onclick="document.getElementById('quizModal').classList.add('hidden')" class="w-full mt-6 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
+                Close Quiz
             </button>
         </div>
     </div>
@@ -155,15 +183,69 @@
 const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; 
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
+// --- START: Markdown to HTML Parser ---
+function markdownToHtml(markdown) {
+    let html = markdown;
+
+    // 1. Headings (H2 for steps, H3 for sub-points)
+    html = html.replace(/^## (.*)$/gim, '<h3>$1</h3>');
+    html = html.replace(/^# (.*)$/gim, '<h2>$1</h2>');
+
+    // 2. Bold text (**text** or __text__)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+    // 3. Lists (* list item or - list item)
+    // Replace markdown list items with HTML list items
+    html = html.replace(/^\* (.*)$/gim, '<li>$1</li>');
+    html = html.replace(/^- (.*)$/gim, '<li>$1</li>');
+    
+    // Wrap lists in <ul> tags.
+    const lines = html.split('\n');
+    let inList = false;
+    let finalHtml = [];
+
+    lines.forEach(line => {
+        if (line.trim().startsWith('<li>')) {
+            if (!inList) {
+                finalHtml.push('<ul class="list-disc ml-6">');
+                inList = true;
+            }
+            finalHtml.push(line);
+        } else {
+            if (inList) {
+                finalHtml.push('</ul>');
+                inList = false;
+            }
+            // 4. Paragraphs (P tags for any remaining text blocks)
+            if (line.trim().length > 0) {
+                 // Check if line is not already a heading
+                if (!line.trim().startsWith('<h') && !line.trim().startsWith('<ul')) {
+                    finalHtml.push('<p>' + line.trim() + '</p>');
+                } else {
+                    finalHtml.push(line);
+                }
+            }
+        }
+    });
+
+    if (inList) {
+        finalHtml.push('</ul>');
+    }
+
+    return finalHtml.join('\n');
+}
+// --- END: Markdown to HTML Parser ---
+
+
 /**
  * --- START: OFFLINE FALLBACK FUNCTION ---
- * Generates a structured learning path entirely using client-side JavaScript, 
- * with specialized content for African languages, French, and English.
+ * Generates a structured learning path entirely using client-side JavaScript.
  */
 function generateOfflineCourse(topic, level, goals, langCode) {
     let steps;
 
-    // Specialized Language Paths
+    // Specialized Language Paths (African languages, French)
     if (langCode === 'fr-FR') {
         steps = [
             {
@@ -276,10 +358,9 @@ function generateOfflineCourse(topic, level, goals, langCode) {
 
 
 /**
- * Handles the actual API call to the Gemini models. Now only attempts the primary model.
+ * Handles the actual API call to the Gemini models.
  */
-async function fetchAiOutline(prompt, model) {
-    // Only attempt the single provided model
+async function fetchAiOutline(prompt, model = 'gemini-2.5-flash') {
     try {
         const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
         
@@ -340,7 +421,7 @@ async function generateCourseOutline(forceRegenerate = false) {
     if (!forceRegenerate) {
         const cachedText = localStorage.getItem(cacheKey);
         if (cachedText && cachedText.startsWith('AI_OUTPUT:')) {
-            displayOutline(topic, cachedText.replace('AI_OUTPUT:', ''));
+            displayOutline(topic, cachedText.replace('AI_OUTPUT:', ''), false); 
             status.textContent = "💾 Loaded personalized learning path from local cache.";
             return;
         } else if (cachedText && cachedText.startsWith('OFFLINE_OUTPUT:')) {
@@ -360,16 +441,16 @@ async function generateCourseOutline(forceRegenerate = false) {
     content.innerHTML = "";
 
     try {
+        // Instruct the model to use clear Markdown formatting
         const prompt = `You are LearnFlow AI Course Generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. Create a 5-step learning path outline for the subject: "${topic}". 
                         The user's current level is "${level}" (use this to tailor the course difficulty and content depth) and their goals are: "${goals}". 
-                        For each step, include a title, a brief goal, and a list of 3-4 key concepts or lessons. Use Markdown formatting for a clean, readable outline.`;
+                        For each step, include a title using a H2 heading (##), a brief goal, and a list of 3-4 key concepts or lessons using bullet points (-). DO NOT include any introductory or concluding remarks, only the formatted outline.`;
 
-        // Only trying gemini-2.5-flash
         const generatedText = await fetchAiOutline(prompt, 'gemini-2.5-flash');
 
         // 3. Save AI Output to Cache and Display
         localStorage.setItem(cacheKey, 'AI_OUTPUT:' + generatedText);
-        displayOutline(topic, generatedText, false);
+        displayOutline(topic, generatedText, false); 
         status.textContent = "✅ Your personalized learning path is ready! (Outline is cached locally)";
 
     } catch (error) {
@@ -384,7 +465,7 @@ async function generateCourseOutline(forceRegenerate = false) {
 
         // Display Offline content (using the HTML structure generated by generateOfflineCourse)
         content.innerHTML = offlineContent; 
-        displayOutline(topic, content.innerHTML, true); // Pass true to use HTML mode for offline content
+        displayOutline(topic, content.innerHTML, true); 
 
         status.innerHTML = `❌ Gemini failed: ${error.message}. <span class="text-yellow-400">🎉 Remix Mode Activated!</span>`;
         speakText(`Remix mode activated. Here's your offline learning path for ${topic}.`);
@@ -407,36 +488,51 @@ function displayOutline(topic, text, isHtmlMode = false) {
 
     content.innerHTML = ''; // Clear previous content
     
+    const outlineBlock = document.createElement("div");
+    outlineBlock.className = "p-4 rounded-lg mb-4 markdown-output";
+
     if (isHtmlMode) {
         // Offline mode: content is already structured HTML
-        content.innerHTML = text;
-        // Re-append the read aloud button for the entire content 
+        outlineBlock.innerHTML = text;
+        // Simple audio cue for offline content
         const readAloudButton = document.createElement('button');
-        readAloudButton.className = "mt-4 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
+        readAloudButton.className = "mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
         readAloudButton.textContent = "🔊 Read Aloud Summary";
-        readAloudButton.onclick = () => speakText(`Remix mode outline for ${topic} is now displayed.`); // Simple audio cue for offline content
-        content.appendChild(readAloudButton);
+        readAloudButton.onclick = () => speakText(`Remix mode outline for ${topic} is now displayed.`); 
+        outlineBlock.appendChild(readAloudButton);
 
     } else {
-        // AI mode: content is raw markdown/text, display in <pre>
-        const outlineBlock = document.createElement("div");
-        outlineBlock.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
-        outlineBlock.innerHTML = `
-            <pre class="whitespace-pre-wrap text-sm mb-2 text-gray-200">${text}</pre>
-            <button onclick="speakText(\`${text.replace(/`/g, "\\`")}\`)" class="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">🔊 Read Aloud</button>
-        `;
-        content.appendChild(outlineBlock);
+        // AI mode: content is raw markdown/text, convert and display as HTML
+        const htmlContent = markdownToHtml(text);
+        outlineBlock.innerHTML = htmlContent;
+
+        // Add Read Aloud button
+        const readAloudButton = document.createElement('button');
+        readAloudButton.className = "mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
+        readAloudButton.textContent = "🔊 Read Aloud Outline";
+        readAloudButton.onclick = () => speakText(text); // Pass raw text for cleaning in speakText
+        outlineBlock.appendChild(readAloudButton);
     }
     
+    content.appendChild(outlineBlock);
     output.classList.remove("hidden");
 }
 
 /**
- * Updates speakText() to use the language selected in the dropdown.
+ * Cleans Markdown symbols and uses the Web Speech API.
  */
 function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
-    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // 1. Clean Markdown symbols for clearer speech
+    let cleanText = text
+        .replace(/##/g, 'Section') // Replace heading indicators with "Section"
+        .replace(/\*\*/g, '')      // Remove double asterisks (bold)
+        .replace(/^- /gm, '.\n')   // Replace bullet points with a period and new line for pause
+        .replace(/(\r\n|\n|\r)/gm, ' ') // Replace all newlines with a space
+        .replace(/ +/g, ' ');      // Collapse multiple spaces
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     
     // Set the language for the utterance
     utterance.lang = selectedLang;
@@ -448,11 +544,54 @@ function speakText(text) {
 }
 
 /**
- * Placeholder function for Quiz Generation
+ * Function to generate the specialized quiz using an AI call.
  */
-function generateQuiz() {
-    // In a real app, this would make an AI call to generate JSON structured quiz data.
-    alert("Functionality to generate a quiz from the outline is not yet implemented. Imagine the questions are in your chosen language!");
+async function generateQuiz() {
+    const topic = document.getElementById("subjectMastery").value.trim();
+    const courseLevel = document.getElementById("currentLevel").value;
+    const customPrompt = document.getElementById("quizPromptInput").value.trim();
+    const selectedLang = document.getElementById("languageSelect").value;
+
+    const quizContentDiv = document.getElementById("quizContent");
+    const quizStatusDiv = document.getElementById("quizStatus");
+    const quizModal = document.getElementById("quizModal");
+    const quizButton = document.getElementById("quizButton");
+
+    // Show modal and loading state
+    quizModal.classList.remove('hidden');
+    quizContentDiv.innerHTML = `<div class="text-center py-8"><span class="animate-spin inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></span><p class="text-indigo-300 mt-3">Generating specialized quiz...</p></div>`;
+    quizStatusDiv.textContent = 'Contacting AI for quiz generation...';
+    quizButton.disabled = true;
+
+    try {
+        let quizContext = '';
+        if (customPrompt) {
+            // Use custom prompt for a specialized quiz
+            quizContext = `Generate a quiz based on this specific request: "${customPrompt}".`;
+        } else {
+            // Fallback to a standard quiz based on the generated course outline
+            const outlineText = document.getElementById("courseContent").innerText;
+            quizContext = `Based on the course outline for the subject "${topic}" at the "${courseLevel}" level, create a challenging quiz. Use a mix of multiple-choice and short fill-in-the-blank questions. The quiz should be directly relevant to the outline content.`;
+        }
+
+        const quizPrompt = `You are an expert educational quiz generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. ${quizContext} Create exactly 5 questions. Provide the output as a Markdown list of questions. Clearly state the correct answers at the very end, separated by a horizontal rule (---) and marked "ANSWERS:". DO NOT include any introductory or concluding remarks besides the quiz content and the answers section.`;
+
+        const quizText = await fetchAiOutline(quizPrompt, 'gemini-2.5-flash');
+
+        // Display the generated quiz
+        quizContentDiv.innerHTML = markdownToHtml(quizText); 
+
+        quizStatusDiv.textContent = `✅ Specialized quiz successfully generated!`;
+        speakText("Your specialized quiz is ready!");
+
+    } catch (error) {
+        console.error("Quiz Generation Error:", error);
+        quizContentDiv.innerHTML = `<p class="text-red-400">❌ Failed to generate quiz. Please try a simpler prompt or ensure your API key is valid. Error: ${error.message}</p>`;
+        quizStatusDiv.textContent = `Error: Cannot connect to AI.`;
+        speakText("Sorry, I could not generate the quiz due to an error.");
+    } finally {
+        quizButton.disabled = false;
+    }
 }
 
 /**
@@ -460,9 +599,15 @@ function generateQuiz() {
  */
 function generatePdf(elementId) {
     const title = document.querySelector('#aiCourseOutput h4').textContent;
-    const content = document.getElementById(elementId).innerText;
+    // Use innerHTML of courseContent to get the *rendered* outline
+    const contentHtml = document.getElementById(elementId).innerHTML;
     
-    // Simplistic text file generation for demonstration since no library is linked
+    // Simple text file conversion: Create a temporary div, inject HTML, then extract plain text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHtml;
+    const content = tempDiv.innerText;
+
+    // Simplistic text file generation for demonstration
     const fullText = title + "\n\n" + content;
     const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
