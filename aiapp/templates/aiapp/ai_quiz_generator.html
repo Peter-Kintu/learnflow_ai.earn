@@ -182,8 +182,11 @@
 </div>
 
 <script>
-// API Key for Gemini 
-const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; 
+// --- UPDATED: Define keys for specific roles ---
+const API_KEYS = {
+    OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
+    DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
+};
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
@@ -213,8 +216,7 @@ function speakText(text) {
 }
 
 /**
- * Converts AI text to HTML. Since the AI is instructed to use minimal Markdown,
- * this function focuses on list and paragraph creation.
+ * Converts AI text to HTML.
  */
 function markdownToHtml(text) {
     let html = text;
@@ -227,13 +229,11 @@ function markdownToHtml(text) {
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
-    // Convert bulleted lists (handles hyphens or asterisks, which we clean for voice)
+    // Convert bulleted lists
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-            // Check for list item
             const listItemText = trimmedLine.substring(2).trim();
-            // Check if it's already a list item from the previous iteration
             if (listItemText.match(/^<li/)) {
                  return line; 
             }
@@ -245,17 +245,16 @@ function markdownToHtml(text) {
     // Wrap consecutive list items in <ul>
     html = html.replace(/(<li>.*?<\/li>[\s\n]*)+/gs, (match) => `<ul>${match}</ul>`);
 
-    // Basic paragraph wrapping: treat any line not starting with a tag as a paragraph
+    // Basic paragraph wrapping
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
         if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p)/i)) {
             return line; // Skip empty lines, headings, or lists/paragraphs
         }
-        // If it's a line of text, wrap it in a paragraph
         return `<p>${trimmedLine}</p>`;
     }).join('\n');
     
-    // Clean up empty tags and repeated newlines from previous steps
+    // Clean up empty tags and repeated newlines
     html = html.replace(/<p><\/p>/g, '')
                .replace(/(\n\s*){3,}/g, '\n\n');
     
@@ -285,10 +284,16 @@ function generatePdf(elementId) {
 }
 
 
-// --- AI Fetch Function (Simplified to only allow text output) ---
-async function fetchAiContent(prompt, model = 'gemini-2.5-flash') {
+// --- UPDATED: AI Fetch Function to accept a specific key type ---
+async function fetchAiContent(prompt, keyType, model = 'gemini-2.5-flash') {
+    const apiKey = API_KEYS[keyType];
+    
+    if (!apiKey) {
+        throw new Error(`Invalid key type specified: ${keyType}.`);
+    }
+
     try {
-        const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
+        const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + apiKey;
         
         const body = {
             contents: [{ 
@@ -305,7 +310,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash') {
 
         if (!response.ok) {
              const errorData = await response.json().catch(() => ({ error: { message: `Request failed with status ${response.status}.` } }));
-            throw new Error(`API call failed with status ${response.status}. Message: ${errorData.error.message || "No message provided."}`);
+            throw new Error(`API call (${keyType} Key) failed with status ${response.status}. Message: ${errorData.error.message || "No message provided."}`);
         }
 
         const data = await response.json();
@@ -324,7 +329,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash') {
 
 
 /**
- * Main function to generate the course outline.
+ * Main function to generate the course outline. Uses the OUTLINE key.
  */
 async function generateCourseOutline(forceRegenerate = false) {
     const topic = document.getElementById("subjectMastery").value.trim();
@@ -356,7 +361,7 @@ async function generateCourseOutline(forceRegenerate = false) {
     }
 
     // 2. Set Loading State
-    status.innerHTML = `<span class="animate-pulse text-indigo-400">⏳ Generating ${level} course on "${topic}" in ${selectedLang}...</span>`;
+    status.innerHTML = `<span class="animate-pulse text-indigo-400">⏳ Generating ${level} course on "${topic}" in ${selectedLang} using OUTLINE Key...</span>`;
     generateButton.disabled = true;
     generateButton.classList.remove('hover:bg-indigo-700');
     generateButton.classList.add('bg-indigo-800/70', 'cursor-not-allowed');
@@ -364,12 +369,12 @@ async function generateCourseOutline(forceRegenerate = false) {
     content.innerHTML = "";
 
     try {
-        // NOTE: Requesting clean, minimal Markdown (H2 for title, bullet points for concepts)
         const prompt = `You are LearnFlow AI Course Generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. Create a 5-step learning path outline for the subject: "${topic}". 
                         The user's current level is "${level}" and their goals are: "${goals}". 
                         For each step, include a title using a H2 heading (##), a brief goal, and a list of 3-4 key concepts or lessons using bullet points (-). DO NOT include any introductory or concluding remarks, only the formatted outline. Minimize the use of special symbols or complex markdown besides H2 and bullet points.`;
 
-        const generatedText = await fetchAiContent(prompt, 'gemini-2.5-flash');
+        // --- Use the dedicated OUTLINE key ---
+        const generatedText = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
 
         // 3. Save AI Outline to Cache and Display
         localStorage.setItem(cacheKey, 'AI_OUTLINE:' + generatedText);
@@ -377,8 +382,8 @@ async function generateCourseOutline(forceRegenerate = false) {
         status.textContent = "✅ Your personalized learning path is ready! (Outline is cached locally)";
 
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        status.innerHTML = `❌ Outline generation failed: ${error.message}. Please check your API Key or try again.`;
+        console.error("Gemini API Error (Outline):", error);
+        status.innerHTML = `❌ Outline generation failed: ${error.message}. Please check your OUTLINE API Key.`;
     } finally {
         // 4. Reset Button State
         generateButton.disabled = false;
@@ -406,8 +411,7 @@ function displayOutline(topic, level, markdownText) {
         const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
         const briefContentHtml = markdownToHtml(`## ${stepContent}`);
 
-        // Construct the detailed content prompt
-        // NOTE: We explicitly request clean, simple formatting: H3, bold for keywords, and an "Assessment Questions" heading.
+        // The prompt for the detailed content/quiz remains the same
         const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms. After the lesson, create two "Self-Assessment Questions" (one multiple choice, one fill-in-the-blank) based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
                         STRICTLY format the output as: 
                         1. A **H3** heading for the detailed title.
@@ -422,7 +426,6 @@ function displayOutline(topic, level, markdownText) {
         stepDiv.setAttribute('data-step-title', stepTitle.replace(/'/g, "\\'"));
         stepDiv.setAttribute('data-topic', topic.replace(/'/g, "\\'"));
         stepDiv.setAttribute('data-detail-prompt', detailPrompt);
-        // The click handler passes 'this' (the element) to displayDetailedLesson
         stepDiv.setAttribute('onclick', `displayDetailedLesson(this)`);
         
         stepDiv.innerHTML = briefContentHtml;
@@ -441,8 +444,7 @@ function displayOutline(topic, level, markdownText) {
 
 
 /**
- * Makes the second API call to get the detailed lesson content and quiz.
- * It is now solely focused on AI content (live or cached).
+ * Makes the second API call to get the detailed lesson content and quiz. Uses the DETAIL key.
  */
 async function displayDetailedLesson(element) {
     const prompt = element.getAttribute('data-detail-prompt');
@@ -457,7 +459,7 @@ async function displayDetailedLesson(element) {
     
     // 1. Show Loading State in Modal
     document.querySelector('#quizModal h3').textContent = `Lesson: ${stepTitle}`;
-    quizContentDiv.innerHTML = `<p class="text-center py-8 text-indigo-400 animate-pulse">Loading detailed lesson and quiz from AI...</p>`;
+    quizContentDiv.innerHTML = `<p class="text-center py-8 text-indigo-400 animate-pulse">Loading detailed lesson and quiz from AI (using DETAIL Key)...</p>`;
     quizStatusDiv.textContent = `Generating content for "${stepTitle}"...`;
     quizModal.classList.remove('hidden');
 
@@ -470,8 +472,9 @@ async function displayDetailedLesson(element) {
             generatedDetail = cachedDetail.replace('AI_DETAIL:', '');
             quizStatusDiv.textContent = `💾 Loaded detailed lesson from cache.`;
         } else {
-            // 3. Fetch detailed content from AI
-            generatedDetail = await fetchAiContent(prompt, 'gemini-2.5-flash');
+            // 3. Fetch detailed content from AI (will use the dedicated DETAIL key)
+            // --- Use the dedicated DETAIL key ---
+            generatedDetail = await fetchAiContent(prompt, 'DETAIL', 'gemini-2.5-flash');
             
             // 4. Save to cache
             localStorage.setItem(cacheKey, 'AI_DETAIL:' + generatedDetail);
@@ -485,8 +488,8 @@ async function displayDetailedLesson(element) {
         speakText(generatedDetail);
 
     } catch (error) {
-        console.error("Detailed Lesson API Error:", error);
-        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your API Key or try again.</p>`;
+        console.error("Detailed Lesson API Error (Detail):", error);
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your DETAIL API Key.</p>`;
         quizStatusDiv.textContent = "❌ Failed to load lesson content.";
     }
 }
