@@ -190,31 +190,37 @@ const API_KEYS = {
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
- * NEW IMPROVED FUNCTION: Cleans text by aggressively removing ALL Markdown symbols for clearer speech output.
+ * REVISED FUNCTION: Cleans text by aggressively removing ONLY Markdown symbols,
+ * and preserves essential punctuation for pacing without the voice "mentioning" symbols.
  */
 function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
     
-    // 1. Aggressively strip ALL Markdown/code symbols.
+    // 1. Aggressively strip all Markdown/code/list markers.
     let cleanText = text
-        .replace(/#+/g, '')             // Remove all heading markers (e.g., ###)
+        .replace(/#+/g, '')             // Remove headings
         .replace(/\*\*/g, '')           // Remove double asterisks (bold)
         .replace(/\*/g, '')             // Remove single asterisks
-        .replace(/__/g, '')             // Remove double underscores (bold/italic)
+        .replace(/__/g, '')             // Remove double underscores
         .replace(/_/g, '')              // Remove single underscores
-        .replace(/^- /gm, '. ')         // Replace list hyphens
-        .replace(/\d\.\s/g, '. ')       // Remove numbered list digits/markers
-        .replace(/:\s/g, '. ')          // Replace colons
-        .replace(/\//g, ' or ')         // Replace slashes
-        .replace(/\[.*?\]/g, '')        // Remove anything in brackets (if used for notes)
-        .replace(/(\r\n|\n|\r)/gm, ' ') // Replace newlines with spaces
-        .replace(/ +/g, ' ')            // Reduce multiple spaces
-        .trim();                        // Trim any leading/trailing space
+        .replace(/^- /gm, ' ')          // Remove list hyphens, convert to space
+        .replace(/^\s*\d+\.\s*/gm, ' ') // Remove numbered list markers at start of line
+        .replace(/\//g, ' or ')         // Replace slashes with a word
+        .replace(/\[.*?\]/g, '')        // Remove anything in brackets
+        .replace(/:\s/g, ', ');         // Replace colons with a comma for a short pause
+
+    // 2. Replace all newlines/carriage returns with a single space.
+    // This relies on existing punctuation (., ?, !) for natural pacing.
+    cleanText = cleanText.replace(/(\r\n|\n|\r)/gm, ' ');
+
+    // 3. Final cleanup
+    cleanText = cleanText.replace(/ +/g, ' ').trim(); // Reduce multiple spaces and trim whitespace
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = selectedLang;
     utterance.rate = 0.95;
     
+    // Stop any current speech and start the new one
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
 }
@@ -244,11 +250,6 @@ function markdownToHtml(text) {
                 // Handle numbered lists without interfering with question numbering
                 listItemText = trimmedLine.replace(/^\d+\.\s*/, '').trim();
             }
-
-            // Prevent wrapping the explicit "1." and "2." of the assessment questions if possible, 
-            // though the prompt aims to minimize this issue. We will rely on the general list wrapping.
-            
-            // If it's not starting with a question number (1. or 2.), treat it as a list item
              if (!trimmedLine.match(/^(1|2)\.\s*Self-Assessment Questions/i) && !trimmedLine.match(/^(1|2)\.\s*What is/i)) {
                  if (listItemText.match(/^<li/)) {
                      return line; 
@@ -501,7 +502,7 @@ async function displayDetailedLesson(element) {
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
-        // --- FIXED: Now correctly triggers voice with clean text ---
+        // --- FIXED: Now correctly triggers voice with clean and punctuated text ---
         speakText(generatedDetail);
 
     } catch (error) {
