@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Generate AI-Powered Courses{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+
+    <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Generate AI-Powered Courses</h2>
+        <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+            Generate comprehensive, step-by-step courses on any topic with AI-powered learning paths
+        </p>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        
+        <div class="lg:w-7/12 bg-slate-700 p-8 rounded-2xl shadow-inner">
+            <h3 class="text-2xl font-bold text-gray-200 mb-2 flex items-center">
+                <span class="text-indigo-400 mr-3">🎯</span>
+                What Would You Like to Learn Today?
+            </h3>
+            <p class="text-gray-400 mb-6">
+                Tell us your learning goals and we'll create a personalized study plan just for you.
+            </p>
+
+            <form id="learningPathForm" class="space-y-6">
+                <div>
+                    <label for="subjectMastery" class="block text-lg font-medium text-gray-200 mb-2">What subject do you want to master? *</label>
+                    <input type="text" id="subjectMastery" placeholder="e.g. Advanced Data Structures in Python" required class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="text-sm text-gray-400">
+                    <p class="font-semibold mb-2">💡 Popular subjects among students:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'React Development'">React Development</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Machine Learning Basics'">Machine Learning Basics</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Web Design Fundamentals'">Web Design Fundamentals</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Python Programming'">Python Programming</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Digital Marketing'">Digital Marketing</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Data Science'">Data Science</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'JavaScript ES6+'">JavaScript ES6+</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'UI/UX Design'">UI/UX Design</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="currentLevel" class="block text-lg font-medium text-gray-200 mb-2">What's your current level? 📚</label>
+                    <select id="currentLevel" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="beginner">Beginner (Just starting)</option>
+                        <option value="intermediate">Intermediate (Some experience)</option>
+                        <option value="advanced">Advanced (Experienced)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="learningGoals" class="block text-lg font-medium text-gray-200 mb-2">Any specific learning goals or preferences? 🎓</label>
+                    <textarea id="learningGoals" rows="3" placeholder="e.g. Focus on practical projects, need a certificate, 3 hours per week commitment." class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <button type="button" onclick="generateCourseOutline()" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-bold text-lg flex items-center justify-center shadow-lg">
+                    <span class="mr-2">🚀</span>
+                    Create My Learning Path
+                </button>
+                <p id="aiStatus" class="text-sm text-gray-400 mt-4 text-center"></p>
+
+            </form>
+        </div>
+
+        <div class="lg:w-5/12 bg-slate-700 p-8 rounded-2xl shadow-inner border border-indigo-500/50">
+            <h4 class="text-xl font-bold text-gray-200 mb-6 flex items-center">
+                <span class="mr-2 text-yellow-400">✨</span>
+                Your personalized learning journey will include:
+            </h4>
+            <ul class="space-y-4 text-gray-300 font-medium">
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**15-30 interactive lessons** based on your pace.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Hands-on practice exercises** for skill retention.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Curated learning resources** and external links.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Progress tracking & achievements** to keep you motivated.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Real-world projects** to apply your new knowledge.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**AI-powered study assistant** available 24/7.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="aiCourseOutput" class="hidden bg-slate-700 p-6 rounded-xl shadow-inner mt-10">
+        <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Generated Learning Path Outline</h4>
+        <div id="courseContent" class="space-y-4 text-gray-300">
+            </div>
+        <div class="text-center mt-6">
+            <button class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-green-800" disabled>
+                Enroll in Course (Coming Soon)
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Your active API key is included here
+const GEMINI_API_KEY = "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw"; 
+
+function speakText(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    speechSynthesis.speak(utterance);
+}
+
+async function generateCourseOutline() {
+    // 1. Get all user inputs
+    const topic = document.getElementById("subjectMastery").value.trim();
+    const level = document.getElementById("currentLevel").value;
+    const goals = document.getElementById("learningGoals").value.trim();
+    
+    const status = document.getElementById("aiStatus");
+    const output = document.getElementById("aiCourseOutput");
+    const content = document.getElementById("courseContent");
+
+    if (!topic) {
+        status.textContent = "Please enter a subject to create your learning path.";
+        return;
+    }
+
+    status.textContent = `LearnFlow AI is charting your personalized course on "${topic}"...`;
+    output.classList.add("hidden");
+    content.innerHTML = "";
+
+    try {
+        const prompt = `You are LearnFlow AI Course Generator. Create a 5-step learning path outline for the subject: "${topic}". 
+                        The user's current level is "${level}" and their goals are: "${goals}". 
+                        For each step, include a title, a brief goal, and a list of 3-4 key concepts or lessons.`;
+
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+        console.log("Gemini response:", data);
+
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text || text.trim() === "") {
+            status.textContent = "AI did not return any course content. Check console for errors.";
+            return;
+        }
+
+        // Update output title
+        document.querySelector('#aiCourseOutput h4').textContent = `Generated Learning Path Outline for: ${topic}`;
+
+        // Simple rendering: just display the full text for a course outline
+        const outlineBlock = document.createElement("div");
+        outlineBlock.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
+        outlineBlock.innerHTML = `
+            <pre class="whitespace-pre-wrap text-sm mb-2 text-gray-200">${text}</pre>
+            <button onclick="speakText(\`${text.replace(/`/g, "\\`")}\`)" class="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">🔊 Read Aloud</button>
+            `;
+        content.appendChild(outlineBlock);
+
+        output.classList.remove("hidden");
+        status.textContent = "Your personalized learning path is ready! Review the outline below.";
+    } catch (error) {
+        status.textContent = "Error creating learning path. Please check your network connection or API key.";
+        console.error("Course Generation Error:", error);
+    }
+}
+</script>
+
+{% endblock %}
