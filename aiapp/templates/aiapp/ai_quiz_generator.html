@@ -174,7 +174,6 @@
     
     <div id="quizModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-700 p-8 rounded-xl max-w-2xl w-full shadow-2xl relative">
-            <button onclick="document.getElementById('quizModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">×</button>
             <h3 class="text-2xl font-bold text-yellow-400 mb-4">Interactive Quiz Time! 🧠</h3>
             <div id="quizContent" class="text-gray-300 space-y-4 max-h-96 overflow-y-auto pr-2">
                 </div>
@@ -183,12 +182,15 @@
                 <h4 id="quizScore" class="text-2xl font-bold mb-2"></h4>
                 <p id="quizSummary" class="text-gray-400"></p>
             </div>
-            <button onclick="submitQuiz()" id="submitQuizButton" class="w-full mt-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
-                Submit & Get Feedback
-            </button>
-            <button onclick="document.getElementById('quizModal').classList.add('hidden')" class="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
-                Close Quiz
-            </button>
+            
+            <div class="flex flex-col gap-3 mt-6">
+                <button onclick="submitQuiz()" id="submitQuizButton" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+                    Submit & Get Feedback
+                </button>
+                <button onclick="document.getElementById('quizModal').classList.add('hidden')" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
+                    ⬅️ Go Back to Course Outline
+                </button>
+            </div>
         </div>
     </div>
 
@@ -203,7 +205,6 @@ let quizData = []; // Store the parsed quiz data globally for marking
 
 // --- START: Markdown to HTML Parser ---
 function markdownToHtml(markdown) {
-    // ... (Markdown to HTML function remains the same)
     let html = markdown;
 
     // 1. Headings (H2 for steps, H3 for sub-points)
@@ -374,6 +375,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
         };
 
         if (responseSchema) {
+            // FIX: The config block MUST be a sibling of 'contents' in the main request body.
             body.config = {
                 responseMimeType: "application/json",
                 responseSchema: responseSchema
@@ -418,8 +420,6 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
         throw error;
     }
 }
-
-// ... (Rest of the functions: generateOfflineCourse, generateCourseOutline, displayOutline)
 
 /**
  * Main function to generate the course outline, using caching and OFFLINE fallback on failure.
@@ -545,7 +545,6 @@ function displayOutline(topic, text, isHtmlMode = false) {
 
 /**
  * Cleans Markdown symbols and uses the Web Speech API.
- * ENHANCEMENT: Added more aggressive cleanup for flow disruptors.
  */
 function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
@@ -691,7 +690,6 @@ function generatePdf(elementId) {
 
 // --- OFFLINE FALLBACK FUNCTION (kept here for completeness but not included in final logic for brevity)
 function generateOfflineCourse(topic, level, goals, langCode) {
-    // ... (The offline course content generation logic from the previous file)
     let steps = [
         {
             title: "Step 1: Foundational Concepts",
