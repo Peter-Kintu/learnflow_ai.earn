@@ -35,4 +35,6 @@ urlpatterns = [
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
     path('why-learnflow-ai/', views.why_learnflow_ai, name='why_learnflow_ai'),
+     # AI Quiz Generator URL - FIXED
+    path('ai_quiz_generator/', views.ai_quiz_generator, name='ai_quiz_generator'),
 ]

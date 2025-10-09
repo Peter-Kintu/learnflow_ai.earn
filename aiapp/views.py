@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from docx import Document
 
+
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
 
@@ -793,3 +794,7 @@ def retake_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
 
+
+
+def ai_quiz_generator(request):
+    return render(request, 'aiapp/ai_quiz_generator.html')
