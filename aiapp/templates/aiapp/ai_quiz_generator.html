@@ -1,8 +1,18 @@
-{% extends "base.html" %}
-
-{% block title %}Generate AI-Powered Courses{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate AI-Powered Courses</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to set a dark background for the whole page and enable pulse for loading */
+        body {
+            background-color: #1e293b; /* slate-800 equivalent background */
+        }
+    </style>
+</head>
+<body>
 
 <div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
 
@@ -60,7 +70,7 @@
                     <textarea id="learningGoals" rows="3" placeholder="e.g. Focus on practical projects, need a certificate, 3 hours per week commitment." class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 </div>
 
-                <button type="button" onclick="generateCourseOutline()" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-bold text-lg flex items-center justify-center shadow-lg">
+                <button type="button" onclick="generateCourseOutline()" id="generateButton" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-bold text-lg flex items-center justify-center shadow-lg">
                     <span class="mr-2">🚀</span>
                     Create My Learning Path
                 </button>
@@ -107,7 +117,10 @@
         <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Generated Learning Path Outline</h4>
         <div id="courseContent" class="space-y-4 text-gray-300">
             </div>
-        <div class="text-center mt-6">
+        <div class="text-center mt-6 flex justify-center items-center gap-4">
+            <button onclick="generateCourseOutline()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm">
+                🔄 Regenerate
+            </button>
             <button class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-green-800" disabled>
                 Enroll in Course (Coming Soon)
             </button>
@@ -128,7 +141,7 @@ function speakText(text) {
 }
 
 async function generateCourseOutline() {
-    // 1. Get all user inputs
+    // 1. Get all user inputs and elements
     const topic = document.getElementById("subjectMastery").value.trim();
     const level = document.getElementById("currentLevel").value;
     const goals = document.getElementById("learningGoals").value.trim();
@@ -136,13 +149,19 @@ async function generateCourseOutline() {
     const status = document.getElementById("aiStatus");
     const output = document.getElementById("aiCourseOutput");
     const content = document.getElementById("courseContent");
+    const generateButton = document.getElementById("generateButton");
 
     if (!topic) {
-        status.textContent = "Please enter a subject to create your learning path.";
+        status.textContent = "⚠️ Please enter a subject to create your learning path.";
         return;
     }
 
-    status.textContent = `LearnFlow AI is charting your personalized course on "${topic}"...`;
+    // 2. Add Loading Spinner and Disable Button
+    status.innerHTML = `<span class="animate-pulse text-indigo-400">⏳ Generating ${level} course on "${topic}"...</span>`;
+    generateButton.disabled = true;
+    generateButton.classList.remove('hover:bg-indigo-700');
+    generateButton.classList.add('bg-indigo-800/70', 'cursor-not-allowed');
+
     output.classList.add("hidden");
     content.innerHTML = "";
 
@@ -159,20 +178,29 @@ async function generateCourseOutline() {
             })
         });
 
-        const data = await response.json();
-        console.log("Gemini response:", data);
+        // Check for common API errors before parsing JSON
+        if (!response.ok) {
+            let errorDetail = `HTTP Error ${response.status} (${response.statusText})`;
+            try {
+                const errorData = await response.json();
+                errorDetail += ": " + (errorData.error.message || "No message provided.");
+            } catch {
+                // Ignore if response body isn't JSON
+            }
+            throw new Error(errorDetail);
+        }
 
+        const data = await response.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!text || text.trim() === "") {
-            status.textContent = "AI did not return any course content. Check console for errors.";
+            status.textContent = "AI did not return any course content. Try a different topic.";
             return;
         }
 
-        // Update output title
+        // Success Path
         document.querySelector('#aiCourseOutput h4').textContent = `Generated Learning Path Outline for: ${topic}`;
 
-        // Simple rendering: just display the full text for a course outline
         const outlineBlock = document.createElement("div");
         outlineBlock.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4";
         outlineBlock.innerHTML = `
@@ -182,12 +210,18 @@ async function generateCourseOutline() {
         content.appendChild(outlineBlock);
 
         output.classList.remove("hidden");
-        status.textContent = "Your personalized learning path is ready! Review the outline below.";
+        status.textContent = "✅ Your personalized learning path is ready! Review the outline below.";
     } catch (error) {
-        status.textContent = "Error creating learning path. Please check your network connection or API key.";
+        // 3. Improved Error Feedback
+        status.textContent = `❌ Error creating learning path: ${error.message || "Unknown error occurred."} Please check console for details.`;
         console.error("Course Generation Error:", error);
+    } finally {
+        // Re-enable button regardless of success or failure
+        generateButton.disabled = false;
+        generateButton.classList.remove('bg-indigo-800/70', 'cursor-not-allowed');
+        generateButton.classList.add('hover:bg-indigo-700');
     }
 }
 </script>
-
-{% endblock %}
+</body>
+</html>
