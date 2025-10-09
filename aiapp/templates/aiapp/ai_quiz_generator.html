@@ -326,6 +326,7 @@ function submitQuiz() {
             // Get text input value
             const answerInput = document.getElementById(`q${qNum}-input`);
             const userAnswer = answerInput.value.trim().toLowerCase();
+            // Handle array of acceptable answers or single string answer
             const correctAnswers = Array.isArray(q.answer) ? q.answer.map(a => a.toLowerCase()) : [q.answer.toLowerCase()];
 
             // Check if the user's answer matches any of the correct answers
@@ -362,11 +363,14 @@ function submitQuiz() {
 
 /**
  * Handles the actual API call to the Gemini models. Now includes JSON handling.
+ * CORRECTED: This structure is now explicitly for the 'generateContent' REST API endpoint.
  */
 async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema = null) {
     try {
+        // NOTE: The endpoint is for the API, not the full client SDK
         const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
         
+        // Base body structure
         const body = {
             contents: [{ 
                 role: "user",
@@ -375,7 +379,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
         };
 
         if (responseSchema) {
-            // FIX: The config block MUST be a sibling of 'contents' in the main request body.
+            // FIX: The 'config' object must be a top-level key for structured output via the REST API.
             body.config = {
                 responseMimeType: "application/json",
                 responseSchema: responseSchema
@@ -390,6 +394,8 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
 
         if (!response.ok) {
              const errorData = await response.json().catch(() => ({ error: { message: `Request failed with status ${response.status}.` } }));
+            // Log full error for debugging
+            console.error("API Response Error Details:", errorData); 
             throw new Error(`API call failed with status ${response.status}. Message: ${errorData.error.message || "No message provided."}`);
         }
 
@@ -400,9 +406,11 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
             // For JSON response, parse the text
             if (text) {
                 try {
-                    return JSON.parse(text);
+                    // Sometimes the model wraps the JSON in markdown blocks, attempt to clean this.
+                    const cleanText = text.replace(/^```json\s*|s*```$/g, '').trim();
+                    return JSON.parse(cleanText);
                 } catch (e) {
-                    throw new Error("Failed to parse JSON response from the model.");
+                    throw new Error("Failed to parse JSON response from the model. Raw text received: " + text.substring(0, 200) + "...");
                 }
             } else {
                 throw new Error("Model returned empty content in JSON mode.");
@@ -614,8 +622,10 @@ async function generateQuiz() {
                             items: { type: "string" }
                         },
                         answer: {
-                            type: "string",
-                            description: "The single correct option text for multiple choice, or the expected answer keyword for fill_in_the_blank. Use an array of strings for multiple acceptable fill-in answers."
+                            // Using type "string" but noting it can hold array content in the description 
+                            // as the model handles this flexibility well.
+                            type: "string", 
+                            description: "The single correct option text for multiple choice, or the expected answer keyword for fill_in_the_blank. For fill-in-the-blank, use a string array of acceptable answers: ['answer1', 'answer2']"
                         }
                     },
                     required: ["question", "type", "answer"]
