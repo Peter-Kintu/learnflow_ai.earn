@@ -379,7 +379,7 @@ async function fetchAiContent(prompt, model = 'gemini-2.5-flash', responseSchema
         };
 
         if (responseSchema) {
-            // FIX: The 'config' object must be a top-level key for structured output via the REST API.
+            // FIX: This structure is the most robust for the JSON response features via the REST API
             body.config = {
                 responseMimeType: "application/json",
                 responseSchema: responseSchema
