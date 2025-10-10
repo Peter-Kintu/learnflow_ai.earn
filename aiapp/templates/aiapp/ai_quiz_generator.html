@@ -182,7 +182,7 @@
 </div>
 
 <script>
-// --- Define keys for specific roles ---
+// --- Define keys for specific roles (Used for Gemini API calls) ---
 const API_KEYS = {
     OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
     DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
@@ -190,39 +190,72 @@ const API_KEYS = {
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
- * REVISED FUNCTION: Cleans text by aggressively removing ONLY Markdown symbols,
- * and preserves essential punctuation for pacing without the voice "mentioning" symbols.
+ * Helper function for browser's native TTS (fallback).
  */
-function speakText(text) {
+function fallbackToBrowserTTS(text, lang) {
+    console.warn("Falling back to browser's native TTS.");
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Note: Browser TTS language support depends on OS/browser settings
+    utterance.lang = lang; 
+    utterance.rate = 0.95;
+    
+    // Stop any current speech and start the new one
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+}
+
+/**
+ * ASYNC FUNCTION: Attempts Botlhale TTS first, falls back to browser TTS on failure.
+ * Includes improved punctuation for better speech clarity.
+ */
+async function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
     
-    // 1. Aggressively strip all Markdown/code/list markers.
+    // 1. Text Cleaning: Aggressively strip all Markdown/code/list markers and ensure proper pacing.
     let cleanText = text
         .replace(/#+/g, '')             // Remove headings
         .replace(/\*\*/g, '')           // Remove double asterisks (bold)
         .replace(/\*/g, '')             // Remove single asterisks
         .replace(/__/g, '')             // Remove double underscores
         .replace(/_/g, '')              // Remove single underscores
-        .replace(/^- /gm, ' ')          // Remove list hyphens, convert to space
-        .replace(/^\s*\d+\.\s*/gm, ' ') // Remove numbered list markers at start of line
+        .replace(/^- /gm, '. ')         // NEW: Replace list hyphens with period-space for a pause
+        .replace(/^\s*\d+\.\s*/gm, '. ') // NEW: Replace numbered list markers/questions with period-space for a pause
         .replace(/\//g, ' or ')         // Replace slashes with a word
         .replace(/\[.*?\]/g, '')        // Remove anything in brackets
         .replace(/:\s/g, ', ');         // Replace colons with a comma for a short pause
 
-    // 2. Replace all newlines/carriage returns with a single space.
-    // This relies on existing punctuation (., ?, !) for natural pacing.
+    // 2. Normalize whitespace.
     cleanText = cleanText.replace(/(\r\n|\n|\r)/gm, ' ');
+    cleanText = cleanText.replace(/ +/g, ' ').trim(); 
 
-    // 3. Final cleanup
-    cleanText = cleanText.replace(/ +/g, ' ').trim(); // Reduce multiple spaces and trim whitespace
+    // 3. Attempt to call Django Proxy for Botlhale TTS
+    try {
+        const response = await fetch('/tts/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                text: cleanText, 
+                language_code: selectedLang 
+            })
+        });
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = selectedLang;
-    utterance.rate = 0.95;
-    
-    // Stop any current speech and start the new one
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
+        const data = await response.json();
+        
+        if (response.ok && data.audio_url) {
+            // SUCCESS: Play the generated audio file
+            console.log("Using Botlhale TTS via Django proxy.");
+            const audio = new Audio(data.audio_url);
+            audio.play();
+        } else {
+            // FAILURE 1: Proxy returned non-200 or missing audio_url -> FALLBACK
+            console.error("Botlhale TTS proxy failed:", data);
+            fallbackToBrowserTTS(cleanText, selectedLang);
+        }
+    } catch (error) {
+        // FAILURE 2: Network error or unhandled fetch exception -> FALLBACK
+        console.error("Fetch error to TTS proxy (Botlhale failed):", error);
+        fallbackToBrowserTTS(cleanText, selectedLang);
+    }
 }
 
 /**
@@ -239,6 +272,12 @@ function markdownToHtml(text) {
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
+    // Convert YouTube URL line to a clickable link
+    html = html.replace(/<p>(https?:\/\/(?:www\.)?youtu(?:be\.com|\.be)\/[^\s]+)<\/p>/g, (match, url) => {
+        return `<p class="mt-4"><a href="${url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold underline break-all">🔗 Watch Video Lesson on YouTube</a></p>`;
+    });
+
+
     // Convert bulleted lists
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
@@ -250,7 +289,7 @@ function markdownToHtml(text) {
                 // Handle numbered lists without interfering with question numbering
                 listItemText = trimmedLine.replace(/^\d+\.\s*/, '').trim();
             }
-             if (!trimmedLine.match(/^(1|2)\.\s*Self-Assessment Questions/i) && !trimmedLine.match(/^(1|2)\.\s*What is/i)) {
+             if (!trimmedLine.match(/Self-Assessment Questions/i)) { // Prevent list-ifying the questions/answers
                  if (listItemText.match(/^<li/)) {
                      return line; 
                  }
@@ -266,8 +305,13 @@ function markdownToHtml(text) {
     // Basic paragraph wrapping
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
-        if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p)/i)) {
-            return line; // Skip empty lines, headings, or lists/paragraphs
+        // Check for common tags and YouTube links to prevent double wrapping
+        if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p|<a)/i)) {
+            return line; // Skip empty lines, headings, or lists/paragraphs/links
+        }
+        // Handle plain URLs that weren't wrapped above (shouldn't happen with the new URL check, but for robustness)
+        if (trimmedLine.match(/^https?:\/\//)) {
+            return line;
         }
         return `<p>${trimmedLine}</p>`;
     }).join('\n');
@@ -302,7 +346,7 @@ function generatePdf(elementId) {
 }
 
 
-// --- AI Fetch Function ---
+// --- AI Fetch Function (Remains unchanged for Gemini Outline/Detail calls) ---
 async function fetchAiContent(prompt, keyType, model = 'gemini-2.5-flash') {
     const apiKey = API_KEYS[keyType];
     
@@ -429,13 +473,17 @@ function displayOutline(topic, level, markdownText) {
         const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
         const briefContentHtml = markdownToHtml(`## ${stepContent}`);
 
-        // The prompt for the detailed content/quiz
-        const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms. After the lesson, create two "Self-Assessment Questions" (one multiple choice, one fill-in-the-blank) based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
+        // THE PROMPT IS UPDATED: Requests 6 plain questions, no multiple choice/fill-in-the-blank.
+        const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms.
+                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a single, working, relevant YouTube link (URL) for a video about this lesson's topic.
+                        After the video link, create a **Self-Assessment** section with **6 simple, open-ended questions** based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
                         STRICTLY format the output as: 
                         1. A **H3** heading for the detailed title.
                         2. The detailed lesson content (in paragraphs, using **bold** for keywords).
-                        3. A **H3** heading titled "Self-Assessment Questions".
-                        4. The two questions, using simple numbering (1. and 2.). 
+                        3. A **H3** heading titled "Further Learning Video".
+                        4. The YouTube URL (no markdown link, just the plain URL on its own line).
+                        5. A **H3** heading titled "Self-Assessment Questions".
+                        6. The 6 open-ended questions, using simple numbering (1. to 6.). 
                         DO NOT include any special symbols like asterisks (*), hyphens (-), or extra markdown for the question/answer structure.`;
 
         const stepDiv = document.createElement("div");
@@ -502,12 +550,12 @@ async function displayDetailedLesson(element) {
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
-        // --- FIXED: Now correctly triggers voice with clean and punctuated text ---
+        // --- Now attempts Botlhale, falls back to browser TTS if it fails ---
         speakText(generatedDetail);
 
     } catch (error) {
         console.error("Detailed Lesson API Error (Detail):", error);
-        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your DETAIL API Key.</p>`;
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your DETAIL API Key or network connection.</p>`;
         quizStatusDiv.textContent = "❌ Failed to load lesson content.";
     }
 }

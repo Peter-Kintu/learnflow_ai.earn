@@ -12,6 +12,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from docx import Document
+import requests
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 
 # Import the necessary libraries for PDF generation
@@ -798,3 +802,39 @@ def retake_quiz(request, quiz_id):
     return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
 
 
+
+# Replace with your actual Botlhale token
+BOTLHALE_API_TOKEN = "Bearer YOUR_BOTLHALE_TOKEN"
+BOTLHALE_TTS_URL = "https://api.botlhale.xyz/tts"
+
+@csrf_exempt
+def tts_proxy(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST requests are allowed."}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        text = data.get("text")
+        language_code = data.get("language_code")
+
+        if not text or not language_code:
+            return JsonResponse({"error": "Missing 'text' or 'language_code'."}, status=400)
+
+        payload = {
+            "text": text,
+            "language_code": language_code
+        }
+
+        headers = {
+            "Authorization": BOTLHALE_API_TOKEN
+        }
+
+        response = requests.post(BOTLHALE_TTS_URL, headers=headers, data=payload)
+
+        if response.status_code != 200:
+            return JsonResponse({"error": "Botlhale API error", "details": response.text}, status=response.status_code)
+
+        return JsonResponse(response.json())
+
+    except Exception as e:
+        return JsonResponse({"error": "Server error", "details": str(e)}, status=500)

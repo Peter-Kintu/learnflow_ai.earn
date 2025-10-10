@@ -1,5 +1,9 @@
 from django.urls import path
 from . import views
+from django.urls import path
+from .views import tts_proxy
+
+
 
 # Set the application namespace for use with `{% url 'aiapp:name' %}`
 app_name = 'aiapp'
@@ -39,5 +43,7 @@ urlpatterns = [
     # User Profile URL
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
     path('why-learnflow-ai/', views.why_learnflow_ai, name='why_learnflow_ai'),
+    path('tts/', tts_proxy, name='tts_proxy'),
+
     
 ]
