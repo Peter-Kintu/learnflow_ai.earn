@@ -272,8 +272,10 @@ function markdownToHtml(text) {
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
-    // Convert YouTube URL line to a clickable link
+    // **UPDATED LOGIC HERE:** Convert YouTube URL line to a clickable link
+    // It looks for a paragraph containing ONLY a URL matching common YouTube patterns.
     html = html.replace(/<p>(https?:\/\/(?:www\.)?youtu(?:be\.com|\.be)\/[^\s]+)<\/p>/g, (match, url) => {
+        // 'url' is the captured link from the regex. We use it for the href.
         return `<p class="mt-4"><a href="${url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold underline break-all">🔗 Watch Video Lesson on YouTube</a></p>`;
     });
 
@@ -473,9 +475,9 @@ function displayOutline(topic, level, markdownText) {
         const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
         const briefContentHtml = markdownToHtml(`## ${stepContent}`);
 
-        // THE PROMPT IS UPDATED: Requests 6 plain questions, no multiple choice/fill-in-the-blank.
+        // THE PROMPT IS UPDATED: Requests 6 plain questions, and strongly requests a verified, working YouTube link.
         const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms.
-                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a single, working, relevant YouTube link (URL) for a video about this lesson's topic.
+                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a **single, verified, relevant, and working YouTube link (URL)** for a video about this lesson's topic.
                         After the video link, create a **Self-Assessment** section with **6 simple, open-ended questions** based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
                         STRICTLY format the output as: 
                         1. A **H3** heading for the detailed title.
