@@ -215,7 +215,7 @@ async function speakText(text) {
     let cleanText = text
         .replace(/#+/g, '')             // Remove headings
         .replace(/\*\*/g, '')           // Remove double asterisks (bold)
-        .replace(/\*/g, '')             // Remove single asterisks
+        .replace(/\*/g, '')              // Remove single asterisks
         .replace(/__/g, '')             // Remove double underscores
         .replace(/_/g, '')              // Remove single underscores
         .replace(/^- /gm, '. ')         // NEW: Replace list hyphens with period-space for a pause
@@ -264,23 +264,36 @@ async function speakText(text) {
 function markdownToHtml(text) {
     let html = text;
     
-    // Simple replacements for common headings, assuming AI uses them for structure
-    html = html.replace(/^## (.*)$/gim, '<h3>$1</h3>');
-    html = html.replace(/^# (.*)$/gim, '<h2>$1</h2>');
+    // 1. Simple replacements for common headings, assuming AI uses them for structure
+    html = html.replace(/^## (.*)$/gim, '<h3>$1</h3>'); // Step titles in outline
+    html = html.replace(/^# (.*)$/gim, '<h2>$1</h2>'); // Not used, but kept for safety
     
-    // Replace bold syntax if present (for robustness)
+    // 2. Replace bold syntax
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
-    // **UPDATED LOGIC HERE:** Convert YouTube URL line to a clickable link
-    // It looks for a paragraph containing ONLY a URL matching common YouTube patterns.
-    html = html.replace(/<p>(https?:\/\/(?:www\.)?youtu(?:be\.com|\.be)\/[^\s]+)<\/p>/g, (match, url) => {
-        // 'url' is the captured link from the regex. We use it for the href.
-        return `<p class="mt-4"><a href="${url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold underline break-all">🔗 Watch Video Lesson on YouTube</a></p>`;
+    // Helper to get a Google Search URL for the current lesson title
+    function getGoogleSearchUrl(query) {
+        return `https://www.google.com/search?q=youtube+video+${encodeURIComponent(query)}`;
+    }
+    
+    // Get the current lesson title for the manual search button
+    const lessonTitle = document.querySelector('#quizModal h3').textContent.replace('Lesson: ', '');
+    const searchLink = getGoogleSearchUrl(lessonTitle);
+
+    // 3. **CRITICAL FIX: Robustly convert the plain YouTube URL into a clickable link.**
+    // The regex is aggressive, looking for http/https followed by any YouTube pattern, separated by a line break.
+    const youtubeRegex = /(https?:\/\/(?:www\.)?youtu(?:be\.com|\.be)\/[^\s\n]+)/gi;
+    
+    html = html.replace(youtubeRegex, (match, url) => {
+        // Return the clickable link structure, including the manual search button for accuracy fallback.
+        return `<p class="mt-4 flex items-center gap-3">
+            <a href="${url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold underline break-all">🔗 Watch AI-Suggested Video</a>
+            <a href="${searchLink}" target="_blank" class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 text-sm">🔍 Search for Video</a>
+        </p>\n`;
     });
 
-
-    // Convert bulleted lists
+    // 4. Convert bulleted lists
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || trimmedLine.match(/^\d+\./)) {
@@ -301,24 +314,20 @@ function markdownToHtml(text) {
         return line;
     }).join('\n');
     
-    // Wrap consecutive list items in <ul>
+    // 5. Wrap consecutive list items in <ul>
     html = html.replace(/(<li>.*?<\/li>[\s\n]*)+/gs, (match) => `<ul>${match}</ul>`);
 
-    // Basic paragraph wrapping
+    // 6. Basic paragraph wrapping
     html = html.split('\n').map(line => {
         const trimmedLine = line.trim();
-        // Check for common tags and YouTube links to prevent double wrapping
+        // Check for common tags, including the new <a> tag structure, to prevent double wrapping
         if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p|<a)/i)) {
-            return line; // Skip empty lines, headings, or lists/paragraphs/links
-        }
-        // Handle plain URLs that weren't wrapped above (shouldn't happen with the new URL check, but for robustness)
-        if (trimmedLine.match(/^https?:\/\//)) {
-            return line;
+            return line; // Skip empty lines, headings, lists, or links/paragraphs already processed
         }
         return `<p>${trimmedLine}</p>`;
     }).join('\n');
     
-    // Clean up empty tags and repeated newlines
+    // 7. Clean up empty tags and repeated newlines
     html = html.replace(/<p><\/p>/g, '')
                .replace(/(\n\s*){3,}/g, '\n\n');
     
@@ -475,15 +484,15 @@ function displayOutline(topic, level, markdownText) {
         const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
         const briefContentHtml = markdownToHtml(`## ${stepContent}`);
 
-        // THE PROMPT IS UPDATED: Requests 6 plain questions, and strongly requests a verified, working YouTube link.
+        // THE PROMPT IS UPDATED: Requests a verified, working YouTube link.
         const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms.
-                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a **single, verified, relevant, and working YouTube link (URL)** for a video about this lesson's topic.
+                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a **single, HIGHLY-VERIFIED, RELEVANT, and WORKING YouTube link (URL starting with https://)** for a video about this lesson's topic. You must pretend to have performed a web search and confirmed the link is active and accurate.
                         After the video link, create a **Self-Assessment** section with **6 simple, open-ended questions** based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
                         STRICTLY format the output as: 
                         1. A **H3** heading for the detailed title.
                         2. The detailed lesson content (in paragraphs, using **bold** for keywords).
                         3. A **H3** heading titled "Further Learning Video".
-                        4. The YouTube URL (no markdown link, just the plain URL on its own line).
+                        4. The YouTube URL (no markdown link, just the plain URL on its own line, e.g., https://www.youtube.com/watch?v=XXXX).
                         5. A **H3** heading titled "Self-Assessment Questions".
                         6. The 6 open-ended questions, using simple numbering (1. to 6.). 
                         DO NOT include any special symbols like asterisks (*), hyphens (-), or extra markdown for the question/answer structure.`;
