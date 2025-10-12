@@ -414,7 +414,7 @@
     }
 
 
-    // ## TTS Functions (UNCHANGED) ##
+    // ## TTS Functions (MODIFIED: speakText) ##
     
     function populateVoices() {
         voices = speechSynthesis.getVoices();
@@ -440,28 +440,46 @@
         // The cleaning happens in typeWriter/transcriptQuery/summarizeChat before this call
         const utterance = new SpeechSynthesisUtterance(text);
         
-        const preferredVoices = [
-            "Daniel", "Samantha", "Ting-Ting", 
-            "Google US English", "Microsoft Zira" 
+        // 🔥 MODIFIED: Change the voice tone (pitch) and rate (speed) 🔥
+        utterance.pitch = 1.2; // Higher tone (e.g., 1.2)
+        utterance.rate = 0.95; // Slightly slower speed (e.g., 0.95)
+
+        // 🔥 MODIFIED: Enhanced Voice Selection for Multilingual/African Languages 🔥
+        // This attempts to find voices that support African languages well and other languages
+        const voicePreferences = [
+            // Priority 1: African-related languages (may only be available on certain OS/browsers)
+            { lang: 'en-ZA', name: 'South African' }, // Regional English accent
+            { lang: 'zu', name: 'Zulu' }, 
+            { lang: 'sw', name: 'Swahili' }, 
+            { lang: 'ha', name: 'Hausa' }, 
+            // Priority 2: High-quality, often multilingual/polyglot voices
+            { lang: 'Google', name: 'Multi' }, 
+            { lang: 'Microsoft', name: 'Multi' },
+            // Priority 3: Other high-quality defaults
+            { lang: 'Daniel', name: 'Daniel' }, 
+            { lang: 'Samantha', name: 'Samantha' }, 
+            { lang: 'Zira', name: 'Zira' }
         ];
 
         let selectedVoice = null;
-        for (let name of preferredVoices) {
-            selectedVoice = voices.find(voice => voice.name.includes(name));
+        for (let pref of voicePreferences) {
+            // Find a voice by name OR by language code match
+            selectedVoice = voices.find(voice => 
+                voice.name.includes(pref.name) || voice.lang.includes(pref.lang)
+            );
             if (selectedVoice) break;
         }
         
+        // Final fallback: any voice with an English language code
         if (!selectedVoice) {
-            selectedVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.includes('en'));
+            selectedVoice = voices.find(voice => voice.lang.includes('en'));
         }
         
+        // If a voice is found, set it
         if (selectedVoice) {
             utterance.voice = selectedVoice;
         }
         
-        utterance.rate = 1.0; 
-        utterance.pitch = 1.0; 
-
         utterance.onend = () => {
             isSpeaking = false;
             stopSpeakingButton.style.display = 'none'; 
@@ -861,7 +879,7 @@
         if (historyForSummary.length === 0) {
             const warningMsgDiv = document.createElement('div');
             const noSummaryText = "No conversation to summarize. Start chatting!";
-            warningMsgMsgDiv.className = "chat-message error";
+            warningMsgDiv.className = "chat-message error";
             warningMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">⚠️</span> ${cleanText(noSummaryText)}`;
             chatLog.appendChild(warningMsgDiv);
             chatLog.scrollTop = chatLog.scrollHeight;
