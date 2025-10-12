@@ -191,14 +191,40 @@ const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
  * Helper function for browser's native TTS (fallback).
+ * MODIFIED: Improved voice tone (pitch) and multilingual voice selection.
  */
 function fallbackToBrowserTTS(text, lang) {
     console.warn("Falling back to browser's native TTS.");
     const utterance = new SpeechSynthesisUtterance(text);
-    // Note: Browser TTS language support depends on OS/browser settings
-    utterance.lang = lang; 
-    utterance.rate = 0.95;
     
+    // 1. IMPROVE TONE (Pitch/Rate)
+    utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
+    utterance.rate = 0.95; // Maintain slightly slower pace for clarity (as before)
+
+    // 2. Multilingual Voice Selection Logic
+    const voices = speechSynthesis.getVoices();
+    let selectedVoice = null;
+    
+    // Priority 1: Find an exact match for the language code (e.g., 'fr-FR', 'en-US')
+    selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()));
+
+    // Priority 2: African Language Fallback (Try for African-region English or a related code)
+    if (!selectedVoice && (lang === 'sw' || lang === 'yo' || lang === 'zu')) {
+        selectedVoice = voices.find(voice => voice.lang.includes('en-ZA') || voice.lang.includes('en-GB') || voice.name.includes('African') || voice.name.includes('Zulu'));
+    }
+
+    // Priority 3: General Multilingual/High-quality fallback (Google/Microsoft voices often support more languages)
+    if (!selectedVoice) {
+         selectedVoice = voices.find(voice => voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.lang.startsWith('en'));
+    }
+    
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(`TTS Voice selected: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+        console.warn(`Could not find a specific voice for language code: ${lang}. Using default.`);
+    }
+
     // Stop any current speech and start the new one
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
