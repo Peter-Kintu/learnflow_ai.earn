@@ -307,9 +307,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
                 </svg>
-                Ask LearnFlow AI 
+                Ask LearnFlow AI
             </h2>
-            
             {# MODIFIED: Buttons are now smaller, input area is wider #}
             <div class="integrated-input-container">
                 <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">
@@ -317,16 +316,13 @@
                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/>
                     </svg>
                 </button>
-                
                 <textarea id="chatInput" placeholder="Type your question or tap the mic to speak..." onkeydown="handleKeydown(event)"></textarea>
-                
                 <button onclick="typeQuery()" class="action-icon-button" id="sendChatButton" title="Send Message">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3v7l15 2-15 2v7z"/>
                     </svg>
                 </button>
             </div>
-            
             {# Old voiceStatus and old input wrapper removed. #}
             <div id="voiceStatus"></div>
 
@@ -334,7 +330,6 @@
                 <button onclick="stopSpeaking()" class="action-button stop-speak" id="stopSpeakingButton">
                     <span class="text-xl">🔇</span> Stop Speaking
                 </button>
-                
                 <button onclick="summarizeChat()" class="action-button summarize">Summarize Chat</button>
                 <button onclick="exportChat()" class="action-button export">Export Chat</button>
                 <button onclick="clearChat()" class="action-button clear">Clear Chat</button>
@@ -349,132 +344,368 @@
     const stopSpeakingButton = document.getElementById('stopSpeakingButton');
     const recordButton = document.getElementById('recordButton');
     const voiceStatus = document.getElementById('voiceStatus');
-    const chatInput = document.getElementById('chatInput'); 
+    const chatInput = document.getElementById('chatInput');
     // NEW: Get the send button for potential status updates (though not strictly required)
-    const sendChatButton = document.getElementById('sendChatButton'); 
-
+    const sendChatButton = document.getElementById('sendChatButton');
     const responseLimit = 10;
     const username = "{{ user.username }}";
     const chatHistoryKey = `chatHistory-${username}`;
     const responseCountKey = `responseCount-${username}`;
     let responseCount = localStorage.getItem(responseCountKey) ? parseInt(localStorage.getItem(responseCountKey)) : 0;
-    
+
     // --- Speech Synthesis Variables (TTS) ---
     let voices = [];
     let isSpeaking = false;
-    
+
     // --- Speech Recognition Variables (STT) ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let isRecording = false;
-    
-    // 🔥 NEW CONSTANT: Set the African Language Code for Speech Recognition (STT) 🔥
-    // Swahili (Tanzania) is generally the most robust African language supported by Chrome/browser STT.
-    // Try other codes like 'ha-NG' (Hausa) or 'zu-ZA' (Zulu) if you prefer.
-    const africanLanguageCode = 'sw-TZ'; 
 
-    // --- API Configuration ---
-    // NOTE: Replace the placeholder with your actual Gemini API key.
-    const apiKey = "AIzaSyBo-nakWm_HBUBStldTAKzcAdvB4OU46HU";
-    const modelName = 'gemini-2.5-flash';
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // 🔥 UPDATED CONSTANT: System instruction to include Kintu Peter's details 🔥
-    const systemInstruction = `You are LearnFlow AI, an educational partner. You were developed by **Kintu Peter**, a dedicated teacher and the CEO of Mwene Groups of Companies. Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including **Luganda**, Swahili, Hausa, Yoruba, Zulu, and others. Always respond in the language the user is using, maintaining context and educational quality.`;
+    // --- Core Chat Functions ---
 
     /**
-     * Cleans the AI response text by removing markdown formatting and disruptive symbols
-     * before text-to-speech conversion.
-     * @param {string} text The raw text from the API.
-     * @returns {string} The cleaned text.
+     * Handles typing into the input field and sending the query.
+     */
+    function handleKeydown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent newline
+            typeQuery();
+        }
+    }
+
+    /**
+     * Appends a message to the chat log.
+     * @param {string} role - 'user' or 'ai'
+     * @param {string} text - The message content.
+     */
+    function appendMessage(role, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${role}`;
+        
+        // Sanitize the text for display, replace newline with <br> for pre-wrap
+        const formattedText = text.replace(/\n/g, '<br>');
+
+        messageDiv.innerHTML = `<strong>${role === 'user' ? 'You' : 'Ai'}:</strong> ${formattedText}`;
+        chatLog.appendChild(messageDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        
+        // Save history only for non-streaming messages or at the end of streaming
+        if (role !== 'ai') {
+            saveChatHistory();
+        }
+    }
+
+    /**
+     * Creates and appends a placeholder for AI's response while loading.
+     */
+    function showLoading() {
+        // Disable input and buttons
+        chatInput.disabled = true;
+        sendChatButton.disabled = true;
+        recordButton.disabled = true;
+        
+        // Add loader message
+        const loaderDiv = document.createElement('div');
+        loaderDiv.className = "chat-message ai";
+        loaderDiv.id = "aiLoader";
+        loaderDiv.innerHTML = '<strong>Ai:</strong> <div class="loader"></div>';
+        chatLog.appendChild(loaderDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    /**
+     * Removes the loading placeholder and re-enables controls.
+     */
+    function hideLoading() {
+        const loader = document.getElementById('aiLoader');
+        if (loader) {
+            loader.remove();
+        }
+        chatInput.disabled = false;
+        sendChatButton.disabled = false;
+        recordButton.disabled = false;
+        chatInput.focus();
+    }
+    
+    /**
+     * A utility function to ensure text is HTML-safe and suitable for pre-wrap.
+     * @param {string} text - The text to clean.
      */
     function cleanText(text) {
-        let cleaned = text;
-
-        // 1. Remove link/citation brackets and their content
-        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content content inside brackets, remove brackets themselves (e.g. for [text](link))
-
-        // 2. Remove common markdown bold/italic/strikethrough symbols (**, *, __, _, ~~).
-        cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** and __ for bold/strong
-        cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Removes * and _ for italics/emphasis
-        cleaned = cleaned.replace(/~~(.*?)~~/g, '$1'); // Removes ~~ for strikethrough
-
-        // 3. Remove list markers, headings, and specific disruptive punctuation (like " and lone *)
-        cleaned = cleaned.replace(/^\s*[-*]+\s+/gm, ''); // Removes list markers: -, *, --, etc. at the start of a line
-        cleaned = cleaned.replace(/#+\s*/g, ''); // Removes heading symbols (e.g., #, ##, ###)
-        cleaned = cleaned.replace(/"/g, ''); // Remove all double quotes (user requested)
-        cleaned = cleaned.replace(/---/g, ' '); // Remove triple dashes (horizontal rule)
-        cleaned = cleaned.replace(/--/g, ' '); // Remove double dashes (en/em dashes)
-        cleaned = cleaned.replace(/-/g, ' '); // Remove remaining single hyphens (user requested, replace with space)
-
-        // 4. Clean up excessive whitespace that might result from removals
-        cleaned = cleaned.replace(/\s\s+/g, ' '); // Replace multiple spaces with a single space
-
-        return cleaned.trim(); // Trim leading/trailing whitespace
+        if (!text) return '';
+        // 1. Basic HTML sanitization (replace <, > with entities)
+        let cleaned = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // 2. Remove markdown artifacts that TTS/plain text doesn't need
+        cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Bold
+        cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Italics
+        cleaned = cleaned.replace(/###?\s/g, ''); // Headers
+        cleaned = cleaned.replace(/- /g, ''); // List markers
+        // 3. Remove newlines for a cleaner, continuous spoken stream
+        // For spoken text, a newline is just a pause, so we replace it with a space.
+        // For display, the original string with \n is better when used with pre-wrap.
+        // Since this function is mostly used for *spoken* text, we keep the space.
+        cleaned = cleaned.replace(/\n/g, ' '); 
+        
+        return cleaned;
     }
 
-    // ## TTS Functions (MODIFIED: speakText) ##
-    function populateVoices() {
-        voices = speechSynthesis.getVoices();
-    }
-    populateVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = populateVoices;
+    /**
+     * Core function to send query to the AI API (Flask backend).
+     * @param {string} query - The user's input.
+     * @param {string} source - 'text' or 'voice'.
+     */
+    async function sendQuery(query, source) {
+        if (!query.trim()) return;
+
+        // 1. Show user message and loading state
+        appendMessage('user', query);
+        chatInput.value = ''; // Clear input field
+        showLoading();
+
+        // 2. Fetch API key from the element
+        const apiKeyElement = document.getElementById('gemini-api-key-home');
+        if (!apiKeyElement) {
+             hideLoading();
+             appendMessage('ai', 'Error: Gemini API Key element not found.');
+             return;
+        }
+        const apiKey = apiKeyElement.getAttribute('data-key');
+        if (!apiKey) {
+             hideLoading();
+             appendMessage('ai', 'Error: Gemini API Key not configured. Please set the environment variable.');
+             return;
+        }
+
+        // 3. Increment response count (for limit)
+        responseCount++;
+        localStorage.setItem(responseCountKey, responseCount);
+
+        // 4. Enforce message limit
+        if (responseCount > responseLimit) {
+            hideLoading();
+            const limitMsg = `You have reached your limit of ${responseLimit} responses for this session. Please refresh the page or clear chat to continue.`;
+            appendMessage('ai', limitMsg);
+            speakText(limitMsg);
+            return;
+        }
+        
+        // 5. Get current chat history for context
+        const history = getChatHistory();
+        const chatLogMessages = history.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model', // Map 'ai' to 'model' for the API
+            text: msg.text
+        }));
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey // Send API key in header
+                },
+                body: JSON.stringify({
+                    prompt: query,
+                    history: chatLogMessages,
+                    language: window.navigator.language || 'en-US' // Pass user language
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server responded with status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiResponseText = data.response;
+
+            // 6. Remove loader before typing effect
+            hideLoading();
+            
+            // 7. Start the typing effect
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = "chat-message ai";
+            
+            const aiStrong = document.createElement('strong');
+            aiStrong.textContent = "Ai:";
+            aiMsgDiv.appendChild(aiStrong);
+
+            const contentSpan = document.createElement('span');
+            aiMsgDiv.appendChild(contentSpan);
+            chatLog.appendChild(aiMsgDiv);
+            
+            let i = 0;
+            function typeResponse() {
+                if (i < aiResponseText.length) {
+                    // Use substring to ensure full characters are added
+                    contentSpan.textContent += aiResponseText.charAt(i);
+                    i++;
+                    setTimeout(typeResponse, 10); // Adjust typing speed (ms)
+                } else {
+                    // Typing is complete
+                    saveChatHistory();
+                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
+                    const speakableText = cleanText(aiResponseText);
+                    speakText(speakableText); 
+                }
+                // Keep the chat log scrolled to the bottom
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+
+            typeResponse();
+
+        } catch (error) {
+            console.error("Chat API Error:", error);
+            hideLoading();
+            const errorText = `Could not connect to the AI service. Error: ${error.message}`;
+            appendMessage('ai', `🚨 ${errorText}`);
+            speakText("I encountered an error while processing your request.");
+        }
     }
 
-    function speakText(text) {
-        if (!'speechSynthesis' in window) {
-            console.warn("Speech Synthesis not supported in this browser.");
+
+    /**
+     * Initiates the chat interaction from the text input field.
+     */
+    function typeQuery() {
+        const query = chatInput.value.trim();
+        if (query) {
+            sendQuery(query, 'text');
+        }
+    }
+
+
+    // --- Speech Recognition (STT) Functions ---
+
+    /**
+     * Initializes the Speech Recognition object.
+     */
+    function initSpeechRecognition() {
+        if (!SpeechRecognition) {
+            recordButton.disabled = true;
+            recordButton.title = "Speech recognition not supported in this browser.";
+            console.error("Speech Recognition not supported.");
             return;
         }
 
-        stopSpeaking();
-        isSpeaking = true;
-        stopSpeakingButton.style.display = 'block';
+        recognition = new SpeechRecognition();
+        recognition.continuous = false; // Capture a single utterance
+        recognition.lang = window.navigator.language || 'en-US'; // Use user's browser language
 
-        // NOTE: The text passed to this function should already be cleaned
-        // The cleaning happens in typeWriter/transcriptQuery/summarizeChat before this call
-        const utterance = new SpeechSynthesisUtterance(text);
+        recognition.onstart = () => {
+            isRecording = true;
+            recordButton.classList.add('recording');
+            recordButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11V8h2v8z"/></svg>';
+            recordButton.title = "Stop Recording / Analyzing...";
+        };
 
-        // 🔥 MODIFIED: Change the voice tone (pitch) and rate (speed) 🔥
-        utterance.pitch = 1.2; // Higher tone (e.g., 1.2)
-        utterance.rate = 0.95; // Slightly slower speed (e.g., 0.95)
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            chatInput.value = transcript;
+            recordButton.classList.remove('recording');
+            recordButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/></svg>';
+            recordButton.title = "Start Recording";
 
-        // 🔥 MODIFIED: Enhanced Voice Selection for Multilingual/African Languages 🔥
-        // This attempts to find voices that support African languages well and other languages
-        const voicePreferences = [
-            // Priority 1: African-related languages (may only be available on certain OS/browsers)
-            { lang: 'en-ZA', name: 'South African' }, // Regional English accent
-            { lang: 'zu', name: 'Zulu' }, 
-            { lang: 'sw', name: 'Swahili' }, 
-            { lang: 'ha', name: 'Hausa' }, 
-            // Priority 2: High-quality, often multilingual/polyglot voices
-            { lang: 'Google', name: 'Multi' }, 
-            { lang: 'Microsoft', name: 'Multi' },
-            // Priority 3: Other high-quality defaults
-            { lang: 'Daniel', name: 'Daniel' }, 
-            { lang: 'Samantha', name: 'Samantha' }, 
-            { lang: 'Zira', name: 'Zira' }
-        ];
-        let selectedVoice = null;
-        for (let pref of voicePreferences) {
-            // Find a voice by name OR by language code match
-            selectedVoice = voices.find(voice => voice.name.includes(pref.name) || voice.lang.includes(pref.lang) );
-            if (selectedVoice) break;
+            // Automatically send the query after successful transcription
+            if (transcript) {
+                sendQuery(transcript, 'voice');
+            }
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            recordButton.classList.remove('recording');
+            recordButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/></svg>';
+            recordButton.title = "Start Recording";
+        };
+
+        recognition.onerror = (event) => {
+            isRecording = false;
+            recordButton.classList.remove('recording');
+            recordButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.9-3.4 7-7.3 7s-7.3-3.1-7.3-7H4c0 4.3 3.3 7.8 7.5 8.3v3.7h1v-3.7c4.2-.5 7.5-4 7.5-8.3h-2.7z"/></svg>';
+            recordButton.title = "Start Recording";
+            console.error('Speech recognition error:', event.error);
+        };
+    }
+
+    /**
+     * Toggles the recording state.
+     */
+    function toggleRecording() {
+        if (!recognition) {
+            // Should not happen if check in initSpeechRecognition worked
+            alert("Speech recognition is not supported in your browser.");
+            return;
         }
 
-        // Final fallback: any voice with an English language code
+        if (isRecording) {
+            recognition.stop();
+        } else {
+            // Clear input first
+            chatInput.value = '';
+            // Stop any ongoing speech
+            stopSpeaking();
+            recognition.start();
+        }
+    }
+
+
+    // --- Speech Synthesis (TTS) Functions ---
+
+    /**
+     * Stops the currently speaking utterance.
+     */
+    function stopSpeaking() {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            stopSpeakingButton.style.display = 'none';
+        }
+    }
+
+    /**
+     * Speaks the given text using the Web Speech API.
+     * @param {string} text - The text to speak.
+     */
+    function speakText(text) {
+        if (!'speechSynthesis' in window) {
+            console.warn("Speech Synthesis not supported.");
+            return;
+        }
+
+        stopSpeaking(); // Stop any previous utterance
+
+        // 1. Get a voice (prefer English/African voices if available)
+        if (voices.length === 0) {
+            voices = window.speechSynthesis.getVoices();
+        }
+        
+        // Prioritize a few preferred languages, fallback to first available
+        let selectedVoice = voices.find(voice => 
+            voice.lang.startsWith('en-US') && voice.name.includes('Google')
+        ) || voices.find(voice => 
+            voice.lang.startsWith('en-GB') && voice.name.includes('Google')
+        ) || voices.find(voice => 
+            voice.lang.startsWith('en')
+        ) || voices[0];
+        
         if (!selectedVoice) {
-            selectedVoice = voices.find(voice => voice.lang.includes('en'));
+            console.warn("No compatible voice found.");
+            return;
         }
 
-        // If a voice is found, set it
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
-            // 🔥 CRITICAL FIX: Set the utterance language to the selected voice's language.
-            // This tells the TTS engine which language model to use for pronunciation.
-            utterance.lang = selectedVoice.lang;
-        }
+        // 2. Create the utterance
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = selectedVoice;
+        utterance.pitch = 1.0;
+        utterance.rate = 1.0; // Normal speed
+
+        // 3. Set event handlers
+        utterance.onstart = () => {
+            isSpeaking = true;
+            stopSpeakingButton.style.display = 'inline-block';
+        };
 
         utterance.onend = () => {
             isSpeaking = false;
@@ -482,290 +713,88 @@
         };
 
         utterance.onerror = (event) => {
-            console.error('SpeechSynthesisUtterance.onerror', event);
             isSpeaking = false;
             stopSpeakingButton.style.display = 'none';
+            console.error('SpeechSynthesisUtterance.onerror', event);
         };
 
-        speechSynthesis.speak(utterance);
+        // 4. Speak
+        window.speechSynthesis.speak(utterance);
     }
 
-    function stopSpeaking() {
-        if (isSpeaking && 'speechSynthesis' in window) {
-            speechSynthesis.cancel();
-            isSpeaking = false;
-            stopSpeakingButton.style.display = 'none';
-        }
-    }
 
-    // ## STT Functions ##
-    function initSpeechRecognition() {
-        if (!SpeechRecognition) {
-            console.warn("Speech Recognition not supported in this browser.");
-            recordButton.disabled = true;
+    // --- Utility Functions ---
+
+    /**
+     * Summarizes the current chat conversation using an API call.
+     */
+    async function summarizeChat() {
+        stopSpeaking();
+        const history = getChatHistory();
+
+        if (history.length === 0) {
+            appendMessage('ai', 'Nothing to summarize yet. Start a conversation!');
+            speakText("Nothing to summarize yet. Start a conversation!");
             return;
         }
 
-        recognition = new SpeechRecognition();
-        recognition.continuous = false; // Capture a single phrase/sentence
-        recognition.interimResults = false; // Only final results
-        recognition.lang = africanLanguageCode; // Use the defined African language code
-
-        recognition.onstart = () => {
-            isRecording = true;
-            recordButton.classList.add('recording');
-            recordButton.title = 'Stop Recording (Listening)';
-            chatInput.placeholder = '🎙️ Listening... Speak now.';
-        };
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            chatInput.value = transcript;
-            // Immediately send the query once transcription is complete
-            typeQuery();
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Speech Recognition Error:', event.error);
-            resetRecordingState();
-            if (event.error === 'no-speech') {
-                chatInput.placeholder = 'No speech detected. Try again.';
-            } else if (event.error === 'not-allowed') {
-                alert("Microphone access was denied. Please allow microphone permissions in your browser settings.");
-            } else {
-                 chatInput.placeholder = 'Error listening. Type or try again.';
-            }
-        };
-
-        recognition.onend = () => {
-            resetRecordingState();
-        };
-    }
-
-    function resetRecordingState() {
-        isRecording = false;
-        recordButton.classList.remove('recording');
-        recordButton.title = 'Start Recording';
-        chatInput.placeholder = 'Type your question or tap the mic to speak...';
-    }
-
-    function toggleRecording() {
-        if (!recognition) {
-            initSpeechRecognition();
-            if (!recognition) return; // Exit if init failed
-        }
+        const chatToSummarize = history.map(msg => `${msg.role}: ${msg.text}`).join('\n');
         
-        if (isRecording) {
-            recognition.stop();
-        } else {
-            // Stop any ongoing speech before starting a recording
-            stopSpeaking(); 
-            recognition.start();
-        }
-    }
-
-    // ## Chat UI Functions ##
-    function appendMessage(sender, text, isError = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${sender} ${isError ? 'error' : ''}`;
-        
-        if (sender === 'ai') {
-            messageDiv.innerHTML = `<strong>Ai:</strong> <span class="text-gray-400"></span>`;
-            const contentSpan = messageDiv.querySelector('span');
-            chatLog.appendChild(messageDiv);
-            
-            // Typewriter effect
-            let i = 0;
-            function typeWriter() {
-                if (i < text.length) {
-                    contentSpan.textContent += text.charAt(i); 
-                    i++;
-                    setTimeout(typeWriter, 10);
-                } else {
-                    saveChatHistory();
-                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
-                    const speakableText = cleanText(text);
-                    speakText(speakableText); 
-                }
-                chatLog.scrollTop = chatLog.scrollHeight;
-            }
-            typeWriter();
-            
-        } else {
-            messageDiv.innerHTML = `<strong>You:</strong> ${text}`;
-            chatLog.appendChild(messageDiv);
-            saveChatHistory();
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }
-    }
-
-    function addLoader() {
+        // 1. Show loading state for summary
         const loaderDiv = document.createElement('div');
-        loaderDiv.className = 'loader';
-        loaderDiv.id = 'chatLoader';
+        loaderDiv.className = "chat-message ai";
+        loaderDiv.id = "summaryLoader";
+        loaderDiv.innerHTML = '<strong>Ai (Summary):</strong> <div class="loader"></div>';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    function removeLoader() {
-        const loader = document.getElementById('chatLoader');
-        if (loader) {
-            loader.remove();
+        
+        // 2. Fetch API key
+        const apiKeyElement = document.getElementById('gemini-api-key-home');
+        const apiKey = apiKeyElement ? apiKeyElement.getAttribute('data-key') : null;
+        
+        if (!apiKey) {
+             const loader = document.getElementById('summaryLoader');
+             if (loader) { loader.remove(); }
+             const errorMsgDiv = document.createElement('div');
+             errorMsgDiv.className = "chat-message error";
+             errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> Gemini API Key not configured.`;
+             chatLog.appendChild(errorMsgDiv);
+             return;
         }
-    }
-
-    // ## API Interaction ##
-
-    async function generateAiResponse(prompt) {
-        // Prevent sending empty queries or if a query is already running
-        if (!prompt || sendChatButton.disabled) {
-            return;
-        }
-        
-        // --- Limit Check ---
-        if (responseCount >= responseLimit) {
-            // Instead of blocking, show a warning and let the user decide.
-            // For a production app, this would be a hard block. For this example, we warn but proceed.
-            // console.warn("Response limit reached. Blocking API call.");
-            // appendMessage('ai', "🚨 **Limit Warning:** You have reached your current response limit. Please upgrade or try again tomorrow.", true);
-            // return;
-        }
-        
-        appendMessage('user', prompt);
-        chatInput.value = ''; // Clear input immediately
-        sendChatButton.disabled = true; // Disable button
-        addLoader();
-        
-        const history = getChatHistory().map(item => ({
-            role: item.role,
-            parts: [{ text: item.text }]
-        }));
-
-        // Add the new user message to the history for the API call
-        history.push({ role: 'user', parts: [{ text: prompt }] });
-        
-        // Filter history to keep the last 5 turns (10 messages + system instruction)
-        // This helps manage token count while maintaining context.
-        const relevantHistory = history.slice(-10); // Last 10 messages (5 turns)
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/summarize', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey // Send API key in header
                 },
                 body: JSON.stringify({
-                    contents: relevantHistory,
-                    config: {
-                        systemInstruction: systemInstruction,
-                        temperature: 0.7,
-                        maxOutputTokens: 2048
-                    }
-                })
+                    chat_history: chatToSummarize,
+                    language: window.navigator.language || 'en-US'
+                }),
             });
 
             if (!response.ok) {
-                const errorBody = await response.json();
-                throw new Error(`API Error ${response.status}: ${errorBody.error.message}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server responded with status: ${response.status}`);
             }
 
             const data = await response.json();
+            const displayText = data.summary; // Use the raw summary for typing
             
-            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, I could not generate a response. Please try again.";
-            
-            // Increment and save response count
-            responseCount++;
-            localStorage.setItem(responseCountKey, responseCount);
-            
-            removeLoader();
-            // Append the raw AI text for typewriter effect (cleaning for speech later)
-            appendMessage('ai', aiText); 
-            
-        } catch (error) {
-            console.error('Gemini API Error:', error);
-            removeLoader();
-            const errorMessage = `I encountered an error while processing your request: ${error.message}.`;
-            // Append cleaned error message
-            appendMessage('ai', errorMessage, true); 
-            // Speak the cleaned error message
-            speakText(cleanText(errorMessage));
-        } finally {
-            sendChatButton.disabled = false; // Re-enable button
-        }
-    }
-
-    // --- User Actions ---
-    function typeQuery() {
-        const query = chatInput.value.trim();
-        if (query) {
-            generateAiResponse(query);
-        }
-    }
-
-    function handleKeydown(event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault(); // Prevents a new line in the textarea
-            typeQuery();
-        }
-        // Optional: Auto-resize textarea
-        chatInput.style.height = 'auto';
-        chatInput.style.height = (chatInput.scrollHeight) + 'px';
-    }
-
-    function summarizeChat() {
-        stopSpeaking(); // Stop current speech
-        
-        const history = getChatHistory();
-        if (history.length === 0) {
-            appendMessage('ai', "There is no conversation history to summarize.", true);
-            return;
-        }
-
-        const summaryPrompt = "Please generate a concise, bullet-point summary of the key topics, concepts, and conclusions from the following conversation history. Respond in a professional, educational tone.";
-        
-        // Add a temporary loader message
-        const loaderMsgDiv = document.createElement('div');
-        loaderMsgDiv.className = 'chat-message ai';
-        loaderMsgDiv.id = 'summaryLoader';
-        loaderMsgDiv.innerHTML = '<strong>Ai (Summary):</strong> <div class="loader-small"></div> Generating summary...';
-        chatLog.appendChild(loaderMsgDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
-        
-        // Prepare the conversation payload for the summary request
-        const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
-        const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
-
-        // Send a dedicated API call for the summary
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: summaryRequestContent }] }],
-                config: {
-                    systemInstruction: systemInstruction,
-                    temperature: 0.2, // Lower temperature for factual summary
-                    maxOutputTokens: 1024
-                }
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.error.message); });
-            }
-            return response.json();
-        })
-        .then(data => {
-            const displayText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate summary.";
-            
+            // 3. Replace loader with typing effect
             const loader = document.getElementById('summaryLoader');
             if (loader) { loader.remove(); }
-            
+
             const aiMsgDiv = document.createElement('div');
             aiMsgDiv.className = "chat-message ai";
+            chatLog.appendChild(aiMsgDiv);
             
-            // Create a span for the typewriter effect
+            const aiStrong = document.createElement('strong');
+            aiStrong.textContent = "Ai (Summary):";
+            aiMsgDiv.appendChild(aiStrong);
+
             const contentSpan = document.createElement('span');
             aiMsgDiv.appendChild(contentSpan);
             
@@ -785,50 +814,28 @@
             }
             typeSummary();
             
-        }) 
-        .catch(error => {
+        } catch (error) {
              const loader = document.getElementById('summaryLoader');
              if (loader) { loader.remove(); }
              const errorMsgDiv = document.createElement('div');
              errorMsgDiv.className = "chat-message error";
-             const summaryErrorText = "Could not generate summary due to a connection error: " + error.message;
+             const summaryErrorText = "Could not generate summary due to a connection error.";
              errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(summaryErrorText)}`;
              chatLog.appendChild(errorMsgDiv);
              saveChatHistory();
              speakText("I encountered an error while generating the summary.");
-        });
-    }
-
-    function exportChat() {
-        const history = getChatHistory();
-        if (history.length === 0) {
-            alert("No chat history to export!");
-            return;
         }
-
-        let exportText = `LearnFlow AI Chat Export for ${username}\nDate: ${new Date().toLocaleString()}\n\n`;
-        history.forEach(item => {
-            exportText += `${item.role.toUpperCase()}: ${item.text}\n\n`;
-        });
-
-        const blob = new Blob([exportText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `learnflow_chat_${username}_${Date.now()}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     }
 
+
+    /**
+     * Clears the chat history from the screen and local storage.
+     */
     function clearChat() {
         if (confirm("Are you sure you want to clear the entire chat history? This action cannot be undone.")) {
             localStorage.removeItem(chatHistoryKey);
-            // Optionally, also clear the response count if the user is starting over fresh
-            // localStorage.removeItem(responseCountKey);
-            // responseCount = 0;
-            
+            localStorage.setItem(responseCountKey, 0); // Reset limit
+            responseCount = 0;
             chatLog.innerHTML = `
                 <div class="chat-message ai">
                     <strong>Ai:</strong>
@@ -838,53 +845,74 @@
                 </div>
             `;
             stopSpeaking();
-            speakText("Chat history cleared. How can I help you start your learning journey today?");
-            chatLog.scrollTop = chatLog.scrollHeight;
+            chatInput.focus();
         }
     }
 
-    // ## Local Storage Management ##
+    /**
+     * Exports the current chat history to a text file.
+     */
+    function exportChat() {
+        const history = getChatHistory();
+        if (history.length === 0) {
+            alert("No chat history to export.");
+            return;
+        }
 
-    function saveChatHistory() {
-        const messages = [];
-        // Only consider actual messages, not loaders or the initial welcome message from the template
-        chatLog.querySelectorAll('.chat-message').forEach(msgDiv => {
-            const role = msgDiv.classList.contains('user') ? 'user' : 'ai';
-            const textContent = msgDiv.querySelector('span') ? msgDiv.querySelector('span').textContent.trim() : msgDiv.textContent.replace(role === 'user' ? 'You:' : 'Ai:', '').trim();
-            
-            if (textContent) {
-                 messages.push({ role, text: textContent });
-            }
+        let exportText = `LearnFlow AI Chat Export - User: ${username}\nDate: ${new Date().toLocaleString()}\n\n`;
+
+        history.forEach(item => {
+            exportText += `[${item.role.toUpperCase()}]\n${item.text}\n\n`;
         });
 
-        // The save logic is slightly complex due to the typewriter effect. 
-        // We will simplify by only saving the messages that are fully typed or user-sent messages.
-        // For AI messages with the span, we'll use the span's content.
+        const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `LearnFlow_Chat_${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
-        // Re-implementing a safer save logic:
+
+    // --- History Management ---
+
+    /**
+     * Saves the current chat log to local storage.
+     */
+    function saveChatHistory() {
+        const messages = chatLog.querySelectorAll('.chat-message');
         const finalMessages = [];
-        chatLog.querySelectorAll('.chat-message').forEach(msgDiv => {
-            const role = msgDiv.classList.contains('user') ? 'user' : 'ai';
-            let text = '';
 
-            if (role === 'user') {
-                // User messages are simple text
-                text = msgDiv.textContent.replace('You:', '').trim();
-            } else {
-                // AI messages may have strong (role) and span (content)
-                const contentSpan = msgDiv.querySelector('span');
-                if (contentSpan) {
-                     text = contentSpan.textContent.trim();
-                } else {
-                    // Fallback for AI messages without the span structure (like initial message)
-                    text = msgDiv.textContent.replace('Ai:', '').trim();
-                }
+        messages.forEach(msg => {
+            // Skip the initial welcome message template if it's the only one
+            if (msg.id === 'initial-welcome' && messages.length > 1) {
+                return;
             }
             
-            // Only save non-empty content (excluding the initial welcome text if it's still being typed)
-            if (text) {
-                 finalMessages.push({ role, text });
-            }
+            // Get role and text
+            const roleMatch = msg.className.match(/chat-message (user|ai|error)/);
+            if (!roleMatch) return;
+            const role = roleMatch[1];
+            
+            // Extract the text content from the inner span/content area
+            // We use .innerText and then some light cleaning to capture the actual content
+            let textElement = msg.querySelector('span') || msg;
+            let text = textElement.innerText || msg.textContent; 
+
+            // Clean up role prefix if it exists in the text (e.g., from an error message's strong tag)
+            text = text.replace(/^(Ai|You|Ai \(Summary\)): /, '').trim();
+            // Replace <br> back to \n for storage
+            const innerHTML = msg.querySelector('span') ? msg.querySelector('span').innerHTML : '';
+            text = innerHTML.replace(/<br>/g, '\n').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim() || text.trim();
+
+
+            finalMessages.push({
+                role: role,
+                text: text
+            });
         });
 
         localStorage.setItem(chatHistoryKey, JSON.stringify(finalMessages));
@@ -902,7 +930,7 @@
         if (history.length === 0) {
             // Restore initial welcome message if history is empty
             chatLog.innerHTML = `
-                <div class="chat-message ai">
+                <div class="chat-message ai" id="initial-welcome">
                     <strong>Ai:</strong>
                     <span class="text-gray-400">
                         Hello, {{ user.username }}! How can I help you start your learning journey today?
@@ -915,7 +943,14 @@
         history.forEach(item => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${item.role}`;
-            messageDiv.innerHTML = `<strong>${item.role === 'user' ? 'You' : 'Ai'}:</strong> ${item.text}`;
+            
+            // Replace stored \n with <br> for proper display
+            const formattedText = item.text.replace(/\n/g, '<br>');
+            
+            // Handle specific roles for display in the log
+            let displayRole = item.role === 'user' ? 'You' : (item.role === 'error' ? 'Ai (Error)' : 'Ai');
+
+            messageDiv.innerHTML = `<strong>${displayRole}:</strong> <span class="text-gray-400">${formattedText}</span>`;
             chatLog.appendChild(messageDiv);
         });
 
@@ -924,6 +959,14 @@
 
     // Initialize
     window.onload = () => {
+        // Must fetch voices before use
+        if ('speechSynthesis' in window) {
+            voices = window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+            };
+        }
+        
         loadChatHistory();
         initSpeechRecognition(); // Initialize recognition on page load
     };
