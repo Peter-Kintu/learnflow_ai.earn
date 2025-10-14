@@ -183,9 +183,14 @@
 
 <script>
 // --- Define keys for specific roles (Used for Gemini API calls) ---
+// 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
+// You can obtain keys from Google AI Studio.
 const API_KEYS = {
+    // Key used for generating the high-level course outline (less intensive)
     OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
+    // Key used for generating the detailed lessons and quizzes (more intensive)
     DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
+   
 };
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
@@ -368,6 +373,11 @@ function generateResearchLinks(query, fullContext) {
 
 async function fetchAiContent(prompt, keyRole, model) {
     const apiKey = API_KEYS[keyRole];
+    // Check for placeholder key before calling API
+    if (apiKey.includes("YOUR_GEMINI_API_KEY")) {
+        throw new Error("API Key Missing: Please replace the placeholder API key in the 'API_KEYS' block within the <script> tag with a valid key for the respective role.");
+    }
+
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     
     if (!apiKey) {
@@ -450,7 +460,7 @@ async function generateCourseOutline(isRegenerate) {
             isCached = true;
         } else {
             // 2. Fetch from AI
-            // MODIFIED: Enforce exactly 8 modules for consistent multi-step path generation
+            // ✅ OPTIMIZED PROMPT: Enforce exactly 8 modules for consistent, multi-step path generation
             const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have **exactly 8** distinct, engaging modules to ensure a complete course. Each module must be formatted strictly as a single list item: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
             generatedContent = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
             
@@ -481,7 +491,7 @@ async function generateCourseOutline(isRegenerate) {
         document.getElementById('quizPromptInput').value = `Course: ${subject}, Level: ${level}, Goals: ${goals}, Language Code: ${lang}`;
 
     } catch (error) {
-        console.error("Course Outline API Error:", error);
+        console.error("Course Outline Error:", error);
         aiStatusDiv.textContent = `❌ Failed to generate course outline: ${error.message}`;
         courseContentDiv.innerHTML = `<p class="text-red-400 py-8">Error loading content. Please try again or check your API key.</p>`;
         aiCourseOutputDiv.classList.remove('hidden');
