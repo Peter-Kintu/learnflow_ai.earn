@@ -334,12 +334,16 @@ async function fetchAiContent(prompt, keyRole, model) {
         throw new Error(`API Key for role ${keyRole} is missing.`);
     }
 
-    const systemInstruction = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
+    // Renamed local variable to avoid conflict and clearly define the text.
+    const systemInstructionText = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
     
+    // ✅ CRITICAL FIX: The systemInstruction must be a Content object, as specified by the API error.
     const payload = {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        // ✅ CORRECT FIX: 'systemInstruction' must be a top-level property, not nested.
-        systemInstruction: systemInstruction, 
+        systemInstruction: {
+            role: 'system',
+            parts: [{ text: systemInstructionText }]
+        }, 
         generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048

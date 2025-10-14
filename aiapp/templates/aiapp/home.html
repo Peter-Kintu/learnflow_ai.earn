@@ -379,8 +379,8 @@
     const modelName = 'gemini-2.5-flash';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // 🔥 UPDATED CONSTANT: System instruction to include Kintu Peter's details 🔥
-    const systemInstruction = `You are LearnFlow AI, an educational partner. You were developed by **Kintu Peter**, a dedicated teacher and the CEO of Mwene Groups of Companies. Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including **Luganda**, Swahili, Hausa, Yoruba, Zulu, and others. Always respond in the language the user is using, maintaining context and educational quality.`;
+    // 🔥 FIX: SANITIZED systemInstruction - Removed all Markdown (**) to fix API Error 400 🔥
+    const systemInstruction = `You are LearnFlow AI, an educational partner. You were developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies. Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including Luganda, Swahili, Hausa, Yoruba, Zulu, and others. Always respond in the language the user is using, maintaining context and educational quality.`;
 
     /**
      * Cleans the AI response text by removing markdown formatting and disruptive symbols
@@ -636,17 +636,22 @@
         sendChatButton.disabled = true; // Disable button
         addLoader();
         
+        // 1. Convert history to API format
         const history = getChatHistory().map(item => ({
             role: item.role,
             parts: [{ text: item.text }]
         }));
 
-        // Add the new user message to the history for the API call
-        history.push({ role: 'user', parts: [{ text: prompt }] });
+        // 2. Add the system instruction at the beginning
+        const fullContents = [{ role: "system", parts: [{ text: systemInstruction }] }];
         
-        // Filter history to keep the last 5 turns (10 messages + system instruction)
-        // This helps manage token count while maintaining context.
+        // 3. Add relevant conversation history (last 10 messages)
+        // 🔥 This line is key for remembering older conversation context 🔥
         const relevantHistory = history.slice(-10); // Last 10 messages (5 turns)
+        fullContents.push(...relevantHistory);
+        
+        // 4. Add the new user message
+        fullContents.push({ role: 'user', parts: [{ text: prompt }] });
 
         try {
             const response = await fetch(apiUrl, {
@@ -655,9 +660,8 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contents: relevantHistory,
-                    // FIX: Move systemInstruction to top level and rename 'config' to 'generationConfig'
-                    systemInstruction: systemInstruction, 
+                    contents: fullContents, // USING new fullContents array
+                    // Removed 'config' block
                     generationConfig: { 
                         temperature: 0.7,
                         maxOutputTokens: 2048
@@ -693,7 +697,7 @@
         } catch (error) {
             console.error('Gemini API Error:', error);
             removeLoader();
-            // 🔥 UPDATED ERROR MESSAGE as requested by the prompt:
+            // UPDATED ERROR MESSAGE as requested by the prompt:
             const errorMessage = `🚨 Could not connect to the AI service. Error: ${error.message}`;
             // Append cleaned error message
             appendMessage('ai', errorMessage, true); 
@@ -745,6 +749,12 @@
         const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
         const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
 
+        // FIX: Revert to using the 'contents' array with a System role message
+        const summaryContents = [
+             { role: "system", parts: [{ text: systemInstruction }] },
+             { role: "user", parts: [{ text: summaryRequestContent }] }
+        ];
+
         // Send a dedicated API call for the summary
         fetch(apiUrl, {
             method: 'POST',
@@ -752,9 +762,8 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: summaryRequestContent }] }],
-                // FIX: Move systemInstruction to top level and rename 'config' to 'generationConfig'
-                systemInstruction: systemInstruction,
+                contents: summaryContents, // USING new summaryContents array
+                // Removed 'config' block
                 generationConfig: { 
                     temperature: 0.2, // Lower temperature for factual summary
                     maxOutputTokens: 1024
