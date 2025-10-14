@@ -10,8 +10,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body {
       font-family: 'Inter', sans-serif;
-      /* Ensure body takes up the full viewport */
-      overflow: hidden; /* Prevent background media from causing scrollbars */
+      /* Prevent scrolling caused by absolute positioning */
+      overflow: hidden; 
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -33,71 +33,91 @@
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
-
-    /* --- IMMERSIVE BACKGROUND STYLES --- */
-    .bg-carousel {
+    
+    /* --- NEW BACKGROUND STYLES --- */
+    .bg-slideshow {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -1; /* Keep it behind the login form */
-      background-color: #0f172a; /* Fallback background */
+      z-index: -2; /* Placed behind the overlay */
     }
 
-    .bg-media {
+    .bg-slideshow > div {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Ensures image/video covers the whole area */
+      background-size: cover;
+      background-position: center;
       opacity: 0;
-      transition: opacity 1.5s ease-in-out; /* Smooth transition */
+      animation: imageAnimation 25s linear infinite 0s; 
+      /* Total duration (25s) is slides * (display time + transition time)
+         5 images * 5 seconds each = 25s */
     }
 
-    .bg-media.active {
-      opacity: 0.5; /* The media will be semi-transparent to ensure text readability */
+    /* Assign images using Django's static tag and set the animation start delay */
+    .bg-slideshow .slide-1 { 
+        background-image: url('{% static "images/image1.png" %}'); 
     }
-    
-    /* Optional: Add a subtle overlay to help text readability on any background */
+    .bg-slideshow .slide-2 { 
+        background-image: url('{% static "images/image2.png" %}');
+        animation-delay: 5s; 
+    }
+    .bg-slideshow .slide-3 { 
+        background-image: url('{% static "images/image5.png" %}');
+        animation-delay: 10s;
+    }
+    .bg-slideshow .slide-4 { 
+        background-image: url('{% static "images/image6.png" %}');
+        animation-delay: 15s; 
+    }
+    .bg-slideshow .slide-5 { 
+        background-image: url('{% static "images/image7.png" %}');
+        animation-delay: 20s; 
+    }
+
+    /* CSS Keyframe Animation for the Slideshow */
+    @keyframes imageAnimation {
+      0% { opacity: 0; animation-timing-function: ease-in; }
+      1% { opacity: 0.5; transform: scale(1.05); } /* Start Fade/Scale-in */
+      19% { opacity: 0.5; transform: scale(1.00); } /* Hold display for ~4 seconds */
+      20% { opacity: 0; animation-timing-function: ease-out; } /* Fade-out */
+      100% { opacity: 0; }
+    }
+
+    /* Dark Overlay for contrast and glassmorphism */
     .overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Darker, semi-transparent overlay for contrast */
+        background-color: rgba(0, 0, 0, 0.6); 
         z-index: -1;
     }
 
-    /* Styles for the login form to look clean and "floating" (Glassmorphism) */
+    /* Login container with glassmorphism effect */
     .login-container {
-      background-color: rgba(30, 41, 59, 0.75); /* Slightly transparent slate-800 */
-      backdrop-filter: blur(15px); /* Stronger Glass effect */
-      -webkit-backdrop-filter: blur(15px); /* For Safari support */
-      border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border for glass effect */
+      background-color: rgba(30, 41, 59, 0.75); /* Slate-800 with transparency */
+      backdrop-filter: blur(15px); /* Apply blur effect */
+      -webkit-backdrop-filter: blur(15px); /* Safari support */
+      border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
     }
-
   </style>
+  
+  {% load static %}
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
-  <div class="bg-carousel">
-    <img src="https://images.unsplash.com/photo-1620283088339-4d6d37612716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHw0fHxhaSUyMGFic3RyYWN0JTJDJTIwZGFya3xlbnwwfHx8fDE3MDA3Mzk0NDJ8MA&ixlib=rb-4.0.3&q=80&w=1080"
-        alt="Abstract AI Data Grid" class="bg-media active">
-
-    <video class="bg-media" autoplay loop muted playsinline>
-        <source src="https://videos.pexels.com/video-files/3862668/3862668-uhd_2160_3840_30fps.mp4" type="video/mp4">
-        <img src="https://images.unsplash.com/photo-1596556108151-512140a77f10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwyMHx8Y29kaW5nJTIwZGFyayUyMGdyYWRpZW50fGVufDB8fHx8MTcwMDczOTQ1MHww&ixlib=rb-4.0.3&q=80&w=1080" alt="Fallback Coding Background" class="bg-media">
-    </video>
-    
-    <img src="https://images.unsplash.com/photo-1620311029270-4f932e6500b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwxNXx8ZGlnaXRhbCUyMG5ldHdvcmt8ZW58MHx8fHwxNzAwNzM5NDQ3fDA&ixlib=rb-4.0.3&q=80&w=1080" 
-        alt="Digital Neural Network" class="bg-media">
-
-    <video class="bg-media" autoplay loop muted playsinline>
-        <source src="https://videos.pexels.com/video-files/4206085/4206085-uhd_3840_2160_25fps.mp4" type="video/mp4">
-        <img src="https://images.unsplash.com/photo-1549490349-f06b9b1e84d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwxNnx8ZGF0YSUyMGZsb3clMjBkYXJrfGVufDB8fHx8MTcwMDc0MDU3NHww&ixlib=rb-4.0.3&q=80&w=1080" alt="Fallback Data Flow Background" class="bg-media">
-    </video>
-    
+  <div class="bg-slideshow">
+    <div class="slide-1"></div>
+    <div class="slide-2"></div>
+    <div class="slide-3"></div>
+    <div class="slide-4"></div>
+    <div class="slide-5"></div>
   </div>
 
   <div class="overlay"></div>
@@ -105,8 +125,9 @@
   <div class="login-container p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
     <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
     <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
+    
     <a href="{% url 'aiapp:why_learnflow_ai' %}" 
-   class="inline-block px-5 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
+   class="about-btn inline-block px-6 py-3 text-white font-semibold rounded-full shadow-xl">
    💡 About LearnFlow AI
 </a>
 
@@ -182,7 +203,6 @@
   </div>
 
   <script>
-    // --- Existing Password Toggle Script (Unchanged) ---
     function togglePasswordVisibility(inputId, iconElement) {
       const input = document.getElementById(inputId);
       const iconPath = iconElement.querySelector('path:nth-child(2)');
@@ -196,52 +216,6 @@
         iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
       }
     }
-
-    // --- NEW Background Slideshow Script ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const mediaElements = document.querySelectorAll('.bg-media');
-        let currentIndex = 0;
-        const slideInterval = 5000; // 5 seconds
-
-        function nextSlide() {
-            // Deactivate current slide
-            mediaElements[currentIndex].classList.remove('active');
-            
-            // Increment index, looping back to 0
-            currentIndex = (currentIndex + 1) % mediaElements.length;
-            
-            // Activate the next slide
-            const nextMedia = mediaElements[currentIndex];
-            nextMedia.classList.add('active');
-
-            // Handle video elements: ensure they are playing when active
-            if (nextMedia.tagName === 'VIDEO') {
-                // Must attempt to play after the 'active' class is applied for a moment
-                setTimeout(() => {
-                    nextMedia.play().catch(error => {
-                        // This catch handles cases where autoplay is strictly blocked (common)
-                        console.info("Video autoplay blocked or failed, but it's okay for background video.");
-                    });
-                }, 100); 
-            }
-        }
-
-        // Start the slideshow
-        setInterval(nextSlide, slideInterval);
-
-        // Initial media setup: ensure all videos are muted and play-ready
-        mediaElements.forEach(media => {
-            if (media.tagName === 'VIDEO') {
-                media.muted = true;
-                media.loop = true;
-                media.playsinline = true; // Important for mobile devices
-                // Only the first media element, if it's a video, should attempt to play immediately
-                if (media.classList.contains('active')) {
-                    media.play().catch(error => console.info("Initial video autoplay failed, but background rotation is active."));
-                }
-            }
-        });
-    });
   </script>
 </body>
 </html>
