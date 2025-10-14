@@ -539,10 +539,10 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     quizModal.classList.remove('hidden');
 
     // Create a detailed prompt
-    // ✅ PROMPT MODIFICATION: Updated to STRICTLY enforce EXACTLY 7 questions
+    // ✅ PROMPT MODIFICATION: Updated to STRICTLY enforce EXACTLY 7 questions AND **DO NOT** include answers.
     const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
     1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples).
-    2. **Comprehensive Quiz:** Generate **exactly 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. **STRICTLY ensure there are exactly 7 questions**. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
+    2. **Comprehensive Quiz:** Generate **exactly 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. **STRICTLY ensure there are exactly 7 questions**. **DO NOT include the correct answers or an answer key in the output.**
     Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     
     const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
