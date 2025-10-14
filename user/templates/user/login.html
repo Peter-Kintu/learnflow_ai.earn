@@ -5,47 +5,44 @@
   <meta name="google-adsense-account" content="ca-pub-9564790727166506">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Log In | Learnflow AI</title>
+  <title>LearnFlow AI | Inclusive Learning Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
-      /* Prevent scrolling caused by absolute positioning */
-      overflow: hidden; 
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fadeIn {
-      animation: fadeIn 0.6s ease-out forwards;
-    }
-    .about-btn {
-        /* Restoring your original about-btn style from the latest input */
-        background-image: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
-        transition: all 0.3s ease;
-        padding: 0.75rem 2rem;
-        border-radius: 9999px;
-        color: #e5e7eb;
-        font-weight: 600;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    .about-btn:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
-    /* ---------------------------------- */
-    /* --- NEW CSS FOR SLIDING EFFECT --- */
-    /* ---------------------------------- */
+    :root {
+        --primary-color: #a855f7; /* Purple-500 */
+        --secondary-color: #6366f1; /* Indigo-500 */
+        --accent-color: #ec4899; /* Pink-500 */
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0c0d12;
+        color: #d1d5db;
+        overflow-x: hidden;
+    }
+
+    /* Background Pattern & Slideshow */
+    .bg-pattern {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(#1f2937 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.2;
+        z-index: -3;
+    }
+
     .bg-slideshow {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -2; /* Placed behind the overlay */
+      z-index: -2;
     }
 
     .bg-slideshow > div {
@@ -58,61 +55,77 @@
       background-position: center;
       opacity: 0;
       animation: imageAnimation 25s linear infinite 0s; 
-      /* Total duration (25s) is 5 slides * 5 seconds each */
     }
 
-    /* Assign images using Django's static tag and set the animation start delay */
-    .bg-slideshow .slide-1 { 
-        background-image: url('{% static "images/image1.png" %}'); 
-    }
-    .bg-slideshow .slide-2 { 
-        background-image: url('{% static "images/image2.png" %}');
-        animation-delay: 5s; 
-    }
-    .bg-slideshow .slide-3 { 
-        background-image: url('{% static "images/image5.png" %}');
-        animation-delay: 10s;
-    }
-    .bg-slideshow .slide-4 { 
-        background-image: url('{% static "images/image6.png" %}');
-        animation-delay: 15s; 
-    }
-    .bg-slideshow .slide-5 { 
-        background-image: url('{% static "images/image7.png" %}');
-        animation-delay: 20s; 
-    }
+    /* NOTE: These images rely on your Django static configuration */
+    .bg-slideshow .slide-1 { background-image: url('{% static "images/image1.png" %}'); }
+    .bg-slideshow .slide-2 { background-image: url('{% static "images/image2.png" %}'); animation-delay: 5s; }
+    .bg-slideshow .slide-3 { background-image: url('{% static "images/image5.png" %}'); animation-delay: 10s; }
+    .bg-slideshow .slide-4 { background-image: url('{% static "images/image6.png" %}'); animation-delay: 15s; }
+    .bg-slideshow .slide-5 { background-image: url('{% static "images/image7.png" %}'); animation-delay: 20s; }
 
-    /* CSS Keyframe Animation for the Slideshow */
     @keyframes imageAnimation {
       0% { opacity: 0; animation-timing-function: ease-in; }
-      1% { opacity: 0.5; transform: scale(1.05); } /* Start Fade/Scale-in */
-      19% { opacity: 0.5; transform: scale(1.00); } /* Hold display for ~4 seconds */
-      20% { opacity: 0; animation-timing-function: ease-out; } /* Fade-out */
+      1% { opacity: 0.25; transform: scale(1.05); } 
+      19% { opacity: 0.25; transform: scale(1.00); } 
+      20% { opacity: 0; animation-timing-function: ease-out; } 
       100% { opacity: 0; }
     }
 
-    /* Dark Overlay for contrast */
     .overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.6); 
+        background-color: rgba(0, 0, 0, 0.75); 
         z-index: -1;
     }
 
-    /* Login container with glassmorphism effect for attractiveness */
-    .login-container {
-      background-color: rgba(30, 41, 59, 0.85); /* Slightly darker for better contrast */
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Glassmorphism for Modal and Chat */
+    .glass-card {
+        background-color: rgba(30, 41, 59, 0.85); /* Slate-800 with transparency */
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Utility for Gradient Text (FIXED: Removed non-standard 'text-fill-color') */
+    .text-gradient {
+        background-image: linear-gradient(to right, var(--secondary-color), var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        /* text-fill-color: transparent; <-- REMOVED */
+    }
+
+    /* Modal Styling (Hidden by default) */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50; /* Above all content */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open {
+        opacity: 1;
+        pointer-events: auto;
     }
   </style>
 </head>
-<body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen">
 
+  <!-- Fullscreen Background Elements -->
+  <div class="bg-pattern"></div>
   <div class="bg-slideshow">
     <div class="slide-1"></div>
     <div class="slide-2"></div>
@@ -120,103 +133,380 @@
     <div class="slide-4"></div>
     <div class="slide-5"></div>
   </div>
-
   <div class="overlay"></div>
 
-  <div class="login-container p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
-    <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
-    <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
-    
-    <a href="{% url 'aiapp:why_learnflow_ai' %}" 
-    class="about-btn inline-block px-6 py-3 text-white font-semibold rounded-full shadow-xl">
-    💡 About LearnFlow AI
-    </a>
-
-
-    {% if messages %}
-      <div class="mb-4">
-        {% for message in messages %}
-          <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
-            {{ message }}
-          </div>
-        {% endfor %}
+  <!-- Navbar with Login Button -->
+  <header class="sticky top-0 z-30 w-full glass-card border-b border-white/10 p-4">
+    <div class="flex justify-between items-center max-w-7xl mx-auto">
+      <div class="text-3xl font-extrabold tracking-tight">
+        <span class="text-white">LearnFlow</span><span class="text-gradient"> AI</span>
       </div>
-    {% endif %}
-
-    <form method="post" class="space-y-6">
-      {% csrf_token %}
-
-      {% if login_form.errors %}
-        <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
-          <p class="mb-2">Let’s smooth this out together:</p>
-          <ul>
-            {% for field, errors in login_form.errors.items %}
-              {% for error in errors %}
-                <li class="bg-red-800 text-red-200 px-3 py-1 rounded-full inline-block mb-1">{{ field|title }}: {{ error }}</li>
-              {% endfor %}
-            {% endfor %}
-          </ul>
-        </div>
-      {% endif %}
-
-      {% for field in login_form %}
-        <div class="transition-opacity duration-500 opacity-0 animate-fadeIn">
-          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
-            {{ field.label }}
-          </label>
-
-          {% if field.name == 'password' %}
-            <div class="relative">
-              <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
-                class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
-                placeholder="{{ field.label }}" autocomplete="current-password" required>
-              <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
-                onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </span>
-            </div>
-          {% else %}
-            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
-              class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              placeholder="{{ field.label }}" required>
-          {% endif %}
-        </div>
-      {% endfor %}
-
-      <button type="submit"
-        class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
-        Enter the Flow
-      </button>
-    </form>
-
-    <div class="mt-6 text-center text-sm text-gray-400">
-      New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
+      <nav class="space-x-4">
+        <a href="#hero" class="text-gray-300 hover:text-white transition duration-200 hidden sm:inline">Home</a>
+        <a href="#features" class="text-gray-300 hover:text-white transition duration-200 hidden sm:inline">Features</a>
+        <button id="login-toggle" 
+                class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-full shadow-lg hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105">
+          Sign In
+        </button>
+      </nav>
     </div>
+  </header>
 
-    <div class="mt-8 text-center text-xs text-gray-500 italic">
-      Born in Africa, built for the world🌍
+  <main class="max-w-7xl mx-auto p-4 sm:p-8 space-y-24">
+    
+    <!-- 1. HERO SECTION (Login card removed, content moved to modal) -->
+    <section id="hero" class="relative py-20 md:py-32 text-center">
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tighter mb-6">
+        Unlock <span class="text-gradient">Global Education</span>
+      </h1>
+      <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-10">
+        LearnFlow AI empowers educators and students worldwide with multilingual, adaptive tools—making quality education accessible to every corner of the globe.
+      </p>
+      <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+        <button id="hero-login-toggle" 
+                class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-full shadow-2xl hover:scale-[1.03] transition duration-300 transform">
+          Start Learning Now
+        </button>
+        <a href="#chatbot-card" class="px-8 py-3 border border-indigo-500 text-indigo-300 font-bold text-lg rounded-full hover:bg-indigo-900 transition duration-300 inline-flex items-center justify-center">
+            Ask Our AI Assistant <span class="ml-2">💬</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 2. FEATURES SECTION (Content from why_learnflow_ai.html) -->
+    <section id="features" class="py-16">
+      <h2 class="text-4xl font-bold text-center mb-16 text-white">Why Choose LearnFlow AI?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        
+        <!-- Feature 1: Multilingual Quizzes -->
+        <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
+            <div class="text-4xl mb-4 text-purple-400">🌐</div>
+            <h3 class="text-2xl font-semibold text-white mb-3">True Multilingualism</h3>
+            <p class="text-gray-400">Our content generation, including quizzes and summaries, supports all major languages. Students can learn in their native tongue, significantly boosting comprehension.</p>
+        </div>
+
+        <!-- Feature 2: Global Accessibility -->
+        <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
+            <div class="text-4xl mb-4 text-indigo-400">🌍</div>
+            <h3 class="text-2xl font-semibold text-white mb-3">Built for the World</h3>
+            <p class="text-gray-400">Born in Africa, our platform is designed to overcome geographical and resource limitations, ensuring stable, affordable access for underserved regions.</p>
+        </div>
+
+        <!-- Feature 3: Dynamic Content -->
+        <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
+            <div class="text-4xl mb-4 text-pink-400">💡</div>
+            <h3 class="text-2xl font-semibold text-white mb-3">Adaptive Learning</h3>
+            <p class="text-gray-400">Generate quizzes from any video, book, or document. Our AI assistant can summarize complex topics on demand and tailor content to specific curricula.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CHATBOT SECTION (Interactive Assistant) -->
+    <section id="chatbot-card" class="py-16">
+        <h2 class="text-4xl font-bold text-center mb-12 text-white">Your Universal Study Assistant</h2>
+        <div class="max-w-4xl mx-auto glass-card p-6 sm:p-10 rounded-2xl">
+            <p class="text-gray-400 mb-6 text-center">Ask our AI any question about learning, history, science, or how LearnFlow works. It understands all languages!</p>
+            
+            <div class="mb-6">
+                <label for="user-prompt" class="block text-sm font-medium text-gray-200 mb-2">What would you like to know?</label>
+                <textarea id="user-prompt" rows="3" class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-500 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder="E.g., What are the benefits of multilingual education?"></textarea>
+                
+                <div id="error-message" class="text-red-400 p-3 mt-4 bg-red-900/50 rounded-lg hidden" role="alert"></div>
+            </div>
+
+            <div class="flex space-x-4 justify-center mb-6">
+                <button id="ask-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition-colors flex items-center justify-center min-w-[150px]">
+                    <span id="ask-button-text">Ask AI</span>
+                    <svg id="ask-loader" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </button>
+                <button id="summarize-button" class="px-6 py-3 border border-purple-500 text-purple-300 font-semibold rounded-full hover:bg-purple-900/50 transition-colors flex items-center justify-center min-w-[150px]">
+                    <span id="summarize-button-text">Summarize Text</span>
+                    <svg id="summarize-loader" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="color: var(--primary-color);"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </button>
+            </div>
+
+            <div id="response-container" class="mt-8 hidden p-5 bg-slate-900 rounded-lg border border-slate-700">
+                <h3 class="text-xl font-bold mb-3 text-white">AI Response</h3>
+                <div id="ai-response" class="text-gray-300 leading-relaxed whitespace-pre-wrap"></div>
+                <div id="citations" class="mt-4 pt-3 border-t border-slate-700 text-sm text-gray-500 hidden">
+                    <p class="font-semibold text-gray-400">Sources:</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+  </main>
+
+  <!-- Login Modal (Hidden by default) -->
+  <div id="login-modal-overlay" class="modal-overlay">
+    <div id="login-modal" class="glass-card p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn relative">
+        <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
+        <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
+
+        <!-- Django messages -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-900 text-red-300{% elif message.tags == 'success' %}bg-green-900 text-green-300{% elif message.tags == 'info' %}bg-blue-900 text-blue-300{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Login form -->
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if login_form.errors %}
+                <div class="p-4 bg-red-900 text-red-300 rounded-md font-bold mb-4">
+                    <p class="mb-2">Let’s smooth this out together:</p>
+                    <ul>
+                        {% for field, errors in login_form.errors.items %}
+                            {% for error in errors %}
+                                <li class="bg-red-800 text-red-200 px-3 py-1 rounded-full inline-block mb-1">{{ field|title }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% for field in login_form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
+                        {{ field.label }}
+                    </label>
+
+                    {% if field.name == 'password' %}
+                        <div class="relative">
+                            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                                class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
+                                placeholder="{{ field.label }}" autocomplete="current-password" required>
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
+                                onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </span>
+                        </div>
+                    {% else %}
+                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}_modal"
+                            class="w-full px-4 py-3 bg-slate-900 text-gray-200 placeholder-gray-400 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            placeholder="{{ field.label }}" required>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <!-- Login button -->
+            <button type="submit"
+                class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
+                Enter the Flow
+            </button>
+        </form>
+
+        <!-- Registration link -->
+        <div class="mt-6 text-center text-sm text-gray-400">
+            New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-xs text-gray-500 italic">
+            Born in Africa, built for the world🌍
+        </div>
     </div>
   </div>
 
+  <!-- JavaScript for Modal and Chatbot -->
   <script>
-    function togglePasswordVisibility(inputId, iconElement) {
-      const input = document.getElementById(inputId);
-      const iconPath = iconElement.querySelector('path:nth-child(2)');
-      if (input.type === 'password') {
-        input.type = 'text';
-        // Simplified path for open-eye icon
-        iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM12 9a3 3 0 100 6 3 3 0 000-6z');
-      } else {
-        input.type = 'password';
-        // Original path for closed-eye icon
-        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
-      }
+    // --- Login Modal Logic (NEW) ---
+    const loginToggleBtn = document.getElementById('login-toggle');
+    const heroLoginToggleBtn = document.getElementById('hero-login-toggle');
+    const modalOverlay = document.getElementById('login-modal-overlay');
+    const closeModalBtn = document.getElementById('close-modal');
+
+    function openModal() {
+        modalOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
     }
+
+    function closeModal() {
+        modalOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    loginToggleBtn.addEventListener('click', openModal);
+    if (heroLoginToggleBtn) {
+        heroLoginToggleBtn.addEventListener('click', openModal);
+    }
+    closeModalBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+
+    // --- Password Visibility (EXISTING, UNCHANGED) ---
+    function togglePasswordVisibility(inputId, iconElement) {
+        const input = document.getElementById(inputId);
+        const iconPath = iconElement.querySelector('path:nth-child(2)');
+        if (input.type === 'password') {
+            input.type = 'text';
+            iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM12 9a3 3 0 100 6 3 3 0 000-6z');
+        } else {
+            input.type = 'password';
+            iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
+        }
+    }
+    
+    // --- Gemini API / Chatbot Logic (MIGRATED AND UNCHANGED) ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const userPrompt = document.getElementById('user-prompt');
+        const askButton = document.getElementById('ask-button');
+        const summarizeButton = document.getElementById('summarize-button');
+        const responseContainer = document.getElementById('response-container');
+        const aiResponse = document.getElementById('ai-response');
+        const errorMessage = document.getElementById('error-message');
+        const citationsDiv = document.getElementById('citations');
+
+        // Loader and Text elements
+        const askButtonText = document.getElementById('ask-button-text');
+        const askLoader = document.getElementById('ask-loader');
+        const summarizeButtonText = document.getElementById('summarize-button-text');
+        const summarizeLoader = document.getElementById('summarize-loader');
+
+        // Function to convert base64 to ArrayBuffer (Unchanged helper function)
+        const base64ToArrayBuffer = (base64) => {
+            const binary_string = window.atob(base64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            return bytes.buffer;
+        };
+
+        // Function to make API call with exponential backoff (Unchanged core function)
+        async function fetchWithRetry(apiUrl, payload, maxRetries = 5) {
+            let lastError = null;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}. Body: ${errorBody}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    lastError = error;
+                    const delay = Math.pow(2, i) * 1000;
+                    if (i < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            throw lastError;
+        }
+
+        // Main request handler (Unchanged logic)
+        async function handleRequest(type) {
+            const prompt = userPrompt.value.trim();
+            if (!prompt) {
+                errorMessage.textContent = 'Please enter a query or text to process.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            errorMessage.classList.add('hidden');
+            aiResponse.textContent = 'Generating response...';
+            citationsDiv.classList.add('hidden');
+            responseContainer.classList.remove('hidden');
+
+            const isAsk = type === 'ask';
+            const buttonText = isAsk ? askButtonText : summarizeButtonText;
+            const loader = isAsk ? askLoader : summarizeLoader;
+
+            buttonText.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const systemPrompt = isAsk ? 
+                    "You are a helpful, multilingual AI assistant specializing in education and learning. Answer the user's question accurately and concisely, drawing on current web knowledge when necessary. Respond in the same language as the user's query." :
+                    "You are a professional summarization AI. Take the provided text and create a concise, easy-to-understand summary. The summary should be neutral and retain the core message of the original text. Respond in the same language as the provided text.";
+                
+                const userQuery = isAsk ? prompt : `Summarize the following text: ${prompt}`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    tools: isAsk ? [{ "google_search": {} }] : [], // Use grounding only for 'ask' questions
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                };
+                
+                const apiKey = ""
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const result = await fetchWithRetry(apiUrl, payload);
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    aiResponse.textContent = text; 
+
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+
+                    if (sources.length > 0) {
+                        citationsDiv.innerHTML = '<p class="font-semibold text-gray-400">Sources:</p>';
+                        const sourceList = document.createElement('ul');
+                        sourceList.classList.add('list-disc', 'list-inside', 'mt-1', 'space-y-1');
+                        sources.forEach(source => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `<a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-400">${source.title || source.uri}</a>`;
+                            sourceList.appendChild(listItem);
+                        });
+                        citationsDiv.appendChild(sourceList);
+                        citationsDiv.classList.remove('hidden');
+                    } else {
+                        citationsDiv.innerHTML = '';
+                    }
+                } else {
+                    errorMessage.textContent = 'Received an empty or malformed response from the AI.';
+                    errorMessage.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                errorMessage.textContent = `An error occurred: ${error.message}. Please check your input and try again.`;
+                errorMessage.classList.remove('hidden');
+                responseContainer.classList.add('hidden');
+            } finally {
+                buttonText.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        }
+        askButton.addEventListener('click', () => handleRequest('ask'));
+        summarizeButton.addEventListener('click', () => handleRequest('summarize'));
+    });
   </script>
 </body>
 </html>
