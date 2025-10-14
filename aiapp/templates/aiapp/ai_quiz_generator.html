@@ -191,7 +191,7 @@ const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
  * Helper function for browser's native TTS (fallback).
- * MODIFIED: Improved voice tone (pitch) and multilingual voice selection.
+ * MODIFIED: Improved voice tone (pitch), multilingual voice selection, and speed.
  */
 function fallbackToBrowserTTS(text, lang) {
     console.warn("Falling back to browser's native TTS.");
@@ -199,15 +199,13 @@ function fallbackToBrowserTTS(text, lang) {
     
     // 1. IMPROVE TONE (Pitch/Rate)
     utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
-    utterance.rate = 0.95; // Maintain slightly slower pace for clarity (as before)
+    utterance.rate = 0.88; // Lowered from 0.95 to 0.88 for a calmer, less speedy pace.
 
     // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
     const voices = speechSynthesis.getVoices();
     let selectedVoice = null;
 
-    // 🔥 CRITICAL FIX: Set the utterance language to the requested language.
-    // This is the most important step for non-English pronunciation accuracy.
-    // We use the first part (e.g., 'sw' from 'sw-KE') if the full code doesn't match a voice.
+    // CRITICAL FIX: Set the utterance language to the requested language.
     const baseLang = lang.split('-')[0];
     utterance.lang = lang; 
 
@@ -258,33 +256,31 @@ function fallbackToBrowserTTS(text, lang) {
 }
 
 /**
- * ASYNC FUNCTION: Attempts Botlhale TTS first, falls back to browser TTS on failure.
- * Includes improved punctuation for better speech clarity.
+ * ASYNC FUNCTION: Cleans text for better TTS flow and triggers the speech.
+ * MODIFIED: Preserves standard punctuation for flow, but removes symbols/markdown.
  */
 async function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
 
-    // 1. Text Cleaning: Aggressively strip all Markdown/code/list markers and ensure proper pacing.
+    // 1. Text Cleaning: Aggressively strip Markdown and symbols that are read aloud, 
+    // but PRESERVE punctuation (., ! ? : ;) to create natural pauses and flow.
     let cleanText = text
         .replace(/#+/g, '') // Remove headings
         .replace(/\*\*/g, '') // Remove double asterisks (bold)
-        .replace(/\*/g, '') // Remove single asterisks
+        .replace(/\*/g, '') // Remove single asterisks (italics/list markers)
         .replace(/__/g, '') // Remove double underscores
         .replace(/_/g, '') // Remove single underscores
-        .replace(/^- /gm, '. ') // NEW: Replace list hyphens with period-space for a pause
-        .replace(/^\s*\d+\.\s*/gm, '. ') // NEW: Replace numbered list markers/questions with period-space for a pause
-        .replace(/\//g, ' or ') // Replace slashes with a word
-        .replace(/\[.*?\]/g, '') // Remove links/citations [text](url)
+        .replace(/\[.*?\]\((.*?)\)/g, '') // Remove Markdown links entirely [text](url)
+        .replace(/\[.*?\]/g, '') // Remove brackets, e.g., citations [text]
         .replace(/`/g, '') // Remove backticks (code)
+        .replace(/\//g, ' or ') // Replace slashes with "or"
+        .replace(/[${}^|@<>=+]/g, ' ') // NEW: Remove symbols often read aloud: $, {, }, ^, |, @, <, >, =, +
         .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
 
     // Further cleaning and consolidation
     cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space
 
-    // 2. TTS Attempt (Botlhale/API - currently disabled/removed, falling straight to browser TTS)
-    // NOTE: If Botlhale/external TTS is implemented, this is where the API call would go.
-    
-    // 3. Fallback to Browser TTS (using the language set in the form)
+    // 2. Fallback to Browser TTS (using the language set in the form)
     fallbackToBrowserTTS(cleanText, selectedLang);
 }
 
@@ -329,11 +325,24 @@ function markdownToHtml(markdown) {
 
 /**
  * Generates the HTML for the external research links.
+ * MODIFIED: Accepts fullContext to create more accurate search queries.
  */
-function generateResearchLinks(query) {
-    const safeQuery = encodeURIComponent(query);
-    const googleUrl = `https://www.google.com/search?q=${safeQuery} tutorial`;
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${safeQuery} tutorial`;
+function generateResearchLinks(query, fullContext) {
+    // Extract context: Course: Subject, Level: level
+    const subjectMatch = fullContext.match(/Course:\s*(.*?),/);
+    const levelMatch = fullContext.match(/Level:\s*(.*?),/);
+    
+    const subject = subjectMatch ? subjectMatch[1].trim() : '';
+    const level = levelMatch ? levelMatch[1].trim() : '';
+    
+    // Combine for a highly specific query
+    const effectiveQuery = `${subject} ${level} ${query}`; 
+
+    const safeQuery = encodeURIComponent(effectiveQuery);
+    
+    // Modified search queries for better accuracy
+    const googleUrl = `https://www.google.com/search?q=${safeQuery} lesson`;
+    const youtubeUrl = `https://www.youtube.com/results?search_query=${safeQuery} tutorial video course`;
 
     return `
         <div class="mt-8 pt-4 border-t border-slate-600 flex flex-wrap gap-4 justify-center">
@@ -441,7 +450,8 @@ async function generateCourseOutline(isRegenerate) {
             isCached = true;
         } else {
             // 2. Fetch from AI
-            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path must have a minimum of 6 and a maximum of 10 distinct, engaging modules. Each module must be formatted as: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
+            // MODIFIED: Enforce exactly 8 modules for consistent multi-step path generation
+            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have **exactly 8** distinct, engaging modules to ensure a complete course. Each module must be formatted strictly as a single list item: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
             generatedContent = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
             
             // 3. Save to cache
@@ -458,6 +468,7 @@ async function generateCourseOutline(isRegenerate) {
         listItems.forEach((li, index) => {
             // This applies the requested "clickable container" styling (raised, padded, dark background)
             li.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg');
+            // MODIFIED: Pass the full context to loadDetailedLesson
             li.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
             
             // Add a speaker icon
@@ -529,7 +540,8 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
         // 6. Add Research Links (NEW FEATURE)
-        quizContentDiv.innerHTML += generateResearchLinks(stepTitle);
+        // MODIFIED: Pass the full context for accurate search
+        quizContentDiv.innerHTML += generateResearchLinks(stepTitle, fullContext); 
 
         // --- Now attempts Botlhale, falls back to browser TTS if it fails (Voice/Pronunciation) ---
         speakText(generatedDetail);
