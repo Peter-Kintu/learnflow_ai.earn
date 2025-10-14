@@ -308,14 +308,31 @@ function markdownToHtml(markdown) {
     // Convert links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-indigo-400 hover:text-indigo-300">$1</a>');
 
-    // Convert bulleted lists
-    html = html.replace(/^\s*[\*-]\s+(.*)$/gm, '<li>$1</li>');
-    html = html.replace(/(\n?<li>.*?<\/li>)+/gs, '<ul>$1</ul>');
+    // FIX: Properly handle lists by converting line-by-line and then wrapping consecutive list items.
     
-    // Convert numbered lists
-    html = html.replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>');
-    html = html.replace(/(\n?<li>.*?<\/li>)+/gs, '<ol>$1</ol>');
+    // Convert bulleted lists (Unordered)
+    // Replace markdown list items with <li> tags
+    let listHtml = html.replace(/^\s*[\*-]\s+(.*)$/gm, '<li>$1</li>');
     
+    // Wrap consecutive <li> tags into a <ul> block
+    // The (\n?<li>.*?<\/li>)+/gs pattern is greedy and ensures all consecutive <li>s are caught
+    listHtml = listHtml.replace(/(\n?<li>.*?<\/li>)+/gs, (match) => `<ul>${match.trim().replace(/\n/g, '')}</ul>`);
+
+    // Convert numbered lists (Ordered)
+    // Replace markdown list items with <li> tags
+    listHtml = listHtml.replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>');
+    
+    // Wrap consecutive <li> tags into an <ol> block, but avoid re-wrapping <ul> blocks (which may contain <li>s)
+    listHtml = listHtml.replace(/(\n?<li>.*?<\/li>)+/gs, (match) => {
+        // If the match is not already inside a <ul> (from the previous step), wrap it in <ol>
+        if (!match.includes('<ul>')) {
+            return `<ol>${match.trim().replace(/\n/g, '')}</ol>`;
+        }
+        return match;
+    });
+
+    html = listHtml; // Use the modified HTML content
+
     // Convert paragraphs (must be done last)
     html = html.split(/\n{2,}/).map(p => {
         // Only wrap if it's not a heading, list, or existing block
@@ -522,9 +539,10 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     quizModal.classList.remove('hidden');
 
     // Create a detailed prompt
+    // ✅ PROMPT MODIFICATION: Added strong instruction to enforce minimum of 7 questions
     const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
     1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples).
-    2. **Comprehensive Quiz:** Generate a **minimum of 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
+    2. **Comprehensive Quiz:** Generate a **minimum of 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. **STRICTLY ensure there are at least 7 questions**. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
     Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     
     const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
