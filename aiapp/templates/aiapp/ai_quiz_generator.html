@@ -207,7 +207,9 @@ function fallbackToBrowserTTS(text, lang) {
 
     // 🔥 CRITICAL FIX: Set the utterance language to the requested language.
     // This is the most important step for non-English pronunciation accuracy.
-    utterance.lang = lang;
+    // We use the first part (e.g., 'sw' from 'sw-KE') if the full code doesn't match a voice.
+    const baseLang = lang.split('-')[0];
+    utterance.lang = lang; 
 
     // Define the voice preference array (from user's request)
     const voicePreferences = [
@@ -215,6 +217,7 @@ function fallbackToBrowserTTS(text, lang) {
         { lang: 'en-ZA', name: 'South African' }, // Regional English accent
         { lang: 'zu', name: 'Zulu' },
         { lang: 'sw', name: 'Swahili' },
+        { lang: 'yo', name: 'Yoruba' },
         { lang: 'ha', name: 'Hausa' },
         // Priority 2: High-quality, often multilingual/polyglot voices
         { lang: 'Google', name: 'Multi' },
@@ -225,8 +228,8 @@ function fallbackToBrowserTTS(text, lang) {
         { lang: 'Zira', name: 'Zira' }
     ];
 
-    // Priority 1: Find a voice whose language code starts with the requested language code
-    selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()));
+    // Priority 1: Find a voice whose language code starts with the full requested code or the base code
+    selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()) || voice.lang.toLowerCase().startsWith(baseLang.toLowerCase()));
 
     // Priority 2: If no exact language match, iterate through the high-priority preference list
     if (!selectedVoice) {
@@ -324,6 +327,34 @@ function markdownToHtml(markdown) {
     return `<div class="markdown-output">${html}</div>`;
 }
 
+/**
+ * Generates the HTML for the external research links.
+ */
+function generateResearchLinks(query) {
+    const safeQuery = encodeURIComponent(query);
+    const googleUrl = `https://www.google.com/search?q=${safeQuery} tutorial`;
+    const youtubeUrl = `https://www.youtube.com/results?search_query=${safeQuery} tutorial`;
+
+    return `
+        <div class="mt-8 pt-4 border-t border-slate-600 flex flex-wrap gap-4 justify-center">
+            <h4 class="w-full text-lg font-bold text-gray-200 mb-2 text-center">Further Research 🎓</h4>
+            <a href="${youtubeUrl}" target="_blank" class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2">
+                    <path d="M19.8 4.4c-.9-.4-3.7-.4-6.3-.4H9c-2.6 0-5.4 0-6.3.4C1.9 4.8 1.4 5.3 1.2 6c-.2.7-.2 4.4-.2 6s0 5.3.2 6c.2.7.7 1.2 1.5 1.6.9.4 3.7.4 6.3.4h4.5c2.6 0 5.4 0 6.3-.4.8-.4 1.3-.9 1.5-1.6.2-.7.2-4.4.2-6s0-5.3-.2-6c-.2-.7-.7-1.2-1.5-1.6zM9.5 16.5v-9L16 12l-6.5 4.5z"/>
+                </svg>
+                Search on YouTube
+            </a>
+            <a href="${googleUrl}" target="_blank" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2">
+                    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                Search on Google
+            </a>
+        </div>
+    `;
+}
+
+
 // --- Course Generation Functions ---
 
 async function fetchAiContent(prompt, keyRole, model) {
@@ -337,7 +368,7 @@ async function fetchAiContent(prompt, keyRole, model) {
     // Renamed local variable to avoid conflict and clearly define the text.
     const systemInstructionText = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
     
-    // ✅ CRITICAL FIX: The systemInstruction must be a Content object, as specified by the API error.
+    // ✅ CRITICAL FIX: The systemInstruction is correctly formatted as a Content object.
     const payload = {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         systemInstruction: {
@@ -425,6 +456,7 @@ async function generateCourseOutline(isRegenerate) {
         // 5. Enhance the output list items to be clickable
         const listItems = courseContentDiv.querySelectorAll('ul li, ol li');
         listItems.forEach((li, index) => {
+            // This applies the requested "clickable container" styling (raised, padded, dark background)
             li.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg');
             li.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
             
@@ -469,9 +501,9 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     quizModal.classList.remove('hidden');
 
     // Create a detailed prompt
-    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a short quiz. The output must be structured in two main sections. 
-    1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 500 words) using headings, bullet points, and practical examples.
-    2. **Short 3-Question Quiz:** Generate 3 questions (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
+    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
+    1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples).
+    2. **Comprehensive Quiz:** Generate a **minimum of 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
     Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     
     const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
@@ -486,7 +518,6 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
             quizStatusDiv.textContent = `💾 Loaded detailed lesson from cache.`;
         } else {
             // 3. Fetch detailed content from AI (will use the dedicated DETAIL key)
-            // --- Use the dedicated DETAIL key ---
             generatedDetail = await fetchAiContent(prompt, 'DETAIL', 'gemini-2.5-flash');
             
             // 4. Save to cache
@@ -497,7 +528,10 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
-        // --- Now attempts Botlhale, falls back to browser TTS if it fails ---
+        // 6. Add Research Links (NEW FEATURE)
+        quizContentDiv.innerHTML += generateResearchLinks(stepTitle);
+
+        // --- Now attempts Botlhale, falls back to browser TTS if it fails (Voice/Pronunciation) ---
         speakText(generatedDetail);
 
     } catch (error) {
