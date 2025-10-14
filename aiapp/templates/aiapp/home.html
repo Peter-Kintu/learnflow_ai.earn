@@ -638,15 +638,17 @@
         
         // 1. Convert history to API format
         const history = getChatHistory().map(item => ({
-            role: item.role,
+            // 🔥 FIX: Map local 'ai' role to API 'model' role 🔥
+            role: item.role === 'ai' ? 'model' : item.role, 
             parts: [{ text: item.text }]
         }));
 
         // 2. Add the system instruction at the beginning
-        const fullContents = [{ role: "system", parts: [{ text: systemInstruction }] }];
+        // It's safer to use the 'user' role for the system instruction in the contents array.
+        const fullContents = [{ role: "user", parts: [{ text: systemInstruction }] }];
         
         // 3. Add relevant conversation history (last 10 messages)
-        // 🔥 This line is key for remembering older conversation context 🔥
+        // This line is key for remembering older conversation context
         const relevantHistory = history.slice(-10); // Last 10 messages (5 turns)
         fullContents.push(...relevantHistory);
         
@@ -660,8 +662,8 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contents: fullContents, // USING new fullContents array
-                    // Removed 'config' block
+                    contents: fullContents, 
+                    // FIX VERIFIED: generationConfig is a top-level field
                     generationConfig: { 
                         temperature: 0.7,
                         maxOutputTokens: 2048
@@ -749,9 +751,9 @@
         const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
         const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
 
-        // FIX: Revert to using the 'contents' array with a System role message
+        // FIX: Use the correct 'user' role for the system instruction and set up contents array
         const summaryContents = [
-             { role: "system", parts: [{ text: systemInstruction }] },
+             { role: "user", parts: [{ text: systemInstruction }] },
              { role: "user", parts: [{ text: summaryRequestContent }] }
         ];
 
@@ -762,8 +764,8 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                contents: summaryContents, // USING new summaryContents array
-                // Removed 'config' block
+                contents: summaryContents, 
+                // FIX VERIFIED: generationConfig is a top-level field
                 generationConfig: { 
                     temperature: 0.2, // Lower temperature for factual summary
                     maxOutputTokens: 1024
