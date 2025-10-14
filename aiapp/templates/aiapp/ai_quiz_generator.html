@@ -16,22 +16,7 @@
         .markdown-output p { margin-bottom: 0.75rem; }
         .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
         .markdown-output li { margin-bottom: 0.25rem; }
-        
-        /* Specific styling for the generated Quiz/Questions */
-        .quiz-section { 
-            background-color: #334155; /* slate-700 */
-            padding: 1.5rem; 
-            border-radius: 0.75rem; 
-            margin-top: 2rem; 
-            border: 2px solid #a5b4fc; /* indigo-300 border */
-        }
-        .quiz-section h2 {
-            color: #fcd34d; /* amber-300 */
-            border-bottom: 1px solid #94a3b8; /* slate-400 */
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
+
         /* Quiz/Lesson Modal Specific Styles */
         .question-block { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #475569; }
         .quiz-question { font-weight: bold; color: #f9fafb; margin-bottom: 0.75rem; }
@@ -202,51 +187,63 @@
 // You can obtain keys from Google AI Studio.
 const API_KEYS = {
     // Key used for generating the high-level course outline (less intensive)
-    OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u123456789", // Placeholder
+    OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
     // Key used for generating the detailed lessons and quizzes (more intensive)
-    DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY" // Placeholder
+    DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
    
 };
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
  * Helper function for browser's native TTS (fallback).
+ * MODIFIED: Improved voice tone (pitch), multilingual voice selection, and speed.
  */
 function fallbackToBrowserTTS(text, lang) {
     console.warn("Falling back to browser's native TTS.");
     const utterance = new SpeechSynthesisUtterance(text);
     
-    utterance.pitch = 1.1; 
-    utterance.rate = 0.88; 
+    // 1. IMPROVE TONE (Pitch/Rate)
+    utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
+    utterance.rate = 0.88; // Lowered from 0.95 to 0.88 for a calmer, less speedy pace.
 
+    // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
     const voices = speechSynthesis.getVoices();
     let selectedVoice = null;
 
+    // CRITICAL FIX: Set the utterance language to the requested language.
     const baseLang = lang.split('-')[0];
     utterance.lang = lang; 
 
+    // Define the voice preference array (from user's request)
     const voicePreferences = [
-        { lang: 'en-ZA', name: 'South African' },
+        // Priority 1: African-related languages (may only be available on certain OS/browsers)
+        { lang: 'en-ZA', name: 'South African' }, // Regional English accent
         { lang: 'zu', name: 'Zulu' },
         { lang: 'sw', name: 'Swahili' },
         { lang: 'yo', name: 'Yoruba' },
-        { lang: 'ar', name: 'Arabic' },
+        { lang: 'ha', name: 'Hausa' },
+        // Priority 2: High-quality, often multilingual/polyglot voices
         { lang: 'Google', name: 'Multi' },
         { lang: 'Microsoft', name: 'Multi' },
+        // Priority 3: Other high-quality defaults
         { lang: 'Daniel', name: 'Daniel' },
         { lang: 'Samantha', name: 'Samantha' },
         { lang: 'Zira', name: 'Zira' }
     ];
 
+    // Priority 1: Find a voice whose language code starts with the full requested code or the base code
     selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()) || voice.lang.toLowerCase().startsWith(baseLang.toLowerCase()));
 
+    // Priority 2: If no exact language match, iterate through the high-priority preference list
     if (!selectedVoice) {
         for (let pref of voicePreferences) {
+            // Check for match by full language code OR by preferred name
             selectedVoice = voices.find(voice => voice.lang.toLowerCase().includes(pref.lang.toLowerCase()) || voice.name.includes(pref.name) );
             if (selectedVoice) break;
         }
     }
 
+    // Final fallback: any voice with an English language code
     if (!selectedVoice) {
          selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
     }
@@ -258,31 +255,37 @@ function fallbackToBrowserTTS(text, lang) {
         console.warn(`Could not find a specific voice for language code: ${lang}. Using default.`);
     }
 
+    // Stop any current speech and start the new one
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
 }
 
 /**
  * ASYNC FUNCTION: Cleans text for better TTS flow and triggers the speech.
+ * MODIFIED: Preserves standard punctuation for flow, but removes symbols/markdown.
  */
 async function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
 
+    // 1. Text Cleaning: Aggressively strip Markdown and symbols that are read aloud, 
+    // but PRESERVE punctuation (., ! ? : ;) to create natural pauses and flow.
     let cleanText = text
-        .replace(/#+/g, '') 
-        .replace(/\*\*/g, '')
-        .replace(/\*/g, '')
-        .replace(/__/g, '')
-        .replace(/_/g, '')
-        .replace(/\[.*?\]\((.*?)\)/g, '')
-        .replace(/\[.*?\]/g, '')
-        .replace(/`/g, '')
-        .replace(/\//g, ' or ')
-        .replace(/[${}^|@<>=+]/g, ' ')
-        .replace(/\r?\n|\r/g, ' '); 
+        .replace(/#+/g, '') // Remove headings
+        .replace(/\*\*/g, '') // Remove double asterisks (bold)
+        .replace(/\*/g, '') // Remove single asterisks (italics/list markers)
+        .replace(/__/g, '') // Remove double underscores
+        .replace(/_/g, '') // Remove single underscores
+        .replace(/\[.*?\]\((.*?)\)/g, '') // Remove Markdown links entirely [text](url)
+        .replace(/\[.*?\]/g, '') // Remove brackets, e.g., citations [text]
+        .replace(/`/g, '') // Remove backticks (code)
+        .replace(/\//g, ' or ') // Replace slashes with "or"
+        .replace(/[${}^|@<>=+]/g, ' ') // NEW: Remove symbols often read aloud: $, {, }, ^, |, @, <, >, =, +
+        .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
 
-    cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); 
+    // Further cleaning and consolidation
+    cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space
 
+    // 2. Fallback to Browser TTS (using the language set in the form)
     fallbackToBrowserTTS(cleanText, selectedLang);
 }
 
@@ -291,22 +294,12 @@ async function speakText(text) {
 function markdownToHtml(markdown) {
     let html = markdown;
     
-    // Replace the specific QUIZ heading with a styled block for visibility
-    // FIX: Using regex to look for "Quiz" or "Questions" followed by a heading format
-    html = html.replace(/^(#+\s*(Quiz|Questions).*)$/gim, '<div class="quiz-section">$1');
-    html = html.replace(/^(#+\s*(Lesson|Content|Details).*)$/gim, '</div><div class="lesson-section">$1'); // Close the quiz section if lesson starts again
-
     // Convert headings
     html = html.replace(/^###\s*(.*)$/gm, '<h3>$1</h3>');
     html = html.replace(/^##\s*(.*)$/gm, '<h2>$1</h2>');
     html = html.replace(/^#\s*(.*)$/gm, '<h1>$1</h1>');
-    
-    // Close any open quiz/lesson section divs at the end
-    if (html.includes('<div class="quiz-section">') && !html.includes('</div>')) {
-        html += '</div>';
-    }
-    
-    // Convert bold and italics
+
+    // Convert bold and italics (must be done before list conversion to avoid conflicts)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
@@ -337,17 +330,17 @@ function markdownToHtml(markdown) {
 
 /**
  * Generates the HTML for the external research links.
+ * MODIFIED: Accepts fullContext to create more accurate search queries.
  */
 function generateResearchLinks(query, fullContext) {
     // Extract context: Course: Subject, Level: level
     const subjectMatch = fullContext.match(/Course:\s*(.*?),/);
     const levelMatch = fullContext.match(/Level:\s*(.*?),/);
     
-    const subject = subjectMatch ? subjectMatch[1].trim() : 'Learning Path';
-    const level = levelMatch ? levelMatch[1].trim() : 'General';
+    const subject = subjectMatch ? subjectMatch[1].trim() : '';
+    const level = levelMatch ? levelMatch[1].trim() : '';
     
     // Combine for a highly specific query
-    // FIX: Using the extracted subject and level to create highly accurate searches.
     const effectiveQuery = `${subject} ${level} ${query}`; 
 
     const safeQuery = encodeURIComponent(effectiveQuery);
@@ -381,7 +374,7 @@ function generateResearchLinks(query, fullContext) {
 async function fetchAiContent(prompt, keyRole, model) {
     const apiKey = API_KEYS[keyRole];
     // Check for placeholder key before calling API
-    if (apiKey.includes("YOUR_GEMINI_API_KEY") || apiKey.includes("123456789")) {
+    if (apiKey.includes("YOUR_GEMINI_API_KEY")) {
         throw new Error("API Key Missing: Please replace the placeholder API key in the 'API_KEYS' block within the <script> tag with a valid key for the respective role.");
     }
 
@@ -391,8 +384,10 @@ async function fetchAiContent(prompt, keyRole, model) {
         throw new Error(`API Key for role ${keyRole} is missing.`);
     }
 
+    // Renamed local variable to avoid conflict and clearly define the text.
     const systemInstructionText = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
     
+    // ✅ CRITICAL FIX: The systemInstruction is correctly formatted as a Content object.
     const payload = {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         systemInstruction: {
@@ -428,6 +423,7 @@ async function generateCourseOutline(isRegenerate) {
     const level = document.getElementById('currentLevel').value;
     const goals = document.getElementById('learningGoals').value.trim();
     const lang = document.getElementById('languageSelect').value;
+    const form = document.getElementById('learningPathForm');
     const aiStatusDiv = document.getElementById('aiStatus');
     const generateButton = document.getElementById('generateButton');
     const aiCourseOutputDiv = document.getElementById('aiCourseOutput');
@@ -454,21 +450,23 @@ async function generateCourseOutline(isRegenerate) {
 
     try {
         let generatedContent = '';
+        let isCached = false;
         
         // 1. Check cache (unless regenerating)
         const cachedOutline = localStorage.getItem(cacheKey);
         if (cachedOutline && !isRegenerate) {
             generatedContent = cachedOutline;
             aiStatusDiv.textContent = '💾 Loaded outline from cache.';
+            isCached = true;
         } else {
             // 2. Fetch from AI
-            // FIX: Set to exactly 5 modules as requested, and enforce a clear, parseable list.
-            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have **exactly 5** distinct, engaging modules to ensure a complete course. Each module must be formatted strictly as a single list item: \n- **Module [Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
+            // ✅ OPTIMIZED PROMPT: Enforce exactly 8 modules for consistent, multi-step path generation
+            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have **exactly 8** distinct, engaging modules to ensure a complete course. Each module must be formatted strictly as a single list item: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
             generatedContent = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
             
             // 3. Save to cache
             localStorage.setItem(cacheKey, generatedContent);
-            aiStatusDiv.textContent = `✅ Outline for "${subject}" is ready! Click a step to begin.`;
+            aiStatusDiv.textContent = `✅ Outline for "${subject}" is ready!`;
         }
 
         // 4. Process and Display
@@ -476,29 +474,19 @@ async function generateCourseOutline(isRegenerate) {
         aiCourseOutputDiv.classList.remove('hidden');
 
         // 5. Enhance the output list items to be clickable
-        // FIX: Look for both UL and OL list items to ensure compatibility with AI output
-        const listItems = courseContentDiv.querySelectorAll('.markdown-output li'); 
-        
-        // Clear old content to prevent duplication if markdownToHtml failed
-        courseContentDiv.innerHTML = ''; 
-
+        const listItems = courseContentDiv.querySelectorAll('ul li, ol li');
         listItems.forEach((li, index) => {
-            // This is the primary fix for the path display issue: Re-create the div container for *each* item.
-            const stepDiv = document.createElement('div');
-            stepDiv.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg', 'font-semibold', 'text-gray-200');
-            stepDiv.innerHTML = li.innerHTML.replace(/<[\/]?ul>/g, '').replace(/<[\/]?li>/g, ''); // Clean up remaining list tags
-            
+            // This applies the requested "clickable container" styling (raised, padded, dark background)
+            li.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg');
             // MODIFIED: Pass the full context to loadDetailedLesson
-            stepDiv.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
+            li.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
             
             // Add a speaker icon
             const icon = document.createElement('span');
             icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
-            stepDiv.appendChild(icon);
-            
-            courseContentDiv.appendChild(stepDiv);
+            li.appendChild(icon);
         });
-        
+
         // 6. Set the quiz context input (used by detailed lesson loader)
         document.getElementById('quizPromptInput').value = `Course: ${subject}, Level: ${level}, Goals: ${goals}, Language Code: ${lang}`;
 
@@ -534,10 +522,9 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     quizModal.classList.remove('hidden');
 
     // Create a detailed prompt
-    // FIX: Enhanced prompt to explicitly request a H2 heading for the quiz and bold the questions/answers for better formatting.
     const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
-    1. **Detailed Lesson Content (H2 Heading):** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples). Use Markdown to format this content.
-    2. **Comprehensive Quiz (H2 Heading):** Immediately following the lesson, generate a **minimum of 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Each question should be numbered and bolded. Include the correct answer immediately after the question, clearly labeled as **Answer: [Correct Answer]**.
+    1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples).
+    2. **Comprehensive Quiz:** Generate a **minimum of 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
     Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     
     const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
@@ -562,8 +549,8 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
 
-        // 6. Add Research Links 
-        // FIX: The fullContext variable is now correctly passed to generateResearchLinks
+        // 6. Add Research Links (NEW FEATURE)
+        // MODIFIED: Pass the full context for accurate search
         quizContentDiv.innerHTML += generateResearchLinks(stepTitle, fullContext); 
 
         // --- Now attempts Botlhale, falls back to browser TTS if it fails (Voice/Pronunciation) ---
