@@ -97,7 +97,6 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        /* text-fill-color: transparent; <-- REMOVED */
     }
 
     /* Modal Styling (Hidden by default) */
@@ -203,8 +202,20 @@
 
     <!-- 3. CHATBOT SECTION (Interactive Assistant) -->
     <section id="chatbot-card" class="py-16">
-        <h2 class="text-4xl font-bold text-center mb-12 text-white">Your Universal Study Assistant</h2>
+        <h2 class="text-4xl font-bold text-center mb-8 text-white">Your Universal Study Assistant</h2>
         <div class="max-w-4xl mx-auto glass-card p-6 sm:p-10 rounded-2xl">
+            
+            <!-- AI Persona Section (New) -->
+            <div class="mb-8 p-4 border border-purple-600 bg-purple-900/20 rounded-lg">
+                <p class="text-sm font-semibold text-purple-300 mb-2 flex items-center">
+                    <span class="mr-2 text-xl">🧠</span> LearnFlow AI System Description
+                </p>
+                <p class="text-gray-300 text-sm">
+                    You are **LearnFlow AI** — a multilingual, education-focused AI assistant built by **Kintu Peter**, a visionary teacher and software developer. Your mission is to make high-quality education joyful, accessible, and multilingual — for every learner, everywhere.
+                </p>
+            </div>
+            <!-- End AI Persona Section -->
+            
             <p class="text-gray-400 mb-6 text-center">Ask our AI any question about learning, history, science, or how LearnFlow works. It understands all languages!</p>
             
             <div class="mb-6">
@@ -288,7 +299,7 @@
                                 placeholder="{{ field.label }}" autocomplete="current-password" required>
                             <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer"
                                 onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -365,7 +376,7 @@
         }
     }
     
-    // --- Gemini API / Chatbot Logic (MIGRATED AND UNCHANGED) ---
+    // --- Gemini API / Chatbot Logic (UPDATED SYSTEM PROMPTS) ---
     document.addEventListener('DOMContentLoaded', () => {
         const userPrompt = document.getElementById('user-prompt');
         const askButton = document.getElementById('ask-button');
@@ -419,7 +430,33 @@
             throw lastError;
         }
 
-        // Main request handler (Unchanged logic)
+        // --- LearnFlow Contact Information ---
+        const LEARNFLOW_CONTACT_INFO = {
+            whatsapp: "+256789746493",
+            email: "kintupeter7@gmail.com",
+            website: "https://learnflow-ai-0fdz.onrender.com",
+            support_hours: "Monday–Saturday, 9am–6pm EAT"
+        };
+
+        // --- Core LearnFlow AI System Prompt (Updated to include contact info) ---
+        const LEARNFLOW_AI_SYSTEM_PROMPT = `You are LearnFlow AI, a multilingual, education-focused assistant built by Kintu Peter, a teacher and software developer. Your core mission is to make high-quality education joyful, accessible, and multilingual.
+        
+        Your capabilities include:
+        1. **Chatbot Support:** Providing accurate, empathetic, and concise answers to any learning query.
+        2. **Personalized Learning:** Generating AI-driven learning paths for any given topic, tailoring them to the user's needs.
+        3. **Assessment Tools:** Creating personalized quizzes, exercises, and study guides from videos, teacher notes, or uploaded documents.
+        4. **Resource Management:** Summarizing documents, videos, and books, and offering context on the platform's features, including eBook buying and selling.
+        
+        --- CONTACT INFORMATION ---
+        For support or contact:
+        - WhatsApp: ${LEARNFLOW_CONTACT_INFO.whatsapp}
+        - Email: ${LEARNFLOW_CONTACT_INFO.email}
+        - Website: ${LEARNFLOW_CONTACT_INFO.website}
+        - Support Hours: ${LEARNFLOW_CONTACT_INFO.support_hours}
+        
+        Communicate with clarity and precision, and always respond in the same language as the user's query.`;
+
+        // Main request handler (Updated logic for new system prompts)
         async function handleRequest(type) {
             const prompt = userPrompt.value.trim();
             if (!prompt) {
@@ -441,21 +478,31 @@
             loader.classList.remove('hidden');
 
             try {
-                const systemPrompt = isAsk ? 
-                    "You are a helpful, multilingual AI assistant specializing in education and learning. Answer the user's question accurately and concisely, drawing on current web knowledge when necessary. Respond in the same language as the user's query." :
-                    "You are a professional summarization AI. Take the provided text and create a concise, easy-to-understand summary. The summary should be neutral and retain the core message of the original text. Respond in the same language as the provided text.";
-                
-                const userQuery = isAsk ? prompt : `Summarize the following text: ${prompt}`;
+                // Determine specific prompt based on mode
+                let finalSystemPrompt;
+                let userQuery = prompt;
+                let useSearch = false;
+
+                if (isAsk) {
+                    // Use the full system prompt for general queries, enabling search grounding.
+                    finalSystemPrompt = LEARNFLOW_AI_SYSTEM_PROMPT;
+                    useSearch = true;
+                } else {
+                    // For summarization, modify the prompt to focus purely on that task.
+                    finalSystemPrompt = LEARNFLOW_AI_SYSTEM_PROMPT.replace('Your capabilities include:', 'Your current task is strictly summarization.') + ' Take the provided text and produce a clear, neutral, and easy-to-understand summary that preserves the core message.';
+                    userQuery = `Summarize the following text: ${prompt}`;
+                    useSearch = false;
+                }
                 
                 const payload = {
                     contents: [{ parts: [{ text: userQuery }] }],
-                    tools: isAsk ? [{ "google_search": {} }] : [], // Use grounding only for 'ask' questions
+                    tools: useSearch ? [{ "google_search": {} }] : [], 
                     systemInstruction: {
-                        parts: [{ text: systemPrompt }]
+                        parts: [{ text: finalSystemPrompt }]
                     },
                 };
                 
-                const apiKey = ""
+                const apiKey = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo";  
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                 const result = await fetchWithRetry(apiUrl, payload);
