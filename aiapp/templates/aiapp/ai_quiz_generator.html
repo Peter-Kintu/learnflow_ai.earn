@@ -201,21 +201,45 @@ function fallbackToBrowserTTS(text, lang) {
     utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
     utterance.rate = 0.95; // Maintain slightly slower pace for clarity (as before)
 
-    // 2. Multilingual Voice Selection Logic
+    // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
     const voices = speechSynthesis.getVoices();
     let selectedVoice = null;
-    
-    // Priority 1: Find an exact match for the language code (e.g., 'fr-FR', 'en-US')
+
+    // 🔥 CRITICAL FIX: Set the utterance language to the requested language.
+    // This is the most important step for non-English pronunciation accuracy.
+    utterance.lang = lang;
+
+    // Define the voice preference array (from user's request)
+    const voicePreferences = [
+        // Priority 1: African-related languages (may only be available on certain OS/browsers)
+        { lang: 'en-ZA', name: 'South African' }, // Regional English accent
+        { lang: 'zu', name: 'Zulu' },
+        { lang: 'sw', name: 'Swahili' },
+        { lang: 'ha', name: 'Hausa' },
+        // Priority 2: High-quality, often multilingual/polyglot voices
+        { lang: 'Google', name: 'Multi' },
+        { lang: 'Microsoft', name: 'Multi' },
+        // Priority 3: Other high-quality defaults
+        { lang: 'Daniel', name: 'Daniel' },
+        { lang: 'Samantha', name: 'Samantha' },
+        { lang: 'Zira', name: 'Zira' }
+    ];
+
+    // Priority 1: Find a voice whose language code starts with the requested language code
     selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()));
 
-    // Priority 2: African Language Fallback (Try for African-region English or a related code)
-    if (!selectedVoice && (lang === 'sw' || lang === 'yo' || lang === 'zu')) {
-        selectedVoice = voices.find(voice => voice.lang.includes('en-ZA') || voice.lang.includes('en-GB') || voice.name.includes('African') || voice.name.includes('Zulu'));
+    // Priority 2: If no exact language match, iterate through the high-priority preference list
+    if (!selectedVoice) {
+        for (let pref of voicePreferences) {
+            // Check for match by full language code OR by preferred name
+            selectedVoice = voices.find(voice => voice.lang.toLowerCase().includes(pref.lang.toLowerCase()) || voice.name.includes(pref.name) );
+            if (selectedVoice) break;
+        }
     }
 
-    // Priority 3: General Multilingual/High-quality fallback (Google/Microsoft voices often support more languages)
+    // Final fallback: any voice with an English language code
     if (!selectedVoice) {
-         selectedVoice = voices.find(voice => voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.lang.startsWith('en'));
+         selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
     }
     
     if (selectedVoice) {
@@ -236,335 +260,214 @@ function fallbackToBrowserTTS(text, lang) {
  */
 async function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
-    
+
     // 1. Text Cleaning: Aggressively strip all Markdown/code/list markers and ensure proper pacing.
     let cleanText = text
-        .replace(/#+/g, '')             // Remove headings
-        .replace(/\*\*/g, '')           // Remove double asterisks (bold)
-        .replace(/\*/g, '')              // Remove single asterisks
-        .replace(/__/g, '')             // Remove double underscores
-        .replace(/_/g, '')              // Remove single underscores
-        .replace(/^- /gm, '. ')         // NEW: Replace list hyphens with period-space for a pause
+        .replace(/#+/g, '') // Remove headings
+        .replace(/\*\*/g, '') // Remove double asterisks (bold)
+        .replace(/\*/g, '') // Remove single asterisks
+        .replace(/__/g, '') // Remove double underscores
+        .replace(/_/g, '') // Remove single underscores
+        .replace(/^- /gm, '. ') // NEW: Replace list hyphens with period-space for a pause
         .replace(/^\s*\d+\.\s*/gm, '. ') // NEW: Replace numbered list markers/questions with period-space for a pause
-        .replace(/\//g, ' or ')         // Replace slashes with a word
-        .replace(/\[.*?\]/g, '')        // Remove anything in brackets
-        .replace(/:\s/g, ', ');         // Replace colons with a comma for a short pause
+        .replace(/\//g, ' or ') // Replace slashes with a word
+        .replace(/\[.*?\]/g, '') // Remove links/citations [text](url)
+        .replace(/`/g, '') // Remove backticks (code)
+        .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
 
-    // 2. Normalize whitespace.
-    cleanText = cleanText.replace(/(\r\n|\n|\r)/gm, ' ');
-    cleanText = cleanText.replace(/ +/g, ' ').trim(); 
+    // Further cleaning and consolidation
+    cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space
 
-    // 3. Attempt to call Django Proxy for Botlhale TTS
-    try {
-        const response = await fetch('/tts/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                text: cleanText, 
-                language_code: selectedLang 
-            })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok && data.audio_url) {
-            // SUCCESS: Play the generated audio file
-            console.log("Using Botlhale TTS via Django proxy.");
-            const audio = new Audio(data.audio_url);
-            audio.play();
-        } else {
-            // FAILURE 1: Proxy returned non-200 or missing audio_url -> FALLBACK
-            console.error("Botlhale TTS proxy failed:", data);
-            fallbackToBrowserTTS(cleanText, selectedLang);
-        }
-    } catch (error) {
-        // FAILURE 2: Network error or unhandled fetch exception -> FALLBACK
-        console.error("Fetch error to TTS proxy (Botlhale failed):", error);
-        fallbackToBrowserTTS(cleanText, selectedLang);
-    }
+    // 2. TTS Attempt (Botlhale/API - currently disabled/removed, falling straight to browser TTS)
+    // NOTE: If Botlhale/external TTS is implemented, this is where the API call would go.
+    
+    // 3. Fallback to Browser TTS (using the language set in the form)
+    fallbackToBrowserTTS(cleanText, selectedLang);
 }
 
-/**
- * Converts AI text to HTML.
- */
-function markdownToHtml(text) {
-    let html = text;
+// --- Markdown Rendering Functions ---
+// Simple markdown to HTML conversion for displaying course content
+function markdownToHtml(markdown) {
+    let html = markdown;
     
-    // 1. Simple replacements for common headings, assuming AI uses them for structure
-    html = html.replace(/^## (.*)$/gim, '<h3>$1</h3>'); // Step titles in outline
-    html = html.replace(/^# (.*)$/gim, '<h2>$1</h2>'); // Not used, but kept for safety
-    
-    // 2. Replace bold syntax
+    // Convert headings
+    html = html.replace(/^###\s*(.*)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^##\s*(.*)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^#\s*(.*)$/gm, '<h1>$1</h1>');
+
+    // Convert bold and italics (must be done before list conversion to avoid conflicts)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-
-    // Helper to get a Google Search URL for the current lesson title
-    function getGoogleSearchUrl(query) {
-        return `https://www.google.com/search?q=youtube+video+${encodeURIComponent(query)}`;
-    }
+    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
     
-    // Get the current lesson title for the manual search button
-    const lessonTitle = document.querySelector('#quizModal h3').textContent.replace('Lesson: ', '');
-    const searchLink = getGoogleSearchUrl(lessonTitle);
+    // Convert links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-indigo-400 hover:text-indigo-300">$1</a>');
 
-    // 3. **CRITICAL FIX: Robustly convert the plain YouTube URL into a clickable link.**
-    // The regex is aggressive, looking for http/https followed by any YouTube pattern, separated by a line break.
-    const youtubeRegex = /(https?:\/\/(?:www\.)?youtu(?:be\.com|\.be)\/[^\s\n]+)/gi;
+    // Convert bulleted lists
+    html = html.replace(/^\s*[\*-]\s+(.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(\n?<li>.*?<\/li>)+/gs, '<ul>$1</ul>');
     
-    html = html.replace(youtubeRegex, (match, url) => {
-        // Return the clickable link structure, including the manual search button for accuracy fallback.
-        return `<p class="mt-4 flex items-center gap-3">
-            <a href="${url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold underline break-all">🔗 Watch AI-Suggested Video</a>
-            <a href="${searchLink}" target="_blank" class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 text-sm">🔍 Search for Video</a>
-        </p>\n`;
-    });
-
-    // 4. Convert bulleted lists
-    html = html.split('\n').map(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || trimmedLine.match(/^\d+\./)) {
-            let listItemText = trimmedLine;
-             if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-                listItemText = trimmedLine.substring(2).trim();
-            } else if (trimmedLine.match(/^\d+\./)) {
-                // Handle numbered lists without interfering with question numbering
-                listItemText = trimmedLine.replace(/^\d+\.\s*/, '').trim();
-            }
-             if (!trimmedLine.match(/Self-Assessment Questions/i)) { // Prevent list-ifying the questions/answers
-                 if (listItemText.match(/^<li/)) {
-                     return line; 
-                 }
-                 return `<li>${listItemText}</li>`;
-            }
+    // Convert numbered lists
+    html = html.replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(\n?<li>.*?<\/li>)+/gs, '<ol>$1</ol>');
+    
+    // Convert paragraphs (must be done last)
+    html = html.split(/\n{2,}/).map(p => {
+        // Only wrap if it's not a heading, list, or existing block
+        if (p.trim() !== '' && !p.startsWith('<h') && !p.startsWith('<ul') && !p.startsWith('<ol') && !p.startsWith('<div')) {
+            return `<p>${p.trim().replace(/\n/g, '<br>')}</p>`;
         }
-        return line;
-    }).join('\n');
-    
-    // 5. Wrap consecutive list items in <ul>
-    html = html.replace(/(<li>.*?<\/li>[\s\n]*)+/gs, (match) => `<ul>${match}</ul>`);
+        return p;
+    }).join('');
 
-    // 6. Basic paragraph wrapping
-    html = html.split('\n').map(line => {
-        const trimmedLine = line.trim();
-        // Check for common tags, including the new <a> tag structure, to prevent double wrapping
-        if (trimmedLine.length === 0 || trimmedLine.match(/^(<h|<u|<l|<p|<a)/i)) {
-            return line; // Skip empty lines, headings, lists, or links/paragraphs already processed
-        }
-        return `<p>${trimmedLine}</p>`;
-    }).join('\n');
-    
-    // 7. Clean up empty tags and repeated newlines
-    html = html.replace(/<p><\/p>/g, '')
-               .replace(/(\n\s*){3,}/g, '\n\n');
-    
-    return html;
+    return `<div class="markdown-output">${html}</div>`;
 }
 
-/**
- * Placeholder function for TXT Download
- */
-function generatePdf(elementId) {
-    const title = document.querySelector('#aiCourseOutput h4').textContent;
-    const contentHtml = document.getElementById(elementId).innerHTML;
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = contentHtml;
-    const content = tempDiv.innerText;
+// --- Course Generation Functions ---
 
-    const fullText = title + "\n\n" + content;
-    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = title.replace(/ /g, '_') + ".txt";
-    link.click();
-    URL.revokeObjectURL(url);
-    alert("Downloaded the outline as a text file.");
-}
-
-
-// --- AI Fetch Function (Remains unchanged for Gemini Outline/Detail calls) ---
-async function fetchAiContent(prompt, keyType, model = 'gemini-2.5-flash') {
-    const apiKey = API_KEYS[keyType];
+async function fetchAiContent(prompt, keyRole, model) {
+    const apiKey = API_KEYS[keyRole];
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     
     if (!apiKey) {
-        throw new Error(`Invalid key type specified: ${keyType}.`);
+        throw new Error(`API Key for role ${keyRole} is missing.`);
     }
 
-    try {
-        const endpoint = "https://generativelanguage.googleapis.com/v1/models/" + model + ":generateContent?key=" + apiKey;
-        
-        const body = {
-            contents: [{ 
-                role: "user",
-                parts: [{ text: prompt }] 
-            }]
-        };
-        
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        });
+    const systemInstruction = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
+    
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.7,
+                maxOutputTokens: 2048
+            }
+        })
+    });
 
-        if (!response.ok) {
-             const errorData = await response.json().catch(() => ({ error: { message: `Request failed with status ${response.status}.` } }));
-            throw new Error(`API call (${keyType} Key) failed with status ${response.status}. Message: ${errorData.error.message || "No message provided."}`);
-        }
-
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (text && text.trim() !== "") {
-            return text; 
-        } else {
-            throw new Error(`Model returned empty content or was blocked.`);
-        }
-
-    } catch (error) {
-        throw error;
+    if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(`API Error ${response.status}: ${errorBody.error.message}`);
     }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Content generation failed.";
 }
 
+// Function to handle the initial course outline generation
+async function generateCourseOutline(isRegenerate) {
+    const subject = document.getElementById('subjectMastery').value.trim();
+    const level = document.getElementById('currentLevel').value;
+    const goals = document.getElementById('learningGoals').value.trim();
+    const lang = document.getElementById('languageSelect').value;
+    const form = document.getElementById('learningPathForm');
+    const aiStatusDiv = document.getElementById('aiStatus');
+    const generateButton = document.getElementById('generateButton');
+    const aiCourseOutputDiv = document.getElementById('aiCourseOutput');
+    const courseContentDiv = document.getElementById('courseContent');
 
-/**
- * Main function to generate the course outline. Uses the OUTLINE key.
- */
-async function generateCourseOutline(forceRegenerate = false) {
-    const topic = document.getElementById("subjectMastery").value.trim();
-    const level = document.getElementById("currentLevel").value;
-    const goals = document.getElementById("learningGoals").value.trim();
-    const selectedLang = document.getElementById("languageSelect").value;
-    const cacheKey = CACHE_KEY_PREFIX + selectedLang + "_" + topic.toLowerCase().replace(/\s/g, '_');
-    
-    const status = document.getElementById("aiStatus");
-    const output = document.getElementById("aiCourseOutput");
-    const content = document.getElementById("courseContent");
-    const generateButton = document.getElementById("generateButton");
-
-    if (!topic) {
-        status.textContent = "⚠️ Please enter a subject to create your learning path.";
+    if (!subject) {
+        alert("Please enter a subject to master.");
         return;
     }
-    
-    document.getElementById("quizPromptInput").value = `${topic} (${level})`;
 
-    // 1. Check Cache
-    if (!forceRegenerate) {
-        const cachedText = localStorage.getItem(cacheKey);
-        if (cachedText && cachedText.startsWith('AI_OUTLINE:')) {
-            displayOutline(topic, level, cachedText.replace('AI_OUTLINE:', '')); 
-            status.textContent = "💾 Loaded personalized learning path from local cache.";
-            return;
-        }
-    }
+    const cacheKey = CACHE_KEY_PREFIX + btoa(`${subject}-${level}-${goals}-${lang}`);
 
-    // 2. Set Loading State
-    status.innerHTML = `<span class="animate-pulse text-indigo-400">⏳ Generating ${level} course on "${topic}" in ${selectedLang} using OUTLINE Key...</span>`;
     generateButton.disabled = true;
-    generateButton.classList.remove('hover:bg-indigo-700');
-    generateButton.classList.add('bg-indigo-800/70', 'cursor-not-allowed');
-    output.classList.add("hidden");
-    content.innerHTML = "";
+    generateButton.innerHTML = `<span class="mr-2 loader-spinner"></span> Generating Course...`;
+    aiStatusDiv.textContent = 'Contacting AI for outline...';
+    aiCourseOutputDiv.classList.add('hidden');
+    courseContentDiv.innerHTML = `<div class="text-center py-8">
+        <svg class="animate-spin h-10 w-10 text-indigo-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-indigo-300">Building a comprehensive curriculum just for you...</p>
+    </div>`;
 
     try {
-        const prompt = `You are LearnFlow AI Course Generator. Respond STRICTLY in the language corresponding to the BCP-47 code: ${selectedLang}. Create a 5-step learning path outline for the subject: "${topic}". 
-                        The user's current level is "${level}" and their goals are: "${goals}". 
-                        For each step, include a title using a H2 heading (##), a brief goal, and a list of 3-4 key concepts or lessons using bullet points (-). DO NOT include any introductory or concluding remarks, only the formatted outline. Minimize the use of special symbols or complex markdown besides H2 and bullet points.`;
+        let generatedContent = '';
+        let isCached = false;
+        
+        // 1. Check cache (unless regenerating)
+        const cachedOutline = localStorage.getItem(cacheKey);
+        if (cachedOutline && !isRegenerate) {
+            generatedContent = cachedOutline;
+            aiStatusDiv.textContent = '💾 Loaded outline from cache.';
+            isCached = true;
+        } else {
+            // 2. Fetch from AI
+            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path must have a minimum of 6 and a maximum of 10 distinct, engaging modules. Each module must be formatted as: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
+            generatedContent = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
+            
+            // 3. Save to cache
+            localStorage.setItem(cacheKey, generatedContent);
+            aiStatusDiv.textContent = `✅ Outline for "${subject}" is ready!`;
+        }
 
-        // --- Use the dedicated OUTLINE key ---
-        const generatedText = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
+        // 4. Process and Display
+        courseContentDiv.innerHTML = markdownToHtml(generatedContent);
+        aiCourseOutputDiv.classList.remove('hidden');
 
-        // 3. Save AI Outline to Cache and Display
-        localStorage.setItem(cacheKey, 'AI_OUTLINE:' + generatedText);
-        displayOutline(topic, level, generatedText); 
-        status.textContent = "✅ Your personalized learning path is ready! (Outline is cached locally)";
+        // 5. Enhance the output list items to be clickable
+        const listItems = courseContentDiv.querySelectorAll('ul li, ol li');
+        listItems.forEach((li, index) => {
+            li.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg');
+            li.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
+            
+            // Add a speaker icon
+            const icon = document.createElement('span');
+            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+            li.appendChild(icon);
+        });
+
+        // 6. Set the quiz context input (used by detailed lesson loader)
+        document.getElementById('quizPromptInput').value = `Course: ${subject}, Level: ${level}, Goals: ${goals}, Language Code: ${lang}`;
 
     } catch (error) {
-        console.error("Gemini API Error (Outline):", error);
-        status.innerHTML = `❌ Outline generation failed: ${error.message}. Please check your OUTLINE API Key.`;
+        console.error("Course Outline API Error:", error);
+        aiStatusDiv.textContent = `❌ Failed to generate course outline: ${error.message}`;
+        courseContentDiv.innerHTML = `<p class="text-red-400 py-8">Error loading content. Please try again or check your API key.</p>`;
+        aiCourseOutputDiv.classList.remove('hidden');
+
     } finally {
-        // 4. Reset Button State
         generateButton.disabled = false;
-        generateButton.classList.remove('bg-indigo-800/70', 'cursor-not-allowed');
-        generateButton.classList.add('hover:bg-indigo-700');
+        generateButton.innerHTML = `<span class="mr-2">🚀</span> Create My Learning Path`;
     }
 }
 
-/**
- * Helper function to inject generated text into the DOM, making each step clickable.
- */
-function displayOutline(topic, level, markdownText) {
-    const output = document.getElementById("aiCourseOutput");
-    const content = document.getElementById("courseContent");
-    const selectedLang = document.getElementById("languageSelect").value;
+// Function to handle loading the detailed lesson/quiz content
+async function loadDetailedLesson(stepIndex, stepText, lang) {
+    const stepTitle = stepText.match(/\*\*(.*?)\*\*/)?.[1] || `Step ${stepIndex + 1}`;
+    const quizModal = document.getElementById('quizModal');
+    const quizContentDiv = document.getElementById('quizContent');
+    const quizStatusDiv = document.getElementById('quizStatus');
+    const fullContext = document.getElementById('quizPromptInput').value;
     
-    document.querySelector('#aiCourseOutput h4').textContent = `Generated Learning Path Outline for: ${topic}`;
-
-    content.innerHTML = ''; // Clear previous content
-    
-    const steps = markdownText.split('##').filter(s => s.trim().length > 0);
-    
-    steps.forEach((stepContent, index) => {
-        const stepTitleMatch = stepContent.match(/([^\n]+)/);
-        const stepTitle = stepTitleMatch ? stepTitleMatch[0].trim() : `Step ${index + 1}`;
-        const briefContentHtml = markdownToHtml(`## ${stepContent}`);
-
-        // THE PROMPT IS UPDATED: Requests a verified, working YouTube link.
-        const detailPrompt = `You are an expert tutor. Provide a detailed lesson (approx. 300 words) on the following course step in language code ${selectedLang}. Use **H3** for the title of the detailed lesson, and **bold** text for key terms.
-                        IMPORTANT: After the lesson content, include a section titled "Further Learning Video" and provide a **single, HIGHLY-VERIFIED, RELEVANT, and WORKING YouTube link (URL starting with https://)** for a video about this lesson's topic. You must pretend to have performed a web search and confirmed the link is active and accurate.
-                        After the video link, create a **Self-Assessment** section with **6 simple, open-ended questions** based on the content. The subject is "${topic}" for a "${level}" user. The step is: "${stepTitle}". 
-                        STRICTLY format the output as: 
-                        1. A **H3** heading for the detailed title.
-                        2. The detailed lesson content (in paragraphs, using **bold** for keywords).
-                        3. A **H3** heading titled "Further Learning Video".
-                        4. The YouTube URL (no markdown link, just the plain URL on its own line, e.g., https://www.youtube.com/watch?v=XXXX).
-                        5. A **H3** heading titled "Self-Assessment Questions".
-                        6. The 6 open-ended questions, using simple numbering (1. to 6.). 
-                        DO NOT include any special symbols like asterisks (*), hyphens (-), or extra markdown for the question/answer structure.`;
-
-        const stepDiv = document.createElement("div");
-        stepDiv.className = "bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4 cursor-pointer hover:bg-slate-700/70 transition-colors clickable-step";
-        // Store the title, topic, and prompt
-        stepDiv.setAttribute('data-step-title', stepTitle.replace(/'/g, "\\'"));
-        stepDiv.setAttribute('data-topic', topic.replace(/'/g, "\\'"));
-        stepDiv.setAttribute('data-detail-prompt', detailPrompt);
-        stepDiv.setAttribute('onclick', `displayDetailedLesson(this)`);
-        
-        stepDiv.innerHTML = briefContentHtml;
-        content.appendChild(stepDiv);
-    });
-    
-    // Add Read Aloud button
-    const readAloudButton = document.createElement('button');
-    readAloudButton.className = "mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs";
-    readAloudButton.textContent = "🔊 Read Aloud Outline";
-    readAloudButton.onclick = () => speakText(markdownText); 
-    content.appendChild(readAloudButton);
-
-    output.classList.remove("hidden");
-}
-
-
-/**
- * Makes the second API call to get the detailed lesson content and quiz. Uses the DETAIL key.
- */
-async function displayDetailedLesson(element) {
-    const prompt = element.getAttribute('data-detail-prompt');
-    const stepTitle = element.getAttribute('data-step-title');
-    const topic = element.getAttribute('data-topic');
-    const selectedLang = document.getElementById("languageSelect").value;
-    const cacheKey = CACHE_KEY_PREFIX + selectedLang + "_" + topic.toLowerCase().replace(/\s/g, '_') + "_" + stepTitle.toLowerCase().replace(/\s/g, '_');
-    
-    const quizModal = document.getElementById("quizModal");
-    const quizContentDiv = document.getElementById("quizContent");
-    const quizStatusDiv = document.getElementById("quizStatus");
-    
-    // 1. Show Loading State in Modal
-    document.querySelector('#quizModal h3').textContent = `Lesson: ${stepTitle}`;
-    quizContentDiv.innerHTML = `<p class="text-center py-8 text-indigo-400 animate-pulse">Loading detailed lesson and quiz from AI (using DETAIL Key)...</p>`;
-    quizStatusDiv.textContent = `Generating content for "${stepTitle}"...`;
+    // 1. Prepare for loading
+    quizContentDiv.innerHTML = `<div class="text-center py-8">
+        <svg class="animate-spin h-10 w-10 text-yellow-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-yellow-300">Loading lesson for: ${stepTitle}...</p>
+    </div>`;
+    quizStatusDiv.textContent = `Preparing detailed lesson for ${stepTitle}...`;
     quizModal.classList.remove('hidden');
+
+    // Create a detailed prompt
+    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a short quiz. The output must be structured in two main sections. 
+    1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 500 words) using headings, bullet points, and practical examples.
+    2. **Short 3-Question Quiz:** Generate 3 questions (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Include the correct answers immediately after the questions, clearly labeled as "Answer: [Correct Answer]".
+    Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
+    
+    const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
 
     try {
         // 2. Check cache for detailed content
@@ -596,6 +499,27 @@ async function displayDetailedLesson(element) {
         quizStatusDiv.textContent = "❌ Failed to load lesson content.";
     }
 }
+
+// --- Utility Functions ---
+
+function generatePdf(elementId) {
+    const element = document.getElementById(elementId);
+    let text = `Learning Path Export: ${document.getElementById('subjectMastery').value}\n\n`;
+    
+    // Extract text content from all elements within the container
+    text += element.innerText;
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LearnFlow_Path_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 </script>
 </body>
 </html>
