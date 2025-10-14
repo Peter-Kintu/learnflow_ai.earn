@@ -656,8 +656,9 @@
                 },
                 body: JSON.stringify({
                     contents: relevantHistory,
-                    config: {
-                        systemInstruction: systemInstruction,
+                    // FIX: Move systemInstruction to top level and rename 'config' to 'generationConfig'
+                    systemInstruction: systemInstruction, 
+                    generationConfig: { 
                         temperature: 0.7,
                         maxOutputTokens: 2048
                     }
@@ -752,8 +753,9 @@
             },
             body: JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: summaryRequestContent }] }],
-                config: {
-                    systemInstruction: systemInstruction,
+                // FIX: Move systemInstruction to top level and rename 'config' to 'generationConfig'
+                systemInstruction: systemInstruction,
+                generationConfig: { 
                     temperature: 0.2, // Lower temperature for factual summary
                     maxOutputTokens: 1024
                 }
