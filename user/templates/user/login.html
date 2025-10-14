@@ -172,30 +172,30 @@
       </div>
     </section>
 
-    <!-- 2. FEATURES SECTION (Content from why_learnflow_ai.html) -->
+    <!-- 2. FEATURES SECTION (Content updated to reflect all new capabilities, now 3 columns) -->
     <section id="features" class="py-16">
       <h2 class="text-4xl font-bold text-center mb-16 text-white">Why Choose LearnFlow AI?</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
         
-        <!-- Feature 1: Multilingual Quizzes -->
-        <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
-            <div class="text-4xl mb-4 text-purple-400">🌐</div>
-            <h3 class="text-2xl font-semibold text-white mb-3">True Multilingualism</h3>
-            <p class="text-gray-400">Our content generation, including quizzes and summaries, supports all major languages. Students can learn in their native tongue, significantly boosting comprehension.</p>
-        </div>
-
-        <!-- Feature 2: Global Accessibility -->
+        <!-- Feature 1: Global Accessibility (Now includes Multilingualism for worldwide impact) -->
         <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
             <div class="text-4xl mb-4 text-indigo-400">🌍</div>
-            <h3 class="text-2xl font-semibold text-white mb-3">Built for the World</h3>
-            <p class="text-gray-400">Born in Africa, our platform is designed to overcome geographical and resource limitations, ensuring stable, affordable access for underserved regions.</p>
+            <h3 class="text-xl font-semibold text-white mb-3">Built for the World</h3>
+            <p class="text-gray-400">Born in Africa, our platform ensures stable, affordable access for underserved regions. It is **truly multilingual**, allowing students to learn in their native tongue for maximum comprehension, overcoming geographical barriers.</p>
         </div>
 
-        <!-- Feature 3: Dynamic Content -->
+        <!-- Feature 2: Personalized Paths & Content (Now includes Multilingual adaptation) -->
         <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
             <div class="text-4xl mb-4 text-pink-400">💡</div>
-            <h3 class="text-2xl font-semibold text-white mb-3">Adaptive Learning</h3>
-            <p class="text-gray-400">Generate quizzes from any video, book, or document. Our AI assistant can summarize complex topics on demand and tailor content to specific curricula.</p>
+            <h3 class="text-xl font-semibold text-white mb-3">Personalized Learning Paths</h3>
+            <p class="text-gray-400">Our AI generates adaptive learning pathways, providing detailed content, integrated videos, and follow-up questions. This content is **multilingually generated** and tailored to specific curricula and the student's native language.</p>
+        </div>
+
+        <!-- Feature 3: Dynamic Quizzing & Marketplace (Now includes Multilingual support for quizzes/summaries) -->
+        <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
+            <div class="text-4xl mb-4 text-yellow-400">📚</div>
+            <h3 class="text-xl font-semibold text-white mb-3">Dynamic Quizzing & Commerce</h3>
+            <p class="text-gray-400">Teachers can instantly generate and embed quizzes from any video or document, with **all materials and summaries supporting all major languages**. The platform also features a secure marketplace to buy and sell eBooks.</p>
         </div>
       </div>
     </section>
@@ -429,15 +429,14 @@
             support_hours: "Monday–Saturday, 9am–6pm EAT"
         };
 
-        // --- Core LearnFlow AI System Prompt (Updated to include contact info) ---
+        // --- Core LearnFlow AI System Prompt (Updated to 3 consolidated features) ---
         const LEARNFLOW_AI_SYSTEM_PROMPT = `You are LearnFlow AI, a multilingual, education-focused assistant built by Kintu Peter, a teacher and software developer. Your core mission is to make high-quality education joyful, accessible, and multilingual.
         
         Your capabilities include:
-        1. **Chatbot Support:** Providing accurate, empathetic, and concise answers to any learning query.
-        2. **Personalized Learning:** Generating AI-driven learning paths for any given topic, tailoring them to the user's needs.
-        3. **Assessment Tools:** Creating personalized quizzes, exercises, and study guides from videos, teacher notes, or uploaded documents.
-        4. **Resource Management:** Summarizing documents, videos, and books, and offering context on the platform's features, including eBook buying and selling.
-        
+        1. **Multilingual Chatbot Support:** Providing accurate, empathetic, and concise answers to any learning query in the user's native language using real-time information.
+        2. **Adaptive & Multilingual Content Generation:** Creating and embedding interactive quizzes directly into video content, generating learning pathways (detailed content, integrated videos, questions), and providing summaries. All generated content supports **all major languages** and is tailored to the student's needs.
+        3. **Global Accessibility & Commerce:** Designed for underserved regions, ensuring stable, affordable access. The platform also includes a secure marketplace for the **buying and selling of eBooks**.
+
         --- CONTACT INFORMATION ---
         For support or contact:
         - WhatsApp: ${LEARNFLOW_CONTACT_INFO.whatsapp}
@@ -480,7 +479,7 @@
                     useSearch = true;
                 } else {
                     // For summarization, modify the prompt to focus purely on that task.
-                    finalSystemPrompt = LEARNFLOW_AI_SYSTEM_PROMPT.replace('Your capabilities include:', 'Your current task is strictly summarization.') + ' Take the provided text and produce a clear, neutral, and easy-to-understand summary that preserves the core message.';
+                    finalSystemPrompt = LEARNFLOW_AI_SYSTEM_PROMPT.replace('Your capabilities include:', 'Your current task is strictly summarization. All resource management tools are disabled during this function.') + ' Take the provided text and produce a clear, neutral, and easy-to-understand summary that preserves the core message.';
                     userQuery = `Summarize the following text: ${prompt}`;
                     useSearch = false;
                 }
@@ -493,6 +492,7 @@
                     },
                 };
                 
+                // IMPORTANT: The API key is assigned here for runtime execution.
                 const apiKey = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
