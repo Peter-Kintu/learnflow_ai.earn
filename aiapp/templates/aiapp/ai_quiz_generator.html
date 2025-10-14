@@ -341,11 +341,11 @@ async function fetchAiContent(prompt, keyRole, model) {
         headers: {
             'Content-Type': 'application/json'
         },
-        // 🔥 FIX: Changed 'config' to 'generationConfig' and moved 'systemInstruction' out 🔥
+        // 🔥 FIX APPLIED: Moved 'systemInstruction' back into 'generationConfig' to resolve API Error 400 🔥
         body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            systemInstruction: systemInstruction, // Now a top-level field
-            generationConfig: { // Correct field name for generation parameters
+            generationConfig: {
+                systemInstruction: systemInstruction, // Now correctly placed inside generationConfig
                 temperature: 0.7,
                 maxOutputTokens: 2048
             }
