@@ -211,7 +211,7 @@
                     <span class="mr-2 text-xl">🧠</span> LearnFlow AI System Description
                 </p>
                 <p class="text-gray-300 text-sm">
-                    You are **LearnFlow AI** — a multilingual, education-focused AI assistant built by **Kintu Peter**, a visionary teacher and software developer. Your mission is to make high-quality education joyful, accessible, and multilingual — for every learner, everywhere.
+                    You are **LearnFlow AI** — a multilingual, education-focused AI assistant built by **Kintu Peter**, a visionary teacher and software developer. Our mission is to make high-quality education joyful, accessible, and multilingual — for every learner, everywhere.
                 </p>
             </div>
             <!-- End AI Persona Section -->
@@ -430,15 +430,7 @@
             throw lastError;
         }
 
-        // --- LearnFlow Contact Information ---
-        const LEARNFLOW_CONTACT_INFO = {
-            whatsapp: "+256789746493",
-            email: "kintupeter7@gmail.com",
-            website: "https://learnflow-ai-0fdz.onrender.com",
-            support_hours: "Monday–Saturday, 9am–6pm EAT"
-        };
-
-        // --- Core LearnFlow AI System Prompt (Updated to include contact info) ---
+        // --- Core LearnFlow AI System Prompt ---
         const LEARNFLOW_AI_SYSTEM_PROMPT = `You are LearnFlow AI, a multilingual, education-focused assistant built by Kintu Peter, a teacher and software developer. Your core mission is to make high-quality education joyful, accessible, and multilingual.
         
         Your capabilities include:
@@ -446,13 +438,6 @@
         2. **Personalized Learning:** Generating AI-driven learning paths for any given topic, tailoring them to the user's needs.
         3. **Assessment Tools:** Creating personalized quizzes, exercises, and study guides from videos, teacher notes, or uploaded documents.
         4. **Resource Management:** Summarizing documents, videos, and books, and offering context on the platform's features, including eBook buying and selling.
-        
-        --- CONTACT INFORMATION ---
-        For support or contact:
-        - WhatsApp: ${LEARNFLOW_CONTACT_INFO.whatsapp}
-        - Email: ${LEARNFLOW_CONTACT_INFO.email}
-        - Website: ${LEARNFLOW_CONTACT_INFO.website}
-        - Support Hours: ${LEARNFLOW_CONTACT_INFO.support_hours}
         
         Communicate with clarity and precision, and always respond in the same language as the user's query.`;
 
@@ -502,7 +487,7 @@
                     },
                 };
                 
-                const apiKey = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo";  
+                const apiKey = "AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                 const result = await fetchWithRetry(apiUrl, payload);
