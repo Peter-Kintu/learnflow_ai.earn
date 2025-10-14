@@ -22,6 +22,7 @@
       animation: fadeIn 0.6s ease-out forwards;
     }
     .about-btn {
+        /* Restoring your original about-btn style from the latest input */
         background-image: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
         transition: all 0.3s ease;
         padding: 0.75rem 2rem;
@@ -35,7 +36,9 @@
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
     
-    /* --- NEW BACKGROUND STYLES --- */
+    /* ---------------------------------- */
+    /* --- NEW CSS FOR SLIDING EFFECT --- */
+    /* ---------------------------------- */
     .bg-slideshow {
       position: fixed;
       top: 0;
@@ -55,8 +58,7 @@
       background-position: center;
       opacity: 0;
       animation: imageAnimation 25s linear infinite 0s; 
-      /* Total duration (25s) is slides * (display time + transition time)
-         5 images * 5 seconds each = 25s */
+      /* Total duration (25s) is 5 slides * 5 seconds each */
     }
 
     /* Assign images using Django's static tag and set the animation start delay */
@@ -89,7 +91,7 @@
       100% { opacity: 0; }
     }
 
-    /* Dark Overlay for contrast and glassmorphism */
+    /* Dark Overlay for contrast */
     .overlay {
         position: fixed;
         top: 0;
@@ -100,12 +102,12 @@
         z-index: -1;
     }
 
-    /* Login container with glassmorphism effect */
+    /* Login container with glassmorphism effect for attractiveness */
     .login-container {
-      background-color: rgba(30, 41, 59, 0.75); /* Slate-800 with transparency */
-      backdrop-filter: blur(15px); /* Apply blur effect */
-      -webkit-backdrop-filter: blur(15px); /* Safari support */
-      border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+      background-color: rgba(30, 41, 59, 0.85); /* Slightly darker for better contrast */
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
@@ -126,9 +128,9 @@
     <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
     
     <a href="{% url 'aiapp:why_learnflow_ai' %}" 
-   class="about-btn inline-block px-6 py-3 text-white font-semibold rounded-full shadow-xl">
-   💡 About LearnFlow AI
-</a>
+    class="about-btn inline-block px-6 py-3 text-white font-semibold rounded-full shadow-xl">
+    💡 About LearnFlow AI
+    </a>
 
 
     {% if messages %}
