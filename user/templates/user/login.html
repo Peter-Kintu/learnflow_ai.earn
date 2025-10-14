@@ -10,6 +10,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body {
       font-family: 'Inter', sans-serif;
+      /* Ensure body takes up the full viewport */
+      overflow: hidden; /* Prevent background media from causing scrollbars */
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -31,14 +33,76 @@
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
+
+    /* --- IMMERSIVE BACKGROUND STYLES --- */
+    .bg-carousel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1; /* Keep it behind the login form */
+      background-color: #0f172a; /* Fallback background */
+    }
+
+    .bg-media {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Ensures image/video covers the whole area */
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out; /* Smooth transition */
+    }
+
+    .bg-media.active {
+      opacity: 0.5; /* The media will be semi-transparent to ensure text readability */
+    }
+    
+    /* Optional: Add a subtle overlay to help text readability on any background */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Darker, semi-transparent overlay for contrast */
+        z-index: -1;
+    }
+
+    /* Styles for the login form to look clean and "floating" (Glassmorphism) */
+    .login-container {
+      background-color: rgba(30, 41, 59, 0.75); /* Slightly transparent slate-800 */
+      backdrop-filter: blur(15px); /* Stronger Glass effect */
+      -webkit-backdrop-filter: blur(15px); /* For Safari support */
+      border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border for glass effect */
+    }
+
   </style>
 </head>
 <body class="bg-gray-950 flex items-center justify-center min-h-screen p-4">
 
-  <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
-    <!-- Logo or Illustration -->
+  <div class="bg-carousel">
+    <img src="https://images.unsplash.com/photo-1620283088339-4d6d37612716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHw0fHxhaSUyMGFic3RyYWN0JTJDJTIwZGFya3xlbnwwfHx8fDE3MDA3Mzk0NDJ8MA&ixlib=rb-4.0.3&q=80&w=1080"
+        alt="Abstract AI Data Grid" class="bg-media active">
+
+    <video class="bg-media" autoplay loop muted playsinline>
+        <source src="https://videos.pexels.com/video-files/3862668/3862668-uhd_2160_3840_30fps.mp4" type="video/mp4">
+        <img src="https://images.unsplash.com/photo-1596556108151-512140a77f10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwyMHx8Y29kaW5nJTIwZGFyayUyMGdyYWRpZW50fGVufDB8fHx8MTcwMDczOTQ1MHww&ixlib=rb-4.0.3&q=80&w=1080" alt="Fallback Coding Background" class="bg-media">
+    </video>
     
-    <!-- Headline -->
+    <img src="https://images.unsplash.com/photo-1620311029270-4f932e6500b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwxNXx8ZGlnaXRhbCUyMG5ldHdvcmt8ZW58MHx8fHwxNzAwNzM5NDQ3fDA&ixlib=rb-4.0.3&q=80&w=1080" 
+        alt="Digital Neural Network" class="bg-media">
+
+    <video class="bg-media" autoplay loop muted playsinline>
+        <source src="https://videos.pexels.com/video-files/4206085/4206085-uhd_3840_2160_25fps.mp4" type="video/mp4">
+        <img src="https://images.unsplash.com/photo-1549490349-f06b9b1e84d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTAzNTl8MHwxfHNlYXJjaHwxNnx8ZGF0YSUyMGZsb3clMjBkYXJrfGVufDB8fHx8MTcwMDc0MDU3NHww&ixlib=rb-4.0.3&q=80&w=1080" alt="Fallback Data Flow Background" class="bg-media">
+    </video>
+    
+  </div>
+
+  <div class="overlay"></div>
+
+  <div class="login-container p-8 rounded-xl shadow-2xl w-full max-w-md animate-fadeIn">
     <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
     <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
     <a href="{% url 'aiapp:why_learnflow_ai' %}" 
@@ -47,7 +111,6 @@
 </a>
 
 
-    <!-- Django messages -->
     {% if messages %}
       <div class="mb-4">
         {% for message in messages %}
@@ -58,7 +121,6 @@
       </div>
     {% endif %}
 
-    <!-- Login form -->
     <form method="post" class="space-y-6">
       {% csrf_token %}
 
@@ -104,37 +166,82 @@
         </div>
       {% endfor %}
 
-      <!-- Login button -->
       <button type="submit"
         class="px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-xl font-semibold w-full">
         Enter the Flow
       </button>
     </form>
 
-    <!-- Registration link -->
-     <!-- Registration link -->
     <div class="mt-6 text-center text-sm text-gray-400">
       New to Learnflow? <a href="{% url 'user:register' %}" class="font-medium text-indigo-500 hover:text-indigo-400">Join the Movement</a>
     </div>
 
-    <!-- Footer -->
     <div class="mt-8 text-center text-xs text-gray-500 italic">
       Born in Africa, built for the world🌍
     </div>
   </div>
 
   <script>
+    // --- Existing Password Toggle Script (Unchanged) ---
     function togglePasswordVisibility(inputId, iconElement) {
       const input = document.getElementById(inputId);
       const iconPath = iconElement.querySelector('path:nth-child(2)');
       if (input.type === 'password') {
         input.type = 'text';
-        iconPath.setAttribute('d', 'M13.875 18.875a6 6 0 01-7.75-7.75...');
+        // Simplified path for open-eye icon
+        iconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM12 9a3 3 0 100 6 3 3 0 000-6z');
       } else {
         input.type = 'password';
-        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5...');
+        // Original path for closed-eye icon
+        iconPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
       }
     }
+
+    // --- NEW Background Slideshow Script ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const mediaElements = document.querySelectorAll('.bg-media');
+        let currentIndex = 0;
+        const slideInterval = 5000; // 5 seconds
+
+        function nextSlide() {
+            // Deactivate current slide
+            mediaElements[currentIndex].classList.remove('active');
+            
+            // Increment index, looping back to 0
+            currentIndex = (currentIndex + 1) % mediaElements.length;
+            
+            // Activate the next slide
+            const nextMedia = mediaElements[currentIndex];
+            nextMedia.classList.add('active');
+
+            // Handle video elements: ensure they are playing when active
+            if (nextMedia.tagName === 'VIDEO') {
+                // Must attempt to play after the 'active' class is applied for a moment
+                setTimeout(() => {
+                    nextMedia.play().catch(error => {
+                        // This catch handles cases where autoplay is strictly blocked (common)
+                        console.info("Video autoplay blocked or failed, but it's okay for background video.");
+                    });
+                }, 100); 
+            }
+        }
+
+        // Start the slideshow
+        setInterval(nextSlide, slideInterval);
+
+        // Initial media setup: ensure all videos are muted and play-ready
+        mediaElements.forEach(media => {
+            if (media.tagName === 'VIDEO') {
+                media.muted = true;
+                media.loop = true;
+                media.playsinline = true; // Important for mobile devices
+                // Only the first media element, if it's a video, should attempt to play immediately
+                if (media.classList.contains('active')) {
+                    media.play().catch(error => console.info("Initial video autoplay failed, but background rotation is active."));
+                }
+            }
+        });
+    });
   </script>
 </body>
 </html>
