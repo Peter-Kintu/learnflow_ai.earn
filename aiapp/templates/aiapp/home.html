@@ -413,6 +413,45 @@
         return cleaned.trim(); // Trim leading/trailing whitespace
     }
 
+    // ## NEW FUNCTION: Simple Language Guessing for TTS (Crucial Update!) ##
+    /**
+     * Attempts a basic guess of the language based on keywords to select the
+     * correct TTS pronunciation engine.
+     * @param {string} text The text to analyze.
+     * @returns {string} The guessed BCP-47 language tag (e.g., 'sw-TZ', 'lg-UG', 'en-US').
+     */
+    function guessTextLanguage(text) {
+        const lowerText = text.toLowerCase();
+        
+        // Swahili (sw) keywords: mambo, habari, asante, tafadhali, sijui, jambo
+        if (lowerText.includes('mambo') || lowerText.includes('asante') || lowerText.includes('tafadhali') || lowerText.includes('swahili') || lowerText.includes('jambo') || lowerText.includes('habari')) {
+            return 'sw-TZ'; // Swahili
+        }
+
+        // Luganda (lg) keywords: webale, otya, kye, kyokka, omulimu, oli otya
+        if (lowerText.includes('webale') || lowerText.includes('otya') || lowerText.includes('luganda') || lowerText.includes('oli otya')) {
+            return 'lg-UG'; // Luganda
+        }
+
+        // Hausa (ha) keywords: sannu, yaya, ina, me, Hausa, ina kwana
+        if (lowerText.includes('sannu') || lowerText.includes('yaya') || lowerText.includes('hausa') || lowerText.includes('ina kwana')) {
+            return 'ha-NG'; // Hausa
+        }
+        
+        // Zulu/Xhosa (zu/xh) keywords: sawubona, yebo, ngiyabonga, zulu
+        if (lowerText.includes('sawubona') || lowerText.includes('ngiyabonga') || lowerText.includes('zulu')) {
+            return 'zu-ZA'; // Zulu
+        }
+
+        // Yoruba (yo) keywords: kaabo, e ku, kini, Yoruba
+        if (lowerText.includes('kaabo') || lowerText.includes('e ku') || lowerText.includes('kini') || lowerText.includes('yoruba')) {
+            return 'yo-NG'; // Yoruba
+        }
+
+        // Default to English if no clear non-English marker is found
+        return 'en-US'; 
+    }
+    
     // ## TTS Functions (MODIFIED: speakText) ##
     function populateVoices() {
         voices = speechSynthesis.getVoices();
@@ -432,35 +471,46 @@
         isSpeaking = true;
         stopSpeakingButton.style.display = 'block';
 
-        // NOTE: The text passed to this function should already be cleaned
-        // The cleaning happens in typeWriter/transcriptQuery/summarizeChat before this call
         const utterance = new SpeechSynthesisUtterance(text);
 
-        // 🔥 MODIFIED: Change the voice tone (pitch) and rate (speed) 🔥
+        // 🔥 CRITICAL UPDATE: Guess the language of the text
+        const targetLangCode = guessTextLanguage(text);
+
+        // MODIFIED: Change the voice tone (pitch) and rate (speed)
         utterance.pitch = 1.2; // Higher tone (e.g., 1.2)
         utterance.rate = 0.95; // Slightly slower speed (e.g., 0.95)
 
-        // 🔥 MODIFIED: Enhanced Voice Selection for Multilingual/African Languages 🔥
-        // This attempts to find voices that support African languages well and other languages
+        // Enhanced Voice Selection for Multilingual/African Languages
         const voicePreferences = [
-            // Priority 1: African-related languages (may only be available on certain OS/browsers)
+            // Priority 1: African-related languages (explicit lang match)
             { lang: 'en-ZA', name: 'South African' }, // Regional English accent
             { lang: 'zu', name: 'Zulu' }, 
             { lang: 'sw', name: 'Swahili' }, 
             { lang: 'ha', name: 'Hausa' }, 
             // Priority 2: High-quality, often multilingual/polyglot voices
-            { lang: 'Google', name: 'Multi' }, 
-            { lang: 'Microsoft', name: 'Multi' },
+            { name: 'Google', keyword: 'Multi' }, // Match any 'Google' voice that might be multilingual
+            { name: 'Microsoft', keyword: 'Multi' },// Match any 'Microsoft' voice that might be multilingual
             // Priority 3: Other high-quality defaults
-            { lang: 'Daniel', name: 'Daniel' }, 
-            { lang: 'Samantha', name: 'Samantha' }, 
-            { lang: 'Zira', name: 'Zira' }
+            { name: 'Daniel', keyword: 'Daniel' }, 
+            { name: 'Samantha', keyword: 'Samantha' }, 
+            { name: 'Zira', keyword: 'Zira' }
         ];
         let selectedVoice = null;
-        for (let pref of voicePreferences) {
-            // Find a voice by name OR by language code match
-            selectedVoice = voices.find(voice => voice.name.includes(pref.name) || voice.lang.includes(pref.lang) );
-            if (selectedVoice) break;
+        
+        // 1. Check for a voice that matches the GUESSED base language (e.g., find any voice with 'sw' language code for 'sw-TZ' text)
+        const baseLang = targetLangCode.split('-')[0].toLowerCase();
+        selectedVoice = voices.find(voice => voice.lang.split('-')[0].toLowerCase() === baseLang);
+        
+        // 2. Fallback to preferred voices if no exact language base match
+        if (!selectedVoice) {
+            for (let pref of voicePreferences) {
+                // Find a voice by name OR by language code match
+                selectedVoice = voices.find(voice => 
+                    (voice.name.includes(pref.name || pref.keyword)) || 
+                    (pref.lang && voice.lang.toLowerCase().includes(pref.lang.toLowerCase()))
+                );
+                if (selectedVoice) break;
+            }
         }
 
         // Final fallback: any voice with an English language code
@@ -471,10 +521,12 @@
         // If a voice is found, set it
         if (selectedVoice) {
             utterance.voice = selectedVoice;
-            // 🔥 CRITICAL FIX: Set the utterance language to the selected voice's language.
-            // This tells the TTS engine which language model to use for pronunciation.
-            utterance.lang = selectedVoice.lang;
         }
+        
+        // 🔥 CRITICAL FIX: Always set the utterance language to the GUESSED language code.
+        // This is the most important step for correct pronunciation, even with an English voice.
+        utterance.lang = targetLangCode; 
+
 
         utterance.onend = () => {
             isSpeaking = false;
