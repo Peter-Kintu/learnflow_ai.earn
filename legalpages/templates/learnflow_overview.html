@@ -1,46 +1,48 @@
 {% extends 'base.html' %}
 
+{% block title %}LearnFlow AI Overview{% endblock %}
+
 {% block content %}
-<header>
-  <h1>Welcome to LearnFlow AI</h1>
-  <p>Scalable, AI-powered learning for Africa and the world</p>
+<header class="text-center py-6 bg-blue-900 text-white">
+  <h1 class="text-3xl font-bold">Welcome to LearnFlow AI</h1>
+  <p class="mt-2 text-lg">Scalable, AI-powered learning for Africa and the world</p>
 </header>
 
-<main>
-  <section>
-    <h2>🤖 AI Chatbot</h2>
-    <p>Engage with our intelligent chatbot for instant answers, personalized guidance, and interactive learning support.</p>
-    <a href="/aiapp/" class="button">Try the Chatbot</a>
+<main class="max-w-4xl mx-auto px-4 py-8">
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">🤖 AI Chatbot</h2>
+    <p class="mt-2">Engage with our intelligent chatbot for instant answers, personalized guidance, and interactive learning support.</p>
+    <a href="{% url 'aiapp:chatbot' %}" class="button">Try the Chatbot</a>
   </section>
 
-  <section>
-    <h2>🎥 Educational Videos</h2>
-    <p>Watch curated and AI-enhanced video lessons across subjects, tailored for learners and educators.</p>
-    <a href="/video/" class="button">Explore Videos</a>
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">🎥 Educational Videos</h2>
+    <p class="mt-2">Watch curated and AI-enhanced video lessons across subjects, tailored for learners and educators.</p>
+    <a href="{% url 'video:video_list' %}" class="button">Explore Videos</a>
   </section>
 
-  <section>
-    <h2>🧠 Teacher-Generated Quizzes</h2>
-    <p>Practice with quizzes crafted by educators and enhanced by AI for adaptive learning paths.</p>
-    <a href="/quiz/" class="button">Take a Quiz</a>
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">🧠 Teacher-Generated Quizzes</h2>
+    <p class="mt-2">Practice with quizzes crafted by educators and enhanced by AI for adaptive learning paths.</p>
+    <a href="{% url 'aiapp:quiz_list' %}" class="button">Take a Quiz</a>
   </section>
 
-  <section>
-    <h2>📚 Ebooks & Resources</h2>
-    <p>Access downloadable ebooks and study materials to deepen your understanding and prepare for exams.</p>
-    <a href="/book/" class="button">Browse Ebooks</a>
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">📚 Ebooks & Resources</h2>
+    <p class="mt-2">Access downloadable ebooks and study materials to deepen your understanding and prepare for exams.</p>
+    <a href="{% url 'book:book_list' %}" class="button">Browse Ebooks</a>
   </section>
 
-  <section>
-    <h2>🚀 AI-Generated Learning Paths</h2>
-    <p>Let LearnFlow AI build a personalized roadmap based on your goals, strengths, and progress.</p>
-    <a href="/learning-path/" class="button">Generate My Path</a>
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">🚀 AI-Generated Learning Paths</h2>
+    <p class="mt-2">Let LearnFlow AI build a personalized roadmap based on your goals, strengths, and progress.</p>
+    <a href="{% url 'aiapp:learning_path' %}" class="button">Generate My Path</a>
   </section>
 
-  <section>
-    <h2>📝 Detailed AI Notes</h2>
-    <p>Get concise, AI-generated summaries and notes from videos, books, and quizzes — perfect for revision.</p>
-    <a href="/notes/" class="button">View Notes</a>
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-blue-800">📝 Detailed AI Notes</h2>
+    <p class="mt-2">Get concise, AI-generated summaries and notes from videos, books, and quizzes — perfect for revision.</p>
+    <a href="{% url 'aiapp:notes' %}" class="button">View Notes</a>
   </section>
 </main>
 {% endblock %}

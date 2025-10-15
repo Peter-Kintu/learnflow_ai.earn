@@ -25,8 +25,9 @@ urlpatterns = [
     path('aiapp/', include('aiapp.urls')),
     path('video/', include('video.urls')),
     path('book/', include('book.urls')),
-    path('sitemap.xml', sitemap_view, name='sitemap'),
     path('legal/', include('legalpages.urls')), 
+    path('sitemap.xml', sitemap_view, name='sitemap'),
+    path('sitemap/', include('django.contrib.sitemaps.urls')),
     
 ]
 
