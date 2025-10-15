@@ -1,48 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}LearnFlow AI Overview{% endblock %}
+{% block title %}LearnFlow AI Policies{% endblock %}
 
 {% block content %}
 <header class="text-center py-6 bg-blue-900 text-white">
-  <h1 class="text-3xl font-bold">Welcome to LearnFlow AI</h1>
-  <p class="mt-2 text-lg">Scalable, AI-powered learning for Africa and the world</p>
+  <h1 class="text-3xl font-bold">LearnFlow AI Policies</h1>
+  <p class="mt-2 text-lg">Your trust matters. Here's how we protect it.</p>
 </header>
 
 <main class="max-w-4xl mx-auto px-4 py-8">
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">🤖 AI Chatbot</h2>
-    <p class="mt-2">Engage with our intelligent chatbot for instant answers, personalized guidance, and interactive learning support.</p>
-    <a href="{% url 'aiapp:chatbot' %}" class="button">Try the Chatbot</a>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-semibold text-blue-800">📜 Terms & Conditions</h2>
+    <p class="mt-4"><strong>Effective Date:</strong> [Insert Date]</p>
+    <p><strong>Last Updated:</strong> [Insert Date]</p>
+
+    <ul class="list-disc pl-6 mt-4 space-y-2">
+      <li><strong>Acceptance of Terms:</strong> By using LearnFlow AI, you agree to these terms.</li>
+      <li><strong>Use of Platform:</strong> LearnFlow is for educational use only. Misuse is prohibited.</li>
+      <li><strong>User Accounts:</strong> You’re responsible for your login credentials and activity.</li>
+      <li><strong>Intellectual Property:</strong> All content is owned by LearnFlow AI or its licensors.</li>
+      <li><strong>AI-Generated Content:</strong> AI outputs are educational aids, not guaranteed advice.</li>
+      <li><strong>Termination:</strong> We may suspend access for violations without notice.</li>
+      <li><strong>Governing Law:</strong> These terms follow the laws of [Insert Jurisdiction].</li>
+    </ul>
   </section>
 
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">🎥 Educational Videos</h2>
-    <p class="mt-2">Watch curated and AI-enhanced video lessons across subjects, tailored for learners and educators.</p>
-    <a href="{% url 'video:video_list' %}" class="button">Explore Videos</a>
-  </section>
+  <section class="mb-12">
+    <h2 class="text-2xl font-semibold text-blue-800">🔐 Privacy Policy</h2>
+    <p class="mt-4"><strong>Effective Date:</strong> [Insert Date]</p>
+    <p><strong>Last Updated:</strong> [Insert Date]</p>
 
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">🧠 Teacher-Generated Quizzes</h2>
-    <p class="mt-2">Practice with quizzes crafted by educators and enhanced by AI for adaptive learning paths.</p>
-    <a href="{% url 'aiapp:quiz_list' %}" class="button">Take a Quiz</a>
-  </section>
-
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">📚 Ebooks & Resources</h2>
-    <p class="mt-2">Access downloadable ebooks and study materials to deepen your understanding and prepare for exams.</p>
-    <a href="{% url 'book:book_list' %}" class="button">Browse Ebooks</a>
-  </section>
-
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">🚀 AI-Generated Learning Paths</h2>
-    <p class="mt-2">Let LearnFlow AI build a personalized roadmap based on your goals, strengths, and progress.</p>
-    <a href="{% url 'aiapp:learning_path' %}" class="button">Generate My Path</a>
-  </section>
-
-  <section class="mb-8">
-    <h2 class="text-xl font-semibold text-blue-800">📝 Detailed AI Notes</h2>
-    <p class="mt-2">Get concise, AI-generated summaries and notes from videos, books, and quizzes — perfect for revision.</p>
-    <a href="{% url 'aiapp:notes' %}" class="button">View Notes</a>
+    <ul class="list-disc pl-6 mt-4 space-y-2">
+      <li><strong>Information We Collect:</strong> Name, email, usage data, and feedback.</li>
+      <li><strong>Use of Information:</strong> To personalize learning and improve platform features.</li>
+      <li><strong>Data Sharing:</strong> Only anonymized data may be shared for research.</li>
+      <li><strong>Cookies & Tracking:</strong> Used to remember preferences and analyze usage.</li>
+      <li><strong>Data Security:</strong> We use industry-standard protections, but no system is 100% secure.</li>
+      <li><strong>Your Rights:</strong> You may request access, correction, or deletion of your data.</li>
+      <li><strong>Policy Updates:</strong> Continued use implies acceptance of changes.</li>
+    </ul>
   </section>
 
   <section class="mt-12 text-center">
