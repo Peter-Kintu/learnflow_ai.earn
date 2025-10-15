@@ -26,7 +26,7 @@ urlpatterns = [
     path('video/', include('video.urls')),
     path('book/', include('book.urls')),
     path('sitemap.xml', sitemap_view, name='sitemap'),
-    path('', include('legalpages.urls')),
+    path('legal/', include('legalpages.urls')), 
     
 ]
 
