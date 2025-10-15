@@ -15,6 +15,7 @@ CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
 #  Installed Apps
 INSTALLED_APPS = [
+    'legalpages',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
