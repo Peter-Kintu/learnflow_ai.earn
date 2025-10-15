@@ -27,7 +27,7 @@ urlpatterns = [
     path('book/', include('book.urls')),
     path('legal/', include('legalpages.urls')), 
     path('sitemap.xml', sitemap_view, name='sitemap'),
-    path('sitemap/', include('django.contrib.sitemaps.urls')),
+ 
     
 ]
 
