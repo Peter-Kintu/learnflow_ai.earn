@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from docx import Document
 import requests
+from urllib.parse import urljoin
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -764,29 +765,36 @@ def ai_quiz_generator(request):
     return render(request, 'aiapp/ai_quiz_generator.html')
 
 
+
 def sitemap_view(request):
     base_url = "https://learnflow-ai-0fdz.onrender.com"
     urls = [
-        f"{base_url}/",
-        f"{base_url}/aiapp/",
-        f"{base_url}/video/",
-        f"{base_url}/book/",
+        urljoin(base_url, "/"),
+        urljoin(base_url, "/aiapp/"),
+        urljoin(base_url, "/video/"),
+        urljoin(base_url, "/book/"),
     ]
 
     try:
-        urls += [f"{base_url}/quiz/{getattr(q, 'slug', q.pk)}/" for q in Quiz.objects.all()]
+        for q in Quiz.objects.all():
+            slug_or_pk = getattr(q, 'slug', None) or str(q.pk)
+            urls.append(urljoin(base_url, f"/quiz/{slug_or_pk}/"))
     except Exception:
-        urls.append(f"{base_url}/quiz/")
+        urls.append(urljoin(base_url, "/quiz/"))
 
     try:
-        urls += [f"{base_url}/books/{getattr(b, 'slug', b.pk)}/" for b in Book.objects.all()]
+        for b in Book.objects.all():
+            slug_or_pk = getattr(b, 'slug', None) or str(b.pk)
+            urls.append(urljoin(base_url, f"/books/{slug_or_pk}/"))
     except Exception:
-        urls.append(f"{base_url}/books/")
+        urls.append(urljoin(base_url, "/books/"))
 
     try:
-        urls += [f"{base_url}/video/{getattr(v, 'slug', v.pk)}/" for v in Video.objects.all()]
+        for v in Video.objects.all():
+            slug_or_pk = getattr(v, 'slug', None) or str(v.pk)
+            urls.append(urljoin(base_url, f"/video/{slug_or_pk}/"))
     except Exception:
-        urls.append(f"{base_url}/video/")
+        urls.append(urljoin(base_url, "/video/"))
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -795,46 +803,3 @@ def sitemap_view(request):
     xml += '</urlset>'
 
     return HttpResponse(xml, content_type='application/xml')
-
-@login_required
-def retake_quiz(request, quiz_id):
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
-    return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
-
-
-
-# Replace with your actual Botlhale token
-BOTLHALE_API_TOKEN = "Bearer YOUR_BOTLHALE_TOKEN"
-BOTLHALE_TTS_URL = "https://api.botlhale.xyz/tts"
-
-@csrf_exempt
-def tts_proxy(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Only POST requests are allowed."}, status=405)
-
-    try:
-        data = json.loads(request.body)
-        text = data.get("text")
-        language_code = data.get("language_code")
-
-        if not text or not language_code:
-            return JsonResponse({"error": "Missing 'text' or 'language_code'."}, status=400)
-
-        payload = {
-            "text": text,
-            "language_code": language_code
-        }
-
-        headers = {
-            "Authorization": BOTLHALE_API_TOKEN
-        }
-
-        response = requests.post(BOTLHALE_TTS_URL, headers=headers, data=payload)
-
-        if response.status_code != 200:
-            return JsonResponse({"error": "Botlhale API error", "details": response.text}, status=response.status_code)
-
-        return JsonResponse(response.json())
-
-    except Exception as e:
-        return JsonResponse({"error": "Server error", "details": str(e)}, status=500)
