@@ -13,7 +13,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Redirect root URL to login
-    path('', RedirectView.as_view(pattern_name='user:login', permanent=False), name='root'),
+    # path('', RedirectView.as_view(pattern_name='user:login', permanent=False), name='root'),
 
     # Serve robots.txt
     path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),

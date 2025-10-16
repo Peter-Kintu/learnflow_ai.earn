@@ -5,16 +5,43 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .forms import CustomUserCreationForm
 from django.http import HttpResponse
+from django.http import JsonResponse
+from django.utils.translation import gettext as _
+
 # Get the custom User model
 User = get_user_model()
 
 
 def loading_screen(request):
-    return render(request, 'user/loading.html')
+    """
+    Displays a branded loading screen during cold starts or transitions.
+    Future-ready: Includes session-based redirect and multilingual messaging.
+    Redirects to login page after initial boot.
+    """
+    # Prevent repeat loading screen during session
+    if request.session.get("booted"):
+        return redirect("user:login")  # ✅ Redirect to login page
+
+    # Mark session as booted
+    request.session["booted"] = True
+
+    context = {
+        "app_name": "LearnFlow AI",
+        "message": _("Preparing your personalized learning experience...")
+    }
+    return render(request, "user/loading.html", context)
 
 
 def ping(request):
-    return HttpResponse("OK", status=200)
+    """
+    Health check endpoint for uptime monitoring and deployment verification.
+    Returns a JSON response for easier integration with monitoring tools.
+    """
+    return JsonResponse({
+        "status": "OK",
+        "service": "LearnFlow AI"
+    }, status=200)
+
 
 def register_request(request):
     """

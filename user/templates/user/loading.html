@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Welcome to LearnFlow AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="LearnFlow AI is preparing your personalized learning experience. Please wait a moment.">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -10,6 +13,7 @@
       color: #e0e0e0;
       text-align: center;
       padding-top: 100px;
+      margin: 0;
     }
     h1 {
       font-size: 2.5em;
@@ -33,29 +37,50 @@
     @keyframes spin {
       100% { transform: rotate(360deg); }
     }
-    #fallback {
+    #fallback, #error {
       display: none;
       margin-top: 20px;
-      color: #888;
       font-size: 0.95em;
+    }
+    #fallback {
+      color: #888;
+    }
+    #error {
+      color: #ff6b6b;
     }
   </style>
 </head>
 <body>
   <h1>Welcome to LearnFlow AI</h1>
   <p>Your personalized learning experience is loading — just a moment.</p>
-  <div class="spinner"></div>
+  <div class="spinner" role="status" aria-label="Loading animation"></div>
   <p id="fallback">Still waking up… hang tight.</p>
-  <script>
-    setTimeout(() => {
-      fetch("/ping")
-        .then(() => window.location.href = "/user/login")
-        .catch(() => location.reload());
-    }, 3000);
+  <p id="error">Oops! Something went wrong. Please refresh or try again later.</p>
 
+  <script>
+    const fallback = document.getElementById('fallback');
+    const error = document.getElementById('error');
+
+    // Show fallback message after 7 seconds
     setTimeout(() => {
-      document.getElementById('fallback').style.display = 'block';
+      fallback.style.display = 'block';
     }, 7000);
+
+    // Ping server after 3 seconds to check readiness
+    setTimeout(() => {
+      fetch("/ping", { cache: "no-store" })
+        .then(res => {
+          if (res.ok) {
+            window.location.href = "/user/login";
+          } else {
+            throw new Error("Ping failed");
+          }
+        })
+        .catch(() => {
+          fallback.style.display = 'none';
+          error.style.display = 'block';
+        });
+    }, 3000);
   </script>
 </body>
 </html>
