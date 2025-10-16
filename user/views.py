@@ -4,9 +4,17 @@ from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .forms import CustomUserCreationForm
-
+from django.http import HttpResponse
 # Get the custom User model
 User = get_user_model()
+
+
+def loading_screen(request):
+    return render(request, 'user/loading.html')
+
+
+def ping(request):
+    return HttpResponse("OK", status=200)
 
 def register_request(request):
     """

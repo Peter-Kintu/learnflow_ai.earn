@@ -8,6 +8,8 @@ app_name = "user"
 
 urlpatterns = [
     # Update this line to use the correct view function name, `register_request`
+    path('', views.loading_screen, name='loading'),
+    path('ping/', views.ping, name='ping'),  # optional ping view
     path('register/', views.register_request, name='register'),
     path('login/', views.login_request, name='login'),
     path('logout/', views.logout_request, name='logout'),

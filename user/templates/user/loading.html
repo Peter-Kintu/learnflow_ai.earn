@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to LearnFlow AI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #f0f4ff, #e6f0ff);
+      color: #333;
+      text-align: center;
+      padding-top: 100px;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #0056b3;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2em;
+      color: #555;
+      margin-bottom: 30px;
+    }
+    .spinner {
+      margin: 0 auto;
+      width: 60px;
+      height: 60px;
+      border: 6px solid #cce0ff;
+      border-top: 6px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    #fallback {
+      display: none;
+      margin-top: 20px;
+      color: #888;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to LearnFlow AI</h1>
+  <p>Your personalized learning experience is loading — just a moment.</p>
+  <div class="spinner"></div>
+  <p id="fallback">Still waking up… hang tight.</p>
+  <script>
+    setTimeout(() => {
+      fetch("/ping")
+        .then(() => window.location.href = "/user/login")
+        .catch(() => location.reload());
+    }, 3000);
+
+    setTimeout(() => {
+      document.getElementById('fallback').style.display = 'block';
+    }, 7000);
+  </script>
+</body>
+</html>
