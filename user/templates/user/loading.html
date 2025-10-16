@@ -11,8 +11,7 @@
   <meta property="og:image" content="https://learnflow-ai-0fdz.onrender.com/static/logo.png">
   <meta property="og:url" content="https://learnflow-ai-0fdz.onrender.com">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506"
-     crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506" crossorigin="anonymous"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -56,14 +55,9 @@
     #error {
       color: #ff6b6b;
     }
-
     @media (max-width: 600px) {
-      h1 {
-        font-size: 1.8em;
-      }
-      p {
-        font-size: 1em;
-      }
+      h1 { font-size: 1.8em; }
+      p { font-size: 1em; }
       .spinner {
         width: 40px;
         height: 40px;
@@ -85,12 +79,12 @@
     const error = document.getElementById('error');
 
     // Show fallback message after 7 seconds
-    setTimeout(() => {
+    const fallbackTimer = setTimeout(() => {
       fallback.style.display = 'block';
     }, 7000);
 
-    // Ping server after 3 seconds to check readiness
-    setTimeout(() => {
+    // Ping server after 3 seconds
+    const pingTimer = setTimeout(() => {
       fetch("/ping", { cache: "no-store" })
         .then(res => {
           if (res.ok) {
@@ -100,10 +94,18 @@
           }
         })
         .catch(() => {
+          clearTimeout(fallbackTimer);
           fallback.style.display = 'none';
           error.style.display = 'block';
         });
     }, 3000);
+
+    // Safety timeout: show error if nothing happens after 15 seconds
+    setTimeout(() => {
+      clearTimeout(fallbackTimer);
+      error.style.display = 'block';
+      fallback.style.display = 'none';
+    }, 15000);
   </script>
   {% endif %}
 </body>
