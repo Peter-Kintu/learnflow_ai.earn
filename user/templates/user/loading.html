@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Welcome to LearnFlow AI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="index, follow">
@@ -11,7 +12,6 @@
   <meta property="og:image" content="https://learnflow-ai-0fdz.onrender.com/static/logo.png">
   <meta property="og:url" content="https://learnflow-ai-0fdz.onrender.com">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506" crossorigin="anonymous"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -49,12 +49,8 @@
       margin-top: 1.5em;
       font-size: 0.95em;
     }
-    #fallback {
-      color: #888;
-    }
-    #error {
-      color: #ff6b6b;
-    }
+    #fallback { color: #888; }
+    #error { color: #ff6b6b; }
     @media (max-width: 600px) {
       h1 { font-size: 1.8em; }
       p { font-size: 1em; }
@@ -73,14 +69,20 @@
   <p id="fallback">Still waking up… hang tight.</p>
   <p id="error">Oops! Something went wrong. Please refresh or try again later.</p>
 
+  <noscript>
+    <p style="color: #ff6b6b;">JavaScript is required to continue. Please enable it in your browser settings.</p>
+  </noscript>
+
   {% if redirect %}
   <script>
     const fallback = document.getElementById('fallback');
     const error = document.getElementById('error');
     let attempts = 0;
-    const maxAttempts = 12; // Retry for up to 1 minute (12 x 5s)
+    const maxAttempts = 12;
 
-    // Show fallback message after 7 seconds
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    const initialDelay = isMobile ? 5000 : 3000;
+
     setTimeout(() => {
       fallback.style.display = 'block';
     }, 7000);
@@ -100,14 +102,14 @@
             fallback.style.display = 'none';
             error.style.display = 'block';
           } else {
-            setTimeout(pingServer, 5000); // Retry after 5 seconds
+            setTimeout(pingServer, 5000);
           }
         });
     }
 
-    // Initial ping after 3 seconds
-    setTimeout(pingServer, 3000);
+    setTimeout(pingServer, initialDelay);
   </script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506" crossorigin="anonymous"></script>
   {% endif %}
 </body>
 </html>

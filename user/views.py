@@ -9,8 +9,6 @@ from django.utils import timezone
 
 # Get the custom User model
 User = get_user_model()
-
-
 def loading_screen(request):
     """
     Public homepage with branded loading screen.
@@ -20,7 +18,6 @@ def loading_screen(request):
     """
     if request.user.is_authenticated:
         return redirect("aiapp:home")
-
     # Dynamic greeting based on time of day
     current_hour = timezone.now().hour
     if current_hour < 12:
@@ -29,7 +26,6 @@ def loading_screen(request):
         greeting = _("Good afternoon!")
     else:
         greeting = _("Good evening!")
-
     context = {
         "app_name": "LearnFlow AI",
         "message": f"{greeting} {_('Preparing your personalized learning experience...')}",
