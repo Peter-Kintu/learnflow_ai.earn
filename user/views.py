@@ -14,20 +14,23 @@ User = get_user_model()
 
 def loading_screen(request):
     """
-    Displays a branded loading screen during cold starts or transitions.
-    Future-ready: Includes session-based redirect and multilingual messaging.
-    Redirects to login page after initial boot.
+    Public homepage with branded loading screen.
+    Shows content first, then redirects after delay — SEO and AdSense friendly.
     """
-    # Prevent repeat loading screen during session
     if request.session.get("booted"):
-        return redirect("user:login")  # ✅ Redirect to login page
+        # Let crawlers see the page before redirecting
+        context = {
+            "app_name": "LearnFlow AI",
+            "message": _("Redirecting to login..."),
+            "redirect": True
+        }
+        return render(request, "user/loading.html", context)
 
-    # Mark session as booted
     request.session["booted"] = True
-
     context = {
         "app_name": "LearnFlow AI",
-        "message": _("Preparing your personalized learning experience...")
+        "message": _("Preparing your personalized learning experience..."),
+        "redirect": False
     }
     return render(request, "user/loading.html", context)
 
