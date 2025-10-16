@@ -89,7 +89,7 @@
       fetch("/ping", { cache: "no-store" })
         .then(res => {
           if (res.ok) {
-            window.location.href = "/user/login";
+            window.location.href = "/login/";
           } else {
             throw new Error("Ping failed");
           }
