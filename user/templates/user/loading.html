@@ -77,14 +77,15 @@
   <script>
     const fallback = document.getElementById('fallback');
     const error = document.getElementById('error');
+    let attempts = 0;
+    const maxAttempts = 12; // Retry for up to 1 minute (12 x 5s)
 
     // Show fallback message after 7 seconds
-    const fallbackTimer = setTimeout(() => {
+    setTimeout(() => {
       fallback.style.display = 'block';
     }, 7000);
 
-    // Ping server after 3 seconds
-    const pingTimer = setTimeout(() => {
+    function pingServer() {
       fetch("/ping", { cache: "no-store" })
         .then(res => {
           if (res.ok) {
@@ -94,18 +95,18 @@
           }
         })
         .catch(() => {
-          clearTimeout(fallbackTimer);
-          fallback.style.display = 'none';
-          error.style.display = 'block';
+          attempts++;
+          if (attempts >= maxAttempts) {
+            fallback.style.display = 'none';
+            error.style.display = 'block';
+          } else {
+            setTimeout(pingServer, 5000); // Retry after 5 seconds
+          }
         });
-    }, 3000);
+    }
 
-    // Safety timeout: show error if nothing happens after 15 seconds
-    setTimeout(() => {
-      clearTimeout(fallbackTimer);
-      error.style.display = 'block';
-      fallback.style.display = 'none';
-    }, 15000);
+    // Initial ping after 3 seconds
+    setTimeout(pingServer, 3000);
   </script>
   {% endif %}
 </body>
