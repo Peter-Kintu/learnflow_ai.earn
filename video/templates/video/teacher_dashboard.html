@@ -10,7 +10,21 @@
         </a>
     </div>
     <p class="text-gray-400 mb-8">Manage the videos you have uploaded to the platform.</p>
-    
+
+    <!-- ✅ First Ad Block -->
+    <div class="flex justify-center mb-8">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-9564790727166506"
+             data-ad-slot="1234567890"
+             data-ad-format="auto"
+             data-full-width-responsive="true"
+             aria-label="Advertisement"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
     <div class="space-y-4">
         {% for video in user_videos %}
         <div class="bg-slate-700 p-4 rounded-xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
@@ -28,6 +42,20 @@
         {% empty %}
         <p class="text-gray-400 text-center">You have not uploaded any videos yet. Click "Upload New Video" to get started!</p>
         {% endfor %}
+    </div>
+
+    <!-- ✅ Second Ad Block -->
+    <div class="mt-10 text-center">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-9564790727166506"
+             data-ad-slot="1234567890"
+             data-ad-format="auto"
+             data-full-width-responsive="true"
+             aria-label="Advertisement"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
     </div>
 </div>
 {% endblock %}

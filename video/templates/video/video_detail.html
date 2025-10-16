@@ -12,13 +12,26 @@
     </a>
 </div>
 
+<!-- ✅ First Ad Block -->
+<div class="flex justify-center mb-8">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-9564790727166506"
+         data-ad-slot="1234567890"
+         data-ad-format="auto"
+         data-full-width-responsive="true"
+         aria-label="Advertisement"></ins>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
+
 <h2 class="text-3xl font-bold text-gray-200 mb-2">{{ video.title }}</h2>
 
 <!-- Video embed or fallback message -->
 {% if embed_url %}
     <div class="video-container rounded-xl overflow-hidden shadow-lg mb-6">
         <iframe 
-
             width="100%" 
             height="400"
             src="{{ embed_url }}"
@@ -60,6 +73,20 @@
     </div>
 </div>
 {% endif %}
+
+<!-- ✅ Second Ad Block -->
+<div class="mt-10 text-center">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-9564790727166506"
+         data-ad-slot="1234567890"
+         data-ad-format="auto"
+         data-full-width-responsive="true"
+         aria-label="Advertisement"></ins>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
 
 <!-- Back Button -->
 <div class="flex justify-start mt-8">
