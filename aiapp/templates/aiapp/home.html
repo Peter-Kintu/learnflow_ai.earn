@@ -382,23 +382,24 @@
     const modelName = 'gemini-2.5-flash';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // 🔥 MODIFIED: systemInstruction - Updated for Location Awareness and Dynamic Context Handling 🔥
+    // 🔥 MODIFIED: systemInstruction - Updated for Location Link, Match Prediction, and Dynamic Context Handling 🔥
     const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
 
 **INSTRUCTIONS FOR CONTEXT HANDLING:**
 1.  **ACCURATE USER CONTEXT:** The **CURRENT CONTEXT** section below will be dynamically updated by the user's browser (NOT by you). If a **Latitude/Longitude** is present, the user has explicitly shared their location, and you **MUST** use it for location-aware requests (like weather, directions, or local information).
-2.  **FALLBACK:** If no Latitude/Longitude is provided, use your **Virtual Location** (Kampala, Uganda) as a default.
-3.  **PRIVACY:** If the user asks *why* you know their location, state that it was explicitly provided by the browser after the user clicked 'Share Location.'
-4.  **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
+2.  **LOCATION LINK:** When location is successfully obtained, you **ARE PERMITTED** to provide a Google Maps URL for the user's current coordinates using the format: [View on Map](https://www.google.com/maps/search/?api=1&query=LAT,LNG).
+3.  **FALLBACK:** If no Latitude/Longitude is provided, use your **Virtual Location** (Kampala, Uganda) as a default.
+4.  **PRIVACY:** If the user asks *why* you know their location, state that it was explicitly provided by the browser after the user clicked 'Share Location.'
+5.  **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
 
 CURRENT CONTEXT:
 - The current date is **Friday, October 17, 2025**.
 - The current time is **9:04 PM EAT**.
 - Your current virtual location is **Kampala, Uganda**.
 
-Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including Luganda, Swahili, Hausa, Yoruba, Zulu, and others.
-
-- If the user asks for real-time information (like news), use your internal browsing/search capability to provide the most current answer.
+**INSTRUCTIONS FOR REAL-TIME DATA & PREDICTIONS:**
+- If the user asks for **real-time information (like news or current scores)**, use your internal browsing/search capability to provide the most current and accurate answer, acknowledging the inherent latency in news.
+- If the user asks for **match predictions (e.g., football, soccer)**, use your vast knowledge base and current data to provide a detailed analysis and a most likely outcome, acting as an expert sports analyst.
 
 Always respond in the language the user is using, maintaining context and educational quality.`;
     
@@ -451,8 +452,16 @@ Always respond in the language the user is using, maintaining context and educat
                     userCurrentContext.latitude = lat;
                     userCurrentContext.longitude = lng;
                     
-                    // 3. Inform the user in the chat (NO EXTERNAL LINK)
-                    const aiMessage = `Location update successful! Your coordinates (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}) have been saved with an accuracy of ${accuracy.toFixed(0)} meters. I will now use this for location-aware queries and directions.`;
+                    // 🔥 CRITICAL FIX: Use a standard, working Google Maps API URL format 🔥
+                    const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    const mapLinkMarkdown = `[View Your Location on Google Maps](${mapLink})`;
+                    
+                    // 3. Inform the user in the chat (NOW INCLUDES LINK)
+                    const aiMessage = `Location update successful! Your coordinates (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}) have been saved with an accuracy of ${accuracy.toFixed(0)} meters. I will now use this for location-aware queries and directions.
+
+${mapLinkMarkdown}
+
+Please proceed with your location-based query (e.g., "What is the weather like here?").`;
                     
                     // Use the existing 'appendMessage' function to speak the message
                     appendMessage('ai', aiMessage); 
