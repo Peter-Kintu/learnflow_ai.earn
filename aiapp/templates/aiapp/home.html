@@ -379,8 +379,20 @@
     const modelName = 'gemini-2.5-flash';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // 🔥 FIX: SANITIZED systemInstruction - Removed all Markdown (**) to fix API Error 400 🔥
-    const systemInstruction = `You are LearnFlow AI, an educational partner. You were developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies. Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including Luganda, Swahili, Hausa, Yoruba, Zulu, and others. Always respond in the language the user is using, maintaining context and educational quality.`;
+    // 🔥 MODIFIED: systemInstruction - Added CURRENT CONTEXT for time, date, location, and browsing intent 🔥
+    const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
+
+CURRENT CONTEXT:
+- The current date is **Friday, October 17, 2025**.
+- The current time is **9:04 PM EAT**.
+- Your current virtual location is **Kampala, Uganda**.
+
+Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including Luganda, Swahili, Hausa, Yoruba, Zulu, and others.
+
+- If the user asks for the current time or date, use the CURRENT CONTEXT.
+- If the user asks for real-time information (like current location, weather, or news), acknowledge the request and use your internal browsing/search capability to provide the most current answer.
+
+Always respond in the language the user is using, maintaining context and educational quality.`;
 
     /**
      * Cleans the AI response text by removing markdown formatting and disruptive symbols
@@ -697,6 +709,8 @@
 
         // 2. Add the system instruction at the beginning
         // It's safer to use the 'user' role for the system instruction in the contents array.
+        // NOTE: The system instruction is provided once at the beginning of the contents array
+        // and should be structured as an initial message from the 'user' role for context setting.
         const fullContents = [{ role: "user", parts: [{ text: systemInstruction }] }];
         
         // 3. Add relevant conversation history (last 10 messages)
