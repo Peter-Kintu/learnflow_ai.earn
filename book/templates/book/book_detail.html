@@ -2,9 +2,8 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+<div class="max-w-4xl mx-auto p-4 sm:p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
 
-    <!-- Feedback Messages -->
     {% if messages %}
         <div class="mb-6">
             {% for message in messages %}
@@ -17,16 +16,14 @@
 
     {% if book %}
     <div class="flex flex-col md:flex-row items-start md:space-x-8">
-        <!-- Book Cover Section -->
         <div class="flex-shrink-0 mb-6 md:mb-0">
             <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}"
                  alt="Cover of {{ book.title|default:'Untitled Book' }}"
-                 class="w-64 h-auto rounded-lg shadow-xl">
+                 class="w-full max-w-xs sm:w-64 h-auto rounded-lg shadow-xl mx-auto md:mx-0">
         </div>
 
-        <!-- Book Details Section -->
         <div class="flex-grow">
-            <h2 class="text-4xl font-bold text-gray-200 mb-2">{{ book.title|default:"Untitled Book" }}</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-200 mb-2">{{ book.title|default:"Untitled Book" }}</h2>
             <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -50,37 +47,74 @@
                        class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
                         📘 Read Book
                     </a>
-                {% else %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" name="confirm_payment"
-                                class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-transform transform hover:scale-105 shadow-lg font-semibold animate-bounce">
-                            I Have Paid – Unlock Book
-                        </button>
-                    </form>
-
-                    <!-- Custom Airtel QR Code -->
-                    <div class="mt-6 border border-slate-600 p-4 rounded-xl bg-slate-700 shadow-md text-center">
-                        <p class="text-gray-300 font-semibold mb-2">📲 Scan to pay via Airtel Money:</p>
-                        <img src="{% static 'images/aitel.png' %}" alt="Airtel Money QR Code" class="mx-auto w-48 h-auto rounded-lg shadow-lg">
-                        <p class="text-sm text-gray-400 mt-2">
-                            This payment will unlock <span class="font-semibold text-white">{{ book.title|default:"this book" }}</span> for you.
-                        </p>
-                        <p class="text-green-400 font-semibold mt-2 animate-pulse">
-                            📱 Confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline">WhatsApp</a>
-                        </p>
-                    </div>
                 {% endif %}
             </div>
 
             {% if not has_paid %}
-            <div class="text-sm text-gray-400 mt-4 space-y-2">
-                <p>To access this book, you can:</p>
-                <ul class="list-disc list-inside text-gray-300">
-                    <li>Scan the QR code above and pay via Airtel Money</li>
-                    <li>Or <a href="{% url 'book:pay_with_card' book.id %}" class="text-indigo-400 underline">pay with Visa card</a> instantly</li>
-                </ul>
-            </div>
+<div class="flex flex-col mb-6 space-y-6">
+
+  <div class="border border-slate-600 p-4 rounded-xl bg-slate-700 shadow-md text-center space-y-4">
+    <h2 class="text-indigo-400 font-bold text-xl">📘 Unlock Your Book</h2>
+    <p class="text-gray-300 text-sm">Please pay <strong class="text-green-400">UGX {{ book.price|default:"0" }}</strong> using one of the methods below:</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-600 pt-4">
+      <div>
+        <p class="text-gray-300 font-semibold mb-2">📲 Scan QR (Airtel):</p>
+        <img src="{% static 'images/aitel.png' %}" alt="Airtel QR Code" class="mx-auto w-32 h-auto rounded-lg shadow-lg">
+      </div>
+      <div>
+        <p class="text-gray-300 font-semibold mb-2">✨ Dial USSD:</p>
+        <p class="text-xl font-extrabold text-green-400">*185#</p>
+        <p class="text-xs text-gray-400 mt-1">Pay Bill → Others → Enter Code → Amount</p>
+      </div>
+    </div>
+
+    <p class="text-sm text-gray-400 mt-2">
+      💳 Or <a href="{% url 'book:pay_with_card' book.id %}" class="text-indigo-400 underline font-semibold">pay instantly with Visa card</a>.
+    </p>
+
+    {% if book.seller_whatsapp %}
+    <p class="text-sm text-gray-400 mt-2">
+      📞 Seller WhatsApp for Payment Confirmation: 
+      <a href="https://wa.me/{{ book.seller_whatsapp|cut:'+' }}" target="_blank" class="text-green-400 underline">
+        {{ book.seller_whatsapp }}
+      </a>
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="flex items-start bg-slate-700 p-4 rounded-lg">
+    <input type="checkbox" id="payment_confirmed" class="mt-1 mr-3 h-4 w-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500">
+    <label for="payment_confirmed" class="text-gray-300 text-sm font-medium cursor-pointer">
+      ✅ I confirm I’ve paid UGX {{ book.price|default:"0" }} via Mobile Money or Card.
+    </label>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" name="confirm_payment" id="unlock_button"
+            class="w-full px-6 py-3 bg-green-700 text-white rounded-full transition-all duration-300 shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600"
+            disabled>
+      🔓 I Have Paid – Unlock My Book
+    </button>
+  </form>
+
+  <p class="text-xs text-gray-400 mt-2 text-center">
+    💡 <a href="https://wa.me/256789746493" target="_blank" class="underline text-green-400">Need help with payment?</a>
+  </p>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('payment_confirmed');
+    const button = document.getElementById('unlock_button');
+
+    checkbox.addEventListener('change', function() {
+      button.disabled = !this.checked;
+      button.classList.toggle('animate-pulse', this.checked);
+    });
+  });
+</script>
             {% else %}
             <div class="mt-4 text-sm text-green-400 font-semibold">
                 ✅ Payment confirmed. Enjoy your reading journey!
@@ -98,7 +132,6 @@
                     Or <a href="{% url 'book:download_book' book.id %}" class="underline text-indigo-400">click here to download</a>.
                 </p>
 
-                <!-- Floating Toast -->
                 <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
                     🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title|default:'a book' }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code|default:'XXXX-XXXX' }}" target="_blank" class="underline">Share your achievement</a>
                 </div>
