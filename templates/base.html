@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LearnFlow AI{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    {% if user.is_authenticated %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506"
      crossorigin="anonymous"></script>
+    {% endif %}
    
      <script type="application/ld+json">
     {
