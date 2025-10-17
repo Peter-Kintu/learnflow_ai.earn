@@ -359,6 +359,9 @@
     const responseCountKey = `responseCount-${username}`;
     let responseCount = localStorage.getItem(responseCountKey) ? parseInt(localStorage.getItem(responseCountKey)) : 0;
     
+    // 🔥 NEW GLOBAL VARIABLE: To store and pass the user's accurate context to the AI 🔥
+    let userCurrentContext = {};
+    
     // --- Speech Synthesis Variables (TTS) ---
     let voices = [];
     let isSpeaking = false;
@@ -379,8 +382,14 @@
     const modelName = 'gemini-2.5-flash';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // 🔥 MODIFIED: systemInstruction - Added CURRENT CONTEXT for time, date, location, and browsing intent 🔥
+    // 🔥 MODIFIED: systemInstruction - Updated for Location Awareness and Dynamic Context Handling 🔥
     const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
+
+**INSTRUCTIONS FOR CONTEXT HANDLING:**
+1.  **ACCURATE USER CONTEXT:** The **CURRENT CONTEXT** section below will be dynamically updated by the user's browser (NOT by you). If a **Latitude/Longitude** is present, the user has explicitly shared their location, and you **MUST** use it for location-aware requests (like weather, directions, or local information).
+2.  **FALLBACK:** If no Latitude/Longitude is provided, use your **Virtual Location** (Kampala, Uganda) as a default.
+3.  **PRIVACY:** If the user asks *why* you know their location, state that it was explicitly provided by the browser after the user clicked 'Share Location.'
+4.  **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
 
 CURRENT CONTEXT:
 - The current date is **Friday, October 17, 2025**.
@@ -389,10 +398,90 @@ CURRENT CONTEXT:
 
 Your goal is to be highly proficient and helpful in answering questions in many languages. You must prioritize understanding and responding in African languages, including Luganda, Swahili, Hausa, Yoruba, Zulu, and others.
 
-- If the user asks for the current time or date, use the CURRENT CONTEXT.
-- If the user asks for real-time information (like current location, weather, or news), acknowledge the request and use your internal browsing/search capability to provide the most current answer.
+- If the user asks for real-time information (like news), use your internal browsing/search capability to provide the most current answer.
 
 Always respond in the language the user is using, maintaining context and educational quality.`;
+    
+    // --- Function to get and display accurate local date/time ---
+    function updateAccurateLocalTime() {
+        const now = new Date();
+        
+        // Format the date (e.g., Friday, October 17, 2025)
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateString = now.toLocaleDateString(undefined, dateOptions);
+
+        // Format the time (e.g., 9:04 PM EAT)
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZoneName: 'short' };
+        const timeString = now.toLocaleTimeString(undefined, timeOptions);
+        
+        // This is the accurate, user-local time and date
+        const localTimeText = `${dateString}, and the time is ${timeString}`; 
+        
+        // Update the global context variable
+        userCurrentContext.currentTimeAndDate = localTimeText;
+        
+        // Re-run every second to keep time accurate
+        setTimeout(updateAccurateLocalTime, 1000); 
+    }
+
+    // --- Function to get the user's coordinates and pass them to the AI ---
+    function getUserLocation() {
+        // 1. Check if the browser supports the Geolocation API
+        if ("geolocation" in navigator) {
+            
+            // Options for accuracy and timeout (as requested: high accuracy)
+            const options = {
+                enableHighAccuracy: true, // Request the best possible result (more accurate)
+                timeout: 5000,            // Maximum time to wait for a result (5 seconds)
+                maximumAge: 0             // Do not use a cached position
+            };
+
+            // 2. Request the user's current position (will trigger a permission prompt)
+            // Note: We already appended the user's query in typeQuery()
+            appendMessage('ai', 'Waiting for location permission...');
+            
+            navigator.geolocation.getCurrentPosition(
+                // Success Callback: position is available
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Update global context
+                    userCurrentContext.latitude = lat;
+                    userCurrentContext.longitude = lng;
+                    
+                    // 3. Inform the user in the chat (NO EXTERNAL LINK)
+                    const aiMessage = `Location update successful! Your coordinates (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}) have been saved with an accuracy of ${accuracy.toFixed(0)} meters. I will now use this for location-aware queries and directions.`;
+                    
+                    // Use the existing 'appendMessage' function to speak the message
+                    appendMessage('ai', aiMessage); 
+                },
+                // Error Callback: handles when the user denies permission or an error occurs
+                (error) => {
+                    console.error("Error getting user location:", error.code, error.message);
+                    
+                    let errorMessage = "Unable to retrieve your location.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage = "Location access was denied. Please allow location sharing in your browser settings and try again.";
+                    } else if (error.code === error.TIMEOUT) {
+                        errorMessage = "Timed out while trying to get location. Try again.";
+                    } else {
+                         errorMessage = `Location error (${error.code}): ${error.message}`;
+                    }
+                    
+                    // Show error message to the user in the chat log (using existing function)
+                    appendMessage('ai', errorMessage, true);
+                },
+                options // Pass the options object for high accuracy
+            );
+        } else {
+            // Geolocation is not supported by the browser
+            const notSupportedMsg = "Error: Your browser doesn't support geolocation.";
+            appendMessage('ai', notSupportedMsg, true);
+        }
+    }
+
 
     /**
      * Cleans the AI response text by removing markdown formatting and disruptive symbols
@@ -708,10 +797,23 @@ Always respond in the language the user is using, maintaining context and educat
         }));
 
         // 2. Add the system instruction at the beginning
-        // It's safer to use the 'user' role for the system instruction in the contents array.
-        // NOTE: The system instruction is provided once at the beginning of the contents array
-        // and should be structured as an initial message from the 'user' role for context setting.
-        const fullContents = [{ role: "user", parts: [{ text: systemInstruction }] }];
+        let currentSystemInstruction = systemInstruction;
+        
+        // Inject the current local time and date
+        if (userCurrentContext.currentTimeAndDate) {
+            // Overwrite the placeholder date/time in the original instruction
+            const [datePart, timePart] = userCurrentContext.currentTimeAndDate.split(', and the time is ');
+            currentSystemInstruction = currentSystemInstruction.replace(/The current date is \*\*(.*?)\*\*/, `The user's accurate local date is **${datePart}**`);
+            currentSystemInstruction = currentSystemInstruction.replace(/The current time is \*\*(.*?)\*\*/, `The user's accurate local time is **${timePart}**`);
+        }
+        
+        // Inject the current location if available
+        if (userCurrentContext.latitude && userCurrentContext.longitude) {
+            // Inject the user's specific coordinates as context for the AI
+            currentSystemInstruction += `\n- The user's specific coordinates are: **Lat ${userCurrentContext.latitude}, Lng ${userCurrentContext.longitude}**. Use this for location-aware requests and directions.`;
+        }
+        
+        const fullContents = [{ role: "user", parts: [{ text: currentSystemInstruction }] }];
         
         // 3. Add relevant conversation history (last 10 messages)
         // This line is key for remembering older conversation context
@@ -779,6 +881,21 @@ Always respond in the language the user is using, maintaining context and educat
     // --- User Actions ---
     function typeQuery() {
         const query = chatInput.value.trim();
+        
+        if (!query) return;
+
+        // 🔥 NEW LOGIC: Check for location-sharing keyword and trigger getUserLocation 🔥
+        const lowerQuery = query.toLowerCase();
+        if (lowerQuery.includes('share my location') || lowerQuery.includes('get my location') || lowerQuery.includes('update location')) {
+            // Since this is a user action, append the user's message first
+            appendMessage('user', query);
+            
+            // Clear the input and trigger the location request instead of the AI
+            chatInput.value = ''; 
+            getUserLocation();
+            return; 
+        }
+        
         if (query) {
             generateAiResponse(query);
         }
@@ -1024,6 +1141,9 @@ Always respond in the language the user is using, maintaining context and educat
     window.onload = () => {
         loadChatHistory();
         initSpeechRecognition(); // Initialize recognition on page load
+        
+        // --- ADDED: Start the local time display ---
+        updateAccurateLocalTime(); 
     };
 </script>
 {% endblock %}
