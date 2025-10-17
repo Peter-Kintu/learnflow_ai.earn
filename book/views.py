@@ -220,7 +220,7 @@ def pay_with_card(request, book_id):
         return redirect('book:book_detail', book_id=book_id)
 
     tx_ref = f"{request.user.id}-{book.id}-{timezone.now().timestamp()}"
-    redirect_url = request.build_absolute_uri(reverse('payment_callback'))
+    redirect_url = request.build_absolute_uri(reverse('book:payment_callback')) # <-- FIX APPLIED HERE
     messages.info(request, "🔗 Redirecting to payment gateway...")
     return redirect(f"https://payment-gateway.example.com/pay?tx_ref={tx_ref}&amount={book.price}&redirect_url={redirect_url}&book_id={book.id}")
 
@@ -299,4 +299,3 @@ def send_whatsapp_confirmation(user, book, access_code):
     message = f"I just unlocked '{book.title}' on LearnFlow! My access code is {access_code}"
     whatsapp_url = f"https://wa.me/{user.phone_number}?text={message}"
     print(f"[WHATSAPP] Confirmation link: {whatsapp_url}")
-

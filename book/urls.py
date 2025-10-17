@@ -35,7 +35,8 @@ urlpatterns = [
     path('download/<int:book_id>/', views.download_book, name='download_book'),
 
     # Airtel QR payment initiation (Example: /book/airtel/callback/)
-    path('book/airtel/callback/', views.initiate_airtel_payment, name='initiate_airtel_payment'),
+    # NOTE: Changed from 'book/airtel/callback/' to 'airtel/callback/' for correct routing
+    path('airtel/callback/', views.initiate_airtel_payment, name='initiate_airtel_payment'),
 
     # Vendor earnings dashboard (Example: /book/earnings/)
     path('earnings/', views.vendor_earnings, name='vendor_earnings'),
