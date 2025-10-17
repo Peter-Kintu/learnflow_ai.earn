@@ -49,7 +49,8 @@ def home(request):
     return render(request, 'aiapp/home.html', {
         "user": request.user,
         "username": request.user.get_full_name() or request.user.username,
-        "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!"
+        "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!",
+         "show_ads": True
     })
 # @csrf_exempt
 # def chat_api(request):
@@ -128,7 +129,10 @@ def quiz_list(request):
     Renders a list of all quizzes for students to view.
     """
     quizzes = Quiz.objects.order_by('-created_at')
-    return render(request, 'aiapp/quiz_list.html', {'quizzes': quizzes})
+    return render(request, 'aiapp/quiz_list.html', {
+        'quizzes': quizzes,
+        'show_ads': True
+        })
 
 @login_required
 def quiz_detail(request, quiz_id):
@@ -136,7 +140,10 @@ def quiz_detail(request, quiz_id):
     Displays the details of a specific quiz.
     """
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    return render(request, 'aiapp/quiz_detail.html', {'quiz': quiz})
+    return render(request, 'aiapp/quiz_detail.html', {
+        'quiz': quiz,
+        'show_ads': True
+    })
 
 @login_required
 @transaction.atomic
@@ -196,7 +203,11 @@ def quiz_attempt(request, quiz_id):
 
         return redirect('aiapp:quiz_results', attempt_id=new_attempt.id)
 
-    return render(request, 'aiapp/quiz_attempt.html', {'quiz': quiz, 'questions': questions})
+    return render(request, 'aiapp/quiz_attempt.html', {
+        'quiz': quiz, 
+        'questions': questions,
+        'show_ads': True
+        })
 
 @login_required
 def quiz_results(request, attempt_id):
@@ -223,6 +234,7 @@ def quiz_results(request, attempt_id):
             'passed': passed,
             'score_percentage': score_percentage,
             'score_offset': score_offset,
+            'show_ads': True
         })
     except Exception as e:
         print("Error rendering quiz results:", str(e))
@@ -250,7 +262,8 @@ def quiz_review(request, attempt_id):
 
     context = {
         'attempt': attempt,
-        'questions_and_answers': questions_and_answers
+        'questions_and_answers': questions_and_answers,
+        'show_ads': True
     }
     return render(request, 'aiapp/quiz_review.html', context)
 
@@ -315,7 +328,10 @@ def create_quiz(request):
     else:
         quiz_form = QuizForm()
         
-    return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+    return render(request, 'aiapp/create_quiz.html', {
+        'quiz_form': quiz_form,
+        'show_ads': True
+        })
        
 
 @login_required
@@ -324,7 +340,10 @@ def teacher_quiz_dashboard(request):
     Displays a dashboard of quizzes created by the current user.
     """
     user_quizzes = Quiz.objects.filter(teacher=request.user).order_by('-created_at')
-    return render(request, 'aiapp/teacher_quiz_dashboard.html', {'user_quizzes': user_quizzes})
+    return render(request, 'aiapp/teacher_quiz_dashboard.html', {
+        'user_quizzes': user_quizzes,
+        'show_ads': True
+        })
 
 @login_required
 @transaction.atomic
@@ -406,8 +425,11 @@ def edit_quiz(request, quiz_id):
             messages.error(request, "Please correct the form errors below.")
     else:
         quiz_form = QuizForm(instance=quiz)
-        
-    return render(request, 'aiapp/edit_quiz.html', {'quiz_form': quiz_form, 'quiz': quiz})
+
+    return render(request, 'aiapp/edit_quiz.html', {'quiz_form': quiz_form,
+                                                    'quiz': quiz,
+                                                    'show_ads': True
+                                                    })
 
 @login_required
 def delete_quiz(request, quiz_id):
@@ -424,7 +446,7 @@ def delete_quiz(request, quiz_id):
         messages.success(request, f'"{quiz.title}" has been deleted successfully!')
         return redirect('aiapp:teacher_quiz_dashboard')
 
-    return render(request, 'aiapp/delete_quiz_confirm.html', {'quiz': quiz})
+    return render(request, 'aiapp/delete_quiz_confirm.html', {'quiz': quiz, 'show_ads': True})
 
 @login_required
 def user_profile(request, user_id):
@@ -432,7 +454,7 @@ def user_profile(request, user_id):
     Displays the user profile page.
     """
     user_to_display = get_object_or_404(User, pk=user_id)
-    return render(request, 'aiapp/profile_detail.html', {'profile_user': user_to_display})
+    return render(request, 'aiapp/profile_detail.html', {'profile_user': user_to_display, 'show_ads': True})
 
 # Video-related views from the video app
 @login_required
@@ -441,7 +463,7 @@ def video_list(request):
     Renders a list of all available videos.
     """
     videos = Video.objects.all().order_by('-created_at')
-    return render(request, 'video/video_list.html', {'videos': videos})
+    return render(request, 'video/video_list.html', {'videos': videos, 'show_ads': True})
 
 @login_required
 def video_detail(request, video_id):
@@ -449,7 +471,7 @@ def video_detail(request, video_id):
     Renders the detail page for a single video.
     """
     video = get_object_or_404(Video, pk=video_id)
-    return render(request, 'video/video_detail.html', {'video': video})
+    return render(request, 'video/video_detail.html', {'video': video, 'show_ads': True})
 
 @login_required
 def create_video(request):
@@ -467,7 +489,7 @@ def create_video(request):
             return redirect('video:teacher_dashboard')
     else:
         form = VideoForm()
-    return render(request, 'video/video_upload.html', {'form': form})
+    return render(request, 'video/video_upload.html', {'form': form, 'show_ads': True})
 
 @login_required
 def teacher_dashboard(request):
@@ -475,7 +497,7 @@ def teacher_dashboard(request):
     Displays a dashboard of videos uploaded by the current user.
     """
     user_videos = Video.objects.filter(teacher=request.user).order_by('-created_at')
-    return render(request, 'video/teacher_dashboard.html', {'user_videos': user_videos})
+    return render(request, 'video/teacher_dashboard.html', {'user_videos': user_videos, 'show_ads': True})
 
 @login_required
 def edit_video(request, video_id):
@@ -496,7 +518,7 @@ def edit_video(request, video_id):
     else:
         form = VideoForm(instance=video)
 
-    return render(request, 'video/video_edit.html', {'form': form, 'video': video})
+    return render(request, 'video/video_edit.html', {'form': form, 'video': video, 'show_ads': True})
 
 @login_required
 def delete_video(request, video_id):
@@ -513,9 +535,8 @@ def delete_video(request, video_id):
         messages.success(request, f'"{video.title}" has been deleted successfully!')
         return redirect('video:teacher_dashboard')
 
-    return render(request, 'video/video_delete_confirm.html', {'video': video})
+    return render(request, 'video/video_delete_confirm.html', {'video': video, 'show_ads': True})
 
-    
 @login_required
 def quiz_report_pdf_for_quiz(request, quiz_id):
     """Generates a PDF report for a specific quiz, including all student attempts."""
@@ -542,6 +563,7 @@ def quiz_report_pdf_for_quiz(request, quiz_id):
         'attempts': enriched_attempts,
         'report_date': timezone.now(),
         'request_user': request.user,
+        'show_ads': True
     }
 
     try:
@@ -591,6 +613,7 @@ def build_quiz_attempt_context(attempt, request_user):
         'user': attempt.user,
         'today': timezone.now(),
         'answers': enriched_answers,
+        'show_ads': True
     }    
 
 @login_required

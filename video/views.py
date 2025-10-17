@@ -40,7 +40,7 @@ def video_list(request):
     Renders a list of all available videos.
     """
     videos = Video.objects.all().order_by('-created_at')
-    return render(request, 'video/video_list.html', {'videos': videos})
+    return render(request, 'video/video_list.html', {'videos': videos, 'show_ads': True})
 
 @login_required
 def video_detail(request, video_id):
@@ -53,6 +53,7 @@ def video_detail(request, video_id):
     context = {
         'video': video,
         'embed_url': embed_url,
+        'show_ads': True
     }
     return render(request, 'video/video_detail.html', context)
 
@@ -74,7 +75,7 @@ def create_video(request):
             return redirect('video:video_list')
     else:
         form = VideoForm()
-    return render(request, 'video/video_upload.html', {'form': form})
+    return render(request, 'video/video_upload.html', {'form': form, 'show_ads': True})
 
 @login_required
 def teacher_dashboard(request):
@@ -82,7 +83,7 @@ def teacher_dashboard(request):
     Displays a dashboard of videos uploaded by the current user.
     """
     user_videos = Video.objects.filter(teacher=request.user).order_by('-created_at')
-    return render(request, 'video/teacher_dashboard.html', {'user_videos': user_videos})
+    return render(request, 'video/teacher_dashboard.html', {'user_videos': user_videos, 'show_ads': True})
 
 @login_required
 def edit_video(request, video_id):
@@ -103,7 +104,7 @@ def edit_video(request, video_id):
     else:
         form = VideoForm(instance=video)
 
-    return render(request, 'video/video_edit.html', {'form': form, 'video': video})
+    return render(request, 'video/video_edit.html', {'form': form, 'video': video, 'show_ads': True})
 
 @login_required
 def delete_video(request, video_id):
@@ -120,4 +121,4 @@ def delete_video(request, video_id):
         messages.success(request, f'"{video.title}" has been deleted successfully.')
         return redirect('video:teacher_dashboard')
 
-    return render(request, 'video/video_delete_confirm.html', {'video': video})
+    return render(request, 'video/video_delete_confirm.html', {'video': video, 'show_ads': True})

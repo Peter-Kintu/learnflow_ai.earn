@@ -37,7 +37,7 @@ def payment_callback(request):
 @login_required
 def book_list(request):
     books = Book.objects.all().order_by('-created_at')
-    return render(request, 'book/book_list.html', {'books': books})
+    return render(request, 'book/book_list.html', {'books': books, 'show_ads': True})
 
 @login_required
 def book_detail(request, book_id):
@@ -169,12 +169,12 @@ def book_upload(request):
                 return redirect('book:teacher_book_dashboard')
     else:
         form = BookForm()
-    return render(request, 'book/book_upload.html', {'form': form})
+    return render(request, 'book/book_upload.html', {'form': form, 'show_ads': True})
 
 @login_required
 def teacher_book_dashboard(request):
     user_books = Book.objects.filter(uploaded_by=request.user).order_by('-created_at')
-    return render(request, 'book/teacher_book_dashboard.html', {'user_books': user_books})
+    return render(request, 'book/teacher_book_dashboard.html', {'user_books': user_books, 'show_ads': True})
 
 @login_required
 def edit_book(request, book_id):
@@ -189,7 +189,7 @@ def edit_book(request, book_id):
             return redirect('book:teacher_book_dashboard')
     else:
         form = BookForm(instance=book)
-    return render(request, 'book/book_edit.html', {'form': form, 'book': book})
+    return render(request, 'book/book_edit.html', {'form': form, 'book': book, 'show_ads': True})
 
 @login_required
 def delete_book(request, book_id):
@@ -200,7 +200,7 @@ def delete_book(request, book_id):
         book.delete()
         messages.success(request, f'"{book.title}" has been deleted successfully.')
         return redirect('book:teacher_book_dashboard')
-    return render(request, 'book/book_delete_confirm.html', {'book': book})
+    return render(request, 'book/book_delete_confirm.html', {'book': book, 'show_ads': True})
 
 @login_required
 def vendor_earnings(request):
@@ -209,7 +209,8 @@ def vendor_earnings(request):
     total_earned = sum(t.amount for t in transactions)
     return render(request, 'book/vendor_earnings.html', {
         'transactions': transactions,
-        'total_earned': total_earned
+        'total_earned': total_earned,
+        'show_ads': True
     })
 
 @login_required
