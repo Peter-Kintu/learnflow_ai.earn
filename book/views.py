@@ -9,7 +9,30 @@ from django.utils import timezone
 from aiapp.models import User
 from .models import Book, Transaction
 from .forms import BookForm
+from django.db import models
 import uuid
+# book/views.py (or wherever your views are)
+from django.shortcuts import render, redirect
+# ... other imports
+
+def payment_callback(request):
+    """
+    Handles the redirect or post-request from the payment gateway.
+    It should contain logic to verify the transaction status and update the database.
+    """
+    # Example logic:
+    # 1. Get transaction reference from query params or request body.
+    # 2. Query the payment gateway API to confirm the status.
+    # 3. If successful, update the BookTransaction model.
+    # 4. Redirect the user to the book detail page or a success page.
+    
+    # Placeholder for actual logic:
+    # return redirect('book:payment_success')
+    
+    # For now, a simple placeholder redirect:
+    return render(request, 'payment_success.html', {'status': 'Verification in progress...'})
+
+# ... your existing views (like pay_with_card)
 
 @login_required
 def book_list(request):
