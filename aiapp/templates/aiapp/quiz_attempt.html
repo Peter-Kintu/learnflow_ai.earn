@@ -40,16 +40,34 @@
         <div class="question-block bg-slate-700 p-6 rounded-xl shadow-inner border border-slate-600">
             <h3 class="text-xl font-semibold text-gray-200 mb-4 flex items-center">
                 <span class="text-indigo-400 mr-2">{{ forloop.counter }}.</span>
-                {{ question.question_text }}
+                {# FIX: Use 'question.text' to display the question text #}
+                {{ question.text }}
             </h3>
             <div class="space-y-3">
-                {% for choice in question.choices.all %}
-                <label class="flex items-center text-gray-300 cursor-pointer hover:bg-slate-600/50 p-3 rounded-lg transition-colors">
-                    <input type="radio" name="question_{{ question.id }}" value="{{ choice.choice_text }}" required 
-                           class="form-radio h-5 w-5 text-indigo-500 bg-slate-800 border-gray-600 focus:ring-indigo-500">
-                    <span class="ml-3 text-lg">{{ choice.choice_text }}</span>
-                </label>
-                {% endfor %}
+                
+                {# ADDED: Conditional logic to display appropriate input based on question type #}
+                {% if question.question_type == 'MC' %}
+                    {# Multiple Choice Questions #}
+                    {% for choice in question.choices.all %}
+                    <label class="flex items-center text-gray-300 cursor-pointer hover:bg-slate-600/50 p-3 rounded-lg transition-colors">
+                        {# FIX: Use 'choice.id' as the value, as expected by views.py #}
+                        <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required 
+                               class="form-radio h-5 w-5 text-indigo-500 bg-slate-800 border-gray-600 focus:ring-indigo-500">
+                        {# FIX: Use 'choice.text' to display the choice text #}
+                        <span class="ml-3 text-lg">{{ choice.text }}</span>
+                    </label>
+                    {% endfor %}
+                
+                {% elif question.question_type == 'SA' %}
+                    {# Short Answer Questions #}
+                    <textarea name="question_{{ question.id }}" rows="4" required 
+                              class="w-full p-3 bg-slate-800 text-gray-200 rounded-lg border border-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Type your answer here..."></textarea>
+                
+                {% else %}
+                    <p class="text-red-400">Error: Unknown question type.</p>
+                {% endif %}
+
             </div>
         </div>
         {% endfor %}
