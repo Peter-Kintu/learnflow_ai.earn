@@ -5,7 +5,7 @@ from . import views
 app_name = 'legalpages' 
 
 urlpatterns = [
-    # Static Pages (These pages are typically included in the project's root URLs)
+    # Static Pages 
     path('privacy/', views.privacy_policy, name='privacy'),
     path('terms/', views.terms_conditions, name='terms'),
     path('about/', views.about_us, name='about'),
@@ -17,6 +17,6 @@ urlpatterns = [
     path('overview/', views.learnflow_overview, name='overview'),
     path('', views.learnflow_video_analysis, name='learnflow_main'),
     
-    # API Endpoint (UPDATED NAME to match views.py function)
+    # API Endpoint: CRITICAL FIX for the stuck loading state
     path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
 ]

@@ -22,10 +22,9 @@ logger = logging.getLogger(__name__)
 def extract_video_id(url):
     """
     Extracts the YouTube video ID from various URL formats (watch, youtu.be, live).
-    FIXED: Handles trailing query parameters like '?si=...' on shared links.
     """
     if "youtu.be" in url:
-        # Handles short URL format and strips any trailing query parameters like '?si=...'
+        # Handles short URL format and strips any trailing query parameters like '?si=...' on shared links
         return url.split("/")[-1].split("?")[0]
     
     # Handle /live/ URLs
@@ -51,7 +50,6 @@ def learnflow_video_analysis(request):
     Renders the main template containing the client-side HTML and JavaScript.
     This is the core video analysis page (learnflow.html).
     """
-    # Assuming 'learnflow.html' is the main app page.
     return render(request, 'learnflow.html', {
         'api_key': os.getenv('GEMINI_API_KEY') # Passes the API key to the template context
     })
@@ -82,7 +80,6 @@ def sitemap_page(request):
 def video_analysis_view(request, video_id):
     """
     Placeholder view for a dynamic video analysis page.
-    It loads the main analysis page (learnflow.html) which can then load the video.
     """
     return render(request, 'learnflow.html', {'pre_selected_video_id': video_id})
 
@@ -92,10 +89,9 @@ def video_analysis_view(request, video_id):
 # --- API View (Real Transcript Logic & AI Analysis) ---
 
 @csrf_exempt
-def analyze_video_api(request):
+def analyze_video_api(request): # <-- CRITICAL: Must be named this way to match urls.py
     """
-    API endpoint to fetch transcript (or a fallback message) and generate 
-    an AI summary AND a quiz based on the available text.
+    API endpoint to fetch transcript and generate AI summary and quiz.
     """
     if request.method == 'POST':
         video_id = None 
@@ -128,9 +124,8 @@ def analyze_video_api(request):
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
             
-            # --- 2. Transcript Fetch Attempt (Stable Logic) ---
+            # --- 2. Transcript Fetch Attempt ---
             try:
-                # Use the stable get_transcript method which avoids past AttributeError issues.
                 transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
                 full_transcript = " ".join([item['text'] for item in transcript_list])
                 transcript_found = True
@@ -146,24 +141,14 @@ def analyze_video_api(request):
             # --- 3. AI Summarization and Quiz Generation ---
             client = genai.Client(api_key=api_key)
             
-            if transcript_found:
-                # Use a single prompt to generate both outputs for efficiency
-                prompt = (
-                    "Based on the following video transcript, perform two tasks:\n"
-                    "1. **SUMMARY:** Summarize the main topics and key takeaways in a concise, informative paragraph.\n"
-                    "2. **QUIZ:** Generate 3 multiple-choice questions (MCQs) that test comprehension of the summary/transcript. Provide each question with 4 options and identify the correct answer.\n\n"
-                    "Format your response strictly as a JSON object with two top-level keys: 'summary' (string) and 'quiz' (list of question objects).\n\n"
-                    "Transcript:\n\n"
-                    f"{full_transcript}"
-                )
-            else:
-                # Fallback prompt for no transcript
-                prompt = (
-                    f"The video with ID {video_id} (Link: {link}) has NO TRANSCRIPT available. Act as an educational AI and perform two tasks:\n"
-                    "1. **SUMMARY:** Generate a brief, informative paragraph (2-3 sentences) of what the video is LIKELY about, based on the URL/ID, and clearly state that the summary is based on metadata, not content.\n"
-                    "2. **QUIZ:** Generate 3 simple, introductory true/false questions based on the *likely* topic of the video. State the correct answer for each.\n\n"
-                    "Format your response strictly as a JSON object with two top-level keys: 'summary' (string) and 'quiz' (list of question objects). Use the provided link to make an educated guess about the content."
-                )
+            # Use a single, powerful prompt for both summary and quiz
+            prompt = (
+                "Based on the following video content, perform two tasks:\n"
+                "1. **SUMMARY:** Summarize the main topics and key takeaways in a concise, informative paragraph.\n"
+                "2. **QUIZ:** Generate 3 multiple-choice questions (MCQs) that test comprehension. Provide each question with 4 options and identify the correct answer.\n\n"
+                "Format your response strictly as a JSON object with two top-level keys: 'summary' (string) and 'quiz' (list of question objects).\n\n"
+                f"Video Content:\n\n{full_transcript}"
+            )
 
             # Generate content and request JSON output
             response = client.models.generate_content(
@@ -210,7 +195,7 @@ def analyze_video_api(request):
             logger.exception(f"Gemini API Error for {video_id}: {str(e)}")
             return JsonResponse({
                 "status": "error", 
-                "message": f"AI service failed (Gemini API Error). Error: {str(e)}"}, status=503)
+                "message": f"AI service failed (Gemini API Error). Please check your API key and quota."}, status=503)
 
         except json.JSONDecodeError:
             logger.exception(f"AI response was not valid JSON for {video_id}.")
@@ -219,7 +204,7 @@ def analyze_video_api(request):
                 "message": "AI service returned an invalid response format."}, status=500)
 
         except Exception as e:
-            # Catch all other exceptions (including errors from the video ID extraction)
+            # Catch all other exceptions 
             logger.exception(f"A critical, unhandled error occurred during fetch/AI processing for {video_id}.")
             return JsonResponse({
                 "status": "error", 

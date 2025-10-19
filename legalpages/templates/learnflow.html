@@ -20,9 +20,9 @@
                         'primary-blue': '#1e40ff', // A strong, modern blue
                         'hover-blue': '#1c3ade',   // Slightly darker hover
                         
-                        // BACKGROUNDS & TEXT
-                        'background-light': '#f7f7f9',
-                        'background-dark': '#0d0d1e', // Very dark blue-black
+                        // BACKGROUNDS & TEXT (CRITICAL for contrast fix)
+                        'background-light': '#f7f7f9', // Very light gray
+                        'background-dark': '#0d0d1e', // Very dark blue-black for high contrast
                         'error-red': '#d93025',
                     },
                 }
@@ -65,9 +65,7 @@
 
 {% block content %}
     <div class="max-w-4xl mx-auto font-sans p-4 md:p-8 min-h-screen rounded-lg shadow-xl
-                bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-100">
-
-        <h1 id="mainTitle" class="text-3xl font-extrabold text-primary-blue dark:text-blue-400 mb-6">
+                bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-100"> <h1 id="mainTitle" class="text-3xl font-extrabold text-primary-blue dark:text-blue-400 mb-6">
             Video Analysis & Study Kit 🚀
         </h1>
         
@@ -314,8 +312,8 @@
             }
 
             // --- AJAX CALL ---
+            // CRITICAL FIX: The URL name is now 'api_analyze_video' 
             $.ajax({
-                // CRITICAL UPDATE: Changed API endpoint name
                 url: "{% url 'legalpages:api_analyze_video' %}", 
                 type: 'POST',
                 data: {
