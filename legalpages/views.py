@@ -42,15 +42,29 @@ def extract_video_id(url):
 def fetch_transcript_robust(video_id):
     """
     Fetches the full English transcript. Returns the text or a fallback message string.
+    
+    IMPROVED: Uses list_transcripts and find_transcript with auto_generate=True 
+    to robustly attempt to retrieve both manual and auto-generated captions.
     """
     if not video_id:
         return "Video ID is missing or invalid."
     
+    # We will prioritize English (en) and its common variants.
+    target_languages = ['en', 'en-US', 'en-GB'] 
+
     try:
-        # Use get_transcript which attempts to get the best transcript (often English)
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        # 1. Get all available transcripts (manual and auto-generated flags)
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         
-        full_transcript = " ".join([item['text'] for item in transcript_list])
+        # 2. Find the best English transcript, allowing auto-generation as a fallback
+        # auto_generate=True is the key to fetching captions when manual ones are missing.
+        transcript_obj = transcript_list.find_transcript(target_languages, auto_generate=True)
+        
+        # 3. Fetch the content
+        transcript_data = transcript_obj.fetch()
+        
+        # 4. Process the fetched data into a single string
+        full_transcript = " ".join([item['text'] for item in transcript_data])
         return full_transcript
         
     except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript, VideoUnavailable) as e:
