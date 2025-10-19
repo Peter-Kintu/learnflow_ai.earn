@@ -1,8 +1,9 @@
+import os
 from django.shortcuts import render
 from django.http import JsonResponse
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
-import time # Used for potential simulated delays if needed
+import time  # Used for potential simulated delays if needed
 
 # Helper function to extract the video ID from a YouTube URL
 def extract_video_id(url):
@@ -31,7 +32,9 @@ def learnflow_video_analysis(request):
     """
     # Assuming 'learnflow.html' is the main app page.
     # The original file name was 'youtubecourse.html' in a comment, but the provided HTML is 'learnflow.html'
-    return render(request, 'learnflow.html')
+    return render(request, 'learnflow.html', {
+        'api_key': os.getenv('GEMINI_API_KEY')  # ✅ Corrected usage
+    })
 
 def learnflow_overview(request):
     """
