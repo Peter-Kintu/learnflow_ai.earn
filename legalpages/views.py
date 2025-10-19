@@ -23,7 +23,7 @@ def extract_video_id(url):
         # Handles short URL format
         return url.split("/")[-1]
     
-    # New: Handle /live/ URLs
+    # Handle /live/ URLs
     if "youtube.com/live/" in url:
         # Extracts ID from a /live/ URL, stripping any trailing query params
         return url.split("/")[-1].split("?")[0]
@@ -89,18 +89,14 @@ def fetch_transcript_api(request):
     youtube-transcript-api Python library.
     """
     if request.method == 'POST':
-        # Ensure video_id is set to None initially for logging in case of early exit
-        video_id = None
+        video_id = None 
         
         try:
             # 1. Get and Sanitize the YouTube link
-            # Use .get with a default empty string and strip any whitespace
             link = request.POST.get('youtube_link', '').strip() 
 
-            # New: Sanitize malformed link (e.g., https://wwwhttps://www...)
             if link.count("http") > 1:
                 logger.warning(f"Malformed link detected and sanitized: {link}")
-                # Keep only the content starting from the second "http"
                 link = link[link.find("http", 1):]
 
             if not link:
@@ -115,17 +111,16 @@ def fetch_transcript_api(request):
                 logger.warning(f"Could not extract video ID from link: {link}")
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
-            # 2. Fetch the transcript. (FIX FOR AttributeError)
-            # FIX: Changed the method from get_transcripts (which doesn't exist) to list_transcripts.
+            # 2. Fetch the transcript. (Using the now-guaranteed list_transcripts method)
+            # This returns a TranscriptList object.
             transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
             
-            # Find the transcript (prioritize manual 'en', then auto-generated 'en')
+            # Robust logic to find the best English transcript
             try:
-                # Try to find a manually created English transcript
-                # transcripts is a TranscriptList object
+                # 2a. Try to find a manually created English transcript
                 transcript = transcripts.find_transcript(['en'])
             except NoTranscriptFound:
-                # If no manual transcript is found, try to find an auto-generated English transcript
+                # 2b. If no manual transcript is found, try to find an auto-generated English transcript
                 try:
                     transcript = transcripts.find_generated_transcript(['en'])
                 except NoTranscriptFound:
@@ -146,7 +141,7 @@ def fetch_transcript_api(request):
             }
             return JsonResponse(response_data)
 
-        # Updated: Handle expanded specific errors from the transcript API (return 404)
+        # Handle specific errors from the transcript API (return 404)
         except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript, VideoUnavailable) as e:
              logger.warning(f"Transcript unavailable for {video_id}: {str(e)}")
              return JsonResponse({
@@ -155,7 +150,6 @@ def fetch_transcript_api(request):
         
         except Exception as e:
             # Catch all other exceptions (Network errors, Rate Limiting, unexpected crashes)
-            # Log full traceback for the 500 error
             logger.exception(f"A critical, unhandled error occurred during transcript fetch for {video_id}.")
             
             return JsonResponse({
