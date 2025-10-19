@@ -1,9 +1,10 @@
 import os
 from django.shortcuts import render
 from django.http import JsonResponse
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 from urllib.parse import urlparse, parse_qs
-import time  # Used for potential simulated delays if needed
+import time # Used for potential simulated delays if needed
+import json # Used for potential JSON-related functionality, though not strictly needed for this specific function
 
 # Helper function to extract the video ID from a YouTube URL
 def extract_video_id(url):
@@ -31,9 +32,8 @@ def learnflow_video_analysis(request):
     This is the core video analysis page (learnflow.html).
     """
     # Assuming 'learnflow.html' is the main app page.
-    # The original file name was 'youtubecourse.html' in a comment, but the provided HTML is 'learnflow.html'
     return render(request, 'learnflow.html', {
-        'api_key': os.getenv('GEMINI_API_KEY')  # ✅ Corrected usage
+        'api_key': os.getenv('GEMINI_API_KEY') # Passes the API key to the template context
     })
 
 def learnflow_overview(request):
@@ -62,11 +62,8 @@ def sitemap_page(request):
 def video_analysis_view(request, video_id):
     """
     Placeholder view for a dynamic video analysis page.
-    For now, it redirects to the main learnflow_video_analysis page.
+    It loads the main analysis page (learnflow.html) which can then load the video.
     """
-    # This dynamic URL is likely not intended to be a unique page, 
-    # but rather a way to load the main analysis page with a video pre-selected.
-    # To fix the NoReverseMatch, we must include this function.
     return render(request, 'learnflow.html', {'pre_selected_video_id': video_id})
 
 
@@ -102,11 +99,19 @@ def fetch_transcript_api(request):
             }
             return JsonResponse(response_data)
 
+        # Handle specific errors from the transcript API
+        except (TranscriptsDisabled, NoTranscriptFound) as e:
+             return JsonResponse({
+                "status": "error", 
+                "message": f"Transcript not available. This video either has transcripts disabled or none are auto-generated. Error: {str(e)}"
+            }, status=404)
+        
         except Exception as e:
-            # Catch exceptions like "No transcript found" or API errors
+            # Catch all other exceptions (API errors, network issues, etc.)
             return JsonResponse({
                 "status": "error", 
-                "message": f"Failed to fetch transcript. Note: Not all YouTube videos have transcripts enabled. Error: {str(e)}"
+                "message": f"Failed to fetch transcript due to an unexpected error. Error: {str(e)}"
             }, status=500)
         
+    # Handle non-POST requests
     return JsonResponse({"status": "error", "message": "Invalid request method. Must use POST."}, status=400)
