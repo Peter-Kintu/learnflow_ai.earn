@@ -1,49 +1,64 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms and Conditions - LearnFlow AI</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 40px; line-height: 1.6; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); }
+        h1 { color: #1a73e8; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px;}
+        h2 { color: #4285f4; margin-top: 25px; }
+        ul { list-style-type: disc; padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        a { color: #1a73e8; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terms and Conditions</h1>
+        <p><strong>Last Updated: October 20, 2025</strong></p>
+        
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing or using LearnFlow AI, you agree to be bound by these Terms and Conditions. This application (the "Service") is provided for educational, non-commercial use only. If you disagree with any part of the terms, then you may not access the Service.</p>
 
-{% block title %}LearnFlow AI Policies{% endblock %}
+        <h2>2. Use Restrictions and Conduct</h2>
+        <p>You agree to use the Service only for its intended purpose and in compliance with all applicable local, national, and international laws. Prohibited uses include:</p>
+        <ul>
+            <li>Using the service for any unlawful, fraudulent, or malicious purposes.</li>
+            <li>Attempting to interfere with the integrity or performance of the Service's backend systems.</li>
+            <li>Uploading or submitting content that is defamatory, obscene, or harmful.</li>
+            <li>Reverse engineering or attempting to extract the source code of the Service.</li>
+        </ul>
 
-{% block content %}
-<header class="text-center py-6 bg-blue-900 text-white">
-  <h1 class="text-3xl font-bold">LearnFlow AI Policies</h1>
-  <p class="mt-2 text-lg">Your trust matters. Here's how we protect it.</p>
-</header>
+        <h2>3. Content and Intellectual Property</h2>
+        <p>All original software, visual content, and documentation on the LearnFlow AI platform are the exclusive property of LearnFlow AI or its licensors. Content generated through the Service falls under two categories:</p>
+        <ul>
+            <li>**Video Transcripts:** The raw transcript text fetched from YouTube videos is public domain content provided by YouTube. We do not claim ownership of this raw data.</li>
+            <li>**AI-Generated Content (Summaries/Quizzes):** The output from the Chrome AI APIs (Gemini Nano) is intended solely as an educational aid. While you are free to use these study notes for personal purposes, they should **not** be considered professional advice, nor is LearnFlow AI responsible for their accuracy or completeness.</li>
+        </ul>
 
-<main class="max-w-4xl mx-auto px-4 py-8">
+        <h2>4. Disclaimer of Warranties</h2>
+        <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. LearnFlow AI expressly disclaims all warranties of any kind, whether express or implied, including, but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. We do not guarantee that the Service will be uninterrupted, timely, secure, or error-free.</p>
 
-  <section class="mb-12">
-    <h2 class="text-2xl font-semibold text-blue-800">📜 Terms & Conditions</h2>
-    <p class="mt-4"><strong>Effective Date:</strong> 1 January 2025</p>
-    <p><strong>Last Updated:</strong> 1 March 2025</p>
+        <h2>5. Limitation of Liability</h2>
+        <p>In no event shall LearnFlow AI, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any unauthorized access to or use of our servers and/or any personal information stored therein.</p>
 
-    <ul class="list-disc pl-6 mt-4 space-y-2">
-      <li><strong>Acceptance of Terms:</strong> By using LearnFlow AI, you agree to these terms.</li>
-      <li><strong>Use of Platform:</strong> LearnFlow is for educational use only. Misuse is prohibited.</li>
-      <li><strong>User Accounts:</strong> You’re responsible for your login credentials and activity.</li>
-      <li><strong>Intellectual Property:</strong> All content is owned by LearnFlow AI or its licensors.</li>
-      <li><strong>AI-Generated Content:</strong> AI outputs are educational aids, not guaranteed advice.</li>
-      <li><strong>Termination:</strong> We may suspend access for violations without notice.</li>
-      <li><strong>Governing Law:</strong> These terms follow the laws of [Insert Jurisdiction].</li>
-    </ul>
-  </section>
+        <h2>6. Termination</h2>
+        <p>We may terminate or suspend your access immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+        
+        <!-- Acceptance Control -->
+        <div style="margin-top: 30px; padding: 15px; border: 1px solid #1a73e8; background-color: #eaf3ff; border-radius: 8px;">
+            <label for="accept_terms" style="display: flex; align-items: center; font-weight: bold; color: #1a73e8;">
+                <input type="radio" id="accept_terms" name="terms_agreement" value="accepted" style="margin-right: 10px; transform: scale(1.2);"> 
+                I have read and fully agree to the Terms and Conditions.
+            </label>
+        </div>
+        <!-- End Acceptance Control -->
 
-  <section class="mb-12">
-    <h2 class="text-2xl font-semibold text-blue-800">🔐 Privacy Policy</h2>
-    <p class="mt-4"><strong>Effective Date:</strong> 1 January 2025</p>
-    <p><strong>Last Updated:</strong> 1 March 2025</p>
-
-    <ul class="list-disc pl-6 mt-4 space-y-2">
-      <li><strong>Information We Collect:</strong> Name, email, usage data, and feedback.</li>
-      <li><strong>Use of Information:</strong> To personalize learning and improve platform features.</li>
-      <li><strong>Data Sharing:</strong> Only anonymized data may be shared for research.</li>
-      <li><strong>Cookies & Tracking:</strong> Used to remember preferences and analyze usage.</li>
-      <li><strong>Data Security:</strong> We use industry-standard protections, but no system is 100% secure.</li>
-      <li><strong>Your Rights:</strong> You may request access, correction, or deletion of your data.</li>
-      <li><strong>Policy Updates:</strong> Continued use implies acceptance of changes.</li>
-    </ul>
-  </section>
-
-  <section class="mt-12 text-center">
-    <a href="{% url 'legalpages:overview' %}" class="text-blue-600 underline">Return to Overview</a>
-  </section>
-</main>
-{% endblock %}
+        <p style="margin-top: 20px;">For details on data handling, please see our <a href="{% url 'legalpages:privacy' %}">Privacy Policy</a>.</p>
+        <p><a href="{% url 'legalpages:learnflow_main' %}">← Back to App</a></p>
+    </div>
+</body>
+</html>
