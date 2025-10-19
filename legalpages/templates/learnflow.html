@@ -4,7 +4,6 @@
 {% block title %}Video Analysis - LearnFlow AI{% endblock %}
 
 {% block extra_head %}
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Custom Tailwind configuration for better font integration
@@ -32,199 +31,135 @@
         }
     </script>
 
-    <!-- JS Libraries for PDF and Markdown -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
-
-    <style>
-        /* Custom styles for active tab button - added here for single file component principle */
-        .tab-button {
-            padding: 10px 16px;
-            font-weight: 500;
-            border-bottom-width: 2px;
-            transition: all 0.2s ease-in-out;
-            white-space: nowrap; /* Prevent tabs from wrapping */
-        }
-        .tab-active {
-            border-color: #1a73e8; /* primary-blue */
-            color: #1a73e8; /* primary-blue */
-            background-color: #ffffff; /* white */
-        }
-        .dark .tab-active {
-            border-color: #4285f4; /* A light primary blue */
-            color: #ffffff; /* white */
-            background-color: transparent;
-        }
-
-        /* Styling for the content sections */
-        .content-section p {
-            margin-bottom: 1em;
-        }
-        .content-section ul, .content-section ol {
-            margin-left: 20px;
-            margin-bottom: 1em;
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
 {% endblock %}
 
 {% block content %}
-    <div class="max-w-4xl mx-auto font-sans p-4 md:p-8 min-h-screen rounded-lg shadow-xl
-                bg-gradient-to-br from-white to-background-light dark:from-gray-800 dark:to-black-end">
+<div id="video-analysis-app" class="p-4 md:p-8">
 
-        <!-- Header and Title -->
-        <h1 id="mainTitle" class="text-3xl font-extrabold text-primary-blue dark:text-white mb-6">
-            Video Analysis & Study Kit
-        </h1>
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-extrabold text-primary-blue dark:text-white" id="mainTitle">LearnFlow AI</h1>
+        <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-150 ease-in-out" title="Toggle dark mode">
+            <svg id="sunIcon" class="w-6 h-6 text-yellow-500 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+    </header>
 
-        <!-- Input Section -->
-        <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg mb-8 border border-gray-200 dark:border-gray-700">
-            <h2 id="inputTitle" class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Enter YouTube Video Link</h2>
-            <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
-                <input
-                    type="url"
-                    id="youtubeLink"
-                    placeholder="E.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-                <button
-                    id="analyzeButton"
-                    onclick="startAnalysis()"
-                    class="bg-primary-blue hover:bg-hover-blue text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                >
-                    <span id="analyzeButtonText">Analyze Video</span>
-                </button>
-            </div>
-            <div id="errorMessage" class="text-error-red mt-3 hidden text-sm font-medium"></div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="hidden text-center p-6 bg-yellow-50 dark:bg-gray-800 rounded-xl shadow-md border border-yellow-200 dark:border-gray-700 mb-8">
-            <svg class="animate-spin h-5 w-5 text-primary-blue mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span id="loadingText" class="text-gray-700 dark:text-gray-300 font-semibold">Generating Summary & Quiz...</span>
-            <div id="currentTask" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></div>
-        </div>
-
-        <!-- Result Tabs Section -->
-        <div id="resultContainer" class="hidden bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-
-            <!-- Tab Buttons -->
-            <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-                <button id="tab_summary" data-tab="summary" class="tab-button border-transparent text-gray-500 dark:text-gray-400 dark:hover:text-white hover:text-primary-blue">Summary</button>
-                <button id="tab_quiz" data-tab="quiz" class="tab-button border-transparent text-gray-500 dark:text-gray-400 dark:hover:text-white hover:text-primary-blue">Quiz</button>
-                <button id="tab_transcript" data-tab="transcript" class="tab-button border-transparent text-gray-500 dark:text-gray-400 dark:hover:text-white hover:text-primary-blue">Transcript</button>
-
-                <!-- Action Buttons (Score/Export) -->
-                <div class="ml-auto flex space-x-2 p-2">
-                    <button
-                        id="scoreButton"
-                        onclick="scoreQuiz()"
-                        class="hidden bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                    >
-                        <span id="scoreButtonText">Score Quiz</span>
-                    </button>
-                    <button
-                        id="exportButton"
-                        onclick="exportPDF()"
-                        class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50"
-                        disabled
-                    >
-                        <span id="exportButtonText">Export PDF</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tab Content -->
-            <div class="p-6">
-                <!-- Summary Section -->
-                <div id="summaryContent" data-tab-content="summary" class="content-section prose dark:prose-invert max-w-none">
-                    <p id="summaryPlaceholder" class="text-gray-500 dark:text-gray-400 italic">Enter a YouTube link and click 'Analyze Video' to generate a summary.</p>
-                </div>
-
-                <!-- Quiz Section -->
-                <div id="quizContent" data-tab-content="quiz" class="content-section">
-                    <div id="quizForm">
-                        <p id="quizPlaceholder" class="text-gray-500 dark:text-gray-400 italic">A quiz will be generated here after the video analysis.</p>
-                    </div>
-                    <div id="quizResults" class="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 hidden">
-                        <h3 id="quizResultsTitle" class="text-lg font-bold text-green-800 dark:text-green-200 mb-2">Quiz Results</h3>
-                        <p id="quizScoreText" class="text-green-700 dark:text-green-300"></p>
-                    </div>
-                </div>
-
-                <!-- Transcript Section -->
-                <div id="transcriptContent" data-tab-content="transcript" class="content-section max-h-96 overflow-y-auto">
-                    <p id="transcriptPlaceholder" class="text-gray-500 dark:text-gray-400 italic">The full video transcript will appear here.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer / Feedback -->
-        <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p id="feedbackPromptText">Found an issue or have a suggestion?</p>
-            <a id="feedbackLink" href="mailto:support@learnflow.ai" class="text-primary-blue hover:text-hover-blue dark:text-blue-400 dark:hover:text-blue-300 font-medium">Contact Us</a>
-        </div>
+    <div class="flex flex-col md:flex-row gap-4 mb-6">
+        <input type="text" id="videoLink" placeholder="Paste YouTube Video URL here (e.g., https://www.youtube.com/watch?v=...)"
+               class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+               aria-label="YouTube Video Link Input">
+        <button id="analyzeButton" onclick="initiateAnalysis()"
+                class="bg-primary-blue text-white font-semibold py-3 px-6 rounded-lg shadow hover:bg-hover-blue transition duration-150 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed">
+            Analyze Video
+        </button>
     </div>
-{% endblock %}
 
-{% block extra_js %}
+    <div id="statusMessage" class="hidden p-3 mb-4 rounded-lg text-sm font-medium" role="alert"></div>
+
+    <div id="loadingIndicator" class="hidden text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-blue mx-auto mb-3"></div>
+        <p class="text-gray-600 dark:text-gray-300 font-semibold" id="loadingText">Processing video and generating content... Please wait.</p>
+    </div>
+
+    <div id="resultsContent" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
+        
+        <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button data-tab="summary" class="tab-button inline-flex items-center px-1 py-3 border-b-2 text-sm font-medium focus:outline-none" aria-controls="summary-panel" id="summaryTab">Summary</button>
+                <button data-tab="quiz" class="tab-button inline-flex items-center px-1 py-3 border-b-2 text-sm font-medium focus:outline-none" aria-controls="quiz-panel" id="quizTab">Quiz</button>
+                <button data-tab="transcript" class="tab-button inline-flex items-center px-1 py-3 border-b-2 text-sm font-medium focus:outline-none" aria-controls="transcript-panel" id="transcriptTab">Transcript</button>
+            </nav>
+        </div>
+
+        <div id="summary-panel" class="tab-content" role="tabpanel">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white" id="summaryTitle">AI Summary</h2>
+            <div id="summaryContent" class="prose dark:prose-invert max-w-none min-h-[150px] p-4 bg-gray-50 dark:bg-gray-900 rounded-lg" id="placeholderSummary"></div>
+        </div>
+
+        <div id="quiz-panel" class="tab-content hidden" role="tabpanel">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white" id="quizTitle">Interactive Quiz</h2>
+            <div id="quizPlaceholder" class="text-gray-500 dark:text-gray-400 mb-4"></div>
+            <div id="quizContainer">
+                </div>
+            <div id="quizResults" class="mt-6 p-4 border border-green-200 bg-green-50 dark:bg-green-900 dark:border-green-700 rounded-lg hidden">
+                <h3 class="text-xl font-bold text-green-800 dark:text-green-300 mb-2" id="quizResultsTitle">Quiz Results</h3>
+                <p id="scoreDisplay" class="text-green-700 dark:text-green-400 font-semibold text-lg"></p>
+            </div>
+            <button id="scoreButton" onclick="scoreQuiz()" disabled
+                    class="mt-6 w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow hover:bg-green-700 transition duration-150 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed">
+                <span id="scoreButtonText">Submit Quiz</span>
+            </button>
+        </div>
+
+        <div id="transcript-panel" class="tab-content hidden" role="tabpanel">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white" id="transcriptTitle">Video Transcript</h2>
+            <div id="transcriptContent" class="prose dark:prose-invert max-w-none min-h-[150px] p-4 bg-gray-50 dark:bg-gray-900 rounded-lg overflow-y-scroll max-h-[60vh]" id="transcriptPlaceholder"></div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <button id="exportButton" onclick="exportContent()"
+                    class="bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-gray-700 transition duration-150 ease-in-out">
+                <span id="exportButtonText">Export as PDF</span>
+            </button>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                <span id="feedbackPromptText">Found an issue?</span>
+                <a href="{% url 'legalpages:contact' %}" target="_blank" class="text-primary-blue hover:underline" id="feedbackLink">Send Feedback</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+
 <script>
-    // --- Global State and Constants ---
-    let currentTab = 'summary';
-    let videoId = '';
-    let quizData = [];
-    let isAnalyzing = false;
-
-    // Language configuration (can be extended for full i18n)
     const i18n = {
-        mainTitle: "Video Analysis & Study Kit",
-        inputTitle: "Enter YouTube Video Link",
-        analyzeButtonText: "Analyze Video",
-        loadingText: "Generating Study Kit...",
-        taskTranscript: "Fetching transcript...",
-        taskSummary: "Generating summary...",
-        taskQuiz: "Generating quiz...",
-        errorMessageGeneral: "An error occurred. Please check the YouTube link and try again.",
-        errorMessageCSRF: "Security error: Failed to authenticate request. Please refresh the page.",
-        tabSummary: "Summary",
-        tabQuiz: "Quiz",
-        tabTranscript: "Transcript",
-        scoreButtonText: "Score Quiz",
-        exportButtonText: "Export PDF",
-        placeholderSummary: "Enter a YouTube link and click 'Analyze Video' to generate a summary.",
-        placeholderQuiz: "A quiz will be generated here after the video analysis.",
-        placeholderTranscript: "The full video transcript will appear here.",
-        feedbackPrompt: "Found an issue or have a suggestion?",
-        feedbackLink: "Contact Us",
-        quizResultsTitle: "Quiz Results",
-        quizCorrect: "Correct",
-        quizIncorrect: "Incorrect",
-        quizScore: (score, total) => `You scored ${score} out of ${total}!`,
-        pdfReportTitle: "LearnFlow AI Study Report",
-        pdfQuizSection: "Quiz Results & Analysis",
-        pdfSummarySection: "Video Summary Notes",
-        pdfWatermark: "Generated by LearnFlow AI",
-        darkModeToggle: "Toggle Dark Mode",
+        mainTitle: 'LearnFlow AI',
+        analyzeButton: 'Analyze Video',
+        loadingText: 'Processing video and generating content... Please wait.',
+        summaryTitle: 'AI Summary',
+        quizTitle: 'Interactive Quiz',
+        transcriptTitle: 'Video Transcript',
+        scoreButtonText: 'Submit Quiz',
+        exportButtonText: 'Export as PDF',
+        quizResultsTitle: 'Quiz Results',
+        feedbackPrompt: 'Found an issue?',
+        feedbackLink: 'Send Feedback',
+        darkModeToggle: 'Toggle dark mode',
+        placeholderSummary: 'Paste a YouTube link above and click "Analyze Video" to generate a summary and quiz.',
+        placeholderQuiz: 'Quiz questions will appear here after analysis.',
+        placeholderTranscript: 'The video transcript will appear here.',
+        errorVideoLink: 'Please enter a valid YouTube video URL.',
+        errorNetwork: 'Network error or server connection failed. Check console for details.',
+        errorAnalysisFailed: 'Analysis Failed: ',
     };
+    
+    // DOM Elements
+    const videoLinkInput = document.getElementById('videoLink');
+    const analyzeButton = document.getElementById('analyzeButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsContent = document.getElementById('resultsContent');
+    const statusMessage = document.getElementById('statusMessage');
+    const summaryContentDiv = document.getElementById('summaryContent');
+    const transcriptContentDiv = document.getElementById('transcriptContent');
+    const quizContainerDiv = document.getElementById('quizContainer');
+    const scoreButton = document.getElementById('scoreButton');
+    const quizResultsDiv = document.getElementById('quizResults');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const darkModeToggle = document.getElementById('darkModeToggle');
 
+    let currentQuizData = [];
 
-    // --- CSRF Token Utility (FIX for 403 Forbidden) ---
-    /**
-     * Retrieves the CSRF token from the 'csrftoken' cookie.
-     * @param {string} name - The name of the cookie to retrieve ('csrftoken').
-     * @returns {string | null} The CSRF token value or null if not found.
-     */
+    // --- Utility Functions ---
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.startsWith(name + '=')) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
@@ -232,586 +167,223 @@
         }
         return cookieValue;
     }
-    const csrftoken = getCookie('csrftoken');
 
-
-    // --- Helper Functions ---
-
-    /**
-     * Toggles between the Summary, Quiz, and Transcript tabs.
-     * @param {string} tabName - The name of the tab to switch to ('summary', 'quiz', 'transcript').
-     */
-    function switchTab(tabName) {
-        currentTab = tabName;
-        // Update button styles
-        document.querySelectorAll('.tab-button').forEach(button => {
-            if (button.dataset.tab === tabName) {
-                button.classList.add('tab-active', 'border-primary-blue', 'dark:border-blue-400');
-                button.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400', 'dark:hover:text-white', 'hover:text-primary-blue');
-            } else {
-                button.classList.remove('tab-active', 'border-primary-blue', 'dark:border-blue-400');
-                button.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400', 'dark:hover:text-white', 'hover:text-primary-blue');
-            }
-        });
-
-        // Update content visibility
-        document.querySelectorAll('[data-tab-content]').forEach(content => {
-            if (content.dataset.tabContent === tabName) {
-                content.classList.remove('hidden');
-            } else {
-                content.classList.add('hidden');
-            }
-        });
-
-        // Toggle Score button visibility
-        const scoreButton = document.getElementById('scoreButton');
-        if (tabName === 'quiz' && quizData.length > 0) {
-            scoreButton.classList.remove('hidden');
-        } else {
-            scoreButton.classList.add('hidden');
-        }
+    function showStatusMessage(message, isError = true) {
+        statusMessage.textContent = message;
+        statusMessage.className = `p-3 mb-4 rounded-lg text-sm font-medium ${isError ? 'bg-error-red text-white' : 'bg-green-100 text-green-800'}`;
+        statusMessage.style.display = 'block';
     }
 
-    /**
-     * Shows the loading state with an optional task description.
-     * @param {string} task - The current task description.
-     */
-    function showLoading(task = i18n.loadingText) {
-        isAnalyzing = true;
-        document.getElementById('loadingIndicator').classList.remove('hidden');
-        document.getElementById('analyzeButton').disabled = true;
-        document.getElementById('analyzeButtonText').textContent = 'Analyzing...';
-        document.getElementById('resultContainer').classList.add('hidden');
-        document.getElementById('errorMessage').classList.add('hidden');
-        document.getElementById('loadingText').textContent = i18n.loadingText;
-        document.getElementById('currentTask').textContent = task;
+    function hideStatusMessage() {
+        statusMessage.style.display = 'none';
     }
 
-    /**
-     * Hides the loading state and shows the results container.
-     */
-    function hideLoading() {
-        isAnalyzing = false;
-        document.getElementById('loadingIndicator').classList.add('hidden');
-        document.getElementById('analyzeButton').disabled = false;
-        document.getElementById('analyzeButtonText').textContent = i18n.analyzeButtonText;
-        document.getElementById('resultContainer').classList.remove('hidden');
-        document.getElementById('exportButton').disabled = false;
-        // Only show score button if on quiz tab AND quiz data exists
-        if (currentTab === 'quiz' && quizData.length > 0) {
-            document.getElementById('scoreButton').classList.remove('hidden');
-        }
-    }
+    // --- Main Application Logic ---
 
-    /**
-     * Displays a temporary error message.
-     * @param {string} message - The error message to display.
-     */
-    function displayError(message) {
-        document.getElementById('errorMessage').textContent = message;
-        document.getElementById('errorMessage').classList.remove('hidden');
-        document.getElementById('loadingIndicator').classList.add('hidden');
-        document.getElementById('analyzeButton').disabled = false;
-        document.getElementById('analyzeButtonText').textContent = i18n.analyzeButtonText;
-        isAnalyzing = false;
-    }
+    function initiateAnalysis() {
+        const link = videoLinkInput.value.trim();
+        hideStatusMessage();
+        quizResultsDiv.classList.add('hidden'); // Reset results display
 
-    /**
-     * Clears all results and resets the UI state.
-     */
-    function resetUI() {
-        // Clear all content
-        document.getElementById('summaryContent').innerHTML = `<p id="summaryPlaceholder" class="text-gray-500 dark:text-gray-400 italic">${i18n.placeholderSummary}</p>`;
-        document.getElementById('quizForm').innerHTML = `<p id="quizPlaceholder" class="text-gray-500 dark:text-gray-400 italic">${i18n.placeholderQuiz}</p>`;
-        document.getElementById('transcriptContent').innerHTML = `<p id="transcriptPlaceholder" class="text-gray-500 dark:text-gray-400 italic">${i18n.placeholderTranscript}</p>`;
-        document.getElementById('quizResults').classList.add('hidden');
-
-        // Reset state variables
-        videoId = '';
-        quizData = [];
-
-        // Reset buttons/indicators
-        document.getElementById('exportButton').disabled = true;
-        document.getElementById('scoreButton').classList.add('hidden');
-        document.getElementById('resultContainer').classList.add('hidden');
-        document.getElementById('loadingIndicator').classList.add('hidden');
-        document.getElementById('errorMessage').classList.add('hidden');
-        document.getElementById('analyzeButton').disabled = false;
-        document.getElementById('analyzeButtonText').textContent = i18n.analyzeButtonText;
-
-        // Switch to default tab
-        switchTab('summary');
-    }
-
-    /**
-     * Initiates the video analysis process.
-     */
-    async function startAnalysis() {
-        if (isAnalyzing) return;
-
-        const link = document.getElementById('youtubeLink').value.trim();
-        if (!link) {
-            displayError("Please enter a YouTube video link.");
+        if (!link || (!link.includes('youtube.com/watch?v=') && !link.includes('youtu.be/'))) {
+            showStatusMessage(i18n.errorVideoLink);
             return;
         }
 
-        resetUI();
-        showLoading(i18n.taskTranscript);
+        fetchTranscript(link); // Use the original function name
+    }
+
+    // RENAMED and CRITICAL FIX for the API URL mismatch
+    async function fetchTranscript(link) {
+        // CRITICAL FIX: The API URL must match the path defined in urls.py
+        const apiUrl = '/api/analyze_video/'; 
+
+        analyzeButton.disabled = true;
+        loadingIndicator.style.display = 'block';
+        resultsContent.classList.add('hidden');
+        currentQuizData = [];
+        summaryContentDiv.innerHTML = `<p class="text-gray-500 dark:text-gray-400">Loading...</p>`;
+        transcriptContentDiv.innerHTML = `<p class="text-gray-500 dark:text-gray-400">Loading...</p>`;
+        quizContainerDiv.innerHTML = '';
+        scoreDisplay.textContent = '';
+        scoreButton.disabled = true;
 
         try {
-            // Step 1: Fetch Transcript (API call)
-            const transcriptResponse = await fetchTranscript(link);
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ video_link: link })
+            });
 
-            if (transcriptResponse.status === 'success') {
-                videoId = transcriptResponse.video_id;
-                const fullTranscript = transcriptResponse.transcript;
+            const data = await response.json();
 
-                // Display Transcript immediately
-                document.getElementById('transcriptContent').textContent = fullTranscript;
-
-                // Step 2: Generate Summary and Quiz (LLM call)
-                document.getElementById('currentTask').textContent = i18n.taskSummary;
-                const { summary, quiz } = await generateSummaryAndQuiz(fullTranscript);
-
-                // Display Summary (using marked and DOMPurify for safety)
-                const safeSummaryHtml = DOMPurify.sanitize(marked.parse(summary));
-                document.getElementById('summaryContent').innerHTML = safeSummaryHtml;
-
-                // Step 3: Render Quiz
-                quizData = quiz;
-                renderQuiz(quizData);
-
-                // Final state
-                hideLoading();
-                // Ensure the score button is enabled when the quiz is ready
-                document.getElementById('scoreButton').disabled = false;
-                if (currentTab === 'quiz') {
-                     document.getElementById('scoreButton').classList.remove('hidden');
-                }
-                switchTab('summary'); // Return to summary view by default
-
+            if (data.status === 'success') {
+                // Use DOMPurify and marked for safe markdown rendering
+                summaryContentDiv.innerHTML = DOMPurify.sanitize(marked.parse(data.summary || 'Summary could not be generated.'));
+                transcriptContentDiv.textContent = data.transcript_text || data.summary; // Fallback to summary if no raw transcript is returned
+                currentQuizData = data.quiz;
+                renderQuiz(data.quiz);
+                resultsContent.classList.remove('hidden');
+                scoreButton.disabled = false;
+                switchTab('summary'); // Switch to summary tab after load
             } else {
-                // Transcript API error (e.g., no transcript available)
-                displayError(transcriptResponse.message || i18n.errorMessageGeneral);
-                document.getElementById('transcriptContent').textContent = `Error: ${transcriptResponse.message}`;
+                const message = data.message || "An unknown error occurred during analysis.";
+                showStatusMessage(i18n.errorAnalysisFailed + message);
+                resultsContent.classList.add('hidden');
             }
 
         } catch (error) {
-            console.error('Analysis failed:', error);
-            // Catch specific error codes, though fetch status handling above is better
-            const errorMessage = error.message.includes('403') ? i18n.errorMessageCSRF : i18n.errorMessageGeneral;
-            displayError(errorMessage);
+            console.error('Error fetching transcript and analysis:', error);
+            showStatusMessage(i18n.errorNetwork);
+            resultsContent.classList.add('hidden');
+        } finally {
+            loadingIndicator.style.display = 'none';
+            analyzeButton.disabled = false;
         }
     }
+    
+    function renderQuiz(quizData) {
+        quizContainerDiv.innerHTML = ''; // Clear previous quiz
+        quizData.forEach((q, qIndex) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'quiz-question p-4 mb-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700';
+            questionDiv.innerHTML = `<p class="font-bold mb-3 text-gray-800 dark:text-white">${qIndex + 1}. ${q.question}</p><div class="quiz-options" id="options-${qIndex}"></div><div class="feedback mt-2 text-sm font-medium p-2 rounded-md hidden" id="feedback-${qIndex}"></div>`;
 
-
-    /**
-     * Calls the Django API to fetch the YouTube video transcript.
-     * FIX: Includes CSRF token in headers.
-     * @param {string} link - The YouTube video URL.
-     * @returns {Promise<object>} The JSON response from the Django API.
-     */
-    async function fetchTranscript(link) {
-        const apiUrl = '/legal/api/fetch_transcript/';
-        const formData = new FormData();
-        formData.append('youtube_link', link);
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                // MANDATORY: Add the CSRF token to the request headers for POST
-                'X-CSRFToken': csrftoken,
-            },
-        });
-
-        // The API returns JSON data directly
-        const data = await response.json();
-
-        if (!response.ok) {
-            // Throw an error if the HTTP status is not 2xx
-            const errorMessage = data.message || `HTTP Error ${response.status}: ${response.statusText}`;
-            throw new Error(errorMessage);
-        }
-
-        return data;
-    }
-
-
-    /**
-     * Calls the Gemini API to generate a summary and quiz from the transcript.
-     * @param {string} transcript - The full video transcript.
-     * @returns {Promise<{summary: string, quiz: Array<object>}>} The generated content.
-     */
-    async function generateSummaryAndQuiz(transcript) {
-        document.getElementById('currentTask').textContent = i18n.taskSummary;
-
-        const systemPrompt = `You are a helpful educational assistant. Your task is to analyze a video transcript and provide two outputs:
-1. A comprehensive, markdown-formatted summary of the key topics and lessons from the video. The summary must be detailed and professional.
-2. A multiple-choice quiz of exactly 5 questions based on the summary and transcript content.
-
-The output MUST be a single JSON object conforming to the provided schema. Do not include any text or markdown outside of the JSON block.`;
-
-        const userQuery = `Video Transcript to analyze: "${transcript.substring(0, 15000)}..." (Truncated for length. Analyze the provided text and generate the summary and 5-question quiz.)`;
-
-        const apiKey = "" // API key is handled by the canvas environment.
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-        // Define the desired JSON structure for the output
-        const responseSchema = {
-            type: "OBJECT",
-            properties: {
-                "summary": {
-                    "type": "STRING",
-                    "description": "The detailed, markdown-formatted summary of the video content."
-                },
-                "quiz": {
-                    "type": "ARRAY",
-                    "description": "An array of 5 multiple-choice quiz questions.",
-                    "items": {
-                        "type": "OBJECT",
-                        "properties": {
-                            "question": { "type": "STRING" },
-                            "options": {
-                                "type": "ARRAY",
-                                "items": { "type": "STRING" }
-                            },
-                            "correctAnswerIndex": {
-                                "type": "INTEGER",
-                                "description": "The zero-based index of the correct answer in the 'options' array (0 for the first option, 1 for the second, etc.)."
-                            }
-                        },
-                        "required": ["question", "options", "correctAnswerIndex"]
-                    }
-                }
-            },
-            "required": ["summary", "quiz"]
-        };
-
-
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: responseSchema,
-                // Request a higher temperature for creative/analytical tasks
-                temperature: 0.7
-            },
-        };
-
-        const response = await fetchWithRetry(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (jsonText) {
-            try {
-                const parsedJson = JSON.parse(jsonText);
-                if (parsedJson.summary && parsedJson.quiz && parsedJson.quiz.length === 5) {
-                    return parsedJson;
-                } else {
-                    throw new Error("Generated JSON is missing summary or does not contain 5 quiz questions.");
-                }
-            } catch (e) {
-                console.error("Failed to parse or validate LLM response JSON:", e);
-                // Attempt to return a default error structure if parsing failed
-                return {
-                    summary: `## Content Generation Error\n\nI encountered an issue parsing the generated summary and quiz. The LLM response was: \n\n\`\`\`json\n${jsonText.substring(0, 500)}...\n\`\`\``,
-                    quiz: []
-                };
-            }
-        }
-        throw new Error("The AI model did not return a valid response.");
-    }
-
-    /**
-     * Generic fetch wrapper with exponential backoff for API calls.
-     */
-    async function fetchWithRetry(url, options, maxRetries = 3) {
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                const response = await fetch(url, options);
-                if (response.status === 429 && attempt < maxRetries - 1) {
-                    const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                    console.warn(`Rate limit hit. Retrying in ${Math.round(delay / 1000)}s...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue; // Go to the next attempt
-                }
-                return response;
-            } catch (error) {
-                if (attempt < maxRetries - 1) {
-                    const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                    console.error(`Fetch attempt ${attempt + 1} failed. Retrying in ${Math.round(delay / 1000)}s. Error: ${error.message}`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                } else {
-                    throw error; // Re-throw the error on the last attempt
-                }
-            }
-        }
-    }
-
-
-    // --- Quiz Logic ---
-
-    /**
-     * Renders the quiz questions and options dynamically.
-     * @param {Array<object>} quiz - The quiz data array.
-     */
-    function renderQuiz(quiz) {
-        document.getElementById('currentTask').textContent = i18n.taskQuiz;
-        const quizForm = document.getElementById('quizForm');
-        quizForm.innerHTML = ''; // Clear placeholder
-
-        if (quiz.length === 0) {
-            quizForm.innerHTML = `<p class="text-error-red font-semibold">Could not generate the quiz. The video may be too short or the content was non-educational.</p>`;
-            document.getElementById('scoreButton').classList.add('hidden');
-            return;
-        }
-
-        quiz.forEach((q, qIndex) => {
-            const questionElement = document.createElement('div');
-            questionElement.className = 'mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700';
-
-            // Question text
-            const qText = document.createElement('p');
-            qText.className = 'font-semibold text-gray-800 dark:text-gray-200 mb-3';
-            qText.textContent = `${qIndex + 1}. ${q.question}`;
-            questionElement.appendChild(qText);
-
-            // Options container
-            const optionsContainer = document.createElement('div');
-            optionsContainer.className = 'space-y-2';
-
+            const optionsDiv = questionDiv.querySelector(`#options-${qIndex}`);
             q.options.forEach((option, oIndex) => {
-                const optionWrapper = document.createElement('label');
-                optionWrapper.className = 'flex items-center cursor-pointer p-2 rounded-lg transition duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-700';
-
-                const radio = document.createElement('input');
-                radio.type = 'radio';
-                radio.name = `question_${qIndex}`;
-                radio.value = oIndex;
-                radio.id = `q${qIndex}o${oIndex}`;
-                radio.className = 'form-radio h-5 w-5 text-primary-blue dark:text-blue-400 border-gray-300 dark:border-gray-600 focus:ring-primary-blue dark:focus:ring-blue-400';
-
-                const optionText = document.createElement('span');
-                optionText.className = 'ml-3 text-gray-700 dark:text-gray-300';
-                optionText.textContent = option;
-
-                optionWrapper.appendChild(radio);
-                optionWrapper.appendChild(optionText);
-                optionsContainer.appendChild(optionWrapper);
+                const label = document.createElement('label');
+                label.className = 'flex items-center p-3 mb-2 cursor-pointer rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-150 ease-in-out';
+                label.innerHTML = `<input type="radio" name="question-${qIndex}" value="${oIndex}" class="w-4 h-4 text-primary-blue focus:ring-primary-blue dark:text-white dark:focus:ring-white mr-3"> ${option}`;
+                optionsDiv.appendChild(label);
             });
 
-            questionElement.appendChild(optionsContainer);
-            quizForm.appendChild(questionElement);
+            quizContainerDiv.appendChild(questionDiv);
         });
-
-        // Enable the score button after rendering
-        document.getElementById('scoreButton').disabled = false;
-        if (currentTab === 'quiz') {
-            document.getElementById('scoreButton').classList.remove('hidden');
-        }
     }
 
-    /**
-     * Scores the quiz, highlights results, and updates the results section.
-     */
     function scoreQuiz() {
         let correctCount = 0;
-        const totalCount = quizData.length;
-        const quizForm = document.getElementById('quizForm');
+        const totalQuestions = currentQuizData.length;
 
-        // Clear previous highlighting
-        document.querySelectorAll('.quiz-highlight').forEach(el => {
-            el.classList.remove('bg-green-200', 'bg-red-200', 'dark:bg-green-700', 'dark:bg-red-700', 'quiz-highlight');
-            el.querySelectorAll('.result-indicator').forEach(ind => ind.remove());
-        });
-
-        quizData.forEach((q, qIndex) => {
-            // Get the selected radio button for this question
-            const selectedOption = quizForm.querySelector(`input[name="question_${qIndex}"]:checked`);
-            const questionContainer = quizForm.querySelector(`div:nth-child(${qIndex + 1})`);
-
-            if (!questionContainer) return; // Should not happen
-
-            // Find the correct option label for highlighting
-            const correctOptionLabel = questionContainer.querySelector(`input[id="q${qIndex}o${q.correctAnswerIndex}"]`).closest('label');
-
+        currentQuizData.forEach((q, qIndex) => {
+            const selectedOption = document.querySelector(`input[name="question-${qIndex}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${qIndex}`);
+            const optionsDiv = document.getElementById(`options-${qIndex}`);
+            
+            // Reset feedback and option styling
+            feedbackDiv.classList.add('hidden');
+            optionsDiv.querySelectorAll('label').forEach(label => {
+                label.style.backgroundColor = '';
+                label.classList.remove('bg-red-100', 'dark:bg-red-900', 'bg-green-100', 'dark:bg-green-900', 'border-red-500', 'border-green-500');
+            });
+            
+            // CRITICAL FIX: Use the correctAnswerIndex from the server
+            const correctIndex = q.correctAnswerIndex;
+            
+            // Get all option labels for this question
+            const allLabels = optionsDiv.querySelectorAll('label');
+            
             if (selectedOption) {
-                const selectedIndex = parseInt(selectedOption.value, 10);
-                const isCorrect = selectedIndex === q.correctAnswerIndex;
-
-                let indicator;
-                let highlightClass;
-
+                const selectedIndex = parseInt(selectedOption.value);
+                const isCorrect = selectedIndex === correctIndex;
+                
                 if (isCorrect) {
                     correctCount++;
-                    highlightClass = 'bg-green-200 dark:bg-green-700';
-                    indicator = `<span class="result-indicator text-green-700 dark:text-green-300 ml-3 font-bold">${i18n.quizCorrect}</span>`;
+                    feedbackDiv.textContent = 'Correct! 🎉';
+                    feedbackDiv.className = 'feedback mt-2 text-sm font-medium p-2 rounded-md bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                    allLabels[selectedIndex].classList.add('bg-green-100', 'dark:bg-green-900');
                 } else {
-                    highlightClass = 'bg-red-200 dark:bg-red-700';
-                    indicator = `<span class="result-indicator text-red-700 dark:text-red-300 ml-3 font-bold">${i18n.quizIncorrect}</span>`;
+                    feedbackDiv.textContent = 'Incorrect. The correct answer is highlighted in green.';
+                    feedbackDiv.className = 'feedback mt-2 text-sm font-medium p-2 rounded-md bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                    // Highlight the incorrect selection in red
+                    selectedOption.closest('label').classList.add('bg-red-100', 'dark:bg-red-900');
+                    // Highlight the correct answer in green
+                    if (correctIndex >= 0 && correctIndex < allLabels.length) {
+                        allLabels[correctIndex].classList.add('bg-green-100', 'dark:bg-green-900');
+                    }
                 }
-
-                // Highlight the selected option
-                const selectedLabel = selectedOption.closest('label');
-                selectedLabel.classList.add(highlightClass, 'quiz-highlight');
-                selectedLabel.innerHTML += indicator;
-            }
-
-            // Always highlight the correct answer
-            if (correctOptionLabel && (selectedOption === null || parseInt(selectedOption.value, 10) !== q.correctAnswerIndex)) {
-                // If not selected or incorrectly selected, highlight the correct one as a hint
-                correctOptionLabel.classList.add('bg-green-100', 'dark:bg-green-800', 'border-green-400'); // Subtle highlight
-                correctOptionLabel.style.border = '1px solid';
-            }
-        });
-
-        // Update results box
-        const resultsDiv = document.getElementById('quizResults');
-        document.getElementById('quizScoreText').textContent = i18n.quizScore(correctCount, totalCount);
-        resultsDiv.classList.remove('hidden');
-
-        // Hide score button until next generation
-        document.getElementById('scoreButton').classList.add('hidden');
-    }
-
-    /**
-     * Formats the quiz results for the PDF export.
-     * @returns {string} The formatted quiz results.
-     */
-    function calculateResults() {
-        let correctCount = 0;
-        const totalCount = quizData.length;
-        const quizForm = document.getElementById('quizForm');
-        let resultsString = "";
-
-        if (totalCount === 0) return "No quiz was generated for this video.";
-
-        quizData.forEach((q, qIndex) => {
-            const selectedOption = quizForm.querySelector(`input[name="question_${qIndex}"]:checked`);
-            const selectedIndex = selectedOption ? parseInt(selectedOption.value, 10) : -1;
-            const isCorrect = selectedIndex === q.correctAnswerIndex;
-            const status = isCorrect ? i18n.quizCorrect : i18n.quizIncorrect;
-            const selectedAnswer = selectedIndex !== -1 ? q.options[selectedIndex] : "No Answer";
-            const correctAnswer = q.options[q.correctAnswerIndex];
-
-            resultsString += `Q${qIndex + 1}: ${status}\n`;
-            resultsString += `Your Answer: ${selectedAnswer}\n`;
-            resultsString += `Correct Answer: ${correctAnswer}\n\n`;
-        });
-
-        resultsString = `Final Score: ${correctCount}/${totalCount}\n\n` + resultsString.trim();
-        return resultsString;
-    }
-
-
-    // --- PDF Export Logic (using jsPDF) ---
-    function exportPDF() {
-        if (quizData.length === 0 && !document.getElementById("summaryContent").innerText.trim()) {
-            displayError("Nothing to export. Please analyze a video first.");
-            return;
-        }
-
-        const summaryText = document.getElementById("summaryContent").innerText || i18n.summaryTitle;
-        const quizResults = calculateResults();
-        const watermark = i18n.pdfWatermark;
-        const videoId = document.getElementById('youtubeLink').value; // Use the URL as the title source
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let yOffset = 15;
-
-        // Title
-        doc.setFontSize(18);
-        doc.text(i18n.pdfReportTitle, 10, yOffset);
-        yOffset += 10;
-        doc.line(10, yOffset, 200, yOffset); // Horizontal line
-        yOffset += 10;
-
-        // Quiz Results
-        doc.setFontSize(14);
-        doc.text(i18n.pdfQuizSection, 10, yOffset);
-        yOffset += 8;
-        doc.setFontSize(12);
-        const splitQuizResults = doc.splitTextToSize(quizResults, 180);
-        doc.text(splitQuizResults, 10, yOffset);
-        yOffset += (splitQuizResults.length * 7) + 8; // Adjust yOffset based on lines of text
-
-        // Summary Notes
-        doc.setFontSize(14);
-        doc.text(i18n.pdfSummarySection, 10, yOffset);
-        yOffset += 8;
-        doc.setFontSize(10);
-
-        // Split text to fit within PDF page width and handle page breaks
-        const margin = 10;
-        const pageHeight = doc.internal.pageSize.height;
-        const lineHeight = 5; // A reasonable estimate for font size 10
-
-        const summaryLines = doc.splitTextToSize(summaryText, 180);
-
-        for (const line of summaryLines) {
-            if (yOffset > pageHeight - margin) {
-                doc.addPage();
-                yOffset = margin + 10; // Reset yOffset for new page
-            }
-            doc.text(line, 10, yOffset);
-            yOffset += lineHeight;
-        }
-
-        // Footer/Watermark (placed on the last page)
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(watermark, doc.internal.pageSize.getWidth() - margin, doc.internal.pageSize.getHeight() - margin, { align: 'right' });
-
-
-        // Save the PDF
-        doc.save(`LearnFlow_Report_${videoId || 'analysis'}.pdf`);
-    }
-
-    // --- Localization and Dark Mode ---
-    function initializeDarkMode() {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const htmlElement = document.documentElement;
-
-        // Load preference from localStorage
-        const preferredMode = localStorage.getItem('theme');
-        if (preferredMode === 'dark' || (!preferredMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            htmlElement.classList.add('dark');
-            darkModeToggle.checked = true;
-        } else {
-            htmlElement.classList.remove('dark');
-            darkModeToggle.checked = false;
-        }
-
-        // Event listener for the toggle
-        darkModeToggle.addEventListener('change', () => {
-            if (darkModeToggle.checked) {
-                htmlElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
             } else {
-                htmlElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
+                // Unanswered
+                feedbackDiv.textContent = 'Unanswered. The correct answer is highlighted in green.';
+                feedbackDiv.className = 'feedback mt-2 text-sm font-medium p-2 rounded-md bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                 // Highlight the correct answer in green
+                if (correctIndex >= 0 && correctIndex < allLabels.length) {
+                    allLabels[correctIndex].classList.add('bg-green-100', 'dark:bg-green-900');
+                }
             }
+            feedbackDiv.classList.remove('hidden');
+
+            // Disable all radio buttons after scoring
+            optionsDiv.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = true);
         });
+
+        scoreDisplay.textContent = `${correctCount} out of ${totalQuestions} correct (${Math.round((correctCount / totalQuestions) * 100)}%)`;
+        quizResultsDiv.classList.remove('hidden');
+        scoreButton.disabled = true; // Disable submit after scoring
+    }
+    
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(panel => panel.classList.add('hidden'));
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('border-primary-blue', 'text-primary-blue', 'dark:border-white', 'dark:text-white');
+            button.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'hover:border-gray-300');
+        });
+
+        document.getElementById(`${tabName}-panel`).classList.remove('hidden');
+        const selectedButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+        selectedButton.classList.add('border-primary-blue', 'text-primary-blue', 'dark:border-white', 'dark:text-white');
+        selectedButton.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'hover:border-gray-300');
+    }
+
+    function exportContent() {
+        // The element to be converted to PDF (e.g., the whole results container)
+        const element = document.getElementById('resultsContent');
+        const videoTitle = document.getElementById('mainTitle').textContent;
+        const filename = `${videoTitle.replace(/[^a-z0-9]/gi, '_')}_Analysis.pdf`;
+
+        // Configure PDF generation options
+        const options = {
+            margin: 10,
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, logging: false, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Use html2pdf
+        html2pdf().from(element).set(options).save();
+    }
+
+    function initializeDarkMode() {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }
+
+    function toggleDarkMode() {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
     }
 
     function applyLocalization() {
-        // Apply text content based on i18n object
+        // Apply text content
         document.getElementById('mainTitle').textContent = i18n.mainTitle;
-        document.getElementById('inputTitle').textContent = i18n.inputTitle;
-        document.getElementById('analyzeButtonText').textContent = i18n.analyzeButtonText;
+        document.getElementById('analyzeButton').textContent = i18n.analyzeButton;
         document.getElementById('loadingText').textContent = i18n.loadingText;
-        document.getElementById('tab_summary').textContent = i18n.tabSummary;
-        document.getElementById('tab_quiz').textContent = i18n.tabQuiz;
-        document.getElementById('tab_transcript').textContent = i18n.tabTranscript;
-        document.getElementById('summaryPlaceholder').textContent = i18n.placeholderSummary;
+        document.getElementById('summaryTitle').textContent = i18n.summaryTitle;
+        document.getElementById('quizTitle').textContent = i18n.quizTitle;
+        document.getElementById('transcriptTitle').textContent = i18n.transcriptTitle;
+        document.getElementById('placeholderSummary').textContent = i18n.placeholderSummary;
         document.getElementById('quizPlaceholder').textContent = i18n.placeholderQuiz;
         document.getElementById('transcriptPlaceholder').textContent = i18n.placeholderTranscript;
         document.getElementById('scoreButtonText').textContent = i18n.scoreButtonText;
@@ -835,6 +407,9 @@ The output MUST be a single JSON object conforming to the provided schema. Do no
 
         // Apply text content
         applyLocalization();
+
+        // Add event listeners for dark mode
+        darkModeToggle.addEventListener('click', toggleDarkMode);
 
         // Add event listeners for tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
