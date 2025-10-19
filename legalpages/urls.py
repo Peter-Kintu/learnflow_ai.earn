@@ -17,6 +17,6 @@ urlpatterns = [
     path('overview/', views.learnflow_overview, name='overview'),
     path('', views.learnflow_video_analysis, name='learnflow_main'),
     
-    # API Endpoint
-    path('api/fetch_transcript/', views.fetch_transcript_api, name='api_fetch_transcript'),
+    # API Endpoint (UPDATED NAME)
+    path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
 ]
