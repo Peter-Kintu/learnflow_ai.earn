@@ -37,6 +37,8 @@ def extract_video_id(url):
         
     return None
 
+# ----------------------------------------------------------------------
+
 # --- Main Application Views ---
 
 def learnflow_video_analysis(request):
@@ -80,6 +82,8 @@ def video_analysis_view(request, video_id):
     return render(request, 'learnflow.html', {'pre_selected_video_id': video_id})
 
 
+# ----------------------------------------------------------------------
+
 # --- API View (Real Transcript Logic) ---
 
 @csrf_exempt
@@ -111,24 +115,9 @@ def fetch_transcript_api(request):
                 logger.warning(f"Could not extract video ID from link: {link}")
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
-            # 2. Fetch the transcript. (Using the now-guaranteed list_transcripts method)
-            # This returns a TranscriptList object.
-            transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
-            
-            # Robust logic to find the best English transcript
-            try:
-                # 2a. Try to find a manually created English transcript
-                transcript = transcripts.find_transcript(['en'])
-            except NoTranscriptFound:
-                # 2b. If no manual transcript is found, try to find an auto-generated English transcript
-                try:
-                    transcript = transcripts.find_generated_transcript(['en'])
-                except NoTranscriptFound:
-                    # If still not found, let the outer exception handle the NoTranscriptFound error
-                    raise 
-            
-            # Fetch the actual list of transcript segments
-            transcript_list = transcript.fetch()
+            # 2. Fetch the transcript. (Using get_transcript for maximum compatibility)
+            # FIX: This uses the most stable, universally supported method to avoid the AttributeError.
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
             
             # 3. Concatenate all transcript segments into a single string
             full_transcript = " ".join([item['text'] for item in transcript_list])
