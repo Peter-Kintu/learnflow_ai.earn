@@ -1,10 +1,18 @@
 import os
+import logging # New: Import logging module
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt # New: For AJAX POST endpoints
+
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+# New: Import additional specific exceptions that might cause a 500 if unhandled
+from youtube_transcript_api._errors import CouldNotRetrieveTranscript, VideoUnavailable 
 from urllib.parse import urlparse, parse_qs
-import time # Used for potential simulated delays if needed
-import json # Used for potential JSON-related functionality, though not strictly needed for this specific function
+import time 
+import json 
+
+# Initialize logger
+logger = logging.getLogger(__name__) # New: Initialize logger
 
 # Helper function to extract the video ID from a YouTube URL
 def extract_video_id(url):
@@ -69,6 +77,7 @@ def video_analysis_view(request, video_id):
 
 # --- API View (Real Transcript Logic) ---
 
+@csrf_exempt # New: Allow non-CSRF protected POST for simple API call
 def fetch_transcript_api(request):
     """
     API endpoint to fetch the real transcript from a YouTube link using the 
@@ -79,10 +88,18 @@ def fetch_transcript_api(request):
             # 1. Get the YouTube link from the POST data
             link = request.POST.get('youtube_link')
             if not link:
+                # New: Log missing input
+                logger.error("POST request received without 'youtube_link' parameter.")
                 return JsonResponse({"status": "error", "message": "No YouTube link provided."}, status=400)
             
             video_id = extract_video_id(link)
+            
+            # New: Log received and extracted data
+            logger.info(f"Attempting transcript fetch. Received link: {link}, Extracted ID: {video_id}")
+            
             if not video_id:
+                # New: Log bad extraction
+                logger.warning(f"Could not extract video ID from link: {link}")
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
             # 2. Fetch the transcript.
@@ -99,19 +116,20 @@ def fetch_transcript_api(request):
             }
             return JsonResponse(response_data)
 
-        # Handle specific errors from the transcript API
-        except (TranscriptsDisabled, NoTranscriptFound) as e:
+        # Updated: Handle expanded specific errors from the transcript API (return 404)
+        except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript, VideoUnavailable) as e:
              return JsonResponse({
                 "status": "error", 
-                "message": f"Transcript not available. This video either has transcripts disabled or none are auto-generated. Error: {str(e)}"
-            }, status=404)
+                "message": f"Transcript not available. This video either has transcripts disabled, is unavailable, or the API failed to retrieve it. Error: {str(e)}"}, status=404)
         
         except Exception as e:
-            # Catch all other exceptions (API errors, network issues, etc.)
+            # Catch all other exceptions (Network errors, Rate Limiting, unexpected crashes)
+            # New: Log full traceback for the 500 error
+            logger.exception("A critical, unhandled error occurred during transcript fetch.")
+            
             return JsonResponse({
                 "status": "error", 
-                "message": f"Failed to fetch transcript due to an unexpected error. Error: {str(e)}"
-            }, status=500)
+                "message": "A critical server error occurred. Please try again or check the server logs."}, status=500)
         
     # Handle non-POST requests
     return JsonResponse({"status": "error", "message": "Invalid request method. Must use POST."}, status=400)
