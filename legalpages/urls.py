@@ -17,6 +17,6 @@ urlpatterns = [
     path('overview/', views.learnflow_overview, name='overview'),
     path('', views.learnflow_video_analysis, name='learnflow_main'),
     
-    # API Endpoint (UPDATED NAME)
+    # API Endpoint (UPDATED NAME to match views.py function)
     path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
 ]

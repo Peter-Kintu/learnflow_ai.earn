@@ -508,23 +508,13 @@
             document.getElementById('feedbackPromptText').textContent = i18n.feedbackPrompt; 
             document.getElementById('feedbackLink').textContent = i18n.feedbackLink; 
 
-            // Assuming a dark mode toggle button exists in base.html
-            // if(document.getElementById('darkModeToggle')) {
-            //     document.getElementById('darkModeToggle').setAttribute('aria-label', i18n.darkModeToggle);
-            // }
-
             // Set up initial tab state
             switchTab('summary');
         }
 
         // --- Event Listeners and Initial Setup ---
 
-        // Assuming a function initializeDarkMode() is defined in base.html
-        // function initializeDarkMode() { /* ... */ }
-
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize dark mode first
-            // initializeDarkMode();
 
             // Apply text content
             applyLocalization();

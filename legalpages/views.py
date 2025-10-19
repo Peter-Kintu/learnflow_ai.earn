@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qs
 import time 
 import json 
 
-# Imports for Gemini AI
+# Imports for Gemini AI (Requires 'google-genai' package)
 import google.genai as genai
 from google.genai.errors import APIError
 
