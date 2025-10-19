@@ -11,10 +11,11 @@ urlpatterns = [
     path('about/', views.about_us, name='about'),
     path('contact/', views.contact_us, name='contact'),
     path('sitemap-page/', views.sitemap_page, name='sitemap_page'),
+    path('video/analyze/<int:video_id>/', views.video_analysis_view, name='video_analysis'),
     
     # Main Application Views
     path('overview/', views.learnflow_overview, name='overview'),
-    path('', views.learnflow_page, name='learnflow_main'),
+    path('', views.learnflow_video_analysis, name='learnflow_main'),
     
     # API Endpoint
     path('api/fetch_transcript/', views.fetch_transcript_api, name='api_fetch_transcript'),

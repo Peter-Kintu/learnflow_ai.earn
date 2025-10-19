@@ -25,13 +25,14 @@ def extract_video_id(url):
 
 # --- Main Application Views ---
 
-def learnflow_page(request):
+def learnflow_video_analysis(request):
     """
     Renders the main template containing the client-side HTML and JavaScript.
-    This is the core video analysis page.
+    This is the core video analysis page (learnflow.html).
     """
-    # Assuming 'youtubecourse.html' is the main app page as seen in your conversation history
-    return render(request, 'youtubecourse.html')
+    # Assuming 'learnflow.html' is the main app page.
+    # The original file name was 'youtubecourse.html' in a comment, but the provided HTML is 'learnflow.html'
+    return render(request, 'learnflow.html')
 
 def learnflow_overview(request):
     """
@@ -55,6 +56,17 @@ def contact_us(request):
 
 def sitemap_page(request):
     return render(request, 'sitemap.html')
+    
+def video_analysis_view(request, video_id):
+    """
+    Placeholder view for a dynamic video analysis page.
+    For now, it redirects to the main learnflow_video_analysis page.
+    """
+    # This dynamic URL is likely not intended to be a unique page, 
+    # but rather a way to load the main analysis page with a video pre-selected.
+    # To fix the NoReverseMatch, we must include this function.
+    return render(request, 'learnflow.html', {'pre_selected_video_id': video_id})
+
 
 # --- API View (Real Transcript Logic) ---
 

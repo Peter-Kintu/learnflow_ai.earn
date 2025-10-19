@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -139,7 +140,7 @@
                     Videos
                 </a>
                 
-                <a href="{% url 'legalpages:video_analysis' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'video_analysis/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                <a href="{% url 'legalpages:learnflow_main' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'video_analysis/' in current_path or current_path == '/' %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
                     AI Video Analysis
                 </a>
                 
@@ -197,7 +198,7 @@
                        Overview
                     </a>
                     
-                    <a href="{% url 'legalpages:video_analysis' %}" class="block py-3 px-4 rounded-xl transition-colors flex items-center text-lg font-medium {% if 'video_analysis/' in current_path %}text-white bg-indigo-600 shadow-lg border border-indigo-700/50{% else %}text-white bg-slate-700 hover:bg-indigo-700{% endif %}">
+                    <a href="{% url 'legalpages:learnflow_main' %}" class="block py-3 px-4 rounded-xl transition-colors flex items-center text-lg font-medium {% if 'video_analysis/' in current_path or current_path == '/' %}text-white bg-indigo-600 shadow-lg border border-indigo-700/50{% else %}text-white bg-slate-700 hover:bg-indigo-700{% endif %}">
                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot mr-3"><path d="M12 8V4"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M7 15h10"/><path d="M8 9v2"/><path d="M16 9v2"/></svg>
                        AI Video Analysis
                     </a>
