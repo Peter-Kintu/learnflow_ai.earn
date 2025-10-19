@@ -129,56 +129,62 @@
                 </svg>
             </button>
 
-            <div id="nav-links" class="hidden md:flex items-center md:space-x-4 lg:space-x-6">
+            <div id="nav-links" class="hidden md:flex items-center space-x-6 lg:space-x-8">
                 {% with request.path as current_path %}
                 
-                <a href="{% url 'legalpages:overview' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if current_path == '/overview/' %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    Overview
-                </a>
-                
-                <a href="{% url 'video:video_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'videos/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    Videos
-                </a>
-                
-                <a href="{% url 'legalpages:learnflow_main' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'video_analysis/' in current_path or current_path == '/' %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    AI Video Analysis
-                </a>
-                
-                <a href="{% url 'aiapp:quiz_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'quiz/' in current_path and 'create' not in current_path and 'teacher' not in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    Quizzes
-                </a>
-                
-                <a href="{% url 'book:book_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'book/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    Books
-                </a>
+                <div class="flex items-center space-x-4 lg:space-x-6 pr-6 border-r border-slate-700">
+                    <a href="{% url 'legalpages:overview' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if current_path == '/overview/' %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        Overview
+                    </a>
+                    
+                    <a href="{% url 'video:video_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'videos/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        Videos
+                    </a>
+                    
+                    <a href="{% url 'legalpages:learnflow_main' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'video_analysis/' in current_path or current_path == '/' %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        AI Video Analysis
+                    </a>
+                    
+                    <a href="{% url 'aiapp:quiz_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'quiz/' in current_path and 'create' not in current_path and 'teacher' not in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        Quizzes
+                    </a>
+                    
+                    <a href="{% url 'book:book_list' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'book/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        Books
+                    </a>
+                </div>
                 
                 {% if user.is_authenticated %}
-                <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'teacher_quiz_dashboard/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    My Dashboard
-                </a>
-                
-                <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'create_quiz/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    Create Quiz
-                </a>
-                
-                <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'profile/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
-                    My Profile
-                </a>
-                
-                <form action="{% url 'user:logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-lg font-semibold transform hover:scale-[1.05]">
-                        Logout
-                    </button>
-                </form>
+                <div class="flex items-center space-x-4 lg:space-x-6">
+                    <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'teacher_quiz_dashboard/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        My Dashboard
+                    </a>
+                    
+                    <a href="{% url 'aiapp:create_quiz' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'create_quiz/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        Create Quiz
+                    </a>
+                    
+                    <a href="{% url 'aiapp:user_profile' user.id %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all {% if 'profile/' in current_path %}text-indigo-400 font-semibold bg-slate-700 shadow-inner{% else %}hover:bg-slate-700/50{% endif %}">
+                        My Profile
+                    </a>
+                    
+                    <form action="{% url 'user:logout' %}" method="post" class="ml-4">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-lg font-semibold transform hover:scale-[1.05]">
+                            Logout
+                        </button>
+                    </form>
+                </div>
                 {% else %}
-                <a href="{% url 'user:login' %}" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-bold transform hover:scale-[1.05]">
-                    Login
-                </a>
+                <div class="flex items-center">
+                    <a href="{% url 'user:login' %}" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-bold transform hover:scale-[1.05]">
+                        Login
+                    </a>
+                </div>
                 {% endif %}
                 {% endwith %}
             </div>
-        </div>
+            </div>
 
         <div id="mobile-menu" class="md:hidden">
             <div id="mobile-menu-content" class="p-6">

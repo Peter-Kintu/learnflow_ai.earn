@@ -144,8 +144,61 @@
             }
         }
 
-        // --- AI API MOCK/REAL Functions (Other functions omitted for brevity but remain the same) ---
-        // (fetchTranscript and summarizeText functions remain the same)
+        /**
+         * FIX: Updated the fetch URL to include the '/legal/' prefix 
+         * because the main project's urls.py routes the 'legalpages' app 
+         * (which contains this API endpoint) under that path.
+         */
+        async function fetchTranscript(link) {
+            const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+            const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
+            
+            // The corrected URL path
+            const apiUrl = '/legal/api/fetch_transcript/'; 
+
+            const formData = new FormData();
+            formData.append('youtube_link', link);
+            
+            try {
+                const response = await fetch(apiUrl, { // Use the corrected URL here
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    // Check if 404 is the issue again, even with the new path
+                    if (response.status === 404) {
+                        throw new Error(`The API endpoint was not found at ${apiUrl}. Please double-check Django URL configurations.`);
+                    }
+                    throw new Error(`Server returned HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    console.log("Transcript successfully received from Django backend.");
+                    return data.transcript;
+                } else {
+                    throw new Error(`Backend API Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error("Error fetching transcript from Django API.", error);
+                // Throw a custom error that is more informative based on the context
+                throw new Error("Failed to retrieve transcript. Ensure the video has captions enabled, and check your server logs.");
+            }
+        }
+
+        async function summarizeText(text) {
+            if (typeof chrome.ai?.summarizer?.summarize === 'function') {
+                const result = await chrome.ai.summarizer.summarize({ text: text });
+                return result.summary;
+            }
+            await new Promise(resolve => setTimeout(resolve, 800)); 
+            return `This video explains how to build a powerful AI application for the Chrome Built-in AI Challenge using only **HTML and JavaScript**. It emphasizes that the **Summarizer API** handles note-taking and the **Prompt API** creates dynamic content like quizzes. The final user report, complete with a quiz score and watermark, is generated client-side using the **jsPDF** library. This approach allows the app to work efficiently offline using Gemini Nano.`;
+        }
 
         /** MOCK/REAL: Simulates/Calls the Chrome Prompt API for structured JSON output. **/
         async function generateQuiz(summary) {
@@ -212,52 +265,7 @@ ${summary}
             
             return mockQuiz;
         }
-        
-        // (fetchTranscript and summarizeText functions defined as above)
-        
-        async function fetchTranscript(link) {
-            const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
-            const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
 
-            const formData = new FormData();
-            formData.append('youtube_link', link);
-            
-            try {
-                const response = await fetch('/api/fetch_transcript/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken 
-                    },
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Server returned HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.status === "success") {
-                    console.log("Transcript successfully received from Django backend.");
-                    return data.transcript;
-                } else {
-                    throw new Error(`Backend API Error: ${data.message}`);
-                }
-            } catch (error) {
-                console.error("Error fetching transcript from Django API.", error);
-                throw new Error("Failed to retrieve transcript. Ensure the video has captions enabled, and check your server logs.");
-            }
-        }
-
-        async function summarizeText(text) {
-            if (typeof chrome.ai?.summarizer?.summarize === 'function') {
-                const result = await chrome.ai.summarizer.summarize({ text: text });
-                return result.summary;
-            }
-            await new Promise(resolve => setTimeout(resolve, 800)); 
-            return `This video explains how to build a powerful AI application for the Chrome Built-in AI Challenge using only **HTML and JavaScript**. It emphasizes that the **Summarizer API** handles note-taking and the **Prompt API** creates dynamic content like quizzes. The final user report, complete with a quiz score and watermark, is generated client-side using the **jsPDF** library. This approach allows the app to work efficiently offline using Gemini Nano.`;
-        }
-        
         // --- Quiz Rendering, Scoring, and PDF Generation ---
 
         function renderQuiz(quiz) {
@@ -279,6 +287,7 @@ ${summary}
                         : `<p class="text-gray-400">${i18n.optionsNotAvailable}</p>`;
                 } else if (q.type === 'sc') {
                     // Render Single-Choice (Text Input)
+                    // The text input is styled to look professional and is the 'well designed space' requested.
                     inputHtml = `
                         <input type="text" name="q${i}" class="w-full px-4 py-3 rounded-lg border-2 border-slate-600 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-inner bg-slate-700 text-white placeholder-gray-400" placeholder="Type your answer here (e.g., 'PDF')">
                     `;
