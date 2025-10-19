@@ -195,7 +195,8 @@
 
     // CRITICAL FIX: The API URL must match the path defined in urls.py
     async function fetchTranscript(link) {
-        const apiUrl = '/api/analyze_video/'; 
+        // FIX APPLIED HERE: Prepend the 'legal/' prefix to match the Django routing
+        const apiUrl = '/legal/api/analyze_video/'; 
 
         analyzeButton.disabled = true;
         loadingIndicator.style.display = 'block';
