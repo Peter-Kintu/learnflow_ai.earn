@@ -193,9 +193,8 @@
         fetchTranscript(link); // Use the original function name
     }
 
-    // RENAMED and CRITICAL FIX for the API URL mismatch
+    // CRITICAL FIX: The API URL must match the path defined in urls.py
     async function fetchTranscript(link) {
-        // CRITICAL FIX: The API URL must match the path defined in urls.py
         const apiUrl = '/api/analyze_video/'; 
 
         analyzeButton.disabled = true;

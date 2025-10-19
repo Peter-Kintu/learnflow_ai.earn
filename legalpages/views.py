@@ -14,7 +14,7 @@ import json
 # Imports for Gemini AI (Requires 'google-genai' package)
 import google.genai as genai
 from google.genai.errors import APIError
-from google.genai import types # Import types for schema definition
+from google.genai import types # <-- ADDED MISSING IMPORT
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ except Exception as e:
     logger.error(f"Error initializing Gemini client: {e}")
     client = None
     
-# --- Helper Functions (UNCHANGED) ---
+# --- Helper Functions ---
 
 def extract_video_id(url):
     """
@@ -85,12 +85,18 @@ def fetch_transcript(video_id):
         logger.error(f"An unexpected error occurred while fetching transcript for {video_id}: {e}")
         return "An unexpected server error occurred during transcript fetching."
 
-def generate_ai_content(transcript_text, model=client.models.get('gemini-2.5-flash')):
+def generate_ai_content(transcript_text, model=None):
     """
     Uses the Gemini API to generate a summary and quiz from the transcript.
     """
     if not client:
         return {"summary": "AI client not initialized.", "quiz": []}
+
+    # CRITICAL FIX: Get the model object inside the function, or use the dictionary lookup
+    # Using the dictionary lookup is syntactically correct for the default argument.
+    # We set model=None to avoid executing client.models.get() during module load.
+    if model is None:
+        model = client.models['gemini-2.5-flash'] # Correct way to access model object
 
     prompt = (
         "Based on the following YouTube video transcript, perform two tasks:\n"
@@ -140,6 +146,7 @@ def generate_ai_content(transcript_text, model=client.models.get('gemini-2.5-fla
     except Exception as e:
         logger.exception(f"General error during AI generation: {e}")
         return {"summary": f"AI Content Generation Failed (General Error): {e}", "quiz": []}
+
 
 # --- Django Views (UNCHANGED structure, but corrected function names) ---
 
@@ -203,7 +210,7 @@ def analyze_video_api(request):
         if not transcript_found:
             message = transcript_text
             # Return a non-critical error status for frontend to display the message
-            return JsonResponse({'status': 'error', 'message': message}, status=500)
+            return JsonResponse({'status': 'error', 'message': message, 'transcript_text': message}, status=500)
 
         # 3. Generate AI Content
         ai_data = generate_ai_content(transcript_text)
