@@ -11,6 +11,7 @@ urlpatterns = [
     path('about/', views.about_us, name='about'),
     path('contact/', views.contact_us, name='contact'),
     path('sitemap-page/', views.sitemap_page, name='sitemap_page'),
+    
     # Note: Using <str:video_id> is safer than <int:video_id> for YouTube IDs which are alphanumeric
     path('video/analyze/<str:video_id>/', views.video_analysis_view, name='video_analysis'),
     
@@ -18,6 +19,8 @@ urlpatterns = [
     path('overview/', views.learnflow_overview, name='overview'),
     path('', views.learnflow_video_analysis, name='learnflow_main'),
     
-    # API Endpoint: CRITICAL FIX for the stuck loading state
+    # API Endpoints
     path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
+    # NEW: API endpoint for scoring and reporting
+    path('api/submit_quiz/', views.submit_quiz_api, name='api_submit_quiz'),
 ]
