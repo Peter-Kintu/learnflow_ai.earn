@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
-import json
 import time # Used for potential simulated delays if needed
 
 # Helper function to extract the video ID from a YouTube URL
