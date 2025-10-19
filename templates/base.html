@@ -123,7 +123,7 @@
             
             <div class="w-[28px] h-[28px]"></div>
 
-            </div>
+        </div>
     </nav>
 
     <div id="mobile-menu">
@@ -152,7 +152,7 @@
 
             <div class="space-y-2 flex-grow overflow-y-auto">
                 
-                <p class="text-sm font-semibold text-gray-500 pt-2 pb-1 uppercase tracking-wider">Content & Tools</p>
+                <p class="text-sm font-semibold text-gray-500 pb-1 uppercase tracking-wider">Content & Tools</p>
                 
                 <a href="{% url 'legalpages:learnflow_main' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center text-lg font-medium {% if 'video_analysis/' in current_path or current_path == '/' %}text-white bg-indigo-600 shadow-lg border border-indigo-700/50{% else %}text-white bg-slate-700 hover:bg-indigo-700{% endif %}">
                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot mr-3"><path d="M12 8V4"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M7 15h10"/><path d="M8 9v2"/><path d="M16 9v2"/></svg>
@@ -175,7 +175,7 @@
                 </a>
                 
                 {% if user.is_authenticated %}
-                <p class="text-sm font-semibold text-gray-500 pt-4 pb-1 uppercase tracking-wider">Your Flow</p>
+                <p class="text-sm font-semibold text-gray-500 mt-6 pb-1 uppercase tracking-wider">Your Flow</p>
 
                 <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center font-medium {% if 'teacher_quiz_dashboard/' in current_path %}text-indigo-400 bg-slate-700 shadow-inner border border-indigo-600/50{% else %}text-gray-300 hover:text-white hover:bg-slate-700{% endif %}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard mr-3"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -188,7 +188,7 @@
                 </a>
                 {% endif %}
 
-                <p class="text-sm font-semibold text-gray-500 pt-4 pb-1 uppercase tracking-wider">Information</p>
+                <p class="text-sm font-semibold text-gray-500 mt-6 pb-1 uppercase tracking-wider">Information</p>
                 <a href="{% url 'legalpages:overview' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center text-lg font-medium {% if current_path == '/overview/' %}text-indigo-400 bg-slate-700 shadow-inner border border-indigo-600/50{% else %}text-gray-300 hover:text-white hover:bg-slate-700{% endif %}">
                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info mr-3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                    Overview
