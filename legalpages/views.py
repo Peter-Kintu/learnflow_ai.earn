@@ -89,6 +89,9 @@ def fetch_transcript_api(request):
     youtube-transcript-api Python library.
     """
     if request.method == 'POST':
+        # Ensure video_id is set to None initially for logging in case of early exit
+        video_id = None
+        
         try:
             # 1. Get and Sanitize the YouTube link
             # Use .get with a default empty string and strip any whitespace
@@ -113,12 +116,13 @@ def fetch_transcript_api(request):
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
             # 2. Fetch the transcript. (FIX FOR AttributeError)
-            # The correct method is to get the list, find the desired transcript, and then fetch its content.
-            transcripts = YouTubeTranscriptApi.get_transcripts([video_id])
+            # FIX: Changed the method from get_transcripts (which doesn't exist) to list_transcripts.
+            transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
             
             # Find the transcript (prioritize manual 'en', then auto-generated 'en')
             try:
                 # Try to find a manually created English transcript
+                # transcripts is a TranscriptList object
                 transcript = transcripts.find_transcript(['en'])
             except NoTranscriptFound:
                 # If no manual transcript is found, try to find an auto-generated English transcript
