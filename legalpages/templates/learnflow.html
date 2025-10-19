@@ -39,7 +39,7 @@
         <h1 class="text-3xl font-extrabold text-primary-blue dark:text-white" id="mainTitle">LearnFlow AI</h1>
         <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-150 ease-in-out mt-2 sm:mt-0" title="Toggle dark mode">
             <svg id="sunIcon" class="w-6 h-6 text-yellow-500 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2004/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
         </button>
     </header> 
 
@@ -155,7 +155,8 @@
     };
 
     // --- Core Functions ---
-
+    // ... (switchTab, showStatus, setButtonState, renderVideoPlayer, renderQuestions, collectUserAnswers, submitQuiz functions remain the same)
+    
     function switchTab(tabName) {
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
         document.querySelectorAll('.tab-button').forEach(button => {
@@ -193,8 +194,6 @@
         analyzeButton.querySelector('#analyzeButtonText').textContent = isLoading ? i18n.loadingText : i18n.analyzeButtonText;
     }
 
-    // --- Rendering and Data Handling ---
-
     function renderVideoPlayer(videoId) {
         const iframe = document.createElement('iframe');
         iframe.setAttribute('width', '100%');
@@ -209,7 +208,11 @@
         player.appendChild(iframe);
     }
     
-    // NEW FUNCTION: Renders both MCQ and Short Answer questions
+    function enableScoreButton() {
+        scoreButton.disabled = false;
+    }
+
+    // Renders both MCQ and Short Answer questions
     function renderQuestions(questions) {
         const container = document.getElementById('quizContainer');
         container.innerHTML = ''; // Clear previous content
@@ -280,12 +283,7 @@
         quizSubmitted = false;
     }
 
-    function enableScoreButton() {
-        scoreButton.disabled = false;
-    }
-
     async function analyzeVideo() {
-        // ... (Original video analysis logic - kept as before)
         const videoLink = document.getElementById('videoLink').value.trim();
         if (!videoLink) {
             showStatus("Please paste a valid YouTube video link.", 'error');
@@ -313,10 +311,12 @@
                 
                 // Set global state
                 currentVideoId = data.video_id;
+                // Note: The backend renamed 'quiz' to 'questions' in the successful JSON response for clarity
                 quizData = data.questions; // Store the full data for submission later
 
                 // Render content
                 renderVideoPlayer(currentVideoId);
+                // Use DOMPurify and marked.js for safe and styled markdown rendering
                 document.getElementById('summaryContent').innerHTML = marked.parse(DOMPurify.sanitize(data.summary));
                 document.getElementById('transcriptContent').textContent = data.transcript_text;
                 
@@ -334,7 +334,7 @@
         }
     }
     
-    // NEW FUNCTION: Collects user answers from the rendered quiz
+    // Collects user answers from the rendered quiz
     function collectUserAnswers() {
         const answers = {};
         quizData.forEach((q, index) => {
@@ -354,7 +354,7 @@
         return answers;
     }
 
-    // NEW FUNCTION: Handles quiz submission and PDF download
+    // Handles quiz submission and PDF download
     async function submitQuiz() {
         if (quizSubmitted) return;
 
@@ -400,7 +400,11 @@
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = response.headers.get('Content-Disposition').split('filename=')[1].replace(/"/g, ''); // Use filename from Content-Disposition header
+            // Use filename from Content-Disposition header
+            const contentDisposition = response.headers.get('Content-Disposition');
+            const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+)"/) : null;
+            a.download = filenameMatch ? filenameMatch[1] : 'LearnFlow_AI_Report.pdf'; 
+            
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -422,11 +426,11 @@
     }
 
 
-    // --- Event Listeners and Initial Setup ---\
+    // --- Event Listeners and Initial Setup ---
 
     document.addEventListener('DOMContentLoaded', () => {
-        // ... (Original initial setup and dark mode logic)
-
+        // Initialization logic (e.g., dark mode, localization) would go here in a real app
+        
         // Add event listeners for tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
@@ -444,11 +448,13 @@
         // Initial button states
         scoreButton.disabled = true;
         
-        // If a pre-selected video ID exists (from URL routing), trigger analysis on load
-        {% if pre_selected_video_id %}
+        // **FIX for the JavaScript Syntax Error:**
+        // Check the input element's value (which Django populated if 'pre_selected_video_id' existed)
+        const videoLinkInput = document.getElementById('videoLink');
+        if (videoLinkInput.value.startsWith('https://www.youtube.com')) {
             // Need a slight delay to ensure all JS/HTML elements are ready
             setTimeout(analyzeVideo, 100); 
-        {% endif %}
+        }
     });
 
 </script>
