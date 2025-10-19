@@ -116,7 +116,7 @@ def fetch_transcript_api(request):
                 return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
             
             # 2. Fetch the transcript. (Using get_transcript for maximum compatibility)
-            # FIX: This uses the most stable, universally supported method to avoid the AttributeError.
+            # This method directly returns the list of segment dictionaries.
             transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
             
             # 3. Concatenate all transcript segments into a single string
@@ -133,6 +133,7 @@ def fetch_transcript_api(request):
         # Handle specific errors from the transcript API (return 404)
         except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript, VideoUnavailable) as e:
              logger.warning(f"Transcript unavailable for {video_id}: {str(e)}")
+             # This correctly returns the 404 status code seen in your log
              return JsonResponse({
                 "status": "error", 
                 "message": f"Transcript not available. This video either has transcripts disabled, is unavailable, or the API failed to retrieve it. Error: {str(e)}"}, status=404)
