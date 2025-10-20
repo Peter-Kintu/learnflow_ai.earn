@@ -16,6 +16,10 @@ from youtube_transcript_api._errors import CouldNotRetrieveTranscript, VideoUnav
 import google.genai as genai
 from google.genai.errors import APIError
 from google.genai import types 
+# NOTE: The full Multimodal (frames/audio) pipeline requires external infrastructure 
+# (e.g., Ffmpeg, Cloud Storage, and a video processing service). For this environment, 
+# the robust solution is to rely on Gemini's grounding/web-fetching capability via the URL 
+# and use the more powerful 'pro' model for better inference from metadata.
 
 # Imports for PDF Generation (Assuming ReportLab is installed)
 try:
@@ -62,7 +66,6 @@ def fetch_transcript_robust(video_id):
     Fetches the transcript with retries and robust language fallbacks.
     Returns: full_transcript string OR a special marker/prefix.
     """
-    # ... (Keep existing fetch_transcript_robust implementation as it was robustly updated in the last step)
     if not video_id:
         return TRANSCRIPT_FALLBACK_MARKER
     
@@ -102,7 +105,7 @@ def fetch_transcript_robust(video_id):
             logger.error(f"Critical error during transcript fetch for {video_id}: {e}")
             return TRANSCRIPT_FALLBACK_MARKER
 
-# --- PDF Generation Functions (New) ---
+# --- PDF Generation Functions ---
 
 def add_watermark(canvas, doc):
     """Draws the LearnFlow AI watermark on every page."""
@@ -235,11 +238,11 @@ def video_analysis_view(request, video_id): return render(request, 'learnflow.ht
 def analyze_video_api(request): 
     """
     API endpoint to fetch transcript and generate AI summary and a large, mixed quiz.
+    Uses multimodal/metadata grounding as a fallback for missing transcripts.
     """
     if request.method != 'POST':
         return JsonResponse({"status": "error", "message": "Invalid request method. Must use POST."}, status=400)
 
-    # ... (API Key and URL extraction setup remains the same)
     video_id = None
     video_link = None
         
@@ -264,28 +267,38 @@ def analyze_video_api(request):
         # --- 2. Transcript Fetch Attempt ---
         transcript_text_raw = fetch_transcript_robust(video_id)
 
+        model_name = 'gemini-2.5-flash' # Default for fast, text-only processing
         transcript_to_process = ""
         prompt_instruction = ""
         transcript_found = (transcript_text_raw != TRANSCRIPT_FALLBACK_MARKER)
+        
+        # --- ROBUSTNESS LOGIC ---
+        if not transcript_found:
+            # Fallback to Multimodal/Metadata Grounding
+            model_name = 'gemini-2.5-pro' # Use Pro for better grounding and reasoning without a transcript
+            transcript_to_process = f"Original Video URL: {video_link}" 
+            prompt_instruction = (
+                "The automatic transcript for this video could not be retrieved. "
+                "You MUST use your general knowledge, grounding capabilities, and the video URL provided to determine the video's title, subject, and main content. "
+                "Generate the requested SUMMARY and QUESTIONS based on the video's known topic and purpose. "
+                "The summary MUST begin with the sentence: 'Note: The analysis below is based on the video's title and public information, as the transcript was unavailable.'"
+            )
+            logger.warning(f"Falling back to Gemini Grounding for {video_id} using {model_name}.")
 
-        if transcript_text_raw.startswith("NON_ENGLISH_TRANSCRIPT:"):
+        elif transcript_text_raw.startswith("NON_ENGLISH_TRANSCRIPT:"):
+            # Non-English Transcript Found - Use Flash for translation and processing
             _, lang_code, content = transcript_text_raw.split(":", 2)
             transcript_to_process = content
             prompt_instruction = (
                 f"The following video content is in **{lang_code}**. You MUST first translate the content to English. "
                 "Then, proceed with the summarization and question generation based on the English translation."
             )
-        elif not transcript_found:
-            transcript_to_process = f"Original Video URL: {video_link}" 
-            prompt_instruction = (
-                "The automatic transcript for this video could not be retrieved. "
-                "You MUST use your general knowledge, grounding capabilities, or the video URL provided in the content section to determine the video's title, subject, and main content. "
-                "Generate the requested SUMMARY and QUESTIONS based on the video's known topic and purpose. "
-                "The summary MUST begin with the sentence: 'Note: The analysis below is based on the video's title and public information, as the transcript was unavailable.'"
-            )
+        
         else:
+            # English Transcript Found - Use Flash
             transcript_to_process = transcript_text_raw
             prompt_instruction = "Based on the following video content, perform the tasks."
+
 
         # --- 3. AI Summarization and Quiz Generation ---
         client = genai.Client(api_key=api_key)
@@ -326,7 +339,7 @@ def analyze_video_api(request):
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -378,7 +391,7 @@ def analyze_video_api(request):
         logger.exception(f"A critical, unhandled error occurred during fetch/AI processing for {video_id}.")
         return JsonResponse({"status": "error", "message": f"A critical server error occurred during processing: {e}"}, status=500)
 
-# --- NEW API View: Quiz Submission and PDF Report Generation ---
+# --- API View: Quiz Submission and PDF Report Generation ---
 
 @csrf_exempt
 def submit_quiz_api(request):
@@ -449,4 +462,8 @@ def submit_quiz_api(request):
 
 
 # --- Static Pages Views (Original content) ---
-# ... (kept as before)
+def privacy_policy(request): return render(request, 'privacy.html')
+def terms_conditions(request): return render(request, 'terms.html')
+def about_us(request): return render(request, 'about.html')
+def contact_us(request): return render(request, 'contact.html')
+def sitemap_page(request): return render(request, 'sitemap.html')

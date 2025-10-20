@@ -154,6 +154,24 @@
         darkModeToggle: "Toggle dark mode"
     };
 
+    // --- Helper Function: Get CSRF Token (New for Robustness) ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
     // --- Core Functions ---
     // ... (switchTab, showStatus, setButtonState, renderVideoPlayer, renderQuestions, collectUserAnswers, submitQuiz functions remain the same)
     
@@ -290,6 +308,9 @@
             return;
         }
 
+        // --- NEW: Retrieve CSRF Token ---
+        const csrfToken = getCookie('csrftoken');
+
         setButtonState(true);
         showStatus("Fetching transcript and generating 20+ mixed questions with AI...", 'info');
         
@@ -298,11 +319,24 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // CSRF token must be obtained and included in a real Django setup
+                    // --- NEW: Include CSRF Token in Header ---
+                    'X-CSRFToken': csrfToken, 
                 },
                 body: JSON.stringify({ video_link: videoLink })
             });
 
+            // CRITICAL FIX: Check if the response is JSON before parsing
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                let errorText = await response.text();
+                // This handles the case where Django returns an HTML error (e.g., 403 CSRF or 500)
+                const status = response.status;
+                const message = (status === 403) ? "Request Forbidden (CSRF token missing or invalid). Ensure you have enabled cookies or the server view is properly exempted." : `Server returned non-JSON response (Status: ${status}).`;
+                showStatus(`Analysis Error: ${message}`, 'error');
+                console.error("Non-JSON Response Error:", errorText);
+                return; // Exit the function gracefully
+            }
+            
             const data = await response.json();
 
             if (data.status === 'success') {
@@ -328,7 +362,9 @@
                 showStatus(`Error: ${data.message}`, 'error');
             }
         } catch (error) {
-            showStatus(`A network error occurred: ${error.message}`, 'error');
+            // This is for network errors (e.g., connection refused, timeout, or the original JSON parse error)
+            showStatus(`A network error occurred: ${error.message}. Check console for details.`, 'error');
+            console.error("Network or JSON Parsing Error:", error);
         } finally {
             setButtonState(false);
         }
@@ -366,6 +402,9 @@
             return;
         }
         
+        // --- NEW: Retrieve CSRF Token ---
+        const csrfToken = getCookie('csrftoken');
+        
         // Show loading state for the score button
         scoreButton.disabled = true;
         scoreButton.textContent = 'Submitting...';
@@ -375,7 +414,8 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // CSRF token must be obtained and included
+                    // --- NEW: Include CSRF Token in Header ---
+                    'X-CSRFToken': csrfToken, 
                 },
                 body: JSON.stringify({
                     video_id: currentVideoId,
@@ -385,9 +425,12 @@
             });
 
             // Check if the response is a JSON error or the PDF stream
-            if (response.headers.get('content-type') === 'application/json') {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes('application/json')) {
                  const data = await response.json();
                  showStatus(`Submission Error: ${data.message}`, 'error');
+                 scoreButton.textContent = i18n.scoreButtonText;
+                 scoreButton.disabled = false;
                  return;
             }
 
@@ -419,7 +462,8 @@
             scoreButton.disabled = true;
 
         } catch (error) {
-            showStatus(`A network error occurred during submission: ${error.message}`, 'error');
+            showStatus(`A network error occurred during submission: ${error.message}. Check console for details.`, 'error');
+            console.error("Submission Error:", error);
             scoreButton.textContent = i18n.scoreButtonText;
             scoreButton.disabled = false;
         }
