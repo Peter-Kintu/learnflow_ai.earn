@@ -193,8 +193,8 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
 
         elif q.get('type') == 'ShortAnswer':
             # Robust scoring check for short answers
-            user_ans_normalized = user_ans.strip().lower()
-            correct_ans_normalized = correct_ans.strip().lower()
+            user_ans_normalized = str(user_ans).strip().lower()
+            correct_ans_normalized = str(correct_ans).strip().lower()
             if user_ans_normalized != correct_ans_normalized:
                 is_correct = 'WRONG'
             
@@ -250,7 +250,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 def analyze_video_api(request):
     """
     Handles POST requests to analyze a video URL using Gemini, with enhanced 
-    robustness for missing transcripts (Gemini will generate a transcript if needed).
+    robustness for missing transcripts (Gemini will generate a detailed analysis if needed).
     """
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
@@ -282,14 +282,18 @@ def analyze_video_api(request):
             
         # Check for complete fallback (No transcript available)
         elif transcript == TRANSCRIPT_FALLBACK_MARKER:
-            # --- NEW ROBUSTNESS LOGIC ---
+            # --- MEMORY OPTIMIZED ROBUSTNESS LOGIC ---
             transcript_content = "No machine or auto-generated transcript could be reliably fetched. The model must rely solely on the video URL, title, and description for the analysis."
             transcript_instruction = """
-            **CRITICAL ACTION REQUIRED:** Since no transcript was retrieved, you MUST attempt to generate a high-quality, sequential text transcript (or detailed summary of key dialogue/narration) based on your multimodal analysis of the video URL.
+            **CRITICAL ACTION REQUIRED (Memory Optimized):** Since no transcript was retrieved, you MUST rely on the video URL, title, and description.
             
-            **Include this generated content under a new top-level JSON key named 'gemini_generated_transcript'.**
+            **To ensure high-quality output, as a primary step, analyze the video's content and generate a highly detailed, chronological analysis of the narration/dialogue.**
             
-            Then, use this 'gemini_generated_transcript' content to create the 'summary' and 'quiz_questions'.
+            **Include this content under a new top-level JSON key named 'gemini_generated_analysis' (do NOT call it 'transcript', as it is an analysis, not a verbatim text).**
+            
+            The length of 'gemini_generated_analysis' must be detailed but **concise**—NOT a full, verbatim transcript—to conserve server memory.
+            
+            Then, use this generated 'gemini_generated_analysis' content to create the 'summary' and 'quiz_questions'.
             """
             # ---------------------------
             
@@ -312,8 +316,8 @@ def analyze_video_api(request):
         1.  `summary`: A detailed, markdown-formatted summary of the video's main points, key concepts, and conclusion. Use headings, lists, and bold text.
         2.  `quiz_questions`: An array of at least 15 high-quality, educationally relevant questions. Ensure a mix of **Multiple Choice Questions (MCQ)** and **Short Answer** questions, following the strict format below.
 
-        **If you were instructed to generate a transcript because one was missing, you MUST include a third key:**
-        3. `gemini_generated_transcript`: A long string containing the full, high-quality text of the video's content/narration based on your multimodal analysis of the URL.
+        **If you were instructed to generate an analysis because the transcript was missing, you MUST include a third key:**
+        3. `gemini_generated_analysis`: A long string containing the detailed chronological analysis (NOT a full transcript).
 
         **JSON Format Requirements for Questions:**
         - **MCQ Questions:** Must have `type: "MCQ"`, a `question`, an `options` array (with 4 choices), a `correctAnswerIndex` (integer 0-3), and a `correct_answer` (string, which is the text of the correct option).
@@ -337,6 +341,8 @@ def analyze_video_api(request):
                     "correct_answer": "..."
                 }}
             ]
+            // Optional third key if transcript was missing:
+            // "gemini_generated_analysis": "..." 
         }}
         ```
         Ensure the JSON is valid and complete, and do not include any text outside of the JSON block.
@@ -347,13 +353,12 @@ def analyze_video_api(request):
         
         config = types.GenerateContentConfig(
             # Enable the model to fetch and ground its response on the web, using the URL.
-            # This is crucial for videos where the transcript is missing or poor.
             tools=[{"google_search": {}}], 
             temperature=0.3, # Low temperature for factual, consistent quiz generation
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-pro', # Use a powerful model for complex reasoning and structure generation
+            model='gemini-2.5-pro', # Retaining the pro model for multimodal capability
             contents=prompt,
             config=config,
         )
@@ -371,7 +376,7 @@ def analyze_video_api(request):
             analysis_data = json.loads(json_text)
             
             # Add the original transcript/marker back into the response. 
-            # The frontend can use this and check for 'gemini_generated_transcript' if it's the marker.
+            # The frontend can use this and check for 'gemini_generated_analysis' if it's the marker.
             analysis_data['transcript'] = transcript
             
             return JsonResponse(analysis_data)
@@ -387,7 +392,7 @@ def analyze_video_api(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
         logger.exception(f"Unexpected error in analyze_video_api: {e}")
-        # The previous fix for the f-string issue is maintained here.
+        # Ensures the error message is correctly serialized, preventing the initial error we fixed.
         return JsonResponse({'status': 'error', 'message': 'A critical server error occurred: ' + str(e)}, status=500)
 
 
