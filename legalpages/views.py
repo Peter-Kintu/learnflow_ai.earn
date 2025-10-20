@@ -249,7 +249,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 @csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
 def analyze_video_api(request):
     """
-    Handles POST requests to analyze a video URL using Gemini.
+    Handles POST requests to analyze a video URL using Gemini, with enhanced 
+    robustness for missing transcripts (Gemini will generate a transcript if needed).
     """
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
@@ -270,26 +271,49 @@ def analyze_video_api(request):
         transcript = fetch_transcript_robust(video_id)
         
         # 2. Prepare the Prompt for Gemini
-        # Prioritize the transcript if available, otherwise rely on the URL's contents.
         transcript_content = ""
+        transcript_instruction = ""
+        
+        # Check for non-English transcript
         if transcript.startswith("NON_ENGLISH_TRANSCRIPT:"):
             lang_code, actual_transcript = transcript.split(":", 2)[1:]
             transcript_content = f"The following is a non-English transcript (Language: {lang_code}). Use it to help generate the analysis:\n{actual_transcript}"
+            transcript_instruction = "The transcript provided is non-English, but use it as a primary source for the analysis."
+            
+        # Check for complete fallback (No transcript available)
         elif transcript == TRANSCRIPT_FALLBACK_MARKER:
-            transcript_content = "No machine or auto-generated transcript could be reliably fetched. Rely on the video URL and its title/description for the summary."
+            # --- NEW ROBUSTNESS LOGIC ---
+            transcript_content = "No machine or auto-generated transcript could be reliably fetched. The model must rely solely on the video URL, title, and description for the analysis."
+            transcript_instruction = """
+            **CRITICAL ACTION REQUIRED:** Since no transcript was retrieved, you MUST attempt to generate a high-quality, sequential text transcript (or detailed summary of key dialogue/narration) based on your multimodal analysis of the video URL.
+            
+            **Include this generated content under a new top-level JSON key named 'gemini_generated_transcript'.**
+            
+            Then, use this 'gemini_generated_transcript' content to create the 'summary' and 'quiz_questions'.
+            """
+            # ---------------------------
+            
+        # Standard English transcript available
         else:
             transcript_content = f"Use the following transcript to generate a highly accurate summary and quiz:\n{transcript}"
+            transcript_instruction = "The transcript is provided below. Use it as the primary source for the analysis."
 
         prompt = f"""
         You are a video analysis AI for an educational platform. Your task is to analyze the provided YouTube video URL and its content.
 
         **Video URL:** {video_url}
-        **Content/Transcript Status:** {transcript_content}
+        **Transcript Status/Instructions:** {transcript_instruction}
         
-        Based on this information, generate a comprehensive analysis in a single JSON block. The JSON must have the following two top-level keys:
+        **Transcript Content:**
+        {transcript_content}
+        
+        Based on this information, generate a comprehensive analysis in a single JSON block. The JSON must have the following primary top-level keys:
 
         1.  `summary`: A detailed, markdown-formatted summary of the video's main points, key concepts, and conclusion. Use headings, lists, and bold text.
-        2.  `quiz_questions`: An array of at least 15 high-quality, educationally relevant questions. Ensure a mix of **Multiple Choice Questions (MCQ)** and **Short Answer** questions.
+        2.  `quiz_questions`: An array of at least 15 high-quality, educationally relevant questions. Ensure a mix of **Multiple Choice Questions (MCQ)** and **Short Answer** questions, following the strict format below.
+
+        **If you were instructed to generate a transcript because one was missing, you MUST include a third key:**
+        3. `gemini_generated_transcript`: A long string containing the full, high-quality text of the video's content/narration based on your multimodal analysis of the URL.
 
         **JSON Format Requirements for Questions:**
         - **MCQ Questions:** Must have `type: "MCQ"`, a `question`, an `options` array (with 4 choices), a `correctAnswerIndex` (integer 0-3), and a `correct_answer` (string, which is the text of the correct option).
@@ -346,7 +370,8 @@ def analyze_video_api(request):
             json_text = response.text[json_start : json_end + 1]
             analysis_data = json.loads(json_text)
             
-            # Add the transcript back into the response for the frontend's Transcript tab
+            # Add the original transcript/marker back into the response. 
+            # The frontend can use this and check for 'gemini_generated_transcript' if it's the marker.
             analysis_data['transcript'] = transcript
             
             return JsonResponse(analysis_data)
@@ -362,8 +387,7 @@ def analyze_video_api(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
         logger.exception(f"Unexpected error in analyze_video_api: {e}")
-        # FIX: Replace f-string with string concatenation to avoid Invalid format specifier error
-        # when exception message itself contains characters like single quotes or braces.
+        # The previous fix for the f-string issue is maintained here.
         return JsonResponse({'status': 'error', 'message': 'A critical server error occurred: ' + str(e)}, status=500)
 
 
