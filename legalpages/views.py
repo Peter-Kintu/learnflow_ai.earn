@@ -19,7 +19,7 @@ from google.genai import types
 # NOTE: The full Multimodal (frames/audio) pipeline requires external infrastructure 
 # (e.g., Ffmpeg, Cloud Storage, and a video processing service). For this environment, 
 # the robust solution is to rely on Gemini's grounding/web-fetching capability via the URL 
-# and use the more powerful 'pro' model for better inference from metadata.
+# and use the optimized 'flash' model for better latency.
 
 # Imports for PDF Generation (Assuming ReportLab is installed)
 try:
@@ -89,6 +89,7 @@ def fetch_transcript_robust(video_id):
             full_transcript = " ".join([item['text'] for item in transcript_data])
             
             if transcript_obj.language_code not in target_languages:
+                # Return prefix for non-English transcript
                 return f"NON_ENGLISH_TRANSCRIPT:{transcript_obj.language_code}:{full_transcript}"
 
             return full_transcript # Success: return English transcript
@@ -159,7 +160,8 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
     
     # Display the score prominently
     score_color = colors.darkgreen if final_score > (total_questions / 2) else colors.red
-    story.append(Paragraph(f'<font size="16"><b>Final Score: {final_score} / {total_questions}</b></font>', ParagraphStyle(name='ScoreStyle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=score_color)))
+    score_style = ParagraphStyle(name='ScoreStyle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=score_color)
+    story.append(Paragraph(f'<font size="16"><b>Final Score: {final_score} / {total_questions}</b></font>', score_style))
     story.append(Spacer(1, 80))
     
     story.append(Paragraph('Date Issued: {}'.format(time.strftime("%Y-%m-%d")), styles['Normal']))
@@ -180,35 +182,36 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         q_id = str(q_index)
         user_ans = user_answers.get(q_id, 'N/A')
         correct_ans = q.get('correct_answer', 'N/A')
-        is_correct = 'CORRECT'
+        is_correct = 'WRONG' # Default to wrong
         
-        # Re-run the scoring logic for display
+        # Determine the correct answer text for display
+        correct_ans_text = str(correct_ans)
+        
         if q.get('type') == 'MCQ':
+            correct_option_index = q.get('correctAnswerIndex', -1)
+            # Find the correct text option based on the index
+            correct_ans_text = q['options'][correct_option_index] if correct_option_index >= 0 and correct_option_index < len(q['options']) else 'N/A'
+            
+            # Check for correctness
             try:
-                # User answer is an index string. Check if it matches the correct answer index.
-                if int(user_ans) != int(q.get('correctAnswerIndex', -1)):
-                    is_correct = 'WRONG'
+                if int(user_ans) == int(correct_option_index):
+                    is_correct = 'CORRECT'
             except:
-                is_correct = 'WRONG' # Invalid or missing user response
+                pass # Invalid or missing user response
+
+            # Determine the user's selected option text
+            user_ans_text = q['options'][int(user_ans)] if user_ans.isdigit() and int(user_ans) < len(q['options']) else 'N/A'
 
         elif q.get('type') == 'ShortAnswer':
-            # Robust scoring check for short answers
+            # Check for correctness with normalization
             user_ans_normalized = str(user_ans).strip().lower()
             correct_ans_normalized = str(correct_ans).strip().lower()
-            if user_ans_normalized != correct_ans_normalized:
-                is_correct = 'WRONG'
             
-        # Determine how to display the user answer for different types
-        if q['type'] == 'MCQ':
-            # For MCQ, the correct answer is the option text, not the index
-            correct_option_index = q.get('correctAnswerIndex', -1)
-            correct_ans_text = q['options'][correct_option_index] if correct_option_index >= 0 else 'N/A'
-            user_ans_text = q['options'][int(user_ans)] if user_ans != 'N/A' and user_ans.isdigit() else user_ans
-        else:
-            # ShortAnswer
-            correct_ans_text = correct_ans # The expected text answer
-            user_ans_text = user_ans # The text input by the user
-
+            if user_ans_normalized == correct_ans_normalized and user_ans_normalized != '':
+                is_correct = 'CORRECT'
+            
+            user_ans_text = str(user_ans) # Use the raw user input for display
+            
         # Use different colors for WRONG/CORRECT
         result_color = colors.darkgreen if is_correct == 'CORRECT' else colors.red
         result_text = Paragraph(f'<font color="{result_color.name}"><b>{is_correct}</b></font>', styles['Normal'])
@@ -358,7 +361,7 @@ def analyze_video_api(request):
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-pro', # Retaining the pro model for multimodal capability
+            model='gemini-2.5-flash', # OPTIMIZATION: Switched to Flash for better latency on text tasks
             contents=prompt,
             config=config,
         )
@@ -425,8 +428,8 @@ def submit_quiz_api(request):
             user_ans = user_answers.get(q_id)
             is_correct = False
             
-            # Skip if user didn't answer (should be prevented by frontend, but server must be defensive)
-            if user_ans is None:
+            # Skip if user didn't answer
+            if user_ans is None or user_ans == '':
                 continue
 
             # Standardized scoring for MCQ
@@ -437,7 +440,7 @@ def submit_quiz_api(request):
                     if int(user_ans) == int(correct_ans_index):
                         is_correct = True
                 except:
-                    pass # User response was invalid or missing
+                    pass # User response was invalid
 
             elif q.get('type') == 'ShortAnswer':
                 correct_ans = q.get('correct_answer')
