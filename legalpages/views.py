@@ -300,13 +300,13 @@ def analyze_video_api(request):
         {{
             "summary": "...",
             "quiz_questions": [
-                {
+                {{
                     "type": "MCQ",
                     "question": "...",
                     "options": ["A", "B", "C", "D"],
                     "correctAnswerIndex": 0,
                     "correct_answer": "A"
-                },
+                }},
                 {{
                     "type": "ShortAnswer",
                     "question": "...",
@@ -362,7 +362,9 @@ def analyze_video_api(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
         logger.exception(f"Unexpected error in analyze_video_api: {e}")
-        return JsonResponse({'status': 'error', 'message': f'A critical server error occurred: {e}'}, status=500)
+        # FIX: Replace f-string with string concatenation to avoid Invalid format specifier error
+        # when exception message itself contains characters like single quotes or braces.
+        return JsonResponse({'status': 'error', 'message': 'A critical server error occurred: ' + str(e)}, status=500)
 
 
 @csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
