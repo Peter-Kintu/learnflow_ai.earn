@@ -45,8 +45,8 @@
 
     <div class="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
         <input type="text" id="videoLink" placeholder="Paste YouTube Video URL here (e.g., https://www.youtube.com/watch?v=...)" 
-               class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-primary-blue focus:border-primary-blue dark:bg-gray-700 dark:text-white transition duration-150 ease-in-out"
-               value="{% if pre_selected_video_id %}https://www.youtube.com/watch?v={{ pre_selected_video_id }}{% endif %}">
+                class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-primary-blue focus:border-primary-blue dark:bg-gray-700 dark:text-white transition duration-150 ease-in-out"
+                value="{% if pre_selected_video_id %}https://www.youtube.com/watch?v={{ pre_selected_video_id }}{% endif %}">
         
         <button id="analyzeButton" 
                 class="w-full md:w-auto px-6 py-3 text-white font-bold rounded-lg transition duration-150 ease-in-out bg-primary-blue hover:bg-hover-blue focus:outline-none focus:ring-4 focus:ring-primary-blue/50 disabled:opacity-50" 
@@ -85,8 +85,8 @@
                         <div class="flex justify-between items-center border-b pb-2 dark:border-gray-700">
                             <h2 class="text-xl font-bold" id="quizTitle">Knowledge Assessment (20+ Questions)</h2>
                             <button id="scoreButton" 
-                                    class="px-4 py-2 text-white font-bold rounded-lg bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-600/50 disabled:opacity-50"
-                                    disabled>
+                                        class="px-4 py-2 text-white font-bold rounded-lg bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-600/50 disabled:opacity-50"
+                                        disabled>
                                 <span id="scoreButtonText">Submit & Get Report</span>
                             </button>
                         </div>
@@ -99,8 +99,8 @@
                             <h3 class="text-2xl font-bold text-green-700 dark:text-green-300" id="quizResultsTitle">Your Results</h3>
                             <p id="finalScoreDisplay" class="text-lg font-semibold text-green-800 dark:text-green-200">Score: -/-</p>
                             <button id="exportButton" 
-                                    class="px-4 py-2 text-white font-bold rounded-lg bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-600/50"
-                                    title="Download PDF Report and Certificate">
+                                        class="px-4 py-2 text-white font-bold rounded-lg bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-600/50"
+                                        title="Download PDF Report and Certificate">
                                 <span id="exportButtonText">Download PDF Report & Certificate</span>
                             </button>
                         </div>
@@ -137,7 +137,6 @@
 
     // Internationalization (for text elements)
     const i18n = {
-        // ... (Original i18n properties - kept for context)
         analyzeButtonText: "Analyze Video",
         loadingText: "Analyzing...",
         summaryTitle: "Video Summary",
@@ -154,7 +153,7 @@
         darkModeToggle: "Toggle dark mode"
     };
 
-    // --- Helper Function: Get CSRF Token (New for Robustness) ---
+    // --- Helper Function: Get CSRF Token ---
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -173,7 +172,6 @@
 
 
     // --- Core Functions ---
-    // ... (switchTab, showStatus, setButtonState, renderVideoPlayer, renderQuestions, collectUserAnswers, submitQuiz functions remain the same)
     
     function switchTab(tabName) {
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
@@ -289,7 +287,6 @@
                 input.className = 'mt-2 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-primary-blue focus:border-primary-blue transition duration-150';
                 input.addEventListener('input', enableScoreButton); // Enable score button on input
 
-                // We don't show the answer space, but the input is used to collect the answer
                 questionElement.appendChild(input); 
             }
 
@@ -308,44 +305,44 @@
             return;
         }
 
-        // --- NEW: Retrieve CSRF Token ---
+        // --- Retrieve CSRF Token ---
         const csrfToken = getCookie('csrftoken');
 
         setButtonState(true);
         showStatus("Fetching transcript and generating 20+ mixed questions with AI...", 'info');
         
         try {
+            // FIX: Ensure correct API endpoint matching urls.py
             const response = await fetch('/api/analyze_video/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // --- NEW: Include CSRF Token in Header ---
                     'X-CSRFToken': csrfToken, 
                 },
                 body: JSON.stringify({ video_link: videoLink })
             });
 
-            // CRITICAL FIX: Check if the response is JSON before parsing
+            // CRITICAL FIX: Check if the response is JSON before parsing (handles 404/500 gracefully)
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
+                // Attempt to read as text for better logging
                 let errorText = await response.text();
-                // This handles the case where Django returns an HTML error (e.g., 403 CSRF or 500)
                 const status = response.status;
-                const message = (status === 403) ? "Request Forbidden (CSRF token missing or invalid). Ensure you have enabled cookies or the server view is properly exempted." : `Server returned non-JSON response (Status: ${status}).`;
+                const message = (status === 403) ? "Request Forbidden (CSRF token missing or invalid). Ensure you have enabled cookies." : `Server returned non-JSON response (Status: ${status}).`;
                 showStatus(`Analysis Error: ${message}`, 'error');
                 console.error("Non-JSON Response Error:", errorText);
+                document.getElementById('analysisContent').classList.add('hidden');
                 return; // Exit the function gracefully
             }
             
             const data = await response.json();
 
-            if (data.status === 'success') {
+            if (response.ok) {
                 showStatus("Analysis complete. Check the Summary and Questions tabs.", 'success');
                 document.getElementById('analysisContent').classList.remove('hidden');
                 
                 // Set global state
                 currentVideoId = data.video_id;
-                // Note: The backend renamed 'quiz' to 'questions' in the successful JSON response for clarity
                 quizData = data.questions; // Store the full data for submission later
 
                 // Render content
@@ -354,17 +351,20 @@
                 document.getElementById('summaryContent').innerHTML = marked.parse(DOMPurify.sanitize(data.summary));
                 document.getElementById('transcriptContent').textContent = data.transcript_text;
                 
-                // NEW: Render the mixed questions
+                // Render the mixed questions
                 renderQuestions(quizData); 
 
                 switchTab('summary');
             } else {
+                // Handles JSON error responses (e.g., status 400 with a message)
                 showStatus(`Error: ${data.message}`, 'error');
+                document.getElementById('analysisContent').classList.add('hidden');
             }
         } catch (error) {
-            // This is for network errors (e.g., connection refused, timeout, or the original JSON parse error)
+            // This is for network errors (e.g., connection refused, timeout)
             showStatus(`A network error occurred: ${error.message}. Check console for details.`, 'error');
-            console.error("Network or JSON Parsing Error:", error);
+            console.error("Network Error:", error);
+            document.getElementById('analysisContent').classList.add('hidden');
         } finally {
             setButtonState(false);
         }
@@ -380,10 +380,12 @@
             if (q.type === 'MCQ') {
                 // Find the checked radio button's value (which is the option index)
                 const checkedRadio = qElement.querySelector(`input[name="${qName}"]:checked`);
+                // Store the index of the selected option
                 answers[index] = checkedRadio ? checkedRadio.value : '';
             } else if (q.type === 'ShortAnswer') {
                 // Get the value from the text input
                 const inputField = qElement.querySelector(`input[name="${qName}"]`);
+                // Store the trimmed text answer
                 answers[index] = inputField ? inputField.value.trim() : '';
             }
         });
@@ -392,7 +394,11 @@
 
     // Handles quiz submission and PDF download
     async function submitQuiz() {
-        if (quizSubmitted) return;
+        if (quizSubmitted) {
+            // Allow re-download if submitted
+            showStatus("Report is already generated. Downloading again...", 'info');
+            // The next fetch will re-trigger the download logic if the backend allows re-submission for the PDF.
+        }
 
         const userAnswers = collectUserAnswers();
         
@@ -402,7 +408,7 @@
             return;
         }
         
-        // --- NEW: Retrieve CSRF Token ---
+        // --- Retrieve CSRF Token ---
         const csrfToken = getCookie('csrftoken');
         
         // Show loading state for the score button
@@ -410,11 +416,11 @@
         scoreButton.textContent = 'Submitting...';
 
         try {
+            // FIX: Ensure correct API endpoint matching urls.py
             const response = await fetch('/api/submit_quiz/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // --- NEW: Include CSRF Token in Header ---
                     'X-CSRFToken': csrfToken, 
                 },
                 body: JSON.stringify({
@@ -424,7 +430,7 @@
                 })
             });
 
-            // Check if the response is a JSON error or the PDF stream
+            // Check if the response is a JSON error (e.g., status 400)
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes('application/json')) {
                  const data = await response.json();
@@ -433,8 +439,13 @@
                  scoreButton.disabled = false;
                  return;
             }
-
+            
             // --- Handle successful PDF download (Response is a file stream) ---
+            if (!response.ok) {
+                // Handle cases where the server returned a non-JSON, non-PDF error page (e.g. 404/500 from proxy)
+                throw new Error(`Server returned a non-PDF/non-JSON error response with status ${response.status}.`);
+            }
+            
             const finalScoreHeader = response.headers.get('X-Quiz-Score'); // Get score from header
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -443,10 +454,11 @@
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            // Use filename from Content-Disposition header
+            
+            // Use filename from Content-Disposition header for robustness
             const contentDisposition = response.headers.get('Content-Disposition');
             const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+)"/) : null;
-            a.download = filenameMatch ? filenameMatch[1] : 'LearnFlow_AI_Report.pdf'; 
+            a.download = filenameMatch ? filenameMatch[1] : `LearnFlow_AI_Report_${currentVideoId}.pdf`; 
             
             document.body.appendChild(a);
             a.click();
@@ -455,7 +467,7 @@
             // Display results on the page
             document.getElementById('finalScoreDisplay').textContent = `Final Score: ${finalScoreHeader}`;
             document.getElementById('quizResults').classList.remove('hidden');
-            showStatus("Quiz submitted and PDF report generated successfully!", 'success');
+            showStatus("Quiz submitted and PDF report generated successfully! Report is downloading.", 'success');
             
             quizSubmitted = true;
             scoreButton.textContent = 'Report Downloaded';
@@ -473,8 +485,15 @@
     // --- Event Listeners and Initial Setup ---
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Initialization logic (e.g., dark mode, localization) would go here in a real app
+        // Dark mode toggle logic (not provided, but assume it works)
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
         
+        // Initial tab state
+        switchTab('summary');
+
         // Add event listeners for tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
@@ -484,19 +503,17 @@
 
         // Add the main event listeners
         document.getElementById('analyzeButton').addEventListener('click', analyzeVideo);
-        // NEW: Submit Quiz handler
         document.getElementById('scoreButton').addEventListener('click', submitQuiz);
-        // The export button is now redundant since submission triggers download, but keep it as a re-download trigger
+        // The export button re-triggers the submission (which re-downloads the report)
         document.getElementById('exportButton').addEventListener('click', submitQuiz); 
         
         // Initial button states
         scoreButton.disabled = true;
         
-        // **FIX for the JavaScript Syntax Error:**
-        // Check the input element's value (which Django populated if 'pre_selected_video_id' existed)
+        // Auto-trigger analysis if a video ID was pre-selected (Django context)
         const videoLinkInput = document.getElementById('videoLink');
         if (videoLinkInput.value.startsWith('https://www.youtube.com')) {
-            // Need a slight delay to ensure all JS/HTML elements are ready
+            // Slight delay to ensure all JS/HTML elements are rendered before fetching
             setTimeout(analyzeVideo, 100); 
         }
     });
