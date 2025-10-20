@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate AI-Powered Learning Paths</title>
+
+    <meta name="description" content="Generate personalized, step-by-step AI-powered learning paths and courses for tech skills, digital marketing, and language learning, including Swahili, Yoruba, and Zulu.">
+    <link rel="canonical" href="[YOUR_CANONICAL_URL_HERE]"> 
+    <meta name="robots" content="index, follow">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
+
+    <style>
+        /* Custom styles to set a dark background for the whole page and enable pulse for loading */
+        body {
+            background-color: #1e293b; /* slate-800 equivalent background */
+        }
+        /* Style for the rendered Markdown (Adjusted to handle cleaner AI text) */
+        .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #a5b4fc; margin-top: 1.5rem; border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
+        .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #c7d2fe; margin-top: 1rem; }
+        .markdown-output p { margin-bottom: 0.75rem; }
+        .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .markdown-output li { margin-bottom: 0.25rem; }
+
+        /* Quiz/Lesson Modal Specific Styles */
+        .question-block { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #475569; }
+        .quiz-question { font-weight: bold; color: #f9fafb; margin-bottom: 0.75rem; }
+        .fill-in-box { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #6366f1; color: #fff; margin-top: 0.5rem; }
+        
+        /* Rised Container Style for Clickable Steps */
+        .clickable-step {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1); /* Subtle shadow for "raised" effect */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .clickable-step:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.3), 0 6px 8px -2px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+
+    <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Generate AI-Powered Learning Paths</h2>
+        <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+            Create personalized courses for tech skills, digital marketing, or language learning!
+            <div class="text-yellow-400 text-sm mt-2">🌍 Dynamic Content Mode Activated</div>
+        </p>
+    </div>
+    
+    <div class="flex justify-center mb-10">
+        <ins class="adsbygoogle"
+             style="display:block; text-align:center;"
+             data-ad-client="ca-pub-1234567890123456"
+             data-ad-slot="9876543210"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+    <div class="flex flex-col lg:flex-row gap-8">
+        
+        <div class="lg:w-7/12 bg-slate-700 p-8 rounded-2xl shadow-inner">
+            <h3 class="text-2xl font-bold text-gray-200 mb-2 flex items-center">
+                <span class="text-indigo-400 mr-3">🎯</span>
+                What Would You Like to Master Today?
+            </h3>
+            <p class="text-gray-400 mb-6">
+                Fill in your choices and we'll create a step-by-step learning path for you.
+            </p>
+
+            <form id="learningPathForm" class="space-y-6">
+                <div>
+                    <label for="languageSelect" class="block text-lg font-medium text-gray-200 mb-2">Choose Course Output Language 🌐</label>
+                    <select id="languageSelect" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="en-US">English (US)</option>
+                        <option value="fr-FR">French (France)</option>
+                        <option value="es-ES">Spanish (Spain)</option>
+                        <option value="sw">Swahili (Kenya/Tanzania)</option>
+                        <option value="yo">Yoruba (Nigeria)</option>
+                        <option value="zu">Zulu (South Africa)</option>
+                        <option value="ar">Arabic</option>
+                        <option value="zh">Mandarin Chinese</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="subjectMastery" class="block text-lg font-medium text-gray-200 mb-2">What subject do you want to master? *</label>
+                    <input type="text" id="subjectMastery" placeholder="e.g. Learning Swahili Grammar" required class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="text-sm text-gray-400">
+                    <p class="font-semibold mb-2">💡 Popular subjects:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Beginner React Development'">Beginner React Dev</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate Machine Learning Basics'">Intermediate ML Basics</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Digital Marketing Strategy'">Digital Marketing Strategy</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Advanced Swahili Conversation'">Advanced Swahili</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Beginner Yoruba Tones'">Beginner Yoruba</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate Data Science with Python'">Data Science</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Advanced UI/UX Principles'">Advanced UI/UX</span>
+                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate French Verb Conjugation'">Intermediate French</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="currentLevel" class="block text-lg font-medium text-gray-200 mb-2">What's your current level? 📚</label>
+                    <select id="currentLevel" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="beginner">Beginner (Just starting)</option>
+                        <option value="intermediate">Intermediate (Some experience)</option>
+                        <option value="advanced">Advanced (Experienced)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="learningGoals" class="block text-lg font-medium text-gray-200 mb-2">Any specific learning goals or preferences? 🎓</label>
+                    <textarea id="learningGoals" rows="3" placeholder="e.g. Focus on practical projects, need a certificate, 3 hours per week commitment." class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <button type="button" onclick="generateCourseOutline(false)" id="generateButton" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-bold text-lg flex items-center justify-center shadow-lg">
+                    <span class="mr-2">🚀</span>
+                    Create My Learning Path
+                </button>
+                <p id="aiStatus" class="text-sm text-gray-400 mt-4 text-center"></p>
+
+            </form>
+        </div>
+
+        <div class="lg:w-5/12 bg-slate-700 p-8 rounded-2xl shadow-inner border border-indigo-500/50">
+            <h4 class="text-xl font-bold text-gray-200 mb-6 flex items-center">
+                <span class="mr-2 text-yellow-400">✨</span>
+                Your personalized learning journey will include:
+            </h4>
+            <ul class="space-y-4 text-gray-300 font-medium">
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Interactive lessons** based on your pace.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Hands-on practice exercises** for skill retention.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Curated learning resources** and external links.</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
+                    <span class="leading-relaxed">**Progress tracking & achievements** to keep you motivated.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="aiCourseOutput" class="hidden bg-slate-700 p-6 rounded-xl shadow-inner mt-10">
+        <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Generated Learning Path Outline</h4>
+        <div id="courseContent" class="space-y-4 text-gray-300">
+            </div>
+        
+        <div class="quiz-input-container">
+            <label for="quizPromptInput" class="text-sm">Current Subject Focus (Used for AI Context):</label>
+            <input type="text" id="quizPromptInput" value="" disabled class="mt-1 bg-slate-800/50 border-slate-600">
+        </div>
+
+        <div class="text-center mt-6 flex flex-wrap justify-center items-center gap-4">
+            <button onclick="generateCourseOutline(true)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm">
+                🔄 Regenerate Outline
+            </button>
+            <button onclick="generatePdf('courseContent')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm">
+                ⬇️ Download TXT
+            </button>
+            <button class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:bg-green-800" disabled>
+                Enroll in Course (Coming Soon)
+            </button>
+        </div>
+    </div>
+    
+    <div id="quizModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-700 p-8 rounded-xl max-w-2xl w-full shadow-2xl relative">
+            
+            <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
+                <h3 class="text-2xl font-bold text-yellow-400">Lesson Details 📖</h3>
+                <button id="voiceToggle" onclick="toggleSpeech()" class="px-3 py-1 bg-indigo-500 text-white text-sm rounded-lg hover:bg-indigo-600 transition-colors flex items-center">
+                    <svg id="speakerIcon" class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.899a9 9 0 010 14.142m-9.899-9.899a4 4 0 010 5.656M10 18l-6 4V2l6 4h4l5 4-5 4h-4z"></path></svg>
+                    <span id="voiceText">Listen to Content</span>
+                </button>
+            </div>
+            <div id="quizContent" class="text-gray-300 space-y-4 max-h-96 overflow-y-auto pr-2">
+                </div>
+            <div id="quizStatus" class="text-sm text-center mt-4 text-indigo-300"></div>
+            
+            <div class="flex flex-col gap-3 mt-6">
+                <button onclick="document.getElementById('quizModal').classList.add('hidden'); speechSynthesis.cancel();" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
+                    ⬅️ Back to Course Outline
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// --- Define keys for specific roles (Used for Gemini API calls) ---
+// 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
+// You can obtain keys from Google AI Studio.
+const API_KEYS = {
+    // Key used for generating the high-level course outline (less intensive)
+    OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u3EnzHFw",
+    // Key used for generating the detailed lessons and quizzes (more intensive)
+    DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
+};
+const CACHE_KEY_PREFIX = "learnflow_outline_";
+
+// ADDED: Global variable to store the lesson content and speech state
+window.lessonDetailText = "";
+let isSpeaking = false;
+
+
+// ADDED: Function to update the voice toggle button's appearance
+function updateVoiceButtonState(text, speaking) {
+    const button = document.getElementById('voiceToggle');
+    const textSpan = document.getElementById('voiceText');
+    const icon = document.getElementById('speakerIcon');
+
+    textSpan.textContent = text;
+    isSpeaking = speaking;
+
+    if (speaking) {
+        button.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
+        button.classList.add('bg-red-500', 'hover:bg-red-600');
+        // Pause/Stop Icon
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10.5V13.5M15 10.5V13.5"></path>'; 
+    } else {
+        button.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+        button.classList.remove('bg-red-500', 'hover:bg-red-600');
+        // Speaker Icon (Listen)
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.899a9 9 0 010 14.142m-9.899-9.899a4 4 0 010 5.656M10 18l-6 4V2l6 4h4l5 4-5 4h-4z"></path>'; 
+    }
+}
+
+// ADDED: Main toggle function for the voice button
+function toggleSpeech() {
+    if (speechSynthesis.speaking) {
+        // Speech is currently active, so stop it
+        speechSynthesis.cancel(); 
+        updateVoiceButtonState('Listen to Content', false);
+    } else {
+        // Speech is not active, so start it
+        if (window.lessonDetailText) {
+            speakText(window.lessonDetailText);
+            // The speakText function will handle setting the state to 'Stop Listening'
+        } else {
+            console.warn("No lesson content available to speak.");
+        }
+    }
+}
+
+
+/**
+ * Helper function for browser's native TTS (fallback).
+ * MODIFIED: Improved voice tone (pitch), multilingual voice selection, and speed.
+ */
+function fallbackToBrowserTTS(text, lang) {
+    console.warn("Falling back to browser's native TTS.");
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // 1. IMPROVE TONE (Pitch/Rate)
+    utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
+    utterance.rate = 0.88; // Lowered from 0.95 to 0.88 for a calmer, less speedy pace.
+
+    // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
+    const voices = speechSynthesis.getVoices();
+    let selectedVoice = null;
+
+    // CRITICAL FIX: Set the utterance language to the requested language.
+    const baseLang = lang.split('-')[0];
+    utterance.lang = lang; 
+
+    // Define the voice preference array (from user's request)
+    const voicePreferences = [
+        // Priority 1: African-related languages (may only be available on certain OS/browsers)
+        { lang: 'en-ZA', name: 'South African' }, // Regional English accent
+        { lang: 'zu', name: 'Zulu' },
+        { lang: 'sw', name: 'Swahili' },
+        { lang: 'yo', name: 'Yoruba' },
+        { lang: 'ha', name: 'Hausa' },
+        // Priority 2: High-quality, often multilingual/polyglot voices
+        { lang: 'Google', name: 'Multi' },
+        { lang: 'Microsoft', name: 'Multi' },
+        // Priority 3: Other high-quality defaults
+        { lang: 'Daniel', name: 'Daniel' },
+        { lang: 'Samantha', name: 'Samantha' },
+        { lang: 'Zira', name: 'Zira' }
+    ];
+
+    // Priority 1: Find a voice whose language code starts with the full requested code or the base code
+    selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()) || voice.lang.toLowerCase().startsWith(baseLang.toLowerCase()));
+
+    // Priority 2: If no exact language match, iterate through the high-priority preference list
+    if (!selectedVoice) {
+        for (let pref of voicePreferences) {
+            // Check for match by full language code OR by preferred name
+            selectedVoice = voices.find(voice => voice.lang.toLowerCase().includes(pref.lang.toLowerCase()) || voice.name.includes(pref.name) );
+            if (selectedVoice) break;
+        }
+    }
+
+    // Final fallback: any voice with an English language code
+    if (!selectedVoice) {
+        selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
+    }
+
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(`TTS Voice selected: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+        console.warn(`Could not find a specific voice for language code: ${lang}. Using default.`);
+    }
+
+    // Stop any current speech and start the new one
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+}
+
+/**
+ * ASYNC FUNCTION: Cleans text for better TTS flow and triggers the speech.
+ * MODIFIED: Added logic to update the voice control button state.
+ */
+async function speakText(text) {
+    const selectedLang = document.getElementById("languageSelect").value;
+    
+    // 1. Text Cleaning: Aggressively strip Markdown and symbols that are read aloud,
+    // but PRESERVE punctuation (., ! ? : ;) to create natural pauses and flow.
+    let cleanText = text
+        .replace(/#+/g, '') // Remove headings
+        .replace(/\*\*/g, '') // Remove double asterisks (bold)
+        .replace(/\*/g, '') // Remove single asterisks (italics/list markers)
+        .replace(/__/g, '') // Remove double underscores
+        .replace(/_/g, '') // Remove single underscores
+        .replace(/\[.*?\]\((.*?)\)/g, '') // Remove Markdown links entirely [text](url)
+        .replace(/\[.*?\]/g, '') // Remove brackets, e.g., citations [text]
+        .replace(/`/g, '') // Remove backticks (code)
+        .replace(/\//g, ' or ') // Replace slashes with "or"
+        .replace(/[${}^|@<>=+]/g, ' ') // NEW: Remove symbols often read aloud: $, {, }, ^, |, @, <, >, =, +
+        .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
+    
+    // Further cleaning and consolidation
+    cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space
+
+    // 2. Fallback to Browser TTS (using the language set in the form)
+    fallbackToBrowserTTS(cleanText, selectedLang);
+
+    // ADDED: Update button state when speech starts
+    updateVoiceButtonState('Stop Listening', true);
+    
+    // Set a listener for when the speech ends naturally
+    speechSynthesis.onend = () => {
+        updateVoiceButtonState('Listen to Content', false);
+        speechSynthesis.onend = null; // Clean up the event listener
+    };
+    
+    // Set a listener for when the speech is manually cancelled (e.g., hitting the stop button)
+    speechSynthesis.onstart = () => {
+        // Ensure the button is set to "Stop Listening" once speech actually starts
+        updateVoiceButtonState('Stop Listening', true);
+    };
+}
+
+
+// --- Main Logic Functions (Modified for Voice Control) ---
+
+// Function to generate and display the course outline
+async function generateCourseOutline(isRegenerate) {
+    // ... (content remains the same until loadDetailedLesson)
+}
+
+// Function to load and display the detailed lesson content
+async function loadDetailedLesson(stepTitle, fullContext) {
+    // ... (content remains the same until the end)
+
+    try {
+        // ... (API call and JSON parsing remain the same)
+        const generatedDetail = result.text.trim();
+
+        // 4. Update the Modal content
+        const quizContentDiv = document.getElementById('quizContent');
+        const quizStatusDiv = document.getElementById('quizStatus');
+        
+        // ... (status updates remain the same)
+
+        // 5. Display content
+        quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
+
+        // 6. Add Research Links (NEW FEATURE)
+        // MODIFIED: Pass the full context for accurate search
+        quizContentDiv.innerHTML += generateResearchLinks(stepTitle, fullContext); 
+
+        // 7. VOICE LOGIC MODIFICATION: Store content, but DO NOT auto-start speech
+        window.lessonDetailText = generatedDetail; 
+        updateVoiceButtonState('Listen to Content', false); // Ensure button is in the 'listen' state
+
+    } catch (error) {
+        console.error("Detailed Lesson API Error (Detail):", error);
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your DETAIL API Key or network connection.</p>`;
+        quizStatusDiv.textContent = "❌ Failed to load lesson content.";
+    }
+}
+
+// --- Utility Functions (markdownToHtml and generatePdf remain the same) ---
+function markdownToHtml(markdown) {
+    // ... (content remains the same)
+}
+
+function generatePdf(elementId) {
+    // ... (content remains the same)
+}
+
+function generateResearchLinks(stepTitle, fullContext) {
+    // ... (content remains the same)
+}
+
+</script>
+</body>
+</html>

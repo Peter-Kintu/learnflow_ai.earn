@@ -15,6 +15,9 @@ from docx import Document
 import requests
 from django.views.decorators.csrf import csrf_exempt
 
+from django.shortcuts import render, redirect # Ensure this is imported at the top
+from .models import Quiz, Question, Choice # Ensure these are imported
+from .forms import QuizForm # Ensure this is imported
 
 
 
@@ -870,3 +873,82 @@ def tts_proxy(request):
 
     except Exception as e:
         return JsonResponse({"error": "Server error", "details": str(e)}, status=500)
+
+
+
+@login_required
+def create_quiz(request):
+    """
+    Handles the creation of a new quiz, including its questions and choices,
+    from the POST request containing QuizForm data and questions_json.
+    """
+    if request.method == 'POST':
+        # The upload_code is reconstructed by JS into the hidden 'id_upload_code' input 
+        # which corresponds to the QuizForm field 'upload_code'.
+        quiz_form = QuizForm(request.POST)
+        
+        # The form submission logic relies on a hidden 'questions_json' field
+        questions_json = request.POST.get('questions_json')
+        
+        if quiz_form.is_valid():
+            
+            if not questions_json:
+                messages.error(request, "Please add at least one question to the quiz.")
+                return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+
+            try:
+                questions_data = json.loads(questions_json)
+            except (json.JSONDecodeError, TypeError):
+                messages.error(request, "Invalid question data submitted.")
+                return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+            
+            if not questions_data:
+                messages.error(request, "Please add at least one question to the quiz.")
+                return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+
+
+            # 1. Save the Quiz object
+            with transaction.atomic():
+                # The logged-in user is the teacher
+                quiz = quiz_form.save(commit=False)
+                # Assuming request.user is the teacher as per @login_required
+                quiz.teacher = request.user 
+                quiz.save()
+                
+                # 2. Process Questions and Choices from JSON
+                for q_data in questions_data:
+                    # Create the Question
+                    question = Question.objects.create(
+                        quiz=quiz,
+                        text=q_data['text'],
+                        type=q_data['type']
+                    )
+
+                    if q_data['type'] == 'MC': # Multiple Choice
+                        for c_data in q_data['choices']:
+                            Choice.objects.create(
+                                question=question,
+                                text=c_data['text'],
+                                is_correct=c_data['is_correct']
+                            )
+                    elif q_data['type'] == 'SA': # Single Answer
+                        # For Single Answer, the correct text is stored as a single Choice 
+                        # linked to the question, with is_correct=True.
+                        Choice.objects.create(
+                            question=question,
+                            text=q_data['correct_answer'],
+                            is_correct=True 
+                        )
+
+                messages.success(request, f'Quiz "{quiz.title}" created successfully!')
+                return redirect('aiapp:teacher_quiz_dashboard') # Redirect to the teacher dashboard
+
+        else:
+            # Form is invalid (e.g., title missing, upload_code validation failed)
+            messages.error(request, "There was an error with your quiz details. Please check the form. Note: Upload Access Code must be valid and 5 digits.")
+    
+    else:
+        # GET request: render the empty form
+        quiz_form = QuizForm()
+        
+    return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})        

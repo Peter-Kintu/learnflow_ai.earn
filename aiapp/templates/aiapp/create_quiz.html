@@ -1,430 +1,425 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate AI-Powered Learning Paths</title>
+{% extends "base.html" %}
 
-    <meta name="description" content="Generate personalized, step-by-step AI-powered learning paths and courses for tech skills, digital marketing, and language learning, including Swahili, Yoruba, and Zulu.">
-    <link rel="canonical" href="[YOUR_CANONICAL_URL_HERE]"> 
-    <meta name="robots" content="index, follow">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
+{% block title %}Create New Quiz{% endblock %}
 
-    <style>
-        /* Custom styles to set a dark background for the whole page and enable pulse for loading */
-        body {
-            background-color: #1e293b; /* slate-800 equivalent background */
-        }
-        /* Style for the rendered Markdown (Adjusted to handle cleaner AI text) */
-        .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #a5b4fc; margin-top: 1.5rem; border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
-        .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #c7d2fe; margin-top: 1rem; }
-        .markdown-output p { margin-bottom: 0.75rem; }
-        .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
-        .markdown-output li { margin-bottom: 0.25rem; }
+{% block content %}
+<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10 relative">
+    <a href="{% url 'aiapp:teacher_quiz_dashboard' %}" class="absolute top-4 left-4 text-gray-400 hover:text-indigo-500 transition-colors flex items-center space-x-2 font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <span>Back</span>
+    </a>
 
-        /* Quiz/Lesson Modal Specific Styles */
-        .question-block { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #475569; }
-        .quiz-question { font-weight: bold; color: #f9fafb; margin-bottom: 0.75rem; }
-        .fill-in-box { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #6366f1; color: #fff; margin-top: 0.5rem; }
-        
-        /* Rised Container Style for Clickable Steps */
-        .clickable-step {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1); /* Subtle shadow for "raised" effect */
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        .clickable-step:hover {
-            transform: translateY(-2px); /* Slight lift on hover */
-            box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.3), 0 6px 8px -2px rgba(0, 0, 0, 0.15);
-        }
-    </style>
-</head>
-<body>
+    <h2 class="text-3xl font-bold text-gray-200 mb-2 text-center">Create New Quiz</h2>
+    <p class="text-center text-gray-400 mb-8">Define the quiz details and add your questions.</p>
 
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+    <form method="post" id="create-quiz-form" class="space-y-6">
+        {% csrf_token %}
 
-    <div class="text-center mb-12">
-        <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Generate AI-Powered Learning Paths</h2>
-        <p class="text-xl text-gray-400 max-w-2xl mx-auto">
-            Create personalized courses for tech skills, digital marketing, or language learning!
-            <div class="text-yellow-400 text-sm mt-2">🌍 Dynamic Content Mode Activated</div>
-        </p>
-    </div>
-    
-    <div class="flex justify-center mb-10">
-        <ins class="adsbygoogle"
-             style="display:block; text-align:center;"
-             data-ad-client="ca-pub-1234567890123456"
-             data-ad-slot="9876543210"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-    <div class="flex flex-col lg:flex-row gap-8">
-        
-        <div class="lg:w-7/12 bg-slate-700 p-8 rounded-2xl shadow-inner">
-            <h3 class="text-2xl font-bold text-gray-200 mb-2 flex items-center">
-                <span class="text-indigo-400 mr-3">🎯</span>
-                What Would You Like to Master Today?
-            </h3>
-            <p class="text-gray-400 mb-6">
-                Fill in your choices and we'll create a step-by-step learning path for you.
-            </p>
-
-            <form id="learningPathForm" class="space-y-6">
-                <div>
-                    <label for="languageSelect" class="block text-lg font-medium text-gray-200 mb-2">Choose Course Output Language 🌐</label>
-                    <select id="languageSelect" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="en-US">English (US)</option>
-                        <option value="fr-FR">French (France)</option>
-                        <option value="es-ES">Spanish (Spain)</option>
-                        <option value="sw">Swahili (Kenya/Tanzania)</option>
-                        <option value="yo">Yoruba (Nigeria)</option>
-                        <option value="zu">Zulu (South Africa)</option>
-                        <option value="ar">Arabic</option>
-                        <option value="zh">Mandarin Chinese</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="subjectMastery" class="block text-lg font-medium text-gray-200 mb-2">What subject do you want to master? *</label>
-                    <input type="text" id="subjectMastery" placeholder="e.g. Learning Swahili Grammar" required class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div class="text-sm text-gray-400">
-                    <p class="font-semibold mb-2">💡 Popular subjects:</p>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Beginner React Development'">Beginner React Dev</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate Machine Learning Basics'">Intermediate ML Basics</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Digital Marketing Strategy'">Digital Marketing Strategy</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Advanced Swahili Conversation'">Advanced Swahili</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Beginner Yoruba Tones'">Beginner Yoruba</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate Data Science with Python'">Data Science</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Advanced UI/UX Principles'">Advanced UI/UX</span>
-                        <span class="bg-slate-600/50 text-indigo-300 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-slate-600" onclick="document.getElementById('subjectMastery').value = 'Intermediate French Verb Conjugation'">Intermediate French</span>
-                    </div>
-                </div>
-                
-                <div>
-                    <label for="currentLevel" class="block text-lg font-medium text-gray-200 mb-2">What's your current level? 📚</label>
-                    <select id="currentLevel" class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="beginner">Beginner (Just starting)</option>
-                        <option value="intermediate">Intermediate (Some experience)</option>
-                        <option value="advanced">Advanced (Experienced)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="learningGoals" class="block text-lg font-medium text-gray-200 mb-2">Any specific learning goals or preferences? 🎓</label>
-                    <textarea id="learningGoals" rows="3" placeholder="e.g. Focus on practical projects, need a certificate, 3 hours per week commitment." class="w-full px-4 py-3 rounded-xl bg-slate-800 text-gray-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                </div>
-
-                <button type="button" onclick="generateCourseOutline(false)" id="generateButton" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-bold text-lg flex items-center justify-center shadow-lg">
-                    <span class="mr-2">🚀</span>
-                    Create My Learning Path
-                </button>
-                <p id="aiStatus" class="text-sm text-gray-400 mt-4 text-center"></p>
-
-            </form>
-        </div>
-
-        <div class="lg:w-5/12 bg-slate-700 p-8 rounded-2xl shadow-inner border border-indigo-500/50">
-            <h4 class="text-xl font-bold text-gray-200 mb-6 flex items-center">
-                <span class="mr-2 text-yellow-400">✨</span>
-                Your personalized learning journey will include:
-            </h4>
-            <ul class="space-y-4 text-gray-300 font-medium">
-                <li class="flex items-start">
-                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
-                    <span class="leading-relaxed">**Interactive lessons** based on your pace.</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
-                    <span class="leading-relaxed">**Hands-on practice exercises** for skill retention.</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
-                    <span class="leading-relaxed">**Curated learning resources** and external links.</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-400 mr-3 text-xl font-bold">✓</span>
-                    <span class="leading-relaxed">**Progress tracking & achievements** to keep you motivated.</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-    
-    <div id="aiCourseOutput" class="hidden bg-slate-700 p-6 rounded-xl shadow-inner mt-10">
-        <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Generated Learning Path Outline</h4>
-        <div id="courseContent" class="space-y-4 text-gray-300">
-            </div>
-        
-        <div class="quiz-input-container">
-            <label for="quizPromptInput" class="text-sm">Current Subject Focus (Used for AI Context):</label>
-            <input type="text" id="quizPromptInput" value="" disabled class="mt-1 bg-slate-800/50 border-slate-600">
-        </div>
-
-        <div class="text-center mt-6 flex flex-wrap justify-center items-center gap-4">
-            <button onclick="generateCourseOutline(true)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm">
-                🔄 Regenerate Outline
-            </button>
-            <button onclick="generatePdf('courseContent')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm">
-                ⬇️ Download TXT
-            </button>
-            <button class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:bg-green-800" disabled>
-                Enroll in Course (Coming Soon)
-            </button>
-        </div>
-    </div>
-    
-    <div id="quizModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-700 p-8 rounded-xl max-w-2xl w-full shadow-2xl relative">
+        <div class="bg-slate-700 p-6 rounded-xl shadow-inner space-y-4">
+            <h3 class="text-xl font-semibold text-gray-200">Quiz Details</h3>
             
-            <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
-                <h3 class="text-2xl font-bold text-yellow-400">Lesson Details 📖</h3>
-                <button id="voiceToggle" onclick="toggleSpeech()" class="px-3 py-1 bg-indigo-500 text-white text-sm rounded-lg hover:bg-indigo-600 transition-colors flex items-center">
-                    <svg id="speakerIcon" class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.899a9 9 0 010 14.142m-9.899-9.899a4 4 0 010 5.656M10 18l-6 4V2l6 4h4l5 4-5 4h-4z"></path></svg>
-                    <span id="voiceText">Listen to Content</span>
-                </button>
-            </div>
-            <div id="quizContent" class="text-gray-300 space-y-4 max-h-96 overflow-y-auto pr-2">
-                </div>
-            <div id="quizStatus" class="text-sm text-center mt-4 text-indigo-300"></div>
-            
-            <div class="flex flex-col gap-3 mt-6">
-                <button onclick="document.getElementById('quizModal').classList.add('hidden'); speechSynthesis.cancel();" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
-                    ⬅️ Back to Course Outline
-                </button>
-            </div>
-        </div>
-    </div>
+            {{ quiz_form.title.label_tag }}
+            {{ quiz_form.title }}
 
+            {{ quiz_form.description.label_tag }}
+            {{ quiz_form.description }}
+
+            <div class="space-y-2">
+                <label for="id_upload_code_digits" class="block text-sm font-medium text-gray-300">Teacher's Access Code (5 Digits)</label>
+                <div id="id_upload_code_digits" class="flex space-x-2">
+                    <input type="number" id="code_digit_1" class="code-digit w-1/5 h-12 text-center text-2xl bg-slate-600 border border-slate-500 rounded-lg text-gray-200 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" maxlength="1" required min="0" max="9" pattern="\d{1}">
+                    <input type="number" id="code_digit_2" class="code-digit w-1/5 h-12 text-center text-2xl bg-slate-600 border border-slate-500 rounded-lg text-gray-200 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" maxlength="1" required min="0" max="9" pattern="\d{1}">
+                    <input type="number" id="code_digit_3" class="code-digit w-1/5 h-12 text-center text-2xl bg-slate-600 border border-slate-500 rounded-lg text-gray-200 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" maxlength="1" required min="0" max="9" pattern="\d{1}">
+                    <input type="number" id="code_digit_4" class="code-digit w-1/5 h-12 text-center text-2xl bg-slate-600 border border-slate-500 rounded-lg text-gray-200 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" maxlength="1" required min="0" max="9" pattern="\d{1}">
+                    <input type="number" id="code_digit_5" class="code-digit w-1/5 h-12 text-center text-2xl bg-slate-600 border border-slate-500 rounded-lg text-gray-200 focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" maxlength="1" required min="0" max="9" pattern="\d{1}">
+                </div>
+            </div>
+            <input type="hidden" name="upload_code" id="id_upload_code" value="">
+        </div>
+
+        <h3 class="text-2xl font-bold text-gray-200 pt-4">Quiz Questions</h3>
+
+        <div id="questions-container" class="space-y-8">
+            </div>
+
+        <button type="button" id="add-question-btn" class="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 font-semibold shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span>Add Question</span>
+        </button>
+
+        <input type="hidden" name="questions_json" id="questions_json">
+
+        <button type="submit" id="submit-quiz-btn" class="w-full py-4 bg-green-600 text-white text-xl rounded-md hover:bg-green-700 transition-colors font-bold shadow-xl mt-8">
+            Create Quiz
+        </button>
+    </form>
 </div>
 
 <script>
-// --- Define keys for specific roles (Used for Gemini API calls) ---
-// 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
-// You can obtain keys from Google AI Studio.
-const API_KEYS = {
-    // Key used for generating the high-level course outline (less intensive)
-    OUTLINE: "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u3EnzHFw",
-    // Key used for generating the detailed lessons and quizzes (more intensive)
-    DETAIL: "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
-};
-const CACHE_KEY_PREFIX = "learnflow_outline_";
-
-// ADDED: Global variable to store the lesson content and speech state
-window.lessonDetailText = "";
-let isSpeaking = false;
-
-
-// ADDED: Function to update the voice toggle button's appearance
-function updateVoiceButtonState(text, speaking) {
-    const button = document.getElementById('voiceToggle');
-    const textSpan = document.getElementById('voiceText');
-    const icon = document.getElementById('speakerIcon');
-
-    textSpan.textContent = text;
-    isSpeaking = speaking;
-
-    if (speaking) {
-        button.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
-        button.classList.add('bg-red-500', 'hover:bg-red-600');
-        // Pause/Stop Icon
-        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10.5V13.5M15 10.5V13.5"></path>'; 
-    } else {
-        button.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
-        button.classList.remove('bg-red-500', 'hover:bg-red-600');
-        // Speaker Icon (Listen)
-        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.899a9 9 0 010 14.142m-9.899-9.899a4 4 0 010 5.656M10 18l-6 4V2l6 4h4l5 4-5 4h-4z"></path>'; 
-    }
-}
-
-// ADDED: Main toggle function for the voice button
-function toggleSpeech() {
-    if (speechSynthesis.speaking) {
-        // Speech is currently active, so stop it
-        speechSynthesis.cancel(); 
-        updateVoiceButtonState('Listen to Content', false);
-    } else {
-        // Speech is not active, so start it
-        if (window.lessonDetailText) {
-            speakText(window.lessonDetailText);
-            // The speakText function will handle setting the state to 'Stop Listening'
-        } else {
-            console.warn("No lesson content available to speak.");
-        }
-    }
-}
-
-
-/**
- * Helper function for browser's native TTS (fallback).
- * MODIFIED: Improved voice tone (pitch), multilingual voice selection, and speed.
- */
-function fallbackToBrowserTTS(text, lang) {
-    console.warn("Falling back to browser's native TTS.");
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // 1. IMPROVE TONE (Pitch/Rate)
-    utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
-    utterance.rate = 0.88; // Lowered from 0.95 to 0.88 for a calmer, less speedy pace.
-
-    // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
-    const voices = speechSynthesis.getVoices();
-    let selectedVoice = null;
-
-    // CRITICAL FIX: Set the utterance language to the requested language.
-    const baseLang = lang.split('-')[0];
-    utterance.lang = lang; 
-
-    // Define the voice preference array (from user's request)
-    const voicePreferences = [
-        // Priority 1: African-related languages (may only be available on certain OS/browsers)
-        { lang: 'en-ZA', name: 'South African' }, // Regional English accent
-        { lang: 'zu', name: 'Zulu' },
-        { lang: 'sw', name: 'Swahili' },
-        { lang: 'yo', name: 'Yoruba' },
-        { lang: 'ha', name: 'Hausa' },
-        // Priority 2: High-quality, often multilingual/polyglot voices
-        { lang: 'Google', name: 'Multi' },
-        { lang: 'Microsoft', name: 'Multi' },
-        // Priority 3: Other high-quality defaults
-        { lang: 'Daniel', name: 'Daniel' },
-        { lang: 'Samantha', name: 'Samantha' },
-        { lang: 'Zira', name: 'Zira' }
-    ];
-
-    // Priority 1: Find a voice whose language code starts with the full requested code or the base code
-    selectedVoice = voices.find(voice => voice.lang.toLowerCase().startsWith(lang.toLowerCase()) || voice.lang.toLowerCase().startsWith(baseLang.toLowerCase()));
-
-    // Priority 2: If no exact language match, iterate through the high-priority preference list
-    if (!selectedVoice) {
-        for (let pref of voicePreferences) {
-            // Check for match by full language code OR by preferred name
-            selectedVoice = voices.find(voice => voice.lang.toLowerCase().includes(pref.lang.toLowerCase()) || voice.name.includes(pref.name) );
-            if (selectedVoice) break;
-        }
-    }
-
-    // Final fallback: any voice with an English language code
-    if (!selectedVoice) {
-        selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
-    }
-
-    if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log(`TTS Voice selected: ${selectedVoice.name} (${selectedVoice.lang})`);
-    } else {
-        console.warn(`Could not find a specific voice for language code: ${lang}. Using default.`);
-    }
-
-    // Stop any current speech and start the new one
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
-}
-
-/**
- * ASYNC FUNCTION: Cleans text for better TTS flow and triggers the speech.
- * MODIFIED: Added logic to update the voice control button state.
- */
-async function speakText(text) {
-    const selectedLang = document.getElementById("languageSelect").value;
-    
-    // 1. Text Cleaning: Aggressively strip Markdown and symbols that are read aloud,
-    // but PRESERVE punctuation (., ! ? : ;) to create natural pauses and flow.
-    let cleanText = text
-        .replace(/#+/g, '') // Remove headings
-        .replace(/\*\*/g, '') // Remove double asterisks (bold)
-        .replace(/\*/g, '') // Remove single asterisks (italics/list markers)
-        .replace(/__/g, '') // Remove double underscores
-        .replace(/_/g, '') // Remove single underscores
-        .replace(/\[.*?\]\((.*?)\)/g, '') // Remove Markdown links entirely [text](url)
-        .replace(/\[.*?\]/g, '') // Remove brackets, e.g., citations [text]
-        .replace(/`/g, '') // Remove backticks (code)
-        .replace(/\//g, ' or ') // Replace slashes with "or"
-        .replace(/[${}^|@<>=+]/g, ' ') // NEW: Remove symbols often read aloud: $, {, }, ^, |, @, <, >, =, +
-        .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
-    
-    // Further cleaning and consolidation
-    cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space
-
-    // 2. Fallback to Browser TTS (using the language set in the form)
-    fallbackToBrowserTTS(cleanText, selectedLang);
-
-    // ADDED: Update button state when speech starts
-    updateVoiceButtonState('Stop Listening', true);
-    
-    // Set a listener for when the speech ends naturally
-    speechSynthesis.onend = () => {
-        updateVoiceButtonState('Listen to Content', false);
-        speechSynthesis.onend = null; // Clean up the event listener
-    };
-    
-    // Set a listener for when the speech is manually cancelled (e.g., hitting the stop button)
-    speechSynthesis.onstart = () => {
-        // Ensure the button is set to "Stop Listening" once speech actually starts
-        updateVoiceButtonState('Stop Listening', true);
-    };
-}
-
-
-// --- Main Logic Functions (Modified for Voice Control) ---
-
-// Function to generate and display the course outline
-async function generateCourseOutline(isRegenerate) {
-    // ... (content remains the same until loadDetailedLesson)
-}
-
-// Function to load and display the detailed lesson content
-async function loadDetailedLesson(stepTitle, fullContext) {
-    // ... (content remains the same until the end)
-
-    try {
-        // ... (API call and JSON parsing remain the same)
-        const generatedDetail = result.text.trim();
-
-        // 4. Update the Modal content
-        const quizContentDiv = document.getElementById('quizContent');
-        const quizStatusDiv = document.getElementById('quizStatus');
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('create-quiz-form');
+        const questionsContainer = document.getElementById('questions-container');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const questionsJsonInput = document.getElementById('questions_json');
         
-        // ... (status updates remain the same)
+        // --- Utility Functions ---
 
-        // 5. Display content
-        quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
+        function getNextQuestionNumber() {
+            // Use querySelectorAll on the container to get only the blocks inside it
+            return questionsContainer.querySelectorAll('.question-block').length + 1;
+        }
 
-        // 6. Add Research Links (NEW FEATURE)
-        // MODIFIED: Pass the full context for accurate search
-        quizContentDiv.innerHTML += generateResearchLinks(stepTitle, fullContext); 
+        function updateQuestionNumbers() {
+            questionsContainer.querySelectorAll('.question-block').forEach((block, index) => {
+                const questionNum = index + 1;
+                block.querySelector('.question-number').textContent = `Question ${questionNum}`;
+                
+                // Update names for inputs to ensure uniqueness and match the expected JSON structure
+                // We use qIndex as the question number in the name to make it unique per block
+                
+                // Update question text input name
+                const qTextInput = block.querySelector('.question-text-input');
+                if (qTextInput) qTextInput.name = `question_text_${questionNum}`;
 
-        // 7. VOICE LOGIC MODIFICATION: Store content, but DO NOT auto-start speech
-        window.lessonDetailText = generatedDetail; 
-        updateVoiceButtonState('Listen to Content', false); // Ensure button is in the 'listen' state
+                // Update MC choices and radio buttons
+                block.querySelectorAll('.choice-input').forEach(input => {
+                    const parts = input.name.split('_');
+                    if (parts[0] === 'choice' && parts[1] === 'text') {
+                        // choice_text_OLDINDEX_CHOICENUMBER -> choice_text_NEWINDEX_CHOICENUMBER
+                        input.name = `choice_text_${questionNum}_${parts[3]}`;
+                    } else if (parts[0] === 'single' && parts[1] === 'answer') {
+                        // single_answer_OLDINDEX -> single_answer_NEWINDEX
+                        input.name = `single_answer_${questionNum}`;
+                    }
+                });
+                
+                block.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    // is_correct_OLDINDEX -> is_correct_NEWINDEX
+                    radio.name = `is_correct_${questionNum}`;
+                });
+            });
+        }
 
-    } catch (error) {
-        console.error("Detailed Lesson API Error (Detail):", error);
-        quizContentDiv.innerHTML = `<p class="text-red-400 py-8">❌ Error loading content: ${error.message}. Please check your DETAIL API Key or network connection.</p>`;
-        quizStatusDiv.textContent = "❌ Failed to load lesson content.";
-    }
-}
+        function getQuestionBlockTemplate(questionType, questionData = {}) {
+            const isMC = questionType === 'MC';
+            const questionText = questionData.text || '';
+            const correctText = questionData.correct_answer || '';
+            const questionNum = getNextQuestionNumber();
+            
+            let choicesHtml = '';
+            
+            if (isMC) {
+                // Default choices for a new MC question
+                const choices = questionData.choices || [
+                    {text: '', is_correct: true},
+                    {text: '', is_correct: false},
+                    {text: '', is_correct: false},
+                    {text: '', is_correct: false}
+                ];
 
-// --- Utility Functions (markdownToHtml and generatePdf remain the same) ---
-function markdownToHtml(markdown) {
-    // ... (content remains the same)
-}
+                choicesHtml = `
+                    <div class="space-y-4 pt-4 mc-choices-container">
+                        <h4 class="text-md font-semibold text-gray-300">Choices (Select the correct one)</h4>
+                        ${choices.map((choice, index) => `
+                            <div class="flex items-center space-x-3 bg-slate-700 p-3 rounded-lg border border-slate-600">
+                                <input type="radio" 
+                                    id="q${questionNum}-choice${index + 1}" 
+                                    name="is_correct_${questionNum}" 
+                                    value="choice_${index + 1}" 
+                                    class="form-radio text-indigo-500 h-5 w-5 border-gray-400"
+                                    ${choice.is_correct ? 'checked' : ''}
+                                    data-choice-id="${index + 1}">
+                                <input type="text" 
+                                    name="choice_text_${questionNum}_${index + 1}" 
+                                    class="choice-input w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" 
+                                    placeholder="Choice ${index + 1} text"
+                                    value="${choice.text}"
+                                    required>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else { // SA
+                choicesHtml = `
+                    <div class="space-y-2 pt-4 sa-answer-container">
+                        <label class="block text-sm font-medium text-gray-300">Correct Answer</label>
+                        <input type="text" 
+                            name="single_answer_${questionNum}" 
+                            class="choice-input w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" 
+                            placeholder="Enter the correct answer text"
+                            value="${correctText}"
+                            required>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="question-block bg-slate-700 p-6 rounded-xl shadow-lg border-t-4 border-indigo-500" data-question-type="${questionType}">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="question-number text-xl font-bold text-gray-200">Question ${questionNum}</h4>
+                        <div class="flex items-center space-x-2">
+                             <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${isMC ? 'bg-indigo-500 text-white' : 'bg-pink-500 text-white'}">
+                                 ${isMC ? 'Multiple Choice' : 'Single Answer'}
+                             </span>
+                            <button type="button" class="delete-question-btn text-gray-400 hover:text-red-500 transition-colors" aria-label="Delete Question">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>
+                    </div>
 
-function generatePdf(elementId) {
-    // ... (content remains the same)
-}
+                    <div class="space-y-2 mb-4">
+                        <label class="block text-sm font-medium text-gray-300">Question Text</label>
+                        <textarea 
+                            name="question_text_${questionNum}" 
+                            rows="2"
+                            class="question-text-input w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500" 
+                            placeholder="Enter the question text here"
+                            required>${questionText}</textarea>
+                    </div>
 
-function generateResearchLinks(stepTitle, fullContext) {
-    // ... (content remains the same)
-}
+                    ${choicesHtml}
+                    
+                    <button type="button" class="toggle-type-btn mt-4 text-sm text-gray-400 hover:text-indigo-400 transition-colors" data-current-type="${questionType}">
+                         Change to ${isMC ? 'Single Answer' : 'Multiple Choice'}
+                    </button>
+                </div>
+            `;
+        }
 
+        function createQuestionBlock(questionType = 'MC') {
+            const block = document.createElement('div');
+            block.innerHTML = getQuestionBlockTemplate(questionType);
+            const questionBlock = block.firstElementChild;
+            
+            // Re-attach listeners to the new block
+            questionBlock.querySelector('.delete-question-btn').addEventListener('click', deleteQuestion);
+            questionBlock.querySelector('.toggle-type-btn').addEventListener('click', toggleQuestionType);
+
+            return questionBlock;
+        }
+
+        function deleteQuestion(event) {
+            const block = event.target.closest('.question-block');
+            block.remove();
+            updateQuestionNumbers();
+        }
+
+        function toggleQuestionType(event) {
+            const button = event.target;
+            const block = button.closest('.question-block');
+            const currentType = block.getAttribute('data-question-type');
+            const newType = currentType === 'MC' ? 'SA' : 'MC';
+
+            // Get the current question text
+            const questionTextInput = block.querySelector('.question-text-input');
+            const currentQuestionText = questionTextInput ? questionTextInput.value : '';
+
+            // Replace the block content
+            const newBlockHtml = getQuestionBlockTemplate(newType, { text: currentQuestionText });
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newBlockHtml;
+            const newBlock = tempDiv.firstElementChild;
+            
+            block.replaceWith(newBlock);
+
+            // Re-attach listeners to the new block
+            newBlock.querySelector('.delete-question-btn').addEventListener('click', deleteQuestion);
+            newBlock.querySelector('.toggle-type-btn').addEventListener('click', toggleQuestionType);
+            
+            updateQuestionNumbers();
+        }
+
+        function addQuestion() {
+            questionsContainer.appendChild(createQuestionBlock());
+            updateQuestionNumbers();
+        }
+
+        addQuestionBtn.addEventListener('click', addQuestion);
+        
+        // Add one empty question to start with
+        addQuestion();
+
+
+        // --- Teacher Code Input Logic ---
+        const codeDigits = document.querySelectorAll('.code-digit');
+        const uploadCodeInput = document.getElementById('id_upload_code');
+        
+        codeDigits.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                let value = e.target.value;
+                // Enforce single digit
+                if (value.length > 1) {
+                    value = value.slice(0, 1);
+                    e.target.value = value;
+                }
+                // Auto focus on next field if valid
+                if (e.target.value.length === 1 && index < codeDigits.length - 1) {
+                    codeDigits[index + 1].focus();
+                }
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                // Backspace logic: move to previous field on backspace if current is empty
+                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                    codeDigits[index - 1].focus();
+                }
+            });
+        });
+
+        // --- Form Submission Logic ---
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop default submission initially
+            
+            // 1. Concatenate Teacher's Code
+            let fullCode = '';
+            let isCodeComplete = true;
+            codeDigits.forEach(input => {
+                const digit = input.value.trim();
+                if (digit.length !== 1) {
+                    isCodeComplete = false;
+                }
+                fullCode += digit;
+            });
+
+            if (!isCodeComplete || fullCode.length !== 5) {
+                 alert("Please enter the complete 5-digit Teacher's Access Code.");
+                 // Focus on the first incomplete field
+                 codeDigits.forEach(input => {
+                     if (input.value.trim().length !== 1) {
+                         input.focus();
+                         return;
+                     }
+                 });
+                 return;
+            }
+            // Set the hidden field value that Django's QuizForm expects
+            uploadCodeInput.value = fullCode;
+
+
+            // 2. Validate Questions and Build JSON
+            const questions = [];
+            let isValid = true;
+            
+            questionsContainer.querySelectorAll('.question-block').forEach((block, qIndex) => {
+                if (!isValid) return; // Stop if previous validation failed
+                
+                const type = block.getAttribute('data-question-type');
+                const text = block.querySelector('.question-text-input').value.trim();
+                
+                if (!text) {
+                    isValid = false;
+                    alert(`Question ${qIndex + 1} text cannot be empty.`);
+                    return;
+                }
+
+                const question = {
+                    text: text,
+                    type: type,
+                    choices: []
+                };
+
+                if (type === 'MC') {
+                    let correctChoiceIndex = null;
+                    let hasText = true;
+                    
+                    block.querySelectorAll('.choice-input').forEach((input, cIndex) => {
+                        if (!hasText) return; // Stop inner loop if validation failed
+                        
+                        const choiceText = input.value.trim();
+                        if (!choiceText) {
+                            hasText = false;
+                            alert(`Choice ${cIndex + 1} for Question ${qIndex + 1} cannot be empty.`);
+                            return;
+                        }
+                        
+                        // Look for the corresponding radio input
+                        const radioInput = block.querySelector(`input[name="is_correct_${qIndex + 1}"][data-choice-id="${cIndex + 1}"]`);
+
+                        question.choices.push({
+                            text: choiceText,
+                            is_correct: radioInput.checked
+                        });
+                        
+                        if (radioInput.checked) {
+                            correctChoiceIndex = cIndex;
+                        }
+                    });
+
+                    if (!hasText) { isValid = false; return; }
+
+                    if (correctChoiceIndex === null) {
+                        isValid = false;
+                        alert(`Question ${qIndex + 1} (Multiple Choice) must have one correct answer selected.`);
+                        return;
+                    }
+
+                } else if (type === 'SA') {
+                    const answerInput = block.querySelector('input[name^="single_answer_"]');
+                    const answerText = answerInput.value.trim();
+
+                    if (!answerText) {
+                        isValid = false;
+                        alert(`Question ${qIndex + 1} (Single Answer) must have a correct answer text.`);
+                        return;
+                    }
+                    
+                    // For SA, we use 'correct_answer' to hold the text answer
+                    question.correct_answer = answerText; 
+                }
+
+                questions.push(question);
+            });
+
+            if (!isValid) {
+                return; // Stop submission if question validation failed
+            }
+
+            if (questions.length === 0) {
+                alert('Please add at least one question to the quiz.');
+                return;
+            }
+
+            // 3. Set JSON and Submit
+            questionsJsonInput.value = JSON.stringify(questions);
+            
+            // Submit the form
+            form.submit(); 
+        });
+    });
 </script>
-</body>
-</html>
+
+<style>
+    /* Custom styles for radio buttons to match the dark theme */
+    .form-radio {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        display: inline-block;
+        vertical-align: middle;
+        background-repeat: no-repeat;
+        background-position: center;
+        border-radius: 50%;
+        cursor: pointer;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #6B7280; /* Equivalent to border-gray-600 */
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
+
+    .form-radio:checked {
+        background-color: #4F46E5; /* Equivalent to bg-indigo-600 */
+        border-color: #4F46E5; /* Match border color */
+        /* Custom dot for checked state */
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+    }
+
+    /* Hide number input controls for aesthetic and to enforce single digit */
+    .code-digit::-webkit-outer-spin-button,
+    .code-digit::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>
+{% endblock %}
