@@ -14,30 +14,21 @@ from django.core.exceptions import ObjectDoesNotExist
 from docx import Document
 import requests
 from django.views.decorators.csrf import csrf_exempt
-
 from django.shortcuts import render, redirect # Ensure this is imported at the top
 from .models import Quiz, Question, Choice # Ensure these are imported
 from .forms import QuizForm # Ensure this is imported
-
-
-
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
-
 # Import models and forms from both aiapp and video apps
 from .models import Quiz, Question, Choice, StudentAnswer, Attempt
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
 from book.models import Book
-
-
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from urllib.parse import urljoin
+from django.http import HttpResponse
 
-
-import json
-from django.http import JsonResponse
 # from django.views.decorators.csrf import csrf_exempt
 
 # NOTE: For this to work with your AI models, you'll need to import
@@ -55,51 +46,7 @@ def home(request):
         "ai_context": "LearnFlow AI is here to empower educators and learners across Africa. Ask anything!",
          "show_ads": True
     })
-# @csrf_exempt
-# def chat_api(request):
-#     """
-#     Handles POST requests for the chat API.
-#     Receives a user query and returns a placeholder AI response.
-#     """
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             query = data.get('query', '')
-            
-#             # --- Placeholder for AI model logic ---
-#             # Replace this with your actual AI model's code to generate a response.
-#             ai_response = f"I received your message: '{query}'. This is a placeholder response."
-#             # -------------------------------------
 
-#             return JsonResponse({'answer': ai_response})
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
-    
-#     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-
-# @csrf_exempt
-# def feedback_api(request):
-#     """
-#     Handles POST requests for the feedback API.
-#     Saves feedback to a log file or a database.
-#     """
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             feedback = data.get('feedback', '')
-            
-#             # --- Placeholder for feedback storage ---
-#             # You can save this to a file, database, or send it to a different service.
-#             # For now, let's just log it to the console.
-#             print(f"Received user feedback: '{feedback}'")
-#             # ---------------------------------------
-
-#             return JsonResponse({'message': 'Feedback received successfully'})
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
-    
-#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 def ask_ai_view(request):
     query = request.POST.get("query")
@@ -271,70 +218,70 @@ def quiz_review(request, attempt_id):
     return render(request, 'aiapp/quiz_review.html', context)
 
 
-@login_required
-@transaction.atomic
-def create_quiz(request):
-    """
-    Handles the creation of a new quiz and its questions.
-    """
-    if request.method == 'POST':
-        quiz_form = QuizForm(request.POST)
+# @login_required
+# @transaction.atomic
+# def create_quiz(request):
+#     """
+#     Handles the creation of a new quiz and its questions.
+#     """
+#     if request.method == 'POST':
+#         quiz_form = QuizForm(request.POST)
         
-        if quiz_form.is_valid():
-            quiz = quiz_form.save(commit=False)
-            quiz.teacher = request.user
-            quiz.upload_code = quiz_form.cleaned_data.get('upload_code')
-            quiz.save()
+#         if quiz_form.is_valid():
+#             quiz = quiz_form.save(commit=False)
+#             quiz.teacher = request.user
+#             quiz.upload_code = quiz_form.cleaned_data.get('upload_code')
+#             quiz.save()
             
-            questions_data = request.POST.get('questions_data')
-            if questions_data:
-                try:
-                    questions_list = json.loads(questions_data)
-                    for q_data in questions_list:
-                        question_text = q_data.get('text')
-                        if not question_text:
-                            continue
+            # questions_data = request.POST.get('questions_data')
+            # if questions_data:
+            #     try:
+            #         questions_list = json.loads(questions_data)
+            #         for q_data in questions_list:
+            #             question_text = q_data.get('text')
+            #             if not question_text:
+            #                 continue
 
-                        question_type = q_data.get('question_type', 'MC')
+            #             question_type = q_data.get('question_type', 'MC')
                         
-                        question_instance = Question.objects.create(
-                            quiz=quiz,
-                            text=question_text,
-                            question_type=question_type,
-                        )
+            #             question_instance = Question.objects.create(
+            #                 quiz=quiz,
+            #                 text=question_text,
+            #                 question_type=question_type,
+            #             )
 
-                        if question_type == 'MC':
-                            choices_data = q_data.get('choices', [])
-                            for c_data in choices_data:
-                                if c_data.get('text'):
-                                    Choice.objects.create(
-                                        question=question_instance,
-                                        text=c_data['text'],
-                                        is_correct=c_data.get('isCorrect', False)
-                                    )
-                        elif question_type == 'SA':
-                            correct_answer_text = q_data.get('correct_answer_text')
-                            if correct_answer_text:
-                                question_instance.correct_answer_text = correct_answer_text
-                                question_instance.save()
+                        # if question_type == 'MC':
+                        #     choices_data = q_data.get('choices', [])
+                        #     for c_data in choices_data:
+                        #         if c_data.get('text'):
+                        #             Choice.objects.create(
+                        #                 question=question_instance,
+                        #                 text=c_data['text'],
+                        #                 is_correct=c_data.get('isCorrect', False)
+                        #             )
+                        # elif question_type == 'SA':
+                        #     correct_answer_text = q_data.get('correct_answer_text')
+                        #     if correct_answer_text:
+                        #         question_instance.correct_answer_text = correct_answer_text
+                        #         question_instance.save()
 
-                    messages.success(request, f'"{quiz.title}" has been created successfully!')
-                    return redirect('aiapp:teacher_quiz_dashboard')
+    #                 messages.success(request, f'"{quiz.title}" has been created successfully!')
+    #                 return redirect('aiapp:teacher_quiz_dashboard')
 
-                except (json.JSONDecodeError, KeyError) as e:
-                    print(f"JSON processing error: {e}")
-                    messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
-                    raise
-        else:
-            messages.error(request, "Please correct the form errors below.")
-            print("Form errors:", quiz_form.errors)
-    else:
-        quiz_form = QuizForm()
+    #             except (json.JSONDecodeError, KeyError) as e:
+    #                 print(f"JSON processing error: {e}")
+    #                 messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
+    #                 raise
+    #     else:
+    #         messages.error(request, "Please correct the form errors below.")
+    #         print("Form errors:", quiz_form.errors)
+    # else:
+    #     quiz_form = QuizForm()
         
-    return render(request, 'aiapp/create_quiz.html', {
-        'quiz_form': quiz_form,
-        'show_ads': True
-        })
+    # return render(request, 'aiapp/create_quiz.html', {
+    #     'quiz_form': quiz_form,
+    #     'show_ads': True
+    #     })
        
 
 @login_required
@@ -790,9 +737,6 @@ def ai_quiz_generator(request):
     return render(request, 'aiapp/ai_quiz_generator.html')
 
 
-from urllib.parse import urljoin
-from django.http import HttpResponse
-
 def sitemap_view(request):
     base_url = "https://learnflow-ai-0fdz.onrender.com"
     urls = [
@@ -876,6 +820,7 @@ def tts_proxy(request):
 
 
 
+
 @login_required
 def create_quiz(request):
     """
@@ -894,7 +839,8 @@ def create_quiz(request):
             
             if not questions_json:
                 messages.error(request, "Please add at least one question to the quiz.")
-                return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
+                # Assumes the template is correctly named based on previous context
+                return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form}) 
 
             try:
                 questions_data = json.loads(questions_json)
@@ -921,7 +867,9 @@ def create_quiz(request):
                     question = Question.objects.create(
                         quiz=quiz,
                         text=q_data['text'],
-                        type=q_data['type']
+                        # FIX APPLIED HERE: Changed 'type' to 'question_type' 
+                        # to match the field name in models.py
+                        question_type=q_data['type'] 
                     )
 
                     if q_data['type'] == 'MC': # Multiple Choice
@@ -951,4 +899,4 @@ def create_quiz(request):
         # GET request: render the empty form
         quiz_form = QuizForm()
         
-    return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})        
+    return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})

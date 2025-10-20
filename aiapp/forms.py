@@ -35,27 +35,32 @@ class QuizForm(forms.ModelForm):
         })
     )
 
+    # UPDATED: Enforce max_length=5 and clarify label/placeholder
     upload_code = forms.CharField(
-        label="Upload Access Code",
-        max_length=10,
+        label="Teacher's Access Code (5 Digits)",
+        max_length=5,
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
-            'placeholder': 'Enter code provided by admin',
+            'placeholder': 'Enter the 5-digit code',
             'required': 'true'
         })
     )
 
     class Meta:
         model = Quiz
-        fields = ['title', 'description',  'upload_code']
+        fields = ['title', 'description', 'upload_code']
 
     def clean_upload_code(self):
         code = self.cleaned_data.get('upload_code')
 
         if not code:
-            raise forms.ValidationError("Please enter the code provided by the admin to authorize your upload.")
+            raise forms.ValidationError("Please enter the 5-digit Teacher's Access Code.")
 
         if not code.isdigit():
-            raise forms.ValidationError("Upload access code must be numeric.")
+            raise forms.ValidationError("The access code must be composed of 5 numeric digits.")
+        
+        # FIX: Explicitly enforce the required 5-digit length
+        if len(code) != 5:
+            raise forms.ValidationError("The access code must be exactly 5 digits long.")
 
         return code
