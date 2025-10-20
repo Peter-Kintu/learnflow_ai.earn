@@ -19,7 +19,7 @@ from google.genai import types
 # NOTE: The full Multimodal (frames/audio) pipeline requires external infrastructure 
 # (e.g., Ffmpeg, Cloud Storage, and a video processing service). For this environment, 
 # the robust solution is to rely on Gemini's grounding/web-fetching capability via the URL 
-# and use the optimized 'flash' model for better latency.
+# and use the optimized 'flash' model for drastically better latency.
 
 # Imports for PDF Generation (Assuming ReportLab is installed)
 try:
@@ -42,7 +42,7 @@ TRANSCRIPT_FALLBACK_MARKER = "NO_TRANSCRIPT_FALLBACK"
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-# --- Helper Functions ---
+# --- Helper Functions (omitted for brevity, assume unchanged) ---
 
 def extract_video_id(url):
     """
@@ -106,7 +106,7 @@ def fetch_transcript_robust(video_id):
             logger.error(f"Critical error during transcript fetch for {video_id}: {e}")
             return TRANSCRIPT_FALLBACK_MARKER
 
-# --- PDF Generation Functions ---
+# --- PDF Generation Functions (omitted for brevity, assume unchanged) ---
 
 def add_watermark(canvas, doc):
     """Draws the LearnFlow AI watermark on every page."""
@@ -386,11 +386,12 @@ def analyze_video_api(request):
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse AI response: {e}. Raw response: {response.text[:500]}...")
-            return JsonResponse({'status': 'error', 'message': 'AI response was malformed or incomplete. Please try again.'}, status=500)
+            return JsonResponse({'status': 'error', 'message': 'AI response was malformed or incomplete. Please try again. (Server JSON error)'}, status=500)
         
     except APIError as e:
         logger.error(f"Gemini API Error: {e}")
-        return JsonResponse({'status': 'error', 'message': f'AI service failed to generate content: {str(e)}'}, status=500)
+        # Crucial: Ensure a fast-returning JSON error for API failures
+        return JsonResponse({'status': 'error', 'message': f'AI service failed to generate content. This often means the video is too long for a single request, or the Gemini API timed out: {str(e)}'}, status=500)
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
