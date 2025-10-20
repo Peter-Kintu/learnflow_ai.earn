@@ -112,7 +112,6 @@
                             <p id="transcriptPlaceholder" class="italic text-gray-500 dark:text-gray-400">Transcript will appear here...</p>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -130,10 +129,23 @@
     let currentVideoId = null;
     let quizData = []; // Stores the full quiz structure with correct answers
     let quizSubmitted = false;
+
+    // --- DOM Elements ---
+    const videoLinkInput = document.getElementById('videoLink');
     const analyzeButton = document.getElementById('analyzeButton');
+    const analyzeButtonText = document.getElementById('analyzeButtonText');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const statusMessage = document.getElementById('statusMessage');
+    const analysisContent = document.getElementById('analysisContent');
+    const summaryContent = document.getElementById('summaryContent');
+    const transcriptContent = document.getElementById('transcriptContent');
+    const quizContainer = document.getElementById('quizContainer');
+    const videoPlayer = document.getElementById('videoPlayer');
     const scoreButton = document.getElementById('scoreButton');
     const exportButton = document.getElementById('exportButton');
-    const statusMessage = document.getElementById('statusMessage');
+    const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+    const quizResults = document.getElementById('quizResults');
+
 
     // Internationalization (for text elements)
     const i18n = {
@@ -145,22 +157,21 @@
         placeholderSummary: "Analysis result will appear here...",
         placeholderQuiz: "Questions will load here after analysis...",
         placeholderTranscript: "Transcript will appear here...",
+        errorMessageEmpty: "Please enter a valid YouTube video link.",
+        errorMessageAPI: "An error occurred during analysis. Please try again.",
         scoreButtonText: "Submit & Get Report",
-        exportButtonText: "Download PDF Report & Certificate",
-        quizResultsTitle: "Your Results",
-        feedbackPrompt: "Found an issue or want to request a feature? Let us know.",
-        feedbackLink: "Send Feedback",
-        darkModeToggle: "Toggle dark mode"
+        scoreButtonLoading: "Scoring...",
+        downloadButtonText: "Download PDF Report & Certificate"
     };
 
-    // --- Helper Function: Get CSRF Token ---
+    // --- Helper Functions ---
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
@@ -170,314 +181,328 @@
         return cookieValue;
     }
 
-
-    // --- Core Functions ---
-    
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('text-primary-blue', 'dark:text-white', 'border-b-2', 'border-primary-blue');
-            button.classList.add('text-gray-500', 'dark:text-gray-400');
-        });
-
-        document.getElementById(`tab-${tabName}-content`).classList.remove('hidden');
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('text-primary-blue', 'dark:text-white', 'border-b-2', 'border-primary-blue');
-        document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-500', 'dark:text-gray-400');
-    }
-
-    function showStatus(message, type = 'info') {
+    function setStatus(message, type = 'info') {
         statusMessage.textContent = message;
-        statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800');
-        statusMessage.classList.add('dark:text-white');
+        statusMessage.classList.remove('hidden', 'bg-red-100', 'border-red-400', 'text-red-700', 'bg-green-100', 'border-green-400', 'text-green-700', 'bg-yellow-100', 'border-yellow-400', 'text-yellow-700');
         
         switch (type) {
             case 'error':
-                statusMessage.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-300');
+                statusMessage.classList.add('bg-red-100', 'border-red-400', 'text-red-700', 'border');
                 break;
             case 'success':
-                statusMessage.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-300');
+                statusMessage.classList.add('bg-green-100', 'border-green-400', 'text-green-700', 'border');
+                break;
+            case 'warning':
+                statusMessage.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700', 'border');
                 break;
             case 'info':
             default:
-                statusMessage.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-300');
+                statusMessage.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700', 'border');
                 break;
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    
-    function setButtonState(isLoading) {
+
+    function hideStatus() {
+        statusMessage.classList.add('hidden');
+    }
+
+    function toggleLoading(isLoading) {
         analyzeButton.disabled = isLoading;
-        analyzeButton.querySelector('#loadingIndicator').classList.toggle('hidden', !isLoading);
-        analyzeButton.querySelector('#analyzeButtonText').textContent = isLoading ? i18n.loadingText : i18n.analyzeButtonText;
+        loadingIndicator.classList.toggle('hidden', !isLoading);
+        analyzeButtonText.textContent = isLoading ? i18n.loadingText : i18n.analyzeButtonText;
     }
 
-    function renderVideoPlayer(videoId) {
-        const iframe = document.createElement('iframe');
-        iframe.setAttribute('width', '100%');
-        iframe.setAttribute('height', '100%');
-        iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-        iframe.setAttribute('allowfullscreen', true);
-        
-        const player = document.getElementById('videoPlayer');
-        player.innerHTML = '';
-        player.appendChild(iframe);
-    }
-    
-    function enableScoreButton() {
-        scoreButton.disabled = false;
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-button').forEach(button => {
+            const isSelected = button.dataset.tab === tabName;
+            button.setAttribute('aria-selected', isSelected);
+            button.classList.toggle('border-primary-blue', isSelected);
+            button.classList.toggle('text-primary-blue', isSelected);
+            button.classList.toggle('border-transparent', !isSelected);
+            button.classList.toggle('text-gray-500', !isSelected);
+        });
+
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.toggle('hidden', pane.id !== `tab-${tabName}-content`);
+        });
+
+        // Ensure quiz/summary is the default focus when switching from transcript
+        if (tabName !== 'transcript') {
+            window.scrollTo({ top: analysisContent.offsetTop, behavior: 'smooth' });
+        }
     }
 
-    // Renders both MCQ and Short Answer questions
-    function renderQuestions(questions) {
-        const container = document.getElementById('quizContainer');
-        container.innerHTML = ''; // Clear previous content
+    // --- Core Logic ---
 
-        if (questions.length === 0) {
-            container.innerHTML = `<p class="italic text-gray-500 dark:text-gray-400">No questions were generated for this video.</p>`;
-            scoreButton.disabled = true;
+    function renderQuiz(quizData) {
+        quizContainer.innerHTML = '';
+        if (quizData.length === 0) {
+            quizContainer.innerHTML = `<p class="italic text-gray-500 dark:text-gray-400">Could not generate questions for this video. Please try another link.</p>`;
             return;
         }
 
-        questions.forEach((q, index) => {
-            const questionElement = document.createElement('div');
-            questionElement.className = 'p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 shadow-sm';
-            questionElement.setAttribute('data-q-index', index);
+        quizData.forEach((q, index) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'p-5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 shadow-sm';
+            qDiv.setAttribute('data-question-id', index);
             
-            // Question Text
-            const qText = document.createElement('p');
-            qText.className = 'font-semibold text-lg mb-3';
-            qText.innerHTML = `${index + 1}. ${DOMPurify.sanitize(q.question)}`;
-            questionElement.appendChild(qText);
+            const questionText = DOMPurify.sanitize(marked.parse(`**${index + 1}.** ${q.question}`));
+            qDiv.innerHTML += `<p class="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">${questionText}</p>`;
 
             if (q.type === 'MCQ') {
-                // Render Multiple Choice Options (Radio Buttons)
-                const optionsContainer = document.createElement('div');
-                optionsContainer.className = 'space-y-2';
-
+                // Render Multiple Choice Options
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'space-y-2 ml-4';
                 q.options.forEach((option, optIndex) => {
                     const optionId = `q${index}-opt${optIndex}`;
-                    const radioGroup = document.createElement('div');
-                    radioGroup.className = 'flex items-center';
-
-                    const input = document.createElement('input');
-                    input.type = 'radio';
-                    input.id = optionId;
-                    input.name = `q${index}`; // Group radio buttons by question index
-                    input.value = optIndex; // Value is the index of the option
-                    input.className = 'w-4 h-4 text-primary-blue bg-gray-100 border-gray-300 focus:ring-primary-blue dark:focus:ring-primary-blue dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600';
-                    input.addEventListener('change', enableScoreButton); // Enable score button on first interaction
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.id = optionId;
+                    radio.name = `question-${index}`;
+                    radio.value = optIndex;
+                    radio.className = 'mr-2 text-primary-blue focus:ring-primary-blue dark:bg-gray-600 dark:ring-offset-gray-800';
+                    radio.addEventListener('change', checkQuizCompletion);
 
                     const label = document.createElement('label');
                     label.htmlFor = optionId;
-                    label.className = 'ml-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer';
+                    label.className = 'text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary-blue transition-colors duration-150 ease-in-out';
                     label.textContent = option;
-
-                    radioGroup.appendChild(input);
-                    radioGroup.appendChild(label);
-                    optionsContainer.appendChild(radioGroup);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex items-start';
+                    div.appendChild(radio);
+                    div.appendChild(label);
+                    optionsDiv.appendChild(div);
                 });
-                questionElement.appendChild(optionsContainer);
-            } else if (q.type === 'ShortAnswer') {
-                // Render Short Answer Input (Text Field)
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.name = `q${index}`;
-                input.placeholder = 'Type your answer here...';
-                input.className = 'mt-2 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-primary-blue focus:border-primary-blue transition duration-150';
-                input.addEventListener('input', enableScoreButton); // Enable score button on input
+                qDiv.appendChild(optionsDiv);
 
-                questionElement.appendChild(input); 
+            } else if (q.type === 'ShortAnswer') {
+                // Render Short Answer Input
+                const input = document.createElement('textarea');
+                input.rows = 3;
+                input.placeholder = "Type your answer here...";
+                input.className = 'w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-primary-blue focus:border-primary-blue dark:bg-gray-600 dark:text-white transition duration-150 ease-in-out mt-2';
+                input.setAttribute('data-question-type', 'ShortAnswer');
+                input.addEventListener('input', checkQuizCompletion);
+                qDiv.appendChild(input);
             }
 
-            container.appendChild(questionElement);
+            quizContainer.appendChild(qDiv);
         });
 
-        scoreButton.disabled = false; // Enable the button now that questions are rendered
-        document.getElementById('quizResults').classList.add('hidden'); // Hide results on new load
-        quizSubmitted = false;
+        // Display the count and enable scoring button
+        document.getElementById('quizTitle').textContent = `Knowledge Assessment (${quizData.length} Questions)`;
+        scoreButton.disabled = true; // Still disabled until all questions are answered
     }
 
+    function checkQuizCompletion() {
+        if (quizSubmitted) return; 
+
+        const totalQuestions = quizData.length;
+        let answeredQuestions = 0;
+
+        document.querySelectorAll('#quizContainer > div').forEach((qDiv, index) => {
+            const qType = quizData[index].type;
+            let isAnswered = false;
+
+            if (qType === 'MCQ') {
+                const checkedRadio = qDiv.querySelector(`input[name="question-${index}"]:checked`);
+                if (checkedRadio) {
+                    isAnswered = true;
+                }
+            } else if (qType === 'ShortAnswer') {
+                const textarea = qDiv.querySelector('textarea');
+                if (textarea && textarea.value.trim() !== '') {
+                    isAnswered = true;
+                }
+            }
+
+            if (isAnswered) {
+                answeredQuestions++;
+            }
+        });
+
+        const allAnswered = (answeredQuestions === totalQuestions);
+        scoreButton.disabled = !allAnswered;
+
+        if (allAnswered) {
+            setStatus("All questions have been answered. You can now submit your quiz.", 'success');
+        } else {
+            hideStatus();
+        }
+    }
+
+
     async function analyzeVideo() {
-        const videoLink = document.getElementById('videoLink').value.trim();
-        if (!videoLink) {
-            showStatus("Please paste a valid YouTube video link.", 'error');
+        const videoLink = videoLinkInput.value.trim();
+        const videoIdMatch = videoLink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|embed\/|live\/))([\w-]{11})/);
+
+        if (!videoIdMatch) {
+            setStatus(i18n.errorMessageEmpty, 'error');
             return;
         }
 
-        // --- Retrieve CSRF Token ---
-        const csrfToken = getCookie('csrftoken');
-
-        setButtonState(true);
-        showStatus("Fetching transcript and generating 20+ mixed questions with AI...", 'info');
+        const videoId = videoIdMatch[1];
+        currentVideoId = videoId;
+        hideStatus();
+        toggleLoading(true);
+        analysisContent.classList.add('hidden');
+        quizResults.classList.add('hidden');
+        quizSubmitted = false;
         
+        // Reset placeholders
+        summaryContent.innerHTML = `<p id="summaryPlaceholder" class="italic text-gray-500 dark:text-gray-400">${i18n.placeholderSummary}</p>`;
+        transcriptContent.innerHTML = `<p id="transcriptPlaceholder" class="italic text-gray-500 dark:text-gray-400">${i18n.placeholderTranscript}</p>`;
+        quizContainer.innerHTML = `<p id="quizPlaceholder" class="italic text-gray-500 dark:text-gray-400">${i18n.placeholderQuiz}</p>`;
+        scoreButton.disabled = true;
+
         try {
-            // FIX: Ensure correct API endpoint matching urls.py
-            const response = await fetch('/api/analyze_video/', {
+            // **FIX: Removed leading slash for relative API path to resolve 404 issue.**
+            const response = await fetch('api/analyze_video/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken, 
+                    'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({ video_link: videoLink })
+                body: JSON.stringify({ video_url: videoLink, video_id: videoId })
             });
 
-            // CRITICAL FIX: Check if the response is JSON before parsing (handles 404/500 gracefully)
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                // Attempt to read as text for better logging
-                let errorText = await response.text();
-                const status = response.status;
-                const message = (status === 403) ? "Request Forbidden (CSRF token missing or invalid). Ensure you have enabled cookies." : `Server returned non-JSON response (Status: ${status}).`;
-                showStatus(`Analysis Error: ${message}`, 'error');
-                console.error("Non-JSON Response Error:", errorText);
-                document.getElementById('analysisContent').classList.add('hidden');
-                return; // Exit the function gracefully
-            }
-            
             const data = await response.json();
 
             if (response.ok) {
-                showStatus("Analysis complete. Check the Summary and Questions tabs.", 'success');
-                document.getElementById('analysisContent').classList.remove('hidden');
+                // Update UI with content
+                const summaryHtml = DOMPurify.sanitize(marked.parse(data.summary));
+                summaryContent.innerHTML = summaryHtml;
                 
-                // Set global state
-                currentVideoId = data.video_id;
-                quizData = data.questions; // Store the full data for submission later
+                transcriptContent.textContent = data.transcript;
 
-                // Render content
-                renderVideoPlayer(currentVideoId);
-                // Use DOMPurify and marked.js for safe and styled markdown rendering
-                document.getElementById('summaryContent').innerHTML = marked.parse(DOMPurify.sanitize(data.summary));
-                document.getElementById('transcriptContent').textContent = data.transcript_text;
+                // Store and render quiz data
+                quizData = data.quiz_questions;
+                renderQuiz(quizData);
                 
-                // Render the mixed questions
-                renderQuestions(quizData); 
+                // Set up the video player
+                videoPlayer.innerHTML = `<iframe 
+                                            class="w-full h-full" 
+                                            src="https://www.youtube.com/embed/${videoId}" 
+                                            frameborder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowfullscreen>
+                                         </iframe>`;
 
+                analysisContent.classList.remove('hidden');
+                setStatus("Analysis complete. Review the summary and take the quiz.", 'success');
                 switchTab('summary');
+                window.scrollTo({ top: analysisContent.offsetTop, behavior: 'smooth' });
+
             } else {
-                // Handles JSON error responses (e.g., status 400 with a message)
-                showStatus(`Error: ${data.message}`, 'error');
-                document.getElementById('analysisContent').classList.add('hidden');
+                // Handle API error messages
+                setStatus(`Error: ${data.message || i18n.errorMessageAPI} (${response.status})`, 'error');
             }
+
         } catch (error) {
-            // This is for network errors (e.g., connection refused, timeout)
-            showStatus(`A network error occurred: ${error.message}. Check console for details.`, 'error');
-            console.error("Network Error:", error);
-            document.getElementById('analysisContent').classList.add('hidden');
+            logger.error('Analyze Video Fetch Error:', error);
+            setStatus(`A network error occurred. Please check your connection or try again.`, 'error');
         } finally {
-            setButtonState(false);
+            toggleLoading(false);
         }
     }
-    
-    // Collects user answers from the rendered quiz
-    function collectUserAnswers() {
-        const answers = {};
-        quizData.forEach((q, index) => {
-            const qName = `q${index}`;
-            const qElement = document.querySelector(`[data-q-index="${index}"]`);
-            
-            if (q.type === 'MCQ') {
-                // Find the checked radio button's value (which is the option index)
-                const checkedRadio = qElement.querySelector(`input[name="${qName}"]:checked`);
-                // Store the index of the selected option
-                answers[index] = checkedRadio ? checkedRadio.value : '';
-            } else if (q.type === 'ShortAnswer') {
-                // Get the value from the text input
-                const inputField = qElement.querySelector(`input[name="${qName}"]`);
-                // Store the trimmed text answer
-                answers[index] = inputField ? inputField.value.trim() : '';
-            }
-        });
-        return answers;
-    }
 
-    // Handles quiz submission and PDF download
+
     async function submitQuiz() {
         if (quizSubmitted) {
-            // Allow re-download if submitted
-            showStatus("Report is already generated. Downloading again...", 'info');
-            // The next fetch will re-trigger the download logic if the backend allows re-submission for the PDF.
+             // If already submitted, just re-trigger the download with current state
+             // This uses the same POST endpoint which returns the PDF
+             scoreButton.disabled = true;
+             scoreButton.textContent = "Re-downloading...";
+        } else {
+            // First submission logic
+            scoreButton.disabled = true;
+            scoreButton.textContent = i18n.scoreButtonLoading;
         }
 
-        const userAnswers = collectUserAnswers();
+        const userAnswers = {};
+        const totalQuestions = quizData.length;
         
-        // Simple check to ensure at least one answer was provided before submission
-        if (Object.values(userAnswers).every(ans => ans === '')) {
-            showStatus("Please answer at least one question before submitting.", 'error');
-            return;
-        }
-        
-        // --- Retrieve CSRF Token ---
-        const csrfToken = getCookie('csrftoken');
-        
-        // Show loading state for the score button
-        scoreButton.disabled = true;
-        scoreButton.textContent = 'Submitting...';
+        document.querySelectorAll('#quizContainer > div').forEach((qDiv, index) => {
+            const qType = quizData[index].type;
+            const qId = String(index);
+
+            if (qType === 'MCQ') {
+                const checkedRadio = qDiv.querySelector(`input[name="question-${index}"]:checked`);
+                if (checkedRadio) {
+                    userAnswers[qId] = checkedRadio.value; // Store the option index
+                }
+            } else if (qType === 'ShortAnswer') {
+                const textarea = qDiv.querySelector('textarea');
+                if (textarea) {
+                    userAnswers[qId] = textarea.value.trim(); // Store the text value
+                }
+            }
+        });
 
         try {
-            // FIX: Ensure correct API endpoint matching urls.py
-            const response = await fetch('/api/submit_quiz/', {
+            // **FIX: Removed leading slash for relative API path to resolve 404 issue.**
+            const response = await fetch('api/submit_quiz/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken, 
+                    'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({
-                    video_id: currentVideoId,
-                    quiz_data: quizData,
-                    user_answers: userAnswers
+                body: JSON.stringify({ 
+                    video_id: currentVideoId, 
+                    quiz_data: quizData, // Send the full quiz structure (with correct answers)
+                    user_answers: userAnswers 
                 })
             });
-
-            // Check if the response is a JSON error (e.g., status 400)
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes('application/json')) {
-                 const data = await response.json();
-                 showStatus(`Submission Error: ${data.message}`, 'error');
-                 scoreButton.textContent = i18n.scoreButtonText;
-                 scoreButton.disabled = false;
-                 return;
+            
+            if (response.headers.get('Content-Type') === 'application/pdf') {
+                // Success: PDF is returned
+                const scoreHeader = response.headers.get('X-Quiz-Score'); // e.g., "7/10"
+                const blob = await response.blob();
+                
+                // 1. Trigger Download
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = `LearnFlow_AI_Report_${currentVideoId}.pdf`; 
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+                a.remove();
+                
+                // 2. Update UI
+                if (scoreHeader) {
+                    finalScoreDisplay.textContent = `Final Score: ${scoreHeader}`;
+                } else {
+                    // Fallback if header is missing, though server should always provide it
+                    finalScoreDisplay.textContent = 'Report Generated. Score calculation complete.';
+                }
+                
+                quizResults.classList.remove('hidden');
+                scoreButton.disabled = true;
+                scoreButton.textContent = "Report Submitted";
+                exportButton.textContent = i18n.downloadButtonText;
+                quizSubmitted = true;
+                setStatus("Quiz submitted successfully! Your PDF report is downloading.", 'success');
+                switchTab('questions'); // Stay on the questions tab to show results
+                
+            } else {
+                // Handle JSON error response (e.g., Status 400 or 500)
+                const data = await response.json();
+                setStatus(`Submission Error: ${data.message || 'The server could not process the quiz.'} (${response.status})`, 'error');
             }
-            
-            // --- Handle successful PDF download (Response is a file stream) ---
-            if (!response.ok) {
-                // Handle cases where the server returned a non-JSON, non-PDF error page (e.g. 404/500 from proxy)
-                throw new Error(`Server returned a non-PDF/non-JSON error response with status ${response.status}.`);
-            }
-            
-            const finalScoreHeader = response.headers.get('X-Quiz-Score'); // Get score from header
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            
-            // Trigger download
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            
-            // Use filename from Content-Disposition header for robustness
-            const contentDisposition = response.headers.get('Content-Disposition');
-            const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+)"/) : null;
-            a.download = filenameMatch ? filenameMatch[1] : `LearnFlow_AI_Report_${currentVideoId}.pdf`; 
-            
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            // Display results on the page
-            document.getElementById('finalScoreDisplay').textContent = `Final Score: ${finalScoreHeader}`;
-            document.getElementById('quizResults').classList.remove('hidden');
-            showStatus("Quiz submitted and PDF report generated successfully! Report is downloading.", 'success');
-            
-            quizSubmitted = true;
-            scoreButton.textContent = 'Report Downloaded';
-            scoreButton.disabled = true;
 
         } catch (error) {
-            showStatus(`A network error occurred during submission: ${error.message}. Check console for details.`, 'error');
-            console.error("Submission Error:", error);
-            scoreButton.textContent = i18n.scoreButtonText;
-            scoreButton.disabled = false;
+            logger.error('Submit Quiz Fetch Error:', error);
+            setStatus(`A network error occurred during quiz submission.`, 'error');
+        } finally {
+            scoreButton.disabled = true;
+            // Restore button text if not in download state
+            if (!quizSubmitted) {
+                scoreButton.textContent = i18n.scoreButtonText;
+            }
         }
     }
 
@@ -487,9 +512,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Dark mode toggle logic (not provided, but assume it works)
         const darkModeToggle = document.getElementById('darkModeToggle');
-        darkModeToggle.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-        });
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+        }
         
         // Initial tab state
         switchTab('summary');
@@ -512,7 +539,7 @@
         
         // Auto-trigger analysis if a video ID was pre-selected (Django context)
         const videoLinkInput = document.getElementById('videoLink');
-        if (videoLinkInput.value.startsWith('https://www.youtube.com')) {
+        if (videoLinkInput && videoLinkInput.value.startsWith('https://www.youtube.com')) {
             // Slight delay to ensure all JS/HTML elements are rendered before fetching
             setTimeout(analyzeVideo, 100); 
         }

@@ -121,6 +121,15 @@ def add_watermark(canvas, doc):
 
 def generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_questions):
     """Generates the quiz report and certificate in a single PDF."""
+    if not PDF_ENABLED:
+        logger.error("PDF_ENABLED is False. Skipping PDF generation.")
+        # Return a simple mock PDF (e.g., one page with the score) if ReportLab is not available
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        c.drawString(72, 800, f"MOCK Report - Score: {final_score}/{total_questions}")
+        c.save()
+        return buffer.getvalue()
+
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter,
                             title=f"LearnFlow AI Report for {video_id}",
@@ -171,15 +180,32 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         q_id = str(q_index)
         user_ans = user_answers.get(q_id, 'N/A')
         correct_ans = q.get('correct_answer', 'N/A')
-        is_correct = 'CORRECT' if user_ans == correct_ans else 'WRONG'
+        is_correct = 'CORRECT'
         
+        # Re-run the scoring logic for display
+        if q.get('type') == 'MCQ':
+            try:
+                # User answer is an index string. Check if it matches the correct answer index.
+                if int(user_ans) != int(q.get('correctAnswerIndex', -1)):
+                    is_correct = 'WRONG'
+            except:
+                is_correct = 'WRONG' # Invalid or missing user response
+
+        elif q.get('type') == 'ShortAnswer':
+            # Robust scoring check for short answers
+            user_ans_normalized = user_ans.strip().lower()
+            correct_ans_normalized = correct_ans.strip().lower()
+            if user_ans_normalized != correct_ans_normalized:
+                is_correct = 'WRONG'
+            
         # Determine how to display the user answer for different types
         if q['type'] == 'MCQ':
             # For MCQ, the correct answer is the option text, not the index
             correct_option_index = q.get('correctAnswerIndex', -1)
             correct_ans_text = q['options'][correct_option_index] if correct_option_index >= 0 else 'N/A'
             user_ans_text = q['options'][int(user_ans)] if user_ans != 'N/A' and user_ans.isdigit() else user_ans
-        else: # ShortAnswer
+        else:
+            # ShortAnswer
             correct_ans_text = correct_ans # The expected text answer
             user_ans_text = user_ans # The text input by the user
 
@@ -188,8 +214,8 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         result_text = Paragraph(f'<font color="{result_color.name}"><b>{is_correct}</b></font>', styles['Normal'])
 
         report_data.append([
-            str(q_num), 
-            Paragraph(q['question'], styles['Normal']), 
+            str(q_num),
+            Paragraph(q['question'], styles['Normal']),
             Paragraph(str(user_ans_text), styles['Normal']),
             Paragraph(str(correct_ans_text), styles['Normal']),
             result_text
@@ -206,238 +232,193 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('LEFTPADDING', (1, 1), (-1, -1), 6),
+        ('RIGHTPADDING', (1, 1), (-1, -1), 6),
     ]))
+
     story.append(table)
     
     return story
 
-# --- Main Application Views ---
 
-def learnflow_video_analysis(request):
-    """Renders the main template."""
-    return render(request, 'learnflow.html', {
-        'api_key': os.getenv('GEMINI_API_KEY') 
-    })
+# --- API Views ---
 
-def learnflow_overview(request):
-    """Renders the overview page."""
-    return render(request, 'learnflow_overview.html') 
+# You must set your API key as an environment variable in your production environment
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# --- Static Pages Views (Omitted for brevity) ---
-def privacy_policy(request): return render(request, 'privacy.html')
-def terms_conditions(request): return render(request, 'terms.html')
-def about_us(request): return render(request, 'about.html')
-def contact_us(request): return render(request, 'contact.html')
-def sitemap_page(request): return render(request, 'sitemap.html')
-def video_analysis_view(request, video_id): return render(request, 'learnflow.html', {'pre_selected_video_id': video_id})
-
-
-# --- API View: Analysis & Quiz Generation ---
-
-@csrf_exempt
-def analyze_video_api(request): 
+@csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
+def analyze_video_api(request):
     """
-    API endpoint to fetch transcript and generate AI summary and a large, mixed quiz.
-    Uses multimodal/metadata grounding as a fallback for missing transcripts.
+    Handles POST requests to analyze a video URL using Gemini.
     """
     if request.method != 'POST':
-        return JsonResponse({"status": "error", "message": "Invalid request method. Must use POST."}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
 
-    video_id = None
-    video_link = None
-        
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        logger.error("GEMINI_API_KEY not found in environment variables.")
-        return JsonResponse({"status": "error", "message": "AI service not configured."}, status=500)
-    
     try:
         data = json.loads(request.body)
-        video_link = data.get('video_link', '').strip() 
+        video_url = data.get('video_url')
+        video_id = data.get('video_id')
         
-        if not video_link:
-            return JsonResponse({"status": "error", "message": "No YouTube link provided."}, status=400)
+        if not video_url or not video_id:
+            return JsonResponse({'status': 'error', 'message': 'Missing video URL or ID.'}, status=400)
         
-        video_id = extract_video_id(video_link)
-        if not video_id:
-            return JsonResponse({"status": "error", "message": "Could not extract a valid YouTube video ID."}, status=400)
-        
-        logger.info(f"Analysis request received for video ID: {video_id}")
-        
-        # --- 2. Transcript Fetch Attempt ---
-        transcript_text_raw = fetch_transcript_robust(video_id)
+        if not GEMINI_API_KEY:
+            logger.error("GEMINI_API_KEY is not set.")
+            return JsonResponse({'status': 'error', 'message': 'API key not configured on the server.'}, status=503)
 
-        model_name = 'gemini-2.5-flash' # Default for fast, text-only processing
-        transcript_to_process = ""
-        prompt_instruction = ""
-        transcript_found = (transcript_text_raw != TRANSCRIPT_FALLBACK_MARKER)
+        # 1. Fetch Transcript (Robustly)
+        transcript = fetch_transcript_robust(video_id)
         
-        # --- ROBUSTNESS LOGIC ---
-        if not transcript_found:
-            # Fallback to Multimodal/Metadata Grounding
-            model_name = 'gemini-2.5-pro' # Use Pro for better grounding and reasoning without a transcript
-            transcript_to_process = f"Original Video URL: {video_link}" 
-            prompt_instruction = (
-                "The automatic transcript for this video could not be retrieved. "
-                "You MUST use your general knowledge, grounding capabilities, and the video URL provided to determine the video's title, subject, and main content. "
-                "Generate the requested SUMMARY and QUESTIONS based on the video's known topic and purpose. "
-                "The summary MUST begin with the sentence: 'Note: The analysis below is based on the video's title and public information, as the transcript was unavailable.'"
-            )
-            logger.warning(f"Falling back to Gemini Grounding for {video_id} using {model_name}.")
-
-        elif transcript_text_raw.startswith("NON_ENGLISH_TRANSCRIPT:"):
-            # Non-English Transcript Found - Use Flash for translation and processing
-            _, lang_code, content = transcript_text_raw.split(":", 2)
-            transcript_to_process = content
-            prompt_instruction = (
-                f"The following video content is in **{lang_code}**. You MUST first translate the content to English. "
-                "Then, proceed with the summarization and question generation based on the English translation."
-            )
-        
+        # 2. Prepare the Prompt for Gemini
+        # Prioritize the transcript if available, otherwise rely on the URL's contents.
+        transcript_content = ""
+        if transcript.startswith("NON_ENGLISH_TRANSCRIPT:"):
+            lang_code, actual_transcript = transcript.split(":", 2)[1:]
+            transcript_content = f"The following is a non-English transcript (Language: {lang_code}). Use it to help generate the analysis:\n{actual_transcript}"
+        elif transcript == TRANSCRIPT_FALLBACK_MARKER:
+            transcript_content = "No machine or auto-generated transcript could be reliably fetched. Rely on the video URL and its title/description for the summary."
         else:
-            # English Transcript Found - Use Flash
-            transcript_to_process = transcript_text_raw
-            prompt_instruction = "Based on the following video content, perform the tasks."
+            transcript_content = f"Use the following transcript to generate a highly accurate summary and quiz:\n{transcript}"
 
+        prompt = f"""
+        You are a video analysis AI for an educational platform. Your task is to analyze the provided YouTube video URL and its content.
 
-        # --- 3. AI Summarization and Quiz Generation ---
-        client = genai.Client(api_key=api_key)
+        **Video URL:** {video_url}
+        **Content/Transcript Status:** {transcript_content}
         
-        # CRITICAL UPDATE: New prompt for 20+ mixed questions
-        prompt = (
-            f"{prompt_instruction}\n\n"
-            "Perform two tasks:\n"
-            "1. **SUMMARY (3-5 Sentences):** Summarize the main topics and key takeaways in a concise, informative paragraph. The summary MUST be 3-5 sentences long.\n"
-            "2. **QUESTIONS (20+ Items):** Generate a minimum of 20 challenging questions that test comprehension. The questions MUST be a mix of two types:\n"
-            "   a. **Multiple Choice (MCQ):** Each must have 4 options.\n"
-            "   b. **Short Answer (SA):** The answer must be a single word or short phrase that must be typed by the user.\n\n"
-            "Format your response strictly as a JSON object with two top-level keys: 'summary' (string) and 'questions' (list of question objects).\n\n"
-            f"Video Context for Grounding: {video_link}\n\n" 
-            f"Video Content (Transcript/Marker):\n\n{transcript_to_process}"
-        )
+        Based on this information, generate a comprehensive analysis in a single JSON block. The JSON must have the following two top-level keys:
 
-        # CRITICAL UPDATE: New Schema to support multiple question types
-        response_schema = types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "summary": {"type": "string"},
-                "questions": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "question": {"type": "string"},
-                            "type": {"type": "string", "enum": ["MCQ", "ShortAnswer"]}, # New: type field
-                            "options": {"type": "array", "items": {"type": "string"}, "description": "Required only for MCQ type."},
-                            "correct_answer": {"type": "string"} # The required answer (text for SA, or the option text for MCQ)
-                        },
-                        "required": ["question", "type", "correct_answer"]
-                    }
-                }
-            },
-            required=["summary", "questions"]
+        1.  `summary`: A detailed, markdown-formatted summary of the video's main points, key concepts, and conclusion. Use headings, lists, and bold text.
+        2.  `quiz_questions`: An array of at least 15 high-quality, educationally relevant questions. Ensure a mix of **Multiple Choice Questions (MCQ)** and **Short Answer** questions.
+
+        **JSON Format Requirements for Questions:**
+        - **MCQ Questions:** Must have `type: "MCQ"`, a `question`, an `options` array (with 4 choices), a `correctAnswerIndex` (integer 0-3), and a `correct_answer` (string, which is the text of the correct option).
+        - **Short Answer Questions:** Must have `type: "ShortAnswer"`, a `question`, and a concise, single-sentence `correct_answer` (string). Do not provide an options array.
+
+        Example Structure:
+        ```json
+        {{
+            "summary": "...",
+            "quiz_questions": [
+                {
+                    "type": "MCQ",
+                    "question": "...",
+                    "options": ["A", "B", "C", "D"],
+                    "correctAnswerIndex": 0,
+                    "correct_answer": "A"
+                },
+                {{
+                    "type": "ShortAnswer",
+                    "question": "...",
+                    "correct_answer": "..."
+                }}
+            ]
+        }}
+        ```
+        Ensure the JSON is valid and complete, and do not include any text outside of the JSON block.
+        """
+        
+        # 3. Call Gemini
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        
+        config = types.GenerateContentConfig(
+            # Enable the model to fetch and ground its response on the web, using the URL.
+            # This is crucial for videos where the transcript is missing or poor.
+            tools=[{"google_search": {}}], 
+            temperature=0.3, # Low temperature for factual, consistent quiz generation
         )
 
         response = client.models.generate_content(
-            model=model_name,
+            model='gemini-2.5-pro', # Use a powerful model for complex reasoning and structure generation
             contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=response_schema,
-            )
+            config=config,
         )
 
-        # 4. Process and Return the successful response
-        ai_data = json.loads(response.text)
-        
-        # Post-process questions to calculate the internal correct index for MCQs
-        processed_questions = []
-        for q in ai_data.get("questions", []):
-            if q.get('type') == 'MCQ':
-                correct_index = -1
-                correct_ans_str = q.get("correct_answer", "").strip()
-                options = q.get("options", [])
-                
-                # Find the index of the correct answer string within the options array
-                try:
-                    correct_index = options.index(correct_ans_str)
-                except ValueError:
-                    logger.warning(f"AI answer string '{correct_ans_str}' not found in options for {video_id}.")
-                
-                # Store the index for frontend use, but keep 'correct_answer' for scoring API
-                q['correctAnswerIndex'] = correct_index
+        # 4. Parse Response
+        # The model is instructed to return a pure JSON block.
+        try:
+            # Attempt to find and parse the JSON block from the response text
+            json_start = response.text.find('{')
+            json_end = response.text.rfind('}')
+            if json_start == -1 or json_end == -1:
+                raise ValueError("Could not find a valid JSON block in model response.")
+
+            json_text = response.text[json_start : json_end + 1]
+            analysis_data = json.loads(json_text)
             
-            processed_questions.append(q)
-
-        response_data = {
-            "status": "success",
-            "summary": ai_data.get("summary", "Summary could not be generated."),
-            "questions": processed_questions, # Renamed from 'quiz' to 'questions'
-            "transcript_status": "FOUND" if transcript_found else "NOT_FOUND",
-            "video_id": video_id,
-            "transcript_text": transcript_text_raw if transcript_found else "Transcript Unavailable. Analysis based on public topic." 
-        }
-        return JsonResponse(response_data)
-
+            # Add the transcript back into the response for the frontend's Transcript tab
+            analysis_data['transcript'] = transcript
+            
+            return JsonResponse(analysis_data)
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Failed to parse AI response: {e}. Raw response: {response.text[:500]}...")
+            return JsonResponse({'status': 'error', 'message': 'AI response was malformed or incomplete. Please try again.'}, status=500)
+        
     except APIError as e:
-        logger.exception(f"Gemini API Error for {video_id}: {str(e)}")
-        return JsonResponse({"status": "error", "message": f"AI service failed (Gemini API Error)."}, status=503)
-
+        logger.error(f"Gemini API Error: {e}")
+        return JsonResponse({'status': 'error', 'message': f'AI service failed to generate content: {str(e)}'}, status=500)
     except json.JSONDecodeError:
-        logger.exception(f"AI response was not valid JSON for {video_id}.")
-        return JsonResponse({"status": "error", "message": "AI service returned an invalid response format."}, status=500)
-
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
     except Exception as e:
-        logger.exception(f"A critical, unhandled error occurred during fetch/AI processing for {video_id}.")
-        return JsonResponse({"status": "error", "message": f"A critical server error occurred during processing: {e}"}, status=500)
+        logger.exception(f"Unexpected error in analyze_video_api: {e}")
+        return JsonResponse({'status': 'error', 'message': f'A critical server error occurred: {e}'}, status=500)
 
-# --- API View: Quiz Submission and PDF Report Generation ---
 
-@csrf_exempt
+@csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
 def submit_quiz_api(request):
     """
-    Receives user answers, calculates score, and generates the PDF report/certificate.
+    Handles POST requests to score the quiz and generate a PDF report.
     """
     if request.method != 'POST':
-        return JsonResponse({"status": "error", "message": "Invalid request method. Must use POST."}, status=400)
-
+        return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
+        
     if not PDF_ENABLED:
-        return JsonResponse({"status": "error", "message": "PDF generation library (ReportLab) is not installed on the server."}, status=501)
+        return JsonResponse({'status': 'error', 'message': 'ReportLab is not installed on the server. PDF generation is disabled.'}, status=503)
 
     try:
         data = json.loads(request.body)
-        user_answers = data.get('user_answers', {}) # {q_index: user_response, ...}
-        quiz_data = data.get('quiz_data', []) # The original questions with correct answers
-        video_id = data.get('video_id', 'Unknown Video')
+        video_id = data.get('video_id')
+        quiz_data = data.get('quiz_data', [])
+        user_answers = data.get('user_answers', {})
+        
+        if not video_id or not quiz_data:
+            return JsonResponse({"status": "error", "message": "Missing video ID or quiz data."}, status=400)
 
         final_score = 0
         total_questions = len(quiz_data)
-        
+
         # 1. Score the Quiz
         for q_index, q in enumerate(quiz_data):
             q_id = str(q_index)
-            user_ans = user_answers.get(q_id, '').strip().lower()
-            correct_ans = q.get('correct_answer', '').strip().lower()
-            q['correct_answer'] = correct_ans # Normalize the stored answer (important for report)
-
+            user_ans = user_answers.get(q_id)
             is_correct = False
             
+            # Skip if user didn't answer (should be prevented by frontend, but server must be defensive)
+            if user_ans is None:
+                continue
+
+            # Standardized scoring for MCQ
             if q.get('type') == 'MCQ':
-                # For MCQ, the user answer is the INDEX (0, 1, 2, 3) selected by the radio button
-                # We compare the user-selected option TEXT (extracted from options using the index) to the correct_answer text.
+                correct_ans_index = q.get('correctAnswerIndex')
                 try:
-                    user_option_index = int(user_ans)
-                    if user_option_index >= 0 and user_option_index < len(q.get('options', [])):
-                        user_ans_text = q['options'][user_option_index].strip().lower()
-                        if user_ans_text == correct_ans:
-                            is_correct = True
+                    # User answer is the index string from the radio button value
+                    if int(user_ans) == int(correct_ans_index):
+                        is_correct = True
                 except:
                     pass # User response was invalid or missing
 
             elif q.get('type') == 'ShortAnswer':
-                # For ShortAnswer, compare the user-typed text directly
-                if user_ans == correct_ans:
+                correct_ans = q.get('correct_answer')
+                
+                # --- SENIOR DEV ROBUSTNESS FIX ---
+                # Normalize both answers for case-insensitivity and leading/trailing whitespace
+                user_ans_normalized = str(user_ans).strip().lower()
+                correct_ans_normalized = str(correct_ans).strip().lower()
+
+                if user_ans_normalized == correct_ans_normalized:
                     is_correct = True
+                # ---------------------------------
             
             if is_correct:
                 final_score += 1
@@ -466,4 +447,18 @@ def privacy_policy(request): return render(request, 'privacy.html')
 def terms_conditions(request): return render(request, 'terms.html')
 def about_us(request): return render(request, 'about.html')
 def contact_us(request): return render(request, 'contact.html')
-def sitemap_page(request): return render(request, 'sitemap.html')
+def sitemap_page(request): return render(request, 'sitemap-page.html')
+def learnflow_overview(request): return render(request, 'learnflow_overview.html')
+
+def learnflow_video_analysis(request):
+    """The main view for the video analysis page."""
+    # This view can be used to pass initial context, like a pre-selected video ID.
+    context = {}
+    return render(request, 'learnflow.html', context)
+    
+def video_analysis_view(request, video_id):
+    """
+    View to handle direct links to a video analysis page, pre-populating the URL.
+    """
+    context = {'pre_selected_video_id': video_id}
+    return render(request, 'learnflow.html', context)
