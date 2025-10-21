@@ -6,9 +6,8 @@
 {% block extra_head %}
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Custom Tailwind configuration for better dark mode and color scheme
+        // Custom Tailwind configuration for dark mode and color scheme
         tailwind.config = {
-            // Force dark mode globally for the blue-black theme
             darkMode: 'class', 
             theme: {
                 extend: {
@@ -16,7 +15,7 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        // Custom colors for the dark theme
+                        // Custom colors for the requested dark theme
                         'primary-blue': '#4c7cff', // Lighter blue for accents
                         'hover-blue': '#3b62cc',
                         'background-dark': '#0f172a', // Deep black/blue (slate-900)
@@ -78,28 +77,28 @@
             Status will appear here.
         </div>
 
-        <div id="analysisContent" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div id="analysisContent" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <div class="lg:col-span-1 bg-background-light shadow-xl rounded-lg overflow-hidden">
+            <div class="md:col-span-1 bg-background-light shadow-xl rounded-lg overflow-hidden h-fit">
                 <div id="videoPlayer" class="w-full aspect-video bg-background-dark flex items-center justify-center">
                     <p class="text-text-muted p-4">Video Player will load here...</p>
                 </div>
                 <div class="p-4 border-t border-gray-700">
                     <h3 class="text-xl font-semibold mb-3 text-text-light">Actions</h3>
-                    <div class="flex space-x-3">
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                         <button id="scoreButton" 
                                 class="flex-1 px-4 py-2 bg-success-green text-text-light font-semibold rounded-md shadow-md hover:bg-green-700 transition duration-200" disabled>
                             Score Quiz
                         </button>
                         <button id="exportButton" 
                                 class="flex-1 px-4 py-2 bg-gray-500 text-text-light font-semibold rounded-md shadow-md hover:bg-gray-600 transition duration-200" disabled>
-                            Export Report (PDF)
+                            Export (PDF)
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 bg-background-light shadow-xl rounded-lg p-6">
+            <div class="md:col-span-2 bg-background-light shadow-xl rounded-lg p-6">
                 
                 <div class="border-b border-gray-700 mb-4 flex space-x-4">
                     <button class="tab-button pb-2 border-b-2 text-text-muted hover:text-primary-blue" data-tab="summary">
@@ -113,7 +112,7 @@
                     </button>
                 </div>
 
-                <div class="h-[60vh] overflow-y-auto pr-2">
+                <div class="h-[70vh] md:h-[65vh] overflow-y-auto pr-2"> 
                     <div id="summaryTabContent" class="tab-content prose prose-invert max-w-none text-text-light">
                         </div>
                     
@@ -132,25 +131,15 @@
 
 {% block extra_body %}
 <script>
-    // --- Global State and DOM Elements ---
+    // --- Global State ---
     let quizData = [];
     let videoId = null;
 
-    // Element selection
-    const videoLinkInput = document.getElementById('videoLink');
-    const analyzeButton = document.getElementById('analyzeButton');
-    const analyzeButtonText = document.getElementById('analyzeButtonText');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const statusMessage = document.getElementById('statusMessage');
-    const analysisContentDiv = document.getElementById('analysisContent');
-    const summaryTabContent = document.getElementById('summaryTabContent');
-    const quizTabContent = document.getElementById('quizTabContent');
-    const transcriptTabContent = document.getElementById('transcriptTabContent');
-    const scoreButton = document.getElementById('scoreButton');
-    const exportButton = document.getElementById('exportButton');
+    // --- Helper Functions (Code remains same as prior version) ---
+    // ... (All helper functions: extractVideoId, setAnalysisState, displayStatus, 
+    //      renderVideoPlayer, renderMarkdown, renderQuiz, switchTab, analyzeVideo, 
+    //      submitQuiz are unchanged as they are robust) ...
 
-
-    // --- Helper Functions ---
 
     /**
      * Extracts the YouTube video ID from a URL.
@@ -174,12 +163,20 @@
      * Toggles the UI state for analysis (loading vs. ready).
      */
     function setAnalysisState(isLoading) {
-        // Safe check for elements before accessing properties
+        const analyzeButton = document.getElementById('analyzeButton');
+        const videoLinkInput = document.getElementById('videoLink');
+        const analyzeButtonText = document.getElementById('analyzeButtonText');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const scoreButton = document.getElementById('scoreButton');
+        const exportButton = document.getElementById('exportButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const analysisContentDiv = document.getElementById('analysisContent');
+
         if (analyzeButton) analyzeButton.disabled = isLoading;
         if (videoLinkInput) videoLinkInput.disabled = isLoading;
         
         // Disable score/export buttons during loading
-        if (scoreButton) scoreButton.disabled = isLoading || (quizData.length === 0 && !document.querySelector('input[name^="q"]:checked'));
+        if (scoreButton) scoreButton.disabled = isLoading || (quizData.length === 0);
         if (exportButton) exportButton.disabled = isLoading || (quizData.length === 0);
 
         if (isLoading) {
@@ -197,6 +194,7 @@
      * Displays a status message (success or error).
      */
     function displayStatus(message, type = 'success') {
+        const statusMessage = document.getElementById('statusMessage');
         if (!statusMessage) return;
 
         statusMessage.textContent = message;
@@ -246,6 +244,7 @@
      */
     function renderQuiz(questions) {
         quizData = questions; // Store globally for scoring
+        const quizTabContent = document.getElementById('quizTabContent');
         const quizHtml = questions.map((q, index) => {
             if (q.type === 'MCQ') {
                 const optionsHtml = q.options.map((option, optIndex) => `
@@ -303,12 +302,16 @@
         }
     }
 
-    // --- Main Logic Functions ---
-
     /**
      * CORE FUNCTION: Fetches the video analysis from the server API.
      */
     async function analyzeVideo() {
+        const videoLinkInput = document.getElementById('videoLink');
+        const summaryTabContent = document.getElementById('summaryTabContent');
+        const quizTabContent = document.getElementById('quizTabContent');
+        const transcriptTabContent = document.getElementById('transcriptTabContent');
+        const analysisContentDiv = document.getElementById('analysisContent');
+
         if (!videoLinkInput) return; // Exit if input not found
 
         const videoUrl = videoLinkInput.value.trim();
@@ -471,9 +474,15 @@
     }
 
 
-    // --- Event Listeners and Initial Setup ---
+    // --- Event Listeners and Initial Setup (The FIX is here) ---
 
     document.addEventListener('DOMContentLoaded', () => {
+        
+        // FIX: Re-declare/re-fetch elements here to ensure DOM is fully loaded.
+        const videoLinkInput = document.getElementById('videoLink');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const scoreButton = document.getElementById('scoreButton');
+        const exportButton = document.getElementById('exportButton');
         
         // Initial tab state
         switchTab('summary');
@@ -485,8 +494,7 @@
             });
         });
 
-        // FIX: The analyze video button was potentially not working because the element
-        // was null when the event listener was assigned. Adding checks here.
+        // Add the main event listeners
         if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
         if (scoreButton) scoreButton.addEventListener('click', submitQuiz);
         if (exportButton) exportButton.addEventListener('click', submitQuiz); 
