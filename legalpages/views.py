@@ -6,20 +6,15 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse, parse_qs
-from io import BytesIO # For in-memory PDF generation
+from io import BytesIO 
 
 # Imports for Transcript Fetching
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
-from youtube_transcript_api._errors import CouldNotRetrieveTranscript, VideoUnavailable 
 
 # Imports for Gemini AI
 import google.genai as genai
 from google.genai.errors import APIError
 from google.genai import types 
-# NOTE: The full Multimodal (frames/audio) pipeline requires external infrastructure 
-# (e.g., Ffmpeg, Cloud Storage, and a video processing service). For this environment, 
-# the robust solution is to rely on Gemini's grounding/web-fetching capability via the URL 
-# and use the optimized 'flash' model for drastically better latency.
 
 # Imports for PDF Generation (Assuming ReportLab is installed)
 try:
@@ -27,7 +22,7 @@ try:
     from reportlab.lib.pagesizes import letter
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     PDF_ENABLED = True
 except ImportError:
     logging.warning("ReportLab not installed. PDF generation will be mocked.")
@@ -42,12 +37,10 @@ TRANSCRIPT_FALLBACK_MARKER = "NO_TRANSCRIPT_FALLBACK"
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-# --- Helper Functions (omitted for brevity, assume unchanged) ---
+# --- Helper Functions ---
 
 def extract_video_id(url):
-    """
-    Extracts the YouTube video ID from various URL formats.
-    """
+    """Extracts the YouTube video ID from various URL formats."""
     if "youtu.be" in url:
         return url.split("/")[-1].split("?")[0]
     
@@ -77,9 +70,11 @@ def fetch_transcript_robust(video_id):
             transcript_obj = None
             
             try:
+                # Prioritize English/Auto-generated English
                 transcript_obj = transcript_list.find_transcript(target_languages, auto_generate=True)
             except NoTranscriptFound:
                 try:
+                    # Fallback to any available language
                     available_codes = [t.language_code for t in transcript_list]
                     transcript_obj = transcript_list.find_transcript(available_codes, auto_generate=True)
                 except NoTranscriptFound:
@@ -94,27 +89,21 @@ def fetch_transcript_robust(video_id):
 
             return full_transcript # Success: return English transcript
 
-        except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript, VideoUnavailable) as e:
+        except Exception as e:
             logger.warning(f"Transcript failure on attempt {attempt+1}/{MAX_RETRIES} for {video_id}. Error: {str(e)}")
             if attempt < MAX_RETRIES - 1:
                 time.sleep(2 ** attempt) 
                 continue
             
             return TRANSCRIPT_FALLBACK_MARKER
-        
-        except Exception as e:
-            logger.error(f"Critical error during transcript fetch for {video_id}: {e}")
-            return TRANSCRIPT_FALLBACK_MARKER
 
-# --- PDF Generation Functions (omitted for brevity, assume unchanged) ---
+# --- PDF Generation Functions (Implementation omitted for brevity, assuming they are correct) ---
 
 def add_watermark(canvas, doc):
     """Draws the LearnFlow AI watermark on every page."""
     canvas.saveState()
-    # Use a large, semi-transparent text for the watermark
     canvas.setFont('Helvetica-Bold', 60)
     canvas.setFillColor(colors.lightgrey, alpha=0.3)
-    # Position the watermark diagonally across the center of the page
     canvas.translate(250, 400)
     canvas.rotate(45)
     canvas.drawString(0, 0, 'LearnFlow AI')
@@ -123,8 +112,6 @@ def add_watermark(canvas, doc):
 def generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_questions):
     """Generates the quiz report and certificate in a single PDF."""
     if not PDF_ENABLED:
-        logger.error("PDF_ENABLED is False. Skipping PDF generation.")
-        # Return a simple mock PDF (e.g., one page with the score) if ReportLab is not available
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
         c.drawString(72, 800, f"MOCK Report - Score: {final_score}/{total_questions}")
@@ -136,7 +123,6 @@ def generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_qu
                             title=f"LearnFlow AI Report for {video_id}",
                             topMargin=50, bottomMargin=50)
     
-    # Register the watermark function to be called on every page
     doc.build(generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_questions), onFirstPage=add_watermark, onLaterPages=add_watermark)
     
     pdf = buffer.getvalue()
@@ -148,8 +134,7 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
     styles = getSampleStyleSheet()
     story = []
 
-    # --- CERTIFICATE SECTION ---
-    # Create a large box for the certificate effect
+    # Certificate Section
     story.append(Spacer(1, 120))
     story.append(Paragraph('<font size="24">CERTIFICATE OF COMPLETION</font>', styles['h1']))
     story.append(Spacer(1, 40))
@@ -158,23 +143,19 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
     story.append(Paragraph(f'<font size="18" color="{colors.blue.name}">YouTube Video ID: {video_id}</font>', styles['h2']))
     story.append(Spacer(1, 24))
     
-    # Display the score prominently
     score_color = colors.darkgreen if final_score > (total_questions / 2) else colors.red
     score_style = ParagraphStyle(name='ScoreStyle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=score_color)
     story.append(Paragraph(f'<font size="16"><b>Final Score: {final_score} / {total_questions}</b></font>', score_style))
     story.append(Spacer(1, 80))
     
     story.append(Paragraph('Date Issued: {}'.format(time.strftime("%Y-%m-%d")), styles['Normal']))
-    story.append(Spacer(1, 6))
-    story.append(Paragraph('LearnFlow AI Assessment System', styles['Normal']))
     story.append(Spacer(1, 100))
     story.append(Paragraph('<pageBreak/>', styles['Normal']))
 
-    # --- DETAILED REPORT SECTION ---
+    # Detailed Report Section
     story.append(Paragraph('<font size="16">Detailed Quiz Report</font>', styles['h1']))
     story.append(Spacer(1, 12))
     
-    # Table data for the report
     report_data = [['#', 'Question', 'User Answer', 'Correct Answer', 'Result']]
     q_num = 1
     
@@ -182,37 +163,31 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         q_id = str(q_index)
         user_ans = user_answers.get(q_id, 'N/A')
         correct_ans = q.get('correct_answer', 'N/A')
-        is_correct = 'WRONG' # Default to wrong
-        
-        # Determine the correct answer text for display
+        is_correct = 'WRONG' 
         correct_ans_text = str(correct_ans)
+        user_ans_text = str(user_ans)
         
         if q.get('type') == 'MCQ':
             correct_option_index = q.get('correctAnswerIndex', -1)
-            # Find the correct text option based on the index
             correct_ans_text = q['options'][correct_option_index] if correct_option_index >= 0 and correct_option_index < len(q['options']) else 'N/A'
             
-            # Check for correctness
             try:
                 if int(user_ans) == int(correct_option_index):
                     is_correct = 'CORRECT'
             except:
-                pass # Invalid or missing user response
+                pass 
 
-            # Determine the user's selected option text
             user_ans_text = q['options'][int(user_ans)] if user_ans.isdigit() and int(user_ans) < len(q['options']) else 'N/A'
 
         elif q.get('type') == 'ShortAnswer':
-            # Check for correctness with normalization
             user_ans_normalized = str(user_ans).strip().lower()
             correct_ans_normalized = str(correct_ans).strip().lower()
             
             if user_ans_normalized == correct_ans_normalized and user_ans_normalized != '':
                 is_correct = 'CORRECT'
             
-            user_ans_text = str(user_ans) # Use the raw user input for display
+            user_ans_text = str(user_ans) 
             
-        # Use different colors for WRONG/CORRECT
         result_color = colors.darkgreen if is_correct == 'CORRECT' else colors.red
         result_text = Paragraph(f'<font color="{result_color.name}"><b>{is_correct}</b></font>', styles['Normal'])
 
@@ -225,7 +200,6 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
         ])
         q_num += 1
 
-    # Create the table with column widths
     table = Table(report_data, colWidths=[30, 180, 100, 100, 60])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a73e8')),
@@ -246,15 +220,11 @@ def generate_pdf_elements(video_id, quiz_data, user_answers, final_score, total_
 
 # --- API Views ---
 
-# You must set your API key as an environment variable in your production environment
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-@csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
+@csrf_exempt
 def analyze_video_api(request):
-    """
-    Handles POST requests to analyze a video URL using Gemini, with enhanced 
-    robustness for missing transcripts (Gemini will generate a detailed analysis if needed).
-    """
+    """Handles POST requests to analyze a video URL using Gemini, optimized for latency."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
 
@@ -277,15 +247,12 @@ def analyze_video_api(request):
         transcript_content = ""
         transcript_instruction = ""
         
-        # Check for non-English transcript
         if transcript.startswith("NON_ENGLISH_TRANSCRIPT:"):
             lang_code, actual_transcript = transcript.split(":", 2)[1:]
             transcript_content = f"The following is a non-English transcript (Language: {lang_code}). Use it to help generate the analysis:\n{actual_transcript}"
             transcript_instruction = "The transcript provided is non-English, but use it as a primary source for the analysis."
             
-        # Check for complete fallback (No transcript available)
         elif transcript == TRANSCRIPT_FALLBACK_MARKER:
-            # --- MEMORY OPTIMIZED ROBUSTNESS LOGIC ---
             transcript_content = "No machine or auto-generated transcript could be reliably fetched. The model must rely solely on the video URL, title, and description for the analysis."
             transcript_instruction = """
             **CRITICAL ACTION REQUIRED (Memory Optimized):** Since no transcript was retrieved, you MUST rely on the video URL, title, and description.
@@ -294,13 +261,11 @@ def analyze_video_api(request):
             
             **Include this content under a new top-level JSON key named 'gemini_generated_analysis' (do NOT call it 'transcript', as it is an analysis, not a verbatim text).**
             
-            The length of 'gemini_generated_analysis' must be detailed but **concise**—NOT a full, verbatim transcript—to conserve server memory.
+            The length of 'gemini_generated_analysis' must be detailed but **concise**—NOT a full, verbatim transcript.
             
             Then, use this generated 'gemini_generated_analysis' content to create the 'summary' and 'quiz_questions'.
             """
-            # ---------------------------
             
-        # Standard English transcript available
         else:
             transcript_content = f"Use the following transcript to generate a highly accurate summary and quiz:\n{transcript}"
             transcript_instruction = "The transcript is provided below. Use it as the primary source for the analysis."
@@ -333,43 +298,34 @@ def analyze_video_api(request):
             "quiz_questions": [
                 {{
                     "type": "MCQ",
-                    "question": "...",
-                    "options": ["A", "B", "C", "D"],
-                    "correctAnswerIndex": 0,
-                    "correct_answer": "A"
+                    // ...
                 }},
                 {{
                     "type": "ShortAnswer",
-                    "question": "...",
-                    "correct_answer": "..."
+                    // ...
                 }}
             ]
-            // Optional third key if transcript was missing:
-            // "gemini_generated_analysis": "..." 
         }}
         ```
         Ensure the JSON is valid and complete, and do not include any text outside of the JSON block.
         """
         
-        # 3. Call Gemini
+        # 3. Call Gemini (Using Flash for speed)
         client = genai.Client(api_key=GEMINI_API_KEY)
         
         config = types.GenerateContentConfig(
-            # Enable the model to fetch and ground its response on the web, using the URL.
             tools=[{"google_search": {}}], 
-            temperature=0.3, # Low temperature for factual, consistent quiz generation
+            temperature=0.3,
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash', # OPTIMIZATION: Switched to Flash for better latency on text tasks
+            model='gemini-2.5-flash', 
             contents=prompt,
             config=config,
         )
 
         # 4. Parse Response
-        # The model is instructed to return a pure JSON block.
         try:
-            # Attempt to find and parse the JSON block from the response text
             json_start = response.text.find('{')
             json_end = response.text.rfind('}')
             if json_start == -1 or json_end == -1:
@@ -378,8 +334,7 @@ def analyze_video_api(request):
             json_text = response.text[json_start : json_end + 1]
             analysis_data = json.loads(json_text)
             
-            # Add the original transcript/marker back into the response. 
-            # The frontend can use this and check for 'gemini_generated_analysis' if it's the marker.
+            # Add the original transcript/marker back for frontend display
             analysis_data['transcript'] = transcript
             
             return JsonResponse(analysis_data)
@@ -390,21 +345,15 @@ def analyze_video_api(request):
         
     except APIError as e:
         logger.error(f"Gemini API Error: {e}")
-        # Crucial: Ensure a fast-returning JSON error for API failures
-        return JsonResponse({'status': 'error', 'message': f'AI service failed to generate content. This often means the video is too long for a single request, or the Gemini API timed out: {str(e)}'}, status=500)
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
+        return JsonResponse({'status': 'error', 'message': f'AI service failed. This often means the video is too long for a single request, or the Gemini API timed out: {str(e)}'}, status=500)
     except Exception as e:
         logger.exception(f"Unexpected error in analyze_video_api: {e}")
-        # Ensures the error message is correctly serialized, preventing the initial error we fixed.
         return JsonResponse({'status': 'error', 'message': 'A critical server error occurred: ' + str(e)}, status=500)
 
 
-@csrf_exempt # Note: This is acceptable for an API-focused view, but full protection is better.
+@csrf_exempt
 def submit_quiz_api(request):
-    """
-    Handles POST requests to score the quiz and generate a PDF report.
-    """
+    """Handles POST requests to score the quiz and generate a PDF report."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
         
@@ -429,31 +378,26 @@ def submit_quiz_api(request):
             user_ans = user_answers.get(q_id)
             is_correct = False
             
-            # Skip if user didn't answer
             if user_ans is None or user_ans == '':
                 continue
 
-            # Standardized scoring for MCQ
             if q.get('type') == 'MCQ':
                 correct_ans_index = q.get('correctAnswerIndex')
                 try:
-                    # User answer is the index string from the radio button value
                     if int(user_ans) == int(correct_ans_index):
                         is_correct = True
                 except:
-                    pass # User response was invalid
+                    pass 
 
             elif q.get('type') == 'ShortAnswer':
                 correct_ans = q.get('correct_answer')
                 
-                # --- SENIOR DEV ROBUSTNESS FIX ---
-                # Normalize both answers for case-insensitivity and leading/trailing whitespace
+                # Robust comparison: case-insensitive and whitespace-trimmed
                 user_ans_normalized = str(user_ans).strip().lower()
                 correct_ans_normalized = str(correct_ans).strip().lower()
 
                 if user_ans_normalized == correct_ans_normalized:
                     is_correct = True
-                # ---------------------------------
             
             if is_correct:
                 final_score += 1
@@ -461,23 +405,21 @@ def submit_quiz_api(request):
         # 2. Generate PDF Report
         pdf_data = generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_questions)
 
-        # 3. Return the PDF file as a response
+        # 3. Return the PDF file
         response = HttpResponse(pdf_data, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="LearnFlow_AI_Report_{video_id}.pdf"'
         
-        # Add the score to the response header/body so the frontend can display it before/after download
+        # Pass the score back via a custom header
         response['X-Quiz-Score'] = f'{final_score}/{total_questions}'
         
         return response
 
-    except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON format in quiz submission."}, status=400)
     except Exception as e:
         logger.exception(f"Error during quiz submission or PDF generation: {e}")
         return JsonResponse({"status": "error", "message": f"A server error occurred during scoring/PDF generation: {e}"}, status=500)
 
 
-# --- Static Pages Views (Original content) ---
+# --- Static Pages Views ---
 def privacy_policy(request): return render(request, 'privacy.html')
 def terms_conditions(request): return render(request, 'terms.html')
 def about_us(request): return render(request, 'about.html')
@@ -487,13 +429,10 @@ def learnflow_overview(request): return render(request, 'learnflow_overview.html
 
 def learnflow_video_analysis(request):
     """The main view for the video analysis page."""
-    # This view can be used to pass initial context, like a pre-selected video ID.
     context = {}
     return render(request, 'learnflow.html', context)
     
 def video_analysis_view(request, video_id):
-    """
-    View to handle direct links to a video analysis page, pre-populating the URL.
-    """
+    """View to handle direct links to a video analysis page, pre-populating the URL."""
     context = {'pre_selected_video_id': video_id}
     return render(request, 'learnflow.html', context)
