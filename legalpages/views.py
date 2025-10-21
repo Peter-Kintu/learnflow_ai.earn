@@ -23,6 +23,7 @@ try:
     from reportlab.lib.pagesizes import letter
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    # Senior Dev fix: Ensure all platypus elements are imported
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
     PDF_ENABLED = True
 except ImportError:
@@ -83,6 +84,7 @@ def get_youtube_transcript(video_id):
             if transcript:
                 # If non-English is forced, note the language
                 if not transcript.language_code.startswith('en') and transcript.language_code != 'en-GB':
+                    logger.info(f"Using non-English transcript ({transcript.language_code}) for video ID: {video_id}")
                     # Fetch the actual non-English transcript
                     full_transcript = " ".join([item['text'] for item in transcript.fetch()])
                     return f"NON_ENGLISH_TRANSCRIPT:{transcript.language_code}:{full_transcript}"
@@ -116,18 +118,36 @@ def generate_gemini_analysis(video_url, transcript, video_id):
     It uses the URL for grounding/web context and the transcript for detailed content.
     """
     try:
+        # Senior Dev Check: Ensure API Key is available before proceeding.
+        if not os.getenv("GEMINI_API_KEY"):
+            logger.error("GEMINI_API_KEY environment variable not set. Aborting AI generation.")
+            return {"error": "AI service not configured.", "details": "GEMINI_API_KEY is missing from environment variables."}
+
         # Initialize Gemini Client (assumes API key is in environment variables)
+        # Note: In a production environment, the client should ideally be initialized once globally.
         client = genai.Client()
         model_name = 'gemini-2.5-pro' 
         
         # --- Prompt Engineering ---
+        # If the transcript is missing, inform the model it must use web context (video URL)
+        display_transcript = transcript
+        if transcript == TRANSCRIPT_FALLBACK_MARKER or transcript.startswith("NON_ENGLISH_TRANSCRIPT:"):
+             # For the prompt, provide a truncated version or specific instruction
+             display_transcript = (
+                 f"**NOTE:** The direct transcript was unavailable or non-English ({transcript.split(':')[1] if transcript.startswith('NON_ENGLISH_TRANSCRIPT:') else 'MISSING'}). "
+                 "Rely primarily on the source video URL and its title/description for context. "
+                 "Generate the summary and quiz based on expected video content. "
+                 "For the `gemini_generated_analysis` field, include a note explaining that the analysis was performed without a direct English transcript."
+             )
+
+
         prompt = f"""
         You are an AI educational assistant. Analyze the following content and instructions:
         
         **Source Video URL:** {video_url}
         
         **Available Text Content (Transcript):**
-        {transcript}
+        {display_transcript}
         
         ---
         
@@ -213,7 +233,9 @@ def generate_gemini_analysis(video_url, transcript, video_id):
         logger.error(f"Gemini API Error: {e}")
         return {"error": "AI service failed to generate content.", "details": str(e)}
     except json.JSONDecodeError as e:
-        logger.error(f"JSON parsing error from Gemini: {e}. Raw response: {response.text}")
+        # Senior Dev: Log the raw response if possible to debug why JSON failed
+        raw_response = response.text if 'response' in locals() else 'N/A'
+        logger.error(f"JSON parsing error from Gemini: {e}. Raw response: {raw_response}")
         return {"error": "AI service returned an unparsable response.", "details": str(e)}
     except Exception as e:
         logger.error(f"General error during Gemini generation: {e}")
@@ -265,26 +287,34 @@ def generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_qu
         
         if q['type'] == 'MCQ':
             try:
+                # User and correct answer are expected to be string indices ("0", "1", etc.)
                 user_option_index = int(user_ans)
                 correct_option_index = int(correct_ans)
+                # Map the index back to the option text for reporting
                 user_response_text = q['options'][user_option_index] if 0 <= user_option_index < len(q['options']) else "No Answer"
                 correct_response_text = q['options'][correct_option_index]
                 if user_option_index == correct_option_index:
                     is_correct = True
             except:
                 user_response_text = "No Answer / Invalid Selection"
-                correct_response_text = q['options'][int(correct_ans)]
+                # Safely try to get the correct option text
+                try:
+                     correct_response_text = q['options'][int(correct_ans)]
+                except:
+                     correct_response_text = correct_ans
+
         
         elif q['type'] == 'ShortAnswer':
             user_response_text = user_ans
             correct_response_text = correct_ans
             # Simple case-insensitive match for scoring
-            if user_ans.lower() == correct_ans.lower():
+            if user_ans.strip().lower() == correct_ans.strip().lower():
                 is_correct = True
 
         
         # Status
         status = "Correct" if is_correct else "Incorrect"
+        # Senior Dev: Use proper color definition for robustness
         status_color = colors.green if is_correct else colors.red
         Story.append(Paragraph(f"<b>Status:</b> <font color='{status_color.hexa() or '#000000'}'>{status}</font>", styles['Normal']))
         
@@ -320,7 +350,7 @@ def analyze_video_api(request):
         video_id = data.get('video_id') # Should be extracted by frontend, but re-validate
         
         if not video_id:
-             video_id = extract_video_id(video_url)
+            video_id = extract_video_id(video_url)
 
         if not video_id:
             return JsonResponse({"status": "error", "message": "Invalid or missing YouTube video URL."}, status=400)
@@ -377,6 +407,7 @@ def submit_quiz_api(request):
         for i, q in enumerate(quiz_data):
             q_index = str(i)
             is_correct = False
+            # Senior Dev: Strip leading/trailing whitespace from user and correct answers for robust comparison
             user_ans = user_answers.get(q_index, '').strip()
             correct_ans = q.get('correct_answer', '').strip()
 
