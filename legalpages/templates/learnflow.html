@@ -56,14 +56,14 @@
                 <div class="flex-grow">
                     <label for="videoLink" class="block text-sm font-medium text-text-muted mb-1">YouTube Video URL</label>
                     <input type="url" id="videoLink" 
-                           class="w-full border-gray-600 bg-background-dark text-text-light rounded-md shadow-sm p-3 focus:ring-primary-blue focus:border-primary-blue"
-                           placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                           value="{% if pre_selected_video_id %}https://www.youtube.com/watch?v={{ pre_selected_video_id }}{% endif %}"
-                           required>
+                               class="w-full border-gray-600 bg-background-dark text-text-light rounded-md shadow-sm p-3 focus:ring-primary-blue focus:border-primary-blue"
+                               placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                               value="{% if pre_selected_video_id %}https://www.youtube.com/watch?v={{ pre_selected_video_id }}{% endif %}"
+                               required>
                 </div>
                 
                 <button id="analyzeButton" 
-                        class="w-full md:w-auto px-6 py-3 bg-primary-blue text-text-light font-semibold rounded-md shadow-lg hover:bg-hover-blue transition duration-200 flex justify-center items-center">
+                                class="w-full md:w-auto px-6 py-3 bg-primary-blue text-text-light font-semibold rounded-md shadow-lg hover:bg-hover-blue transition duration-200 flex justify-center items-center">
                     <span id="analyzeButtonText">Analyze Video</span>
                     <svg id="loadingIndicator" class="hidden animate-spin h-5 w-5 text-text-light ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -135,12 +135,8 @@
     let quizData = [];
     let videoId = null;
 
-    // --- Helper Functions (Code remains same as prior version) ---
-    // ... (All helper functions: extractVideoId, setAnalysisState, displayStatus, 
-    //      renderVideoPlayer, renderMarkdown, renderQuiz, switchTab, analyzeVideo, 
-    //      submitQuiz are unchanged as they are robust) ...
-
-
+    // --- Helper Functions ---
+    
     /**
      * Extracts the YouTube video ID from a URL.
      */
@@ -478,7 +474,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         
-        // FIX: Re-declare/re-fetch elements here to ensure DOM is fully loaded.
+        // Ensure elements are fetched after the DOM is fully loaded.
         const videoLinkInput = document.getElementById('videoLink');
         const analyzeButton = document.getElementById('analyzeButton');
         const scoreButton = document.getElementById('scoreButton');
@@ -494,7 +490,7 @@
             });
         });
 
-        // Add the main event listeners
+        // Add the main action event listeners
         if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
         if (scoreButton) scoreButton.addEventListener('click', submitQuiz);
         if (exportButton) exportButton.addEventListener('click', submitQuiz); 
