@@ -41,6 +41,7 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware', 
     # ---------------------------------------------
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # ✅ ELITE ENHANCEMENT: Session Expiry Settings for tighter security
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -75,15 +76,18 @@ WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-            # ✅ ELITE ENHANCEMENT: Add connection timeout for resilience in cloud environments
+        'default': {
+            # ✅ FINAL FIX: Use dictionary unpacking (**) to merge dj_database_url output with custom OPTIONS
+            **dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                ssl_require=True,
+            ),
+            # Add connection timeout for resilience in cloud environments
             'OPTIONS': {
                 'connect_timeout': 10,
             },
-        )
+        }
     }
 else:
     DATABASES = {
@@ -126,7 +130,7 @@ SECURE_PERMISSIONS_POLICY = { # Limits access to sensitive browser features
     "payment": "()", # Common feature to disable
 }
 
-# ✅ ELITE ENHANCEMENT: Session Expiry Settings for tighter security
+# Elite Enhancement: Session Expiry Settings for tighter security
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # Forces users to log in after closing the browser
 SESSION_COOKIE_AGE = 3600             # Sets session to expire after 1 hour of inactivity
 
