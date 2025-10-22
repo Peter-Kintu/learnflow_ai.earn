@@ -182,7 +182,6 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            # ✅ FINAL FIX: Add 'unsafe-eval' to allow Google Ads scripts (like sodar2.js)
             "'unsafe-eval'",
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
@@ -190,6 +189,8 @@ CONTENT_SECURITY_POLICY = {
             'https://unpkg.com',
             'https://cdnjs.cloudflare.com',
             'https://ep1.adtrafficquality.google',
+            # ✅ FINAL FIX: Add the new blocked endpoint for sodar2.js
+            'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
         ),
         'style-src': (
@@ -220,7 +221,9 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
-            'https://ep1.adtrafficquality.google', 
+            'https://ep1.adtrafficquality.google',
+            # Adding ep2 here for completeness, though it was primarily reported in script-src
+            'https://ep2.adtrafficquality.google', 
             BACKEND_API_URL,
         ),
         'frame-ancestors': ("'self'",),
