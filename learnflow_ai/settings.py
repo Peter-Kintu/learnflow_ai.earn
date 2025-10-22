@@ -199,6 +199,7 @@ CSP_CONNECT_SRC = (
 
 # New header replacing X_FRAME_OPTIONS
 CSP_FRAME_ANCESTORS = ("'self'",)
+
 #  Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
