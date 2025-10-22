@@ -135,12 +135,6 @@
     let quizData = [];
     let videoId = null;
 
-    // --- Helper Functions (Code remains same as prior version) ---
-    // ... (All helper functions: extractVideoId, setAnalysisState, displayStatus, 
-    //      renderVideoPlayer, renderMarkdown, renderQuiz, switchTab, analyzeVideo, 
-    //      submitQuiz are unchanged as they are robust) ...
-
-
     /**
      * Extracts the YouTube video ID from a URL.
      */
@@ -151,7 +145,11 @@
             let id = urlParams.get('v');
 
             if (!id && urlObj.hostname.includes('youtu.be')) {
-                id = urlObj.pathname.split('/')[1].split('?')[0];
+                // Handle youtu.be/VIDEO_ID format
+                const pathParts = urlObj.pathname.split('/');
+                if (pathParts.length > 1) {
+                     id = pathParts[1].split('?')[0]; // Get the path segment and strip query
+                }
             }
             return id;
         } catch (e) {
@@ -161,8 +159,11 @@
     
     /**
      * Toggles the UI state for analysis (loading vs. ready).
+     *
+     * @param {boolean} isLoading - True to set loading state, False to set ready state.
+     * @param {boolean} analysisAvailable - True if analysis data (quiz, summary) is available.
      */
-    function setAnalysisState(isLoading) {
+    function setAnalysisState(isLoading, analysisAvailable = false) {
         const analyzeButton = document.getElementById('analyzeButton');
         const videoLinkInput = document.getElementById('videoLink');
         const analyzeButtonText = document.getElementById('analyzeButtonText');
@@ -175,15 +176,19 @@
         if (analyzeButton) analyzeButton.disabled = isLoading;
         if (videoLinkInput) videoLinkInput.disabled = isLoading;
         
-        // Disable score/export buttons during loading
-        if (scoreButton) scoreButton.disabled = isLoading || (quizData.length === 0);
-        if (exportButton) exportButton.disabled = isLoading || (quizData.length === 0);
+        // --- SENIOR DEV FIX: Correctly manage quiz action buttons ---
+        // Quiz actions are disabled during loading, and enabled only if analysis data exists.
+        const canActOnQuiz = analysisAvailable && !isLoading;
+
+        if (scoreButton) scoreButton.disabled = !canActOnQuiz;
+        if (exportButton) exportButton.disabled = !canActOnQuiz;
+        // -----------------------------------------------------------
 
         if (isLoading) {
             if (analyzeButtonText) analyzeButtonText.textContent = 'Analyzing...';
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
             if (statusMessage) statusMessage.classList.add('hidden');
-            if (analysisContentDiv) analysisContentDiv.classList.add('hidden');
+            // Do not hide analysisContentDiv here, only when a *new* analysis starts in analyzeVideo
         } else {
             if (analyzeButtonText) analyzeButtonText.textContent = 'Analyze Video';
             if (loadingIndicator) loadingIndicator.classList.add('hidden');
@@ -247,7 +252,7 @@
         const quizTabContent = document.getElementById('quizTabContent');
         const quizHtml = questions.map((q, index) => {
             if (q.type === 'MCQ') {
-                const optionsHtml = q.options.map((option, optIndex) => `
+                const optionsHtml = (q.options || []).map((option, optIndex) => `
                     <div class="flex items-center space-x-3">
                         <input id="q${index}opt${optIndex}" name="q${index}" type="radio" value="${optIndex}" 
                             class="focus:ring-primary-blue h-4 w-4 text-primary-blue border-gray-600 bg-background-dark">
@@ -273,7 +278,7 @@
         }).join('<div class="h-4"></div>'); // Spacer
 
         if (quizTabContent) quizTabContent.innerHTML = quizHtml;
-        setAnalysisState(false); // Enable score button
+        setAnalysisState(false, quizData.length > 0); // Enable score button if quiz is ready
     }
 
     /**
@@ -319,10 +324,11 @@
 
         if (!videoId || videoUrl.length < 5) {
             displayStatus('Please enter a valid YouTube video URL.', 'error');
+            setAnalysisState(false, false); // Reset buttons
             return;
         }
 
-        setAnalysisState(true);
+        setAnalysisState(true, false);
         displayStatus(`Starting analysis for video ID: ${videoId}. This may take up to a minute for long videos...`, 'warning');
         
         // Clear previous content
@@ -346,6 +352,7 @@
             }
 
             const data = await response.json();
+            const quizIsReady = Array.isArray(data.quiz_questions) && data.quiz_questions.length > 0;
 
             // 1. Render Video
             renderVideoPlayer(videoId);
@@ -354,7 +361,7 @@
             renderMarkdown(data.summary, summaryTabContent);
 
             // 3. Render Quiz
-            renderQuiz(data.quiz_questions);
+            renderQuiz(data.quiz_questions); // This internally updates setAnalysisState(false, true) if quiz is ready
 
             // 4. Render Transcript / Analysis
             const transcriptContent = data.transcript || '';
@@ -377,14 +384,15 @@
             if (analysisContentDiv) analysisContentDiv.classList.remove('hidden');
             displayStatus('Analysis complete! Summary and Quiz are ready.', 'success');
             switchTab('summary'); // Start on the Summary tab
+            
+            // Final state update (redundant if renderQuiz worked, but safer)
+            setAnalysisState(false, quizIsReady); 
 
         } catch (error) {
             console.error('Analysis failed:', error);
             // Client-side message for server/network errors
             displayStatus(`Analysis Failed: ${error.message || 'The server or AI service timed out.'}`, 'error');
-
-        } finally {
-            setAnalysisState(false);
+            setAnalysisState(false, false); // Reset buttons on error
         }
     }
 
@@ -398,7 +406,8 @@
             return;
         }
 
-        setAnalysisState(true);
+        // Set loading state, but remember analysis is available
+        setAnalysisState(true, true); 
         displayStatus('Scoring quiz and generating PDF report...', 'warning');
 
         const answers = {};
@@ -469,7 +478,8 @@
             console.error('Submission failed:', error);
             displayStatus(`Submission Failed: ${error.message || 'An unknown error occurred during scoring/report generation.'}`, 'error');
         } finally {
-            setAnalysisState(false);
+            // Re-enable quiz buttons after submission completes/fails
+            setAnalysisState(false, quizData.length > 0); 
         }
     }
 
@@ -478,7 +488,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         
-        // FIX: Re-declare/re-fetch elements here to ensure DOM is fully loaded.
+        // Ensure event listeners are attached only once, to the correct elements.
         const videoLinkInput = document.getElementById('videoLink');
         const analyzeButton = document.getElementById('analyzeButton');
         const scoreButton = document.getElementById('scoreButton');
@@ -497,12 +507,17 @@
         // Add the main event listeners
         if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
         if (scoreButton) scoreButton.addEventListener('click', submitQuiz);
+        // Both buttons perform the submit_quiz logic, which generates the PDF.
         if (exportButton) exportButton.addEventListener('click', submitQuiz); 
         
         // Auto-trigger analysis if a video ID was pre-selected (Django context)
         if (videoLinkInput && videoLinkInput.value.startsWith('https://www.youtube.com')) {
             // Slight delay to ensure all JS/HTML elements are rendered before fetching
+            // The initial setAnalysisState call will disable buttons until analysis is done.
             setTimeout(analyzeVideo, 100); 
+        } else {
+             // Ensure buttons are disabled initially if no video is pre-loaded
+             setAnalysisState(false, false); 
         }
     });
 
