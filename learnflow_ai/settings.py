@@ -112,6 +112,16 @@ USE_ETAGS = True               # Helps with Cache-Control/Expires warnings
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+# Pro-Level Additions for Enhanced Security
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin' # Mitigates referrer leakage
+SECURE_PERMISSIONS_POLICY = { # Limits access to sensitive browser features
+    "geolocation": "()",
+    "camera": "()",
+    "microphone": "()",
+    "payment": "()", # Common feature to disable
+}
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #  Localization
