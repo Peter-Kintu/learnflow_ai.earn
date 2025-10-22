@@ -55,7 +55,7 @@ ROOT_URLCONF = 'learnflow_ai.urls'
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'user', 'templates'),
-             os.path.join(BASE_DIR, 'templates'),  
+             os.path.join(BASE_DIR, 'templates'), 
              ],
     
     'APP_DIRS': True,
@@ -171,7 +171,7 @@ CSP_SCRIPT_SRC = (
     "'unsafe-inline'", # Needed for the inline Google AdSense push() snippet
     'https://pagead2.googlesyndication.com', # Google Ads
     'https://fundingchoicesmessages.google.com', # Google CMP
-    'https://unpkg.com', # Tailwind CDN (Remove this if you use a local build)
+    'https://unpkg.com', # Tailwind CDN (TEMPORARY: Remove this if you switch to local build)
     'https://cdnjs.cloudflare.com', # External library CDNs
 )
 
