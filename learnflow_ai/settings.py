@@ -6,7 +6,7 @@ from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-#  Security
+# --- CORE SECURITY & ENVIRONMENT CONFIGURATION ---
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
@@ -51,7 +51,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'learnflow_ai.urls'
 
-#  Templates
+#  Templates (Non-printable character fix confirmed)
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'user', 'templates'),
@@ -98,17 +98,16 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 DEBUG_PROPAGATE_EXCEPTIONS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- SECURITY HEADERS ---
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-# --- Security/Cookie/Header Fixes ---
-# REMOVED: X_FRAME_OPTIONS = 'DENY' (Replaced by CSP_FRAME_ANCESTORS)
 SECURE_CONTENT_TYPE_NOSNIFF = True # Adds X-Content-Type-Options: nosniff
-SECURE_BROWSER_XSS_FILTER = True # Adds X-XSS-Protection (though CSP is superior)
+SECURE_BROWSER_XSS_FILTER = True # Adds X-XSS-Protection
 SESSION_COOKIE_HTTPONLY = True # Adds httponly directive to session cookie
 CSRF_COOKIE_HTTPONLY = True    # Adds httponly directive to CSRF cookie
 USE_ETAGS = True               # Helps with Cache-Control/Expires warnings
-# ------------------------------------
 
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -145,34 +144,34 @@ LOGGING = {
     },
 }
 
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-#     'API_KEY': config('CLOUDINARY_API_KEY'),
-#     'API_SECRET': config('CLOUDINARY_API_SECRET'),
-# }
 #  Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login'
 
 # External API Configurations
-# The URL for your FastAPI backend service.
-# Use an environment variable for production and a local fallback for development.
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
 
-# --- Content Security Policy (CSP) Configuration (v4.0+ format) ---
+# --- Content Security Policy (CSP) Configuration (django-csp v4.0+ format) ---
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'default-src': ("'self'",),
         'script-src': (
             "'self'",
-            "'unsafe-inline'", # Needed for the inline Google AdSense push() snippet
+            "'unsafe-inline'", # Required for Google AdSense push() snippet
             'https://pagead2.googlesyndication.com', # Google Ads
             'https://fundingchoicesmessages.google.com', # Google CMP
-            'https://unpkg.com', # Tailwind CDN (TEMPORARY: Remove this if you switch to local build)
+            'https://unpkg.com', # Tailwind CDN 
             'https://cdnjs.cloudflare.com', # External library CDNs
+        ),
+        # ADDED: Essential for Tailwind CSS and general inline styling
+        'style-src': (
+            "'self'",
+            "'unsafe-inline'",
+            'https://unpkg.com',
+            'https://cdnjs.cloudflare.com',
         ),
         'frame-src': (
             "'self'",
@@ -191,9 +190,9 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
-            BACKEND_API_URL, # Dynamically include the domain for your FastAPI backend
+            BACKEND_API_URL, # Dynamic domain for your external FastAPI backend
         ),
-        # New header replacing X_FRAME_OPTIONS (must be in DIRECTIVES dictionary now)
+        # Replaces X-Frame-Options
         'frame-ancestors': ("'self'",),
     }
 }
