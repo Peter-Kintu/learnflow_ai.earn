@@ -37,7 +37,7 @@ INSTALLED_APPS = [
 #  Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # ✅ FIX: CSP Middleware case corrected
+    # Middleware case corrected
     'csp.middleware.CSPMiddleware', 
     # ---------------------------------------------
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -76,7 +76,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
         'default': {
-            # ✅ SYNTAX CORRECTED: Merge dj_database_url output with custom OPTIONS
+            # Syntax corrected for OPTIONS merging
             **dj_database_url.config(
                 default=DATABASE_URL,
                 conn_max_age=600,
@@ -182,25 +182,23 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            # ✅ FIX 1: Allow third-party scripts that use eval() (e.g., Google Ads)
+            # ✅ FINAL FIX: Add 'unsafe-eval' to allow Google Ads scripts (like sodar2.js)
             "'unsafe-eval'",
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
-            # ✅ FIX 2: Allow the Tailwind CDN script
             'https://cdn.tailwindcss.com',
             'https://unpkg.com',
             'https://cdnjs.cloudflare.com',
+            'https://ep1.adtrafficquality.google',
+            'https://googleads.g.doubleclick.net',
         ),
-        # Essential for Tailwind CSS and general inline styling
         'style-src': (
             "'self'",
             "'unsafe-inline'",
             'https://unpkg.com',
             'https://cdnjs.cloudflare.com',
-            # ✅ FIX 3: Allow Google Fonts CSS
             'https://fonts.googleapis.com', 
         ),
-        # ✅ FIX 4: Add font-src directive for Google Fonts resources
         'font-src': (
             "'self'",
             'https://fonts.gstatic.com',
@@ -208,7 +206,7 @@ CONTENT_SECURITY_POLICY = {
         'frame-src': (
             "'self'",
             'https://www.youtube.com',
-            'https://tpc.googlesyndication.com',
+            'https://tpc.googlesyndication.com', 
             'https://googleads.g.doubleclick.net',
             'https://fundingchoicesmessages.google.com',
         ),
@@ -222,11 +220,9 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
-            # ✅ FIX 5: Allow Google traffic quality connect endpoint
             'https://ep1.adtrafficquality.google', 
             BACKEND_API_URL,
         ),
-        # Replaces X-Frame-Options
         'frame-ancestors': ("'self'",),
     }
 }
