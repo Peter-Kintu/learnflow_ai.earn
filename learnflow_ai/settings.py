@@ -37,8 +37,8 @@ INSTALLED_APPS = [
 #  Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # --- ADDED: CSP Middleware (must be early) ---
-    'csp.middleware.CspMiddleware',
+    # ✅ FIX APPLIED: Corrected middleware class name to 'CSPMiddleware' (uppercase C)
+    'csp.middleware.CSPMiddleware', 
     # ---------------------------------------------
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -78,7 +78,11 @@ if DATABASE_URL:
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True
+            ssl_require=True,
+            # ✅ ELITE ENHANCEMENT: Add connection timeout for resilience in cloud environments
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
         )
     }
 else:
@@ -121,6 +125,10 @@ SECURE_PERMISSIONS_POLICY = { # Limits access to sensitive browser features
     "microphone": "()",
     "payment": "()", # Common feature to disable
 }
+
+# ✅ ELITE ENHANCEMENT: Session Expiry Settings for tighter security
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True # Forces users to log in after closing the browser
+SESSION_COOKIE_AGE = 3600             # Sets session to expire after 1 hour of inactivity
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -176,7 +184,7 @@ CONTENT_SECURITY_POLICY = {
             'https://unpkg.com', # Tailwind CDN 
             'https://cdnjs.cloudflare.com', # External library CDNs
         ),
-        # ADDED: Essential for Tailwind CSS and general inline styling
+        # Essential for Tailwind CSS and general inline styling
         'style-src': (
             "'self'",
             "'unsafe-inline'",
