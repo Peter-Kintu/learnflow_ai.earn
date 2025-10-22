@@ -15,6 +15,9 @@ CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
 #  Installed Apps
 INSTALLED_APPS = [
+    # --- ADDED: CSP ---
+    'csp',
+    # ------------------
     'legalpages',
     'jazzmin',
     'django.contrib.admin',
@@ -34,13 +37,16 @@ INSTALLED_APPS = [
 #  Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # --- ADDED: CSP Middleware (must be early) ---
+    'csp.middleware.CspMiddleware',
+    # ---------------------------------------------
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'django.middleware.clickjacking.XFrameOptionsMiddleware', # REMOVED: Replaced by CSP_FRAME_ANCESTORS
 ]
 
 ROOT_URLCONF = 'learnflow_ai.urls'
@@ -49,7 +55,7 @@ ROOT_URLCONF = 'learnflow_ai.urls'
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'user', 'templates'),
-             os.path.join(BASE_DIR, 'templates'),  
+             os.path.join(BASE_DIR, 'templates'),  
              ],
     
     'APP_DIRS': True,
@@ -95,7 +101,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-X_FRAME_OPTIONS = 'DENY'
+# --- Security/Cookie/Header Fixes ---
+# REMOVED: X_FRAME_OPTIONS = 'DENY' (Replaced by CSP_FRAME_ANCESTORS)
+SECURE_CONTENT_TYPE_NOSNIFF = True # Adds X-Content-Type-Options: nosniff
+SECURE_BROWSER_XSS_FILTER = True # Adds X-XSS-Protection (though CSP is superior)
+SESSION_COOKIE_HTTPONLY = True # Adds httponly directive to session cookie
+CSRF_COOKIE_HTTPONLY = True    # Adds httponly directive to CSRF cookie
+USE_ETAGS = True               # Helps with Cache-Control/Expires warnings
+# ------------------------------------
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -132,9 +146,9 @@ LOGGING = {
 }
 
 # CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-#     'API_KEY': config('CLOUDINARY_API_KEY'),
-#     'API_SECRET': config('CLOUDINARY_API_SECRET'),
+#     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+#     'API_KEY': config('CLOUDINARY_API_KEY'),
+#     'API_SECRET': config('CLOUDINARY_API_SECRET'),
 # }
 #  Auth Redirects
 LOGIN_URL = 'user:login'
@@ -147,6 +161,44 @@ LOGOUT_REDIRECT_URL = 'user:login'
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
+
+# --- Content Security Policy (CSP) Configuration ---
+# Addresses CSP blocking issues and provides modern frame security.
+CSP_DEFAULT_SRC = ("'self'",)
+
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "'unsafe-inline'", # Needed for the inline Google AdSense push() snippet
+    'https://pagead2.googlesyndication.com', # Google Ads
+    'https://fundingchoicesmessages.google.com', # Google CMP
+    'https://unpkg.com', # Tailwind CDN (Remove this if you use a local build)
+    'https://cdnjs.cloudflare.com', # External library CDNs
+)
+
+CSP_FRAME_SRC = (
+    "'self'",
+    'https://www.youtube.com', # YouTube Player Embed
+    'https://tpc.googlesyndication.com', # Google Ad Frames
+    'https://googleads.g.doubleclick.net', # Google Ad Frames
+    'https://fundingchoicesmessages.google.com', # Google CMP Frame
+)
+
+CSP_IMG_SRC = (
+    "'self'",
+    'data:', # Allows data URIs (e.g., small inline images)
+    'https://pagead2.googlesyndication.com',
+    'https://i.ytimg.com', # YouTube thumbnails
+)
+
+CSP_CONNECT_SRC = (
+    "'self'",
+    'https://fundingchoicesmessages.google.com',
+    'https://pagead2.googlesyndication.com',
+    # Add your BACKEND_API_URL if it's on a different domain than 'self'
+)
+
+# New header replacing X_FRAME_OPTIONS
+CSP_FRAME_ANCESTORS = ("'self'",)
 #  Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
