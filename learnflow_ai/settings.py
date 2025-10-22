@@ -162,44 +162,41 @@ BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backen
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
 
-# --- Content Security Policy (CSP) Configuration ---
-# Addresses CSP blocking issues and provides modern frame security.
-CSP_DEFAULT_SRC = ("'self'",)
-
-CSP_SCRIPT_SRC = (
-    "'self'",
-    "'unsafe-inline'", # Needed for the inline Google AdSense push() snippet
-    'https://pagead2.googlesyndication.com', # Google Ads
-    'https://fundingchoicesmessages.google.com', # Google CMP
-    'https://unpkg.com', # Tailwind CDN (TEMPORARY: Remove this if you switch to local build)
-    'https://cdnjs.cloudflare.com', # External library CDNs
-)
-
-CSP_FRAME_SRC = (
-    "'self'",
-    'https://www.youtube.com', # YouTube Player Embed
-    'https://tpc.googlesyndication.com', # Google Ad Frames
-    'https://googleads.g.doubleclick.net', # Google Ad Frames
-    'https://fundingchoicesmessages.google.com', # Google CMP Frame
-)
-
-CSP_IMG_SRC = (
-    "'self'",
-    'data:', # Allows data URIs (e.g., small inline images)
-    'https://pagead2.googlesyndication.com',
-    'https://i.ytimg.com', # YouTube thumbnails
-)
-
-CSP_CONNECT_SRC = (
-    "'self'",
-    'https://fundingchoicesmessages.google.com',
-    'https://pagead2.googlesyndication.com',
-    # Add your BACKEND_API_URL if it's on a different domain than 'self'
-)
-
-# New header replacing X_FRAME_OPTIONS
-CSP_FRAME_ANCESTORS = ("'self'",)
-
+# --- Content Security Policy (CSP) Configuration (v4.0+ format) ---
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'",),
+        'script-src': (
+            "'self'",
+            "'unsafe-inline'", # Needed for the inline Google AdSense push() snippet
+            'https://pagead2.googlesyndication.com', # Google Ads
+            'https://fundingchoicesmessages.google.com', # Google CMP
+            'https://unpkg.com', # Tailwind CDN (TEMPORARY: Remove this if you switch to local build)
+            'https://cdnjs.cloudflare.com', # External library CDNs
+        ),
+        'frame-src': (
+            "'self'",
+            'https://www.youtube.com', # YouTube Player Embed
+            'https://tpc.googlesyndication.com', # Google Ad Frames
+            'https://googleads.g.doubleclick.net', # Google Ad Frames
+            'https://fundingchoicesmessages.google.com', # Google CMP Frame
+        ),
+        'img-src': (
+            "'self'",
+            'data:', # Allows data URIs (e.g., small inline images)
+            'https://pagead2.googlesyndication.com',
+            'https://i.ytimg.com', # YouTube thumbnails
+        ),
+        'connect-src': (
+            "'self'",
+            'https://fundingchoicesmessages.google.com',
+            'https://pagead2.googlesyndication.com',
+            BACKEND_API_URL, # Dynamically include the domain for your FastAPI backend
+        ),
+        # New header replacing X_FRAME_OPTIONS (must be in DIRECTIVES dictionary now)
+        'frame-ancestors': ("'self'",),
+    }
+}
 #  Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
