@@ -37,11 +37,10 @@ INSTALLED_APPS = [
 #  Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # ✅ FIX APPLIED: Corrected middleware class name to 'CSPMiddleware' (uppercase C)
+    # ✅ FIX: CSP Middleware case corrected
     'csp.middleware.CSPMiddleware', 
     # ---------------------------------------------
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    # ✅ ELITE ENHANCEMENT: Session Expiry Settings for tighter security
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -77,7 +76,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
         'default': {
-            # ✅ FINAL FIX: Use dictionary unpacking (**) to merge dj_database_url output with custom OPTIONS
+            # ✅ SYNTAX CORRECTED: Merge dj_database_url output with custom OPTIONS
             **dj_database_url.config(
                 default=DATABASE_URL,
                 conn_max_age=600,
@@ -182,11 +181,15 @@ CONTENT_SECURITY_POLICY = {
         'default-src': ("'self'",),
         'script-src': (
             "'self'",
-            "'unsafe-inline'", # Required for Google AdSense push() snippet
-            'https://pagead2.googlesyndication.com', # Google Ads
-            'https://fundingchoicesmessages.google.com', # Google CMP
-            'https://unpkg.com', # Tailwind CDN 
-            'https://cdnjs.cloudflare.com', # External library CDNs
+            "'unsafe-inline'", 
+            # ✅ FIX 1: Allow third-party scripts that use eval() (e.g., Google Ads)
+            "'unsafe-eval'",
+            'https://pagead2.googlesyndication.com', 
+            'https://fundingchoicesmessages.google.com', 
+            # ✅ FIX 2: Allow the Tailwind CDN script
+            'https://cdn.tailwindcss.com',
+            'https://unpkg.com',
+            'https://cdnjs.cloudflare.com',
         ),
         # Essential for Tailwind CSS and general inline styling
         'style-src': (
@@ -194,25 +197,34 @@ CONTENT_SECURITY_POLICY = {
             "'unsafe-inline'",
             'https://unpkg.com',
             'https://cdnjs.cloudflare.com',
+            # ✅ FIX 3: Allow Google Fonts CSS
+            'https://fonts.googleapis.com', 
+        ),
+        # ✅ FIX 4: Add font-src directive for Google Fonts resources
+        'font-src': (
+            "'self'",
+            'https://fonts.gstatic.com',
         ),
         'frame-src': (
             "'self'",
-            'https://www.youtube.com', # YouTube Player Embed
-            'https://tpc.googlesyndication.com', # Google Ad Frames
-            'https://googleads.g.doubleclick.net', # Google Ad Frames
-            'https://fundingchoicesmessages.google.com', # Google CMP Frame
+            'https://www.youtube.com',
+            'https://tpc.googlesyndication.com',
+            'https://googleads.g.doubleclick.net',
+            'https://fundingchoicesmessages.google.com',
         ),
         'img-src': (
             "'self'",
-            'data:', # Allows data URIs (e.g., small inline images)
+            'data:',
             'https://pagead2.googlesyndication.com',
-            'https://i.ytimg.com', # YouTube thumbnails
+            'https://i.ytimg.com',
         ),
         'connect-src': (
             "'self'",
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
-            BACKEND_API_URL, # Dynamic domain for your external FastAPI backend
+            # ✅ FIX 5: Allow Google traffic quality connect endpoint
+            'https://ep1.adtrafficquality.google', 
+            BACKEND_API_URL,
         ),
         # Replaces X-Frame-Options
         'frame-ancestors': ("'self'",),
