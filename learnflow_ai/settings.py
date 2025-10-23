@@ -219,6 +219,8 @@ CONTENT_SECURITY_POLICY = {
         ),
         'connect-src': (
             "'self'",
+            # ✅ FIX: Added the Gemini API endpoint to resolve the 'Failed to fetch' error.
+            'https://generativelanguage.googleapis.com', 
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
             'https://ep1.adtrafficquality.google',
