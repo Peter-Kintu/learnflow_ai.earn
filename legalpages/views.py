@@ -4,7 +4,7 @@ import time
 import json 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt # <-- CRITICAL IMPORT
+# REMOVED: from django.views.decorators.csrf import csrf_exempt 
 from urllib.parse import urlparse, parse_qs
 from io import BytesIO # For in-memory PDF generation
 
@@ -336,7 +336,7 @@ def generate_pdf_report(video_id, quiz_data, user_answers, final_score, total_qu
 
 # --- Django View Functions ---
 
-@csrf_exempt # <--- THIS IS THE CRITICAL FIX FOR API POST REQUESTS
+# @csrf_exempt <--- REMOVED THIS INSECURE DECORATOR
 def analyze_video_api(request):
     """
     API endpoint to initiate video analysis and Gemini generation.
@@ -383,7 +383,7 @@ def analyze_video_api(request):
         return JsonResponse({"status": "error", "message": f"A server error occurred: {e}"}, status=500)
 
 
-@csrf_exempt # <--- THIS IS ALSO NEEDED FOR THE QUIZ SUBMISSION API
+# @csrf_exempt <--- REMOVED THIS INSECURE DECORATOR
 def submit_quiz_api(request):
     """
     API endpoint to score the quiz and generate a PDF report.
