@@ -462,7 +462,11 @@ def learnflow_overview(request): return render(request, 'learnflow_overview.html
 
 def learnflow_video_analysis(request):
     """The main view for the video analysis page."""
-    context = {}
+    video_id = request.GET.get('video_id', '').strip()
+    context = {
+        'video_id': video_id,
+        'current_path': request.path  # ✅ Fixes the template error
+    }
     return render(request, 'learnflow.html', context)
     
 def video_analysis_view(request, video_id):
