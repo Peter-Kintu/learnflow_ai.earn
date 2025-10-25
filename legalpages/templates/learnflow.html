@@ -35,8 +35,7 @@
                         </div>
                 <button id="analyzeButton" 
                     class="w-full sm:w-auto px-6 py-2 bg-primary-blue text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    disabled>
-                    Analyze Video
+                    disabled> Analyze Video
                 </button>
             </div>
 
@@ -78,8 +77,7 @@
                                 <span id="quiz-score" class="text-lg font-semibold text-success-green hidden"></span>
                                 <button type="button" id="scoreButton" 
                                     class="px-6 py-2 bg-accent-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                    disabled>
-                                    Score Quiz
+                                    disabled> Score Quiz
                                 </button>
                             </div>
                         </form>
@@ -95,8 +93,7 @@
                     
                     <button id="exportButton" 
                         class="w-full px-6 py-3 bg-success-green text-white font-semibold rounded-lg hover:bg-green-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center"
-                        disabled>
-                        <i class="fas fa-file-pdf mr-2"></i> Generate & Download PDF
+                        disabled> <i class="fas fa-file-pdf mr-2"></i> Generate & Download PDF
                     </button>
                     <p id="export-status" class="text-center mt-3 text-sm text-text-muted hidden">Generating PDF...</p>
                 </div>
@@ -127,7 +124,7 @@
 
     // --- Global State for Data Persistence ---
     let globalQuizData = null;
-    let globalVideoResponseData = null; // Store summary/title data for PDF generation
+    let globalVideoResponseData = null; 
 
     // Helper function to get the CSRF token
     function getCookie(name) {
@@ -148,11 +145,6 @@
     // --- State and UI Management Variables ---
     const csrftoken = getCookie('csrftoken');
     const playerContainer = document.getElementById('playerContainer');
-    // NOTE: variables are retrieved inside DOMContentLoaded below for scope safety
-    // const videoLinkInput = document.getElementById('videoLink');
-    // const analyzeButton = document.getElementById('analyzeButton');
-    // const scoreButton = document.getElementById('scoreButton');
-    // const exportButton = document.getElementById('exportButton');
 
 
     // Parses the YouTube video ID from a link
@@ -202,12 +194,17 @@
         }
     }
 
-    // Manages button states (Uses the variables passed from DOMContentLoaded)
+    // Manages button states (Now consistently looks up elements inside the function)
     function setAnalysisState(isAnalyzing, isAnalyzed) {
         const analyzeButton = document.getElementById('analyzeButton');
         const videoLinkInput = document.getElementById('videoLink');
         const scoreButton = document.getElementById('scoreButton');
         const exportButton = document.getElementById('exportButton');
+
+        if (!analyzeButton || !videoLinkInput || !scoreButton || !exportButton) {
+            console.error("Critical elements not found for setAnalysisState.");
+            return; 
+        }
 
         analyzeButton.disabled = isAnalyzing;
         videoLinkInput.disabled = isAnalyzing;
@@ -255,11 +252,10 @@
     }
 
 
-    // --- Main Functions (Using Updated URL Constants) ---
+    // --- Main Functions ---
 
     // 1. ANALYZE VIDEO FUNCTION
     async function analyzeVideo() {
-        // Need to retrieve elements here since they aren't globally scoped
         const videoLinkInput = document.getElementById('videoLink');
         
         setAnalysisState(true, false);
@@ -406,7 +402,7 @@
 
     // --- Page Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Retrieve elements inside DOMContentLoaded
+        // FIX APPLIED: Define variables here for clear scope control
         const videoLinkInput = document.getElementById('videoLink');
         const analyzeButton = document.getElementById('analyzeButton');
         const scoreButton = document.getElementById('scoreButton');
@@ -414,6 +410,7 @@
         
         switchTab('summary');
 
+        // Tab button listeners
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 switchTab(button.dataset.tab);
@@ -421,22 +418,26 @@
         });
 
         // 1. Enable/Disable Analyze button based on input
-        videoLinkInput.addEventListener('input', () => {
-            analyzeButton.disabled = videoLinkInput.value.trim().length === 0;
-        });
+        if (videoLinkInput && analyzeButton) {
+            videoLinkInput.addEventListener('input', () => {
+                analyzeButton.disabled = videoLinkInput.value.trim().length === 0;
+            });
+        }
 
         // 2. Attach click handlers to the main action buttons
         if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
         if (scoreButton) scoreButton.addEventListener('click', submitQuiz); 
         if (exportButton) exportButton.addEventListener('click', submitQuiz); 
         
-        // Initial state
-        setAnalysisState(false, false); 
         
-        // Auto-trigger analysis if a video URL was pre-selected (Django context)
+        // Initial state logic
         if (videoLinkInput && videoLinkInput.value.startsWith('http')) {
-            analyzeButton.disabled = false; // Enable button
+            // If URL is preloaded, ensure button is enabled and auto-trigger analysis
+            if (analyzeButton) analyzeButton.disabled = false;
             setTimeout(analyzeVideo, 100); 
+        } else {
+             // Default state if no URL is present
+             setAnalysisState(false, false); 
         }
     });
 
