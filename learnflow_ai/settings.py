@@ -13,7 +13,7 @@ ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,lear
 
 CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
-#  Installed Apps
+# Installed Apps
 INSTALLED_APPS = [
     # --- ADDED: CSP ---
     'csp',
@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'book',
 ]
 
-#  Middleware
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # Middleware case corrected
@@ -51,7 +51,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'learnflow_ai.urls'
 
-#  Templates (Cleaned up context_processors to fix admin.E404)
+# Templates (Cleaned up context_processors to fix admin.E404)
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'user', 'templates'),
@@ -72,7 +72,7 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
-#  Database (Neon.tech or fallback)
+# Database (Neon.tech or fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -100,7 +100,8 @@ else:
 # 🔐 Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthLengthValidator'},
+    # Corrected 'MinimumLengthLengthValidator' typo
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
@@ -132,11 +133,11 @@ SECURE_PERMISSIONS_POLICY = { # Limits access to sensitive browser features
 
 # Elite Enhancement: Session Expiry Settings for tighter security
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # Forces users to log in after closing the browser
-SESSION_COOKIE_AGE = 3600             # Sets session to expire after 1 hour of inactivity
+SESSION_COOKIE_AGE = 3600              # Sets session to expire after 1 hour of inactivity
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-#  Localization
+# Localization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Kampala'
 USE_I18N = True
@@ -166,7 +167,7 @@ LOGGING = {
     },
 }
 
-#  Auth Redirects
+# Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'video:video_list'
 LOGOUT_REDIRECT_URL = 'user:login'
@@ -175,6 +176,12 @@ LOGOUT_REDIRECT_URL = 'user:login'
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
+# Cloudinary Configuration (ADDED for completeness)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
 
 # --- Content Security Policy (CSP) Configuration (django-csp v4.0+ format) ---
 CONTENT_SECURITY_POLICY = {
@@ -239,7 +246,7 @@ CONTENT_SECURITY_POLICY = {
         'frame-ancestors': ("'self'",),
     }
 }
-#  Jazzmin Admin
+# Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
     "site_header": "LearnFlow",
@@ -278,7 +285,7 @@ JAZZMIN_SETTINGS = {
     "related_modal_active": False
 }
 
-#  Jazzmin UI Tweaks
+# Jazzmin UI Tweaks
 JAZZMIN_UI_TWEAKS = {
     "theme": "darkly",
     "dark_mode_theme": "darkly",
