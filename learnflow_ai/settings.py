@@ -189,9 +189,11 @@ CONTENT_SECURITY_POLICY = {
             'https://unpkg.com',
             'https://cdnjs.cloudflare.com',
             'https://ep1.adtrafficquality.google',
-            # ✅ FINAL FIX: Add the new blocked endpoint for sodar2.js
             'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
+            # 💡 FIX: Added common Google script sources to resolve persistent ad/utility blocks
+            'https://www.google.com',
+            'https://www.gstatic.com',
         ),
         'style-src': (
             "'self'",
@@ -210,6 +212,8 @@ CONTENT_SECURITY_POLICY = {
             'https://tpc.googlesyndication.com', 
             'https://googleads.g.doubleclick.net',
             'https://fundingchoicesmessages.google.com',
+            # 💡 FIX: Added common Google frame source
+            'https://www.google.com',
         ),
         'img-src': (
             "'self'",
@@ -219,14 +223,15 @@ CONTENT_SECURITY_POLICY = {
         ),
         'connect-src': (
             "'self'",
-            # ✅ FIX: Added the Gemini API endpoint to resolve the 'Failed to fetch' error.
             'https://generativelanguage.googleapis.com', 
             'https://fundingchoicesmessages.google.com',
             'https://pagead2.googlesyndication.com',
             'https://ep1.adtrafficquality.google',
-            # Adding ep2 here for completeness, though it was primarily reported in script-src
             'https://ep2.adtrafficquality.google', 
             BACKEND_API_URL,
+            # 💡 FIX: Added common Google connection sources
+            'https://www.google.com',
+            'https://www.gstatic.com',
         ),
         'frame-ancestors': ("'self'",),
     }
