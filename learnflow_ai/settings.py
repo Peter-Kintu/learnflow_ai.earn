@@ -183,7 +183,7 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            # ✅ CSP FIX: Ensures string-to-code functions like eval() are allowed for third-party scripts.
+            # ✅ CORRECT: 'unsafe-eval' is needed for Google Ads and potentially html2pdf.js
             "'unsafe-eval'", 
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
@@ -193,7 +193,7 @@ CONTENT_SECURITY_POLICY = {
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
-            # Re-adding core Google domains that were dropped in the previous submission
+            # Re-adding core Google domains 
             'https://www.google.com',
             'https://www.gstatic.com',
         ),
