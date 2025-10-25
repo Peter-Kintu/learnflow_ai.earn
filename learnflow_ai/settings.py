@@ -51,7 +51,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'learnflow_ai.urls'
 
-#  Templates (Non-printable character fix confirmed)
+#  Templates (Cleaned up context_processors to fix admin.E404)
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'user', 'templates'),
@@ -60,11 +60,12 @@ TEMPLATES = [{
     
     'APP_DIRS': True,
     'OPTIONS': {
+        # 🚨 BUILD FIX: Clean rewrite of context processors list
         'context_processors': [
             'django.template.context_processors.debug',
             'django.template.context_processors.request',
             'django.contrib.auth.context_processors.auth',
-            'django.template.context_processors.messages',
+            'django.contrib.messages.context_processors.messages',
         ],
     },
 }]
@@ -99,7 +100,7 @@ else:
 # 🔐 Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
@@ -182,7 +183,7 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            # 💡 FIX: This line explicitly allows eval() for third-party scripts.
+            # ✅ CSP FIX: Ensures string-to-code functions like eval() are allowed for third-party scripts.
             "'unsafe-eval'", 
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
@@ -192,7 +193,7 @@ CONTENT_SECURITY_POLICY = {
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
-            # Added common Google script sources
+            # Re-adding core Google domains that were dropped in the previous submission
             'https://www.google.com',
             'https://www.gstatic.com',
         ),
@@ -214,7 +215,6 @@ CONTENT_SECURITY_POLICY = {
             'https://googleads.g.doubleclick.net',
             'https://fundingchoicesmessages.google.com',
             'https://www.google.com',
-            # Explicitly adding ad tracking domain to frame-src
             'https://ep2.adtrafficquality.google',
         ),
         'img-src': (
@@ -222,7 +222,6 @@ CONTENT_SECURITY_POLICY = {
             'data:',
             'https://pagead2.googlesyndication.com',
             'https://i.ytimg.com',
-            # 🚨 FIX: Explicitly adding ad tracking domains to img-src
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
         ),
