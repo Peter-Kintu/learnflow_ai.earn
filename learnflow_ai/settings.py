@@ -60,7 +60,7 @@ TEMPLATES = [{
     
     'APP_DIRS': True,
     'OPTIONS': {
-        # 🚨 BUILD FIX: Clean rewrite of context processors list
+        # 🚨 BUILD FIX: Clean rewrite of context processors list to fix admin.E404
         'context_processors': [
             'django.template.context_processors.debug',
             'django.template.context_processors.request',
@@ -183,7 +183,7 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            # ✅ CSP FIX: Ensures string-to-code functions like eval() are allowed for third-party scripts.
+            # ✅ CSP FIX: Allows 'eval()' for external scripts like Google Ads.
             "'unsafe-eval'", 
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
@@ -193,7 +193,7 @@ CONTENT_SECURITY_POLICY = {
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
-            # Re-adding core Google domains that were dropped in the previous submission
+            # Re-added core Google domains
             'https://www.google.com',
             'https://www.gstatic.com',
         ),
