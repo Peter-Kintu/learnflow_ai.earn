@@ -64,7 +64,7 @@ TEMPLATES = [{
             'django.template.context_processors.debug',
             'django.template.context_processors.request',
             'django.contrib.auth.context_processors.auth',
-            'django.contrib.messages.context_processors.messages',
+            'django.template.context_processors.messages',
         ],
     },
 }]
@@ -182,7 +182,8 @@ CONTENT_SECURITY_POLICY = {
         'script-src': (
             "'self'",
             "'unsafe-inline'", 
-            "'unsafe-eval'",
+            # 💡 FIX: This line explicitly allows eval() for third-party scripts.
+            "'unsafe-eval'", 
             'https://pagead2.googlesyndication.com', 
             'https://fundingchoicesmessages.google.com', 
             'https://cdn.tailwindcss.com',
@@ -221,7 +222,7 @@ CONTENT_SECURITY_POLICY = {
             'data:',
             'https://pagead2.googlesyndication.com',
             'https://i.ytimg.com',
-            # 🚨 NEW CRITICAL FIX: Explicitly adding ad tracking domains to img-src
+            # 🚨 FIX: Explicitly adding ad tracking domains to img-src
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
         ),
