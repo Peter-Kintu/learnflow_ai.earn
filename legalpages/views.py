@@ -452,6 +452,25 @@ def submit_quiz_api(request):
         return JsonResponse({"status": "error", "message": f"A server error occurred during scoring/PDF generation: {e}"}, status=500)
 
 
+@require_http_methods(["GET"])
+def export_analysis_pdf(request, video_id):
+    """
+    STUB FUNCTION: Added to resolve the AttributeError in urls.py loading.
+    
+    This view notes that direct PDF export via GET by video_id is not possible
+    because the report requires the user's submitted quiz data, which is only
+    available on the client-side and sent via the POST request to submit_quiz_api.
+    
+    If persistent, shareable reports were required, the submit_quiz_api would 
+    need to store the quiz data in a database first.
+    """
+    return JsonResponse({
+        "status": "error", 
+        "message": f"Cannot export report for video ID '{video_id}' via GET request.",
+        "details": "The complete report requires submitted quiz data, which is only generated and available immediately after quiz submission via the POST endpoint '/api/submit_quiz/'."
+    }, status=405)
+
+
 # --- Static Pages Views ---
 def privacy_policy(request): return render(request, 'privacy.html')
 def terms_conditions(request): return render(request, 'terms.html')
