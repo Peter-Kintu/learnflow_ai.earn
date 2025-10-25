@@ -191,7 +191,7 @@ CONTENT_SECURITY_POLICY = {
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
             'https://googleads.g.doubleclick.net',
-            # 💡 FIX: Added common Google script sources to resolve persistent ad/utility blocks
+            # Added common Google script sources
             'https://www.google.com',
             'https://www.gstatic.com',
         ),
@@ -212,8 +212,9 @@ CONTENT_SECURITY_POLICY = {
             'https://tpc.googlesyndication.com', 
             'https://googleads.g.doubleclick.net',
             'https://fundingchoicesmessages.google.com',
-            # 💡 FIX: Added common Google frame source
             'https://www.google.com',
+            # 🚨 CRITICAL FIX: Explicitly adding the blocked ad tracking domain to frame-src
+            'https://ep2.adtrafficquality.google',
         ),
         'img-src': (
             "'self'",
@@ -229,7 +230,6 @@ CONTENT_SECURITY_POLICY = {
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
             BACKEND_API_URL,
-            # 💡 FIX: Added common Google connection sources
             'https://www.google.com',
             'https://www.gstatic.com',
         ),
