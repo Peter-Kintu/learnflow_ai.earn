@@ -44,9 +44,11 @@ logger = logging.getLogger(__name__)
 # --- Configuration ---
 # You should retrieve your API key from environment variables or a secure setting
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") 
-# Initialize the client only if the key is available
+
+# Initialize the client setting. The genai.Client() constructor automatically 
+# picks up the API key from the environment variable or when passed explicitly.
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    # Removed the problematic 'genai.configure(api_key=GEMINI_API_KEY)' call.
     MODEL_FLASH = "gemini-2.5-flash-preview-09-2025"
 else:
     logger.error("GEMINI_API_KEY not found. AI functionality will be disabled.")
@@ -174,6 +176,7 @@ def call_gemini_with_retry(prompt, system_instruction, response_schema=None, max
     
     for attempt in range(max_retries):
         try:
+            # Initialize the client. It will automatically use the API key from the environment.
             client = genai.Client()
             response = client.models.generate_content(
                 model=MODEL_FLASH,
