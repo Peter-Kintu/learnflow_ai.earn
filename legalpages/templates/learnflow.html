@@ -29,13 +29,13 @@
                 <div class="flex-grow w-full">
                     <label for="videoLink" class="block text-sm font-medium text-text-light mb-2">YouTube Video Link</label>
                     <input type="url" id="videoLink" name="videoLink" 
-                        class="w-full px-4 py-2 border border-border-dark bg-input-dark rounded-lg text-text-light focus:ring-primary-blue focus:border-primary-blue" 
+                        class="w-full px-4 py-2 border border-border-dark bg-gray-700 rounded-lg text-text-light focus:ring-primary-blue focus:border-primary-blue" 
                         placeholder="e.g., https://www.youtube.com/watch?v=..."
                         value="{% if preloaded_video_url %}{{ preloaded_video_url }}{% endif %}">
                         </div>
                 <button id="analyzeButton" 
                     class="w-full sm:w-auto px-6 py-2 bg-primary-blue text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    onclick="analyzeVideo()" disabled>
+                    disabled>
                     Analyze Video
                 </button>
             </div>
@@ -43,7 +43,7 @@
             <div id="statusMessage" class="mt-4 p-3 rounded-lg text-center" style="display: none;"></div>
         </div>
         
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:col-cols-3 gap-8">
             
             <div class="lg:col-span-2 space-y-6">
                 
@@ -76,7 +76,7 @@
                             </div>
                             <div class="flex justify-between items-center pt-4 border-t border-border-dark">
                                 <span id="quiz-score" class="text-lg font-semibold text-success-green hidden"></span>
-                                <button type="button" id="scoreButton" onclick="submitQuiz()" 
+                                <button type="button" id="scoreButton" 
                                     class="px-6 py-2 bg-accent-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
                                     disabled>
                                     Score Quiz
@@ -93,7 +93,7 @@
                     <h2 class="text-xl font-bold text-primary-blue mb-4">Study Guide & Export</h2>
                     <p class="text-text-muted mb-4 text-sm">Create a printable PDF of your summary and quiz results.</p>
                     
-                    <button id="exportButton" onclick="submitQuiz()" 
+                    <button id="exportButton" 
                         class="w-full px-6 py-3 bg-success-green text-white font-semibold rounded-lg hover:bg-green-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center"
                         disabled>
                         <i class="fas fa-file-pdf mr-2"></i> Generate & Download PDF
@@ -145,13 +145,15 @@
         return cookieValue;
     }
 
-    // --- State and UI Management Functions ---
+    // --- State and UI Management Variables ---
     const csrftoken = getCookie('csrftoken');
     const playerContainer = document.getElementById('playerContainer');
-    const videoLinkInput = document.getElementById('videoLink');
-    const analyzeButton = document.getElementById('analyzeButton');
-    const scoreButton = document.getElementById('scoreButton');
-    const exportButton = document.getElementById('exportButton');
+    // NOTE: variables are retrieved inside DOMContentLoaded below for scope safety
+    // const videoLinkInput = document.getElementById('videoLink');
+    // const analyzeButton = document.getElementById('analyzeButton');
+    // const scoreButton = document.getElementById('scoreButton');
+    // const exportButton = document.getElementById('exportButton');
+
 
     // Parses the YouTube video ID from a link
     function get_video_id(url) {
@@ -200,18 +202,22 @@
         }
     }
 
-    // Manages button states
+    // Manages button states (Uses the variables passed from DOMContentLoaded)
     function setAnalysisState(isAnalyzing, isAnalyzed) {
+        const analyzeButton = document.getElementById('analyzeButton');
+        const videoLinkInput = document.getElementById('videoLink');
+        const scoreButton = document.getElementById('scoreButton');
+        const exportButton = document.getElementById('exportButton');
+
         analyzeButton.disabled = isAnalyzing;
         videoLinkInput.disabled = isAnalyzing;
-        // Score and Export buttons should only be enabled if analysis is complete
         scoreButton.disabled = isAnalyzing || !isAnalyzed;
         exportButton.disabled = isAnalyzing || !isAnalyzed;
         
         if (isAnalyzing) {
             analyzeButton.textContent = 'Analyzing...';
-            scoreButton.textContent = 'Score Quiz'; // Revert text here as scoring is separate
-            exportButton.textContent = 'Generate & Download PDF'; // Revert text here
+            scoreButton.textContent = 'Score Quiz';
+            exportButton.textContent = 'Generate & Download PDF';
         } else {
             analyzeButton.textContent = 'Analyze Video';
             scoreButton.textContent = 'Score Quiz';
@@ -232,7 +238,6 @@
             html += `<div class="quiz-question bg-input-dark p-4 rounded-lg" data-question-id="${q.id}">`;
             html += `<p class="font-semibold text-text-light mb-3">${index + 1}. ${DOMPurify.sanitize(q.question)}</p>`;
             
-            // Assume multiple choice based on the prompt structure in views.py
             if (Array.isArray(q.options)) {
                 q.options.forEach((option, optIndex) => {
                     const uniqueId = `q${q.id}_opt${optIndex}`;
@@ -254,12 +259,15 @@
 
     // 1. ANALYZE VIDEO FUNCTION
     async function analyzeVideo() {
+        // Need to retrieve elements here since they aren't globally scoped
+        const videoLinkInput = document.getElementById('videoLink');
+        
         setAnalysisState(true, false);
         document.getElementById('quiz-score').classList.add('hidden');
         document.getElementById('summary-content').innerHTML = '<p class="text-text-muted">Analysis results will appear here after the video is processed.</p>';
         document.getElementById('quiz-content').innerHTML = '<p class="text-text-muted">Quiz questions will load here.</p>';
-        globalQuizData = null; // Reset state
-        globalVideoResponseData = null; // Reset state
+        globalQuizData = null; 
+        globalVideoResponseData = null; 
         switchTab('summary');
         
         const videoUrl = videoLinkInput.value.trim();
@@ -271,7 +279,6 @@
             return;
         }
 
-        // Set the video player source
         playerContainer.innerHTML = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}?autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         
         try {
@@ -283,24 +290,21 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
                 },
-                // Send the URL or ID as video_url_or_id, matching views.py expected key
                 body: JSON.stringify({ video_url_or_id: videoUrl || videoId }) 
             });
 
             const data = await response.json();
 
             if (response.ok && data.status === 'success') {
-                // Correctly use 'summary_result' from views.py
                 const summaryMarkdown = data.summary_result || '';
                 const sanitizedSummary = DOMPurify.sanitize(summaryMarkdown);
                 document.getElementById('summary-content').innerHTML = marked.parse(sanitizedSummary);
                 
-                // Store the quiz data and generate HTML
-                globalQuizData = data.quiz_data; // Stored as raw JSON object
-                globalVideoResponseData = { // Store for PDF generation
+                globalQuizData = data.quiz_data; 
+                globalVideoResponseData = { 
                     video_id: data.video_id,
                     video_title: data.video_title,
-                    summary_result: summaryMarkdown // Save the markdown for the PDF function
+                    summary_result: summaryMarkdown 
                 };
 
                 document.getElementById('quiz-content').innerHTML = generateQuizHtml(globalQuizData);
@@ -320,7 +324,6 @@
     }
 
     // 2. SUBMIT QUIZ FUNCTION
-    // This function handles both scoring and PDF generation.
     async function submitQuiz() {
         if (!globalQuizData) {
             updateStatus('error', 'Please analyze a video first.');
@@ -330,15 +333,12 @@
         setAnalysisState(true, true);
         document.getElementById('export-status').classList.remove('hidden');
 
-        // 1. Collect user answers into the dictionary structure required by views.py
         const userAnswers = {};
         const quizForm = document.getElementById('quiz-form');
         
-        // Find all radio groups (questions)
         globalQuizData.questions.forEach(q => {
             const radioGroupName = `question_${q.id}`;
             const checkedElement = quizForm.querySelector(`input[name="${radioGroupName}"]:checked`);
-            // Store the selected value, or null/undefined if not selected
             userAnswers[String(q.id)] = checkedElement ? checkedElement.value : null; 
         });
 
@@ -349,7 +349,6 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
                 },
-                // Send the data exactly as required by submit_quiz_api in views.py
                 body: JSON.stringify({ 
                     user_answers: userAnswers,
                     quiz_data: globalQuizData,
@@ -360,7 +359,6 @@
             setAnalysisState(false, true);
             document.getElementById('export-status').classList.add('hidden');
 
-            // 2. Check for PDF file in response headers (This is the expected success path)
             if (response.headers.get('Content-Type') === 'application/pdf') {
                 const blob = await response.blob();
                 const scoreHeader = response.headers.get('X-Quiz-Score');
@@ -379,7 +377,6 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                // Use the filename provided by the Content-Disposition header if available, otherwise fallback
                 const disposition = response.headers.get('Content-Disposition');
                 const filename = (disposition && disposition.match(/filename="(.+)"/)) 
                                  ? disposition.match(/filename="(.+)"/)[1] 
@@ -394,7 +391,6 @@
                 switchTab('quiz');
 
             } else {
-                // If it's not PDF, it should be an error JSON response
                 const data = await response.json();
                 updateStatus('error', `Scoring/PDF generation failed: ${data.message || 'The server did not return a PDF and reported an unknown error.'}`);
             }
@@ -410,8 +406,13 @@
 
     // --- Page Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
+        // Retrieve elements inside DOMContentLoaded
+        const videoLinkInput = document.getElementById('videoLink');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const scoreButton = document.getElementById('scoreButton');
+        const exportButton = document.getElementById('exportButton');
         
-        switchTab('summary'); // Ensure summary is the default active tab visually
+        switchTab('summary');
 
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
@@ -419,12 +420,17 @@
             });
         });
 
-        // Enable analyze button if input has text
+        // 1. Enable/Disable Analyze button based on input
         videoLinkInput.addEventListener('input', () => {
             analyzeButton.disabled = videoLinkInput.value.trim().length === 0;
         });
 
-        // Event listeners are set in the HTML, ensure state is correct
+        // 2. Attach click handlers to the main action buttons
+        if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
+        if (scoreButton) scoreButton.addEventListener('click', submitQuiz); 
+        if (exportButton) exportButton.addEventListener('click', submitQuiz); 
+        
+        // Initial state
         setAnalysisState(false, false); 
         
         // Auto-trigger analysis if a video URL was pre-selected (Django context)
