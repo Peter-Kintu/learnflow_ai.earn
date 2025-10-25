@@ -11,8 +11,7 @@
 {% endblock %}
 
 
-{% block content %}
-<main class="min-h-screen bg-background-dark text-text-light p-4 sm:p-6 lg:p-8 dark">
+{% block content %}<main class="min-h-screen bg-background-dark text-text-light p-4 sm:p-6 lg:p-8 dark">
     <div class="max-w-7xl mx-auto">
         
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -112,12 +111,10 @@
             </div>
         </div>
 
-    </div>
-</main>
+    </div></main>
 {% endblock %}
 
-{% block extra_body %}
-<script>
+{% block extra_body %}<script>
     // --- API URL Constants (Confirmed Correct) ---
     const ANALYZE_VIDEO_API_URL = "{% url 'legalpages:api_analyze_video' %}";
     const SUBMIT_QUIZ_API_URL = "{% url 'legalpages:api_submit_quiz' %}";
@@ -438,12 +435,9 @@
         // Set all buttons to the non-analyzing, not-analyzed state.
         setAnalysisState(false, false); 
         
-        // FIX: Remove the auto-analysis timeout which was causing button listener issues.
         // If a URL is preloaded, manually ensure the analyze button is enabled.
         if (videoLinkInput && videoLinkInput.value.startsWith('http')) {
             if (analyzeButton) analyzeButton.disabled = false;
         }
-    });
-
-</script>
+    });</script>
 {% endblock %}
