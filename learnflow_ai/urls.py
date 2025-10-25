@@ -26,7 +26,7 @@ urlpatterns = [
     path('aiapp/', include('aiapp.urls')),
     path('video/', include('video.urls')),
     path('book/', include('book.urls')),
-    path('legal/', include('legalpages.urls')),
+    path('legal/', include('legalpages.urls', namespace='legalpages')),
 ]
 
 # Serve static and media files during development
