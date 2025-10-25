@@ -1,21 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms and Conditions - LearnFlow AI</title>
+{% extends "base.html" %}
+
+{% block title %}Terms and Conditions - LearnFlow AI{% endblock %}
+
+{% block extra_head %}
     <style>
-        body { font-family: 'Arial', sans-serif; padding: 40px; line-height: 1.6; background-color: #f4f7f9; color: #333; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); }
-        h1 { color: #1a73e8; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px;}
-        h2 { color: #4285f4; margin-top: 25px; }
-        ul { list-style-type: disc; padding-left: 20px; }
-        li { margin-bottom: 8px; }
-        a { color: #1a73e8; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        /* These styles are specifically for the legal content layout */
+        body { 
+            /* Note: If you use a class on the body in base.html (like 'dark'), 
+               these background/color settings might be overridden. */
+            font-family: 'Arial', sans-serif; 
+            padding: 40px; 
+            line-height: 1.6; 
+            background-color: #f4f7f9; 
+            color: #333; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); 
+        }
+        h1 { 
+            color: #1a73e8; 
+            border-bottom: 2px solid #e0e0e0; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px;
+        }
+        h2 { 
+            color: #4285f4; 
+            margin-top: 25px; 
+        }
+        ul { 
+            list-style-type: disc; 
+            padding-left: 20px; 
+        }
+        li { 
+            margin-bottom: 8px; 
+        }
+        a { 
+            color: #1a73e8; 
+            text-decoration: none; 
+        }
+        a:hover { 
+            text-decoration: underline; 
+        }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="container">
         <h1>Terms and Conditions</h1>
         <p><strong>Last Updated: October 20, 2025</strong></p>
@@ -48,17 +82,13 @@
         <h2>6. Termination</h2>
         <p>We may terminate or suspend your access immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
         
-        <!-- Acceptance Control -->
         <div style="margin-top: 30px; padding: 15px; border: 1px solid #1a73e8; background-color: #eaf3ff; border-radius: 8px;">
             <label for="accept_terms" style="display: flex; align-items: center; font-weight: bold; color: #1a73e8;">
                 <input type="radio" id="accept_terms" name="terms_agreement" value="accepted" style="margin-right: 10px; transform: scale(1.2);"> 
                 I have read and fully agree to the Terms and Conditions.
             </label>
         </div>
-        <!-- End Acceptance Control -->
-
         <p style="margin-top: 20px;">For details on data handling, please see our <a href="{% url 'legalpages:privacy' %}">Privacy Policy</a>.</p>
         <p><a href="{% url 'legalpages:learnflow_main' %}">← Back to website</a></p>
     </div>
-</body>
-</html>
+{% endblock %}
