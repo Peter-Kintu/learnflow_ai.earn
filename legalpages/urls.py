@@ -21,6 +21,8 @@ urlpatterns = [
     
     # API Endpoints
     path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
-    # NEW: API endpoint for scoring and reporting
+    # API endpoint for scoring and reporting
     path('api/submit_quiz/', views.submit_quiz_api, name='api_submit_quiz'),
+    # NEW: Dedicated API endpoint for PDF Export
+    path('api/export_pdf/<str:video_id>/', views.export_analysis_pdf, name='api_export_pdf'),
 ]

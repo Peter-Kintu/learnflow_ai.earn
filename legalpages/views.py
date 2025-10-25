@@ -125,7 +125,7 @@ def fetch_transcript(video_id):
 
             # 2. Try the primary available language (often the best)
             if transcript_list:
-                 # Fetch the first transcript available 
+                   # Fetch the first transcript available 
                 return transcript_list[0].fetch()
             
             # If nothing found after checks
