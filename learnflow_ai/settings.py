@@ -213,7 +213,7 @@ CONTENT_SECURITY_POLICY = {
             'https://googleads.g.doubleclick.net',
             'https://fundingchoicesmessages.google.com',
             'https://www.google.com',
-            # 🚨 CRITICAL FIX: Explicitly adding the blocked ad tracking domain to frame-src
+            # Explicitly adding ad tracking domain to frame-src
             'https://ep2.adtrafficquality.google',
         ),
         'img-src': (
@@ -221,6 +221,9 @@ CONTENT_SECURITY_POLICY = {
             'data:',
             'https://pagead2.googlesyndication.com',
             'https://i.ytimg.com',
+            # 🚨 NEW CRITICAL FIX: Explicitly adding ad tracking domains to img-src
+            'https://ep1.adtrafficquality.google',
+            'https://ep2.adtrafficquality.google', 
         ),
         'connect-src': (
             "'self'",
