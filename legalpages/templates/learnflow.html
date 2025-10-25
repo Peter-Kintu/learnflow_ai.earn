@@ -5,8 +5,7 @@
 
 {% block extra_head %}
     <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
 {% endblock %}
@@ -32,8 +31,8 @@
                     <input type="url" id="videoLink" name="videoLink" 
                         class="w-full px-4 py-2 border border-border-dark bg-input-dark rounded-lg text-text-light focus:ring-primary-blue focus:border-primary-blue" 
                         placeholder="e.g., https://www.youtube.com/watch?v=..."
-                        value="{% if video_id %}https://www.youtube.com/watch?v={{ video_id }}{% endif %}">
-                </div>
+                        value="{% if preloaded_video_url %}{{ preloaded_video_url }}{% endif %}">
+                        </div>
                 <button id="analyzeButton" 
                     class="w-full sm:w-auto px-6 py-2 bg-primary-blue text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
                     onclick="analyzeVideo()" disabled>
@@ -54,10 +53,10 @@
 
                 <div class="bg-card-dark p-4 rounded-xl shadow-lg">
                     <div class="flex border-b border-border-dark mb-4">
-                        <button class="tab-button flex-1 py-3 text-lg font-medium transition-colors duration-200" data-tab="summary">
+                        <button class="tab-button flex-1 py-3 text-lg font-medium transition-colors duration-200 border-b-2 border-primary-blue text-text-light" data-tab="summary">
                             <i class="fas fa-list-alt mr-2"></i>Summary
                         </button>
-                        <button class="tab-button flex-1 py-3 text-lg font-medium transition-colors duration-200" data-tab="quiz">
+                        <button class="tab-button flex-1 py-3 text-lg font-medium transition-colors duration-200 border-transparent text-text-muted" data-tab="quiz">
                             <i class="fas fa-question-circle mr-2"></i>Quiz
                         </button>
                     </div>
@@ -70,13 +69,13 @@
                     </div>
 
                     <div id="quiz-tab" class="tab-content space-y-4 hidden">
-                        <h2 class="text-xl font-bold text-primary-blue">Interactive Quiz</h2>
+                        <h2 class="text-xl font-bold text-primary-blue">Interactive Quiz: <span id="quiz-title-display"></span></h2>
                         <form id="quiz-form" class="space-y-6">
                             <div id="quiz-content" class="space-y-6">
                                 <p class="text-text-muted">Quiz questions will load here.</p>
                             </div>
                             <div class="flex justify-between items-center pt-4 border-t border-border-dark">
-                                <span id="quiz-score" class="text-lg font-semibold text-text-light hidden">Score: N/A</span>
+                                <span id="quiz-score" class="text-lg font-semibold text-success-green hidden"></span>
                                 <button type="button" id="scoreButton" onclick="submitQuiz()" 
                                     class="px-6 py-2 bg-accent-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
                                     disabled>
@@ -122,13 +121,13 @@
 
 {% block extra_body %}
 <script>
-    // ----------------------------------------------------------------------------------
-    // --- FIX APPLIED HERE: Using {% url %} to resolve 404 Not Found error            ---
-    // The {% url %} tag correctly builds the full path (e.g., '/legal/api/analyze_video/').
-    // ----------------------------------------------------------------------------------
+    // --- API URL Constants (Confirmed Correct) ---
     const ANALYZE_VIDEO_API_URL = "{% url 'legalpages:api_analyze_video' %}";
     const SUBMIT_QUIZ_API_URL = "{% url 'legalpages:api_submit_quiz' %}";
-    // ----------------------------------------------------------------------------------
+
+    // --- Global State for Data Persistence ---
+    let globalQuizData = null;
+    let globalVideoResponseData = null; // Store summary/title data for PDF generation
 
     // Helper function to get the CSRF token
     function getCookie(name) {
@@ -205,22 +204,49 @@
     function setAnalysisState(isAnalyzing, isAnalyzed) {
         analyzeButton.disabled = isAnalyzing;
         videoLinkInput.disabled = isAnalyzing;
+        // Score and Export buttons should only be enabled if analysis is complete
         scoreButton.disabled = isAnalyzing || !isAnalyzed;
         exportButton.disabled = isAnalyzing || !isAnalyzed;
         
         if (isAnalyzing) {
             analyzeButton.textContent = 'Analyzing...';
-            scoreButton.textContent = 'Scoring...';
-            exportButton.textContent = 'Generating PDF...';
+            scoreButton.textContent = 'Score Quiz'; // Revert text here as scoring is separate
+            exportButton.textContent = 'Generate & Download PDF'; // Revert text here
         } else {
             analyzeButton.textContent = 'Analyze Video';
             scoreButton.textContent = 'Score Quiz';
-            if (isAnalyzed) {
-                 exportButton.textContent = 'Download Study Guide';
-            } else {
-                exportButton.textContent = 'Generate & Download PDF';
-            }
+            exportButton.textContent = 'Download Study Guide';
         }
+    }
+
+    // Correctly generates the Quiz HTML from the JSON structure
+    function generateQuizHtml(quizData) {
+        if (!quizData || !Array.isArray(quizData.questions)) {
+            return '<p class="text-red-400">Error: Could not parse quiz data from AI response.</p>';
+        }
+
+        document.getElementById('quiz-title-display').textContent = quizData.quiz_title || 'Untitled Quiz';
+        
+        let html = '';
+        quizData.questions.forEach((q, index) => {
+            html += `<div class="quiz-question bg-input-dark p-4 rounded-lg" data-question-id="${q.id}">`;
+            html += `<p class="font-semibold text-text-light mb-3">${index + 1}. ${DOMPurify.sanitize(q.question)}</p>`;
+            
+            // Assume multiple choice based on the prompt structure in views.py
+            if (Array.isArray(q.options)) {
+                q.options.forEach((option, optIndex) => {
+                    const uniqueId = `q${q.id}_opt${optIndex}`;
+                    html += `
+                        <label for="${uniqueId}" class="flex items-center space-x-3 py-2 cursor-pointer hover:bg-card-light rounded-md px-2">
+                            <input type="radio" id="${uniqueId}" name="question_${q.id}" value="${DOMPurify.sanitize(option)}" class="form-radio text-primary-blue">
+                            <span class="text-text-muted">${DOMPurify.sanitize(option)}</span>
+                        </label>
+                    `;
+                });
+            }
+            html += `</div>`;
+        });
+        return html;
     }
 
 
@@ -232,9 +258,13 @@
         document.getElementById('quiz-score').classList.add('hidden');
         document.getElementById('summary-content').innerHTML = '<p class="text-text-muted">Analysis results will appear here after the video is processed.</p>';
         document.getElementById('quiz-content').innerHTML = '<p class="text-text-muted">Quiz questions will load here.</p>';
+        globalQuizData = null; // Reset state
+        globalVideoResponseData = null; // Reset state
         switchTab('summary');
         
-        const videoId = get_video_id(videoLinkInput.value);
+        const videoUrl = videoLinkInput.value.trim();
+        const videoId = get_video_id(videoUrl);
+
         if (!videoId) {
             updateStatus('error', 'Please enter a valid YouTube link.');
             setAnalysisState(false, false);
@@ -253,15 +283,27 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
                 },
-                body: JSON.stringify({ video_id: videoId })
+                // Send the URL or ID as video_url_or_id, matching views.py expected key
+                body: JSON.stringify({ video_url_or_id: videoUrl || videoId }) 
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                const sanitizedSummary = DOMPurify.sanitize(data.summary_markdown);
+            if (response.ok && data.status === 'success') {
+                // Correctly use 'summary_result' from views.py
+                const summaryMarkdown = data.summary_result || '';
+                const sanitizedSummary = DOMPurify.sanitize(summaryMarkdown);
                 document.getElementById('summary-content').innerHTML = marked.parse(sanitizedSummary);
-                document.getElementById('quiz-content').innerHTML = data.quiz_html;
+                
+                // Store the quiz data and generate HTML
+                globalQuizData = data.quiz_data; // Stored as raw JSON object
+                globalVideoResponseData = { // Store for PDF generation
+                    video_id: data.video_id,
+                    video_title: data.video_title,
+                    summary_result: summaryMarkdown // Save the markdown for the PDF function
+                };
+
+                document.getElementById('quiz-content').innerHTML = generateQuizHtml(globalQuizData);
                 
                 updateStatus('success', 'Analysis complete! Check the Summary and Quiz tabs.');
                 setAnalysisState(false, true);
@@ -278,34 +320,26 @@
     }
 
     // 2. SUBMIT QUIZ FUNCTION
+    // This function handles both scoring and PDF generation.
     async function submitQuiz() {
+        if (!globalQuizData) {
+            updateStatus('error', 'Please analyze a video first.');
+            return;
+        }
+
         setAnalysisState(true, true);
         document.getElementById('export-status').classList.remove('hidden');
 
-        const videoId = get_video_id(videoLinkInput.value);
-        if (!videoId) return;
-
-        // Collect quiz data
+        // 1. Collect user answers into the dictionary structure required by views.py
+        const userAnswers = {};
         const quizForm = document.getElementById('quiz-form');
-        const quizData = [];
-        const questionElements = quizForm.querySelectorAll('.quiz-question');
-
-        questionElements.forEach((qElement, index) => {
-            const questionId = qElement.dataset.questionId;
-            const type = qElement.dataset.questionType;
-            let userAnswer = null;
-
-            if (type === 'multiple_choice') {
-                const checkedRadio = qElement.querySelector('input[type="radio"]:checked');
-                userAnswer = checkedRadio ? checkedRadio.value : null;
-            } else if (type === 'fill_in_the_blank') {
-                userAnswer = qElement.querySelector('input[type="text"]').value;
-            }
-
-            quizData.push({
-                question_id: questionId,
-                user_answer: userAnswer
-            });
+        
+        // Find all radio groups (questions)
+        globalQuizData.questions.forEach(q => {
+            const radioGroupName = `question_${q.id}`;
+            const checkedElement = quizForm.querySelector(`input[name="${radioGroupName}"]:checked`);
+            // Store the selected value, or null/undefined if not selected
+            userAnswers[String(q.id)] = checkedElement ? checkedElement.value : null; 
         });
 
         try {
@@ -315,14 +349,18 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
                 },
+                // Send the data exactly as required by submit_quiz_api in views.py
                 body: JSON.stringify({ 
-                    quiz_data: quizData,
-                    video_id: videoId,
-                    summary_html: document.getElementById('summary-content').innerHTML
+                    user_answers: userAnswers,
+                    quiz_data: globalQuizData,
+                    video_response_data: globalVideoResponseData
                 })
             });
 
-            // Check for PDF file in response headers
+            setAnalysisState(false, true);
+            document.getElementById('export-status').classList.add('hidden');
+
+            // 2. Check for PDF file in response headers (This is the expected success path)
             if (response.headers.get('Content-Type') === 'application/pdf') {
                 const blob = await response.blob();
                 const scoreHeader = response.headers.get('X-Quiz-Score');
@@ -341,52 +379,39 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `LearnFlow_Study_Guide_${videoId}.pdf`;
+                // Use the filename provided by the Content-Disposition header if available, otherwise fallback
+                const disposition = response.headers.get('Content-Disposition');
+                const filename = (disposition && disposition.match(/filename="(.+)"/)) 
+                                 ? disposition.match(/filename="(.+)"/)[1] 
+                                 : `LearnFlow_Study_Guide_${globalVideoResponseData.video_id || 'Report'}.pdf`;
+                                 
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
                 
-                updateStatus('success', 'Quiz scored and Study Guide PDF downloaded successfully!');
-                setAnalysisState(false, true);
-                document.getElementById('export-status').classList.add('hidden');
+                updateStatus('success', `Quiz scored (Score: ${scoreHeader}) and Study Guide PDF downloaded successfully!`);
+                switchTab('quiz');
 
             } else {
-                // Handle JSON response for scoring only
+                // If it's not PDF, it should be an error JSON response
                 const data = await response.json();
-                if (response.ok) {
-                    document.getElementById('quiz-content').innerHTML = data.quiz_html_with_answers;
-                    
-                    const scoreDisplay = document.getElementById('quiz-score');
-                    scoreDisplay.textContent = `Final Score: ${data.final_score}/${data.total_questions}`;
-                    scoreDisplay.classList.remove('hidden');
-                    
-                    updateStatus('success', 'Quiz scored! Check the Quiz tab for results and explanations.');
-                    setAnalysisState(false, true);
-                    document.getElementById('export-status').classList.add('hidden');
-                } else {
-                    updateStatus('error', `Scoring failed: ${data.message || 'An unknown error occurred.'}`);
-                    setAnalysisState(false, true);
-                    document.getElementById('export-status').classList.add('hidden');
-                }
+                updateStatus('error', `Scoring/PDF generation failed: ${data.message || 'The server did not return a PDF and reported an unknown error.'}`);
             }
 
         } catch (error) {
             console.error('Fetch error:', error);
-            updateStatus('error', 'A network error occurred during scoring or PDF generation. Please check your connection or try again.');
             setAnalysisState(false, true);
             document.getElementById('export-status').classList.add('hidden');
+            updateStatus('error', 'A network error occurred during scoring or PDF generation. Please check your connection or try again.');
         }
     }
 
 
     // --- Page Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
-        const videoLinkInput = document.getElementById('videoLink');
-        const analyzeButton = document.getElementById('analyzeButton');
-        const scoreButton = document.getElementById('scoreButton');
-        const exportButton = document.getElementById('exportButton');
         
-        switchTab('summary');
+        switchTab('summary'); // Ensure summary is the default active tab visually
 
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
@@ -399,15 +424,13 @@
             analyzeButton.disabled = videoLinkInput.value.trim().length === 0;
         });
 
-        if (analyzeButton) analyzeButton.addEventListener('click', analyzeVideo);
-        if (scoreButton) scoreButton.addEventListener('click', submitQuiz);
-        if (exportButton) exportButton.addEventListener('click', submitQuiz); 
+        // Event listeners are set in the HTML, ensure state is correct
+        setAnalysisState(false, false); 
         
-        // Auto-trigger analysis if a video ID was pre-selected (Django context)
-        if (videoLinkInput && videoLinkInput.value.startsWith('https://www.youtube.com')) {
+        // Auto-trigger analysis if a video URL was pre-selected (Django context)
+        if (videoLinkInput && videoLinkInput.value.startsWith('http')) {
+            analyzeButton.disabled = false; // Enable button
             setTimeout(analyzeVideo, 100); 
-        } else {
-             setAnalysisState(false, false); 
         }
     });
 
