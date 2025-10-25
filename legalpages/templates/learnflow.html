@@ -205,14 +205,13 @@
         // Reset classes
         statusMessage.className = 'p-3 mb-6 text-sm rounded-lg font-medium text-center'; 
         
-        // NOTE: The Tailwind classes here rely on the color palette from the original config. 
-        // If the default CDN doesn't support them, the colors may look slightly off.
+        // 🛠️ IMPROVEMENT: Using standard, high-contrast Tailwind classes for better visibility.
         if (type === 'error') {
-            statusMessage.classList.add('bg-red-900', 'text-error-red', 'border', 'border-error-red');
+            statusMessage.classList.add('bg-red-700', 'text-white', 'border', 'border-red-500'); 
         } else if (type === 'success') {
-            statusMessage.classList.add('bg-green-900', 'text-success-green', 'border', 'border-success-green');
+            statusMessage.classList.add('bg-green-700', 'text-white', 'border', 'border-green-500');
         } else if (type === 'warning') {
-            statusMessage.classList.add('bg-yellow-900', 'text-yellow-400', 'border', 'border-yellow-400');
+            statusMessage.classList.add('bg-yellow-600', 'text-gray-900', 'border', 'border-yellow-400');
         }
         statusMessage.classList.remove('hidden');
     }
@@ -325,7 +324,7 @@
 
         if (!videoId || videoUrl.length < 5) {
             displayStatus('Please enter a valid YouTube video URL.', 'error');
-            setAnalysisState(false, false); // Reset buttons
+            setAnalysisState(false, false); // Ensures button is re-enabled and clickable
             return;
         }
 
