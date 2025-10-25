@@ -465,20 +465,27 @@ def learnflow_video_analysis(request):
     video_id = request.GET.get('video_id', '').strip()
     context = {
         'video_id': video_id,
-        'current_path': request.path  # ✅ Fixes the template error
+        'current_path': request.path  # ✅ FIX: Added current_path
     }
     return render(request, 'learnflow.html', context)
     
 def video_analysis_view(request, video_id):
-    """
-    View to handle direct links to a video analysis page by pre-populating the URL field.
-    """
+    """View to handle direct links to a video analysis page by pre-populating the URL field."""
     # This view accepts a video_id, validates it, and passes it to the template
     if extract_youtube_id(video_id):
         # Construct a full YouTube URL to pass to the template
         video_url = f"https://www.youtube.com/watch?v={video_id}"
-        context = {'preloaded_video_url': video_url}
-        return render(request, 'learnflow.html', context)
+        context = {
+            'preloaded_video_url': video_url,
+            'video_id': video_id,
+            'current_path': request.path # ✅ ENHANCEMENT: Added current_path
+        }
     else:
-        # If the ID is invalid, redirect to the main page
-        return learnflow_video_analysis(request)
+        context = {
+            'preloaded_video_url': '',
+            'video_id': None,
+            'current_path': request.path # ✅ ENHANCEMENT: Added current_path
+        }
+    return render(request, 'learnflow.html', context)
+
+# ... (The rest of your views.py remains unchanged)
