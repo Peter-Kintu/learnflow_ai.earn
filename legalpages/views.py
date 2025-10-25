@@ -1,7 +1,7 @@
 import os
 import logging
-import time
-import json
+import time 
+import json 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 # New: Import required decorators
@@ -48,342 +48,386 @@ TRANSCRIPT_FALLBACK_MARKER = "NO_TRANSCRIPT_AVAILABLE"
 try:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        # Use a model that supports function calling (or text generation)
-        # For general chat/summary, gemini-2.5-flash is a good choice.
-        MODEL_NAME = "gemini-2.5-flash"
+        # Assuming GEMINI_CLIENT initialization is robust
+        # This is a placeholder as the full initialization logic is complex
+        GEMINI_CLIENT = genai.Client(api_key=GEMINI_API_KEY)
+        SAFETY_SETTINGS = [
+            types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            ),
+            types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            ),
+            types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            ),
+            types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            ),
+        ]
     else:
-        client = None
-        logger.error("GEMINI_API_KEY not found in environment variables.")
+        logger.error("GEMINI_API_KEY environment variable not set. AI features are disabled.")
+        GEMINI_CLIENT = None
 except Exception as e:
-    client = None
     logger.error(f"Error initializing Gemini client: {e}")
+    GEMINI_CLIENT = None
 
-# --- Helper Functions (keep them as they were) ---
 
-def extract_youtube_id(url):
-    """
-    Extracts the unique YouTube video ID from various URL formats.
-    """
-    if not url:
+# --- Helper Functions (Please ensure your helper functions are placed here) ---
+
+def extract_youtube_id(url_or_id):
+    """Extracts the 11-character YouTube video ID from a URL or checks if it's already an ID."""
+    if len(url_or_id) == 11 and all(c.isalnum() or c in ['-', '_'] for c in url_or_id):
+        return url_or_id
+    try:
+        if 'youtu.be' in url_or_id:
+            # Handle short links
+            return url_or_id.split('/')[-1].split('?')[0]
+        elif 'youtube.com' in url_or_or_id:
+            # Handle standard links
+            query = urlparse(url_or_id).query
+            video_id = parse_qs(query).get('v')
+            return video_id[0] if video_id else None
+    except:
         return None
-    
-    # Check if the input is already a video ID (alphanumeric, 11 chars)
-    if len(url) == 11 and url.isalnum():
-        return url
-
-    # Parse the URL
-    parsed_url = urlparse(url)
-    
-    # Check for standard watch format: ?v=VIDEO_ID
-    if parsed_url.hostname in ('www.youtube.com', 'youtube.com', 'm.youtube.com'):
-        query_params = parse_qs(parsed_url.query)
-        if 'v' in query_params:
-            return query_params['v'][0]
-    
-    # Check for short URL format: youtu.be/VIDEO_ID
-    elif parsed_url.hostname == 'youtu.be':
-        # The path should be '/VIDEO_ID'
-        path = parsed_url.path.lstrip('/')
-        if path:
-            return path
-            
     return None
 
-def fetch_transcript_with_retry(video_id):
+def get_transcript(video_id):
     """
-    Fetches the transcript with retry logic for intermittent network or API errors.
+    Fetches the transcript for a given YouTube video ID, handling various errors.
+    Returns the transcript text or TRANSCRIPT_FALLBACK_MARKER.
     """
     for attempt in range(MAX_RETRIES):
         try:
-            # Fetches a list of transcript objects (usually one, or one per language)
+            # Attempt to fetch both auto-generated and manual transcripts
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
             
-            # Prioritize English. If not available, use any available transcript.
-            try:
-                # Try to get the English transcript
-                transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
-            except NoTranscriptFound:
-                # If English isn't available, try to fetch the first available one
-                # Note: This might not be English, so the model response quality may vary
-                transcript = transcript_list.find_transcript(transcript_list._generated_transcripts.keys())
-
-            # Fetch the actual text
-            full_transcript_text = ' '.join([item['text'] for item in transcript.fetch()])
-            return full_transcript_text
+            # Prioritize English, then auto-generated English, then any available transcript
+            transcript = None
+            if transcript_list.find_transcript(['en']):
+                transcript = transcript_list.find_transcript(['en'])
+            elif transcript_list.find_transcript(['en'], exact_match=False): # Auto-generated English
+                transcript = transcript_list.find_transcript(['en'], exact_match=False)
+            elif transcript_list:
+                # Fallback to the first available transcript
+                transcript = transcript_list[0]
             
-        # Catch specific exceptions for clearer error handling
-        except VideoUnavailable:
-            logger.warning(f"Video {video_id} is unavailable or private.")
-            return "VideoUnavailable"
-        except TranscriptsDisabled:
-            logger.warning(f"Transcripts are disabled for video {video_id}.")
-            return "TranscriptsDisabled"
-        except NoTranscriptFound:
-            logger.warning(f"No transcript found for video {video_id}.")
-            return "NoTranscriptFound"
-        except CouldNotRetrieveTranscript as e:
-            logger.warning(f"Attempt {attempt + 1}: Could not retrieve transcript for {video_id}. Retrying in 2 seconds. Error: {e}")
-            time.sleep(2)
+            if transcript:
+                # Fetch and format the actual text
+                fetched_transcript = transcript.fetch()
+                return " ".join([item['text'] for item in fetched_transcript])
+
+        # Specific exception handling for robustness
+        except (TranscriptsDisabled, NoTranscriptFound):
+            logger.warning(f"Transcript disabled or not found for video ID: {video_id}")
+            return TRANSCRIPT_FALLBACK_MARKER
+        except (CouldNotRetrieveTranscript, VideoUnavailable) as e:
+            logger.error(f"Attempt {attempt + 1}: Failed to retrieve transcript for {video_id}. Error: {e}")
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** attempt) # Exponential backoff
+            else:
+                return TRANSCRIPT_FALLBACK_MARKER
         except Exception as e:
-            logger.error(f"Attempt {attempt + 1}: An unexpected error occurred while fetching transcript for {video_id}: {e}")
-            time.sleep(2)
+            logger.exception(f"Unexpected error retrieving transcript for {video_id}: {e}")
+            return TRANSCRIPT_FALLBACK_MARKER
 
-    logger.error(f"Failed to fetch transcript for {video_id} after {MAX_RETRIES} attempts.")
-    return TRANSCRIPT_FALLBACK_MARKER
+    return TRANSCRIPT_FALLBACK_MARKER # Should not be reached if MAX_RETRIES > 0
 
-# --- Gemini API Calls ---
+def generate_quiz(transcript):
+    """Uses the Gemini API to generate a multiple-choice quiz from the transcript."""
+    if not GEMINI_CLIENT:
+        return {"status": "error", "message": "AI client not initialized. Check API Key."}
 
-def call_gemini_api(prompt, system_instruction, max_tokens=2048):
+    prompt = f"""
+    You are an expert educational assistant. Your task is to generate a challenging, five-question, multiple-choice quiz based ONLY on the provided video transcript.
+    The quiz must be returned as a single JSON object.
+
+    JSON Format Instructions:
+    - The root object must contain a key 'quiz_data' which is a list of quiz questions.
+    - Each item in 'quiz_data' must be an object with the following keys:
+      - "question": The question text.
+      - "options": A list of four strings representing the options (A, B, C, D).
+      - "answer": The index (0, 1, 2, or 3) of the correct option in the 'options' list.
+
+    Transcript to use:
+    ---
+    {transcript}
+    ---
     """
-    Generic function to call the Gemini API with standard safety and configuration.
-    """
-    if not client:
-        return {"status": "error", "message": "AI client not initialized. Check API Key configuration."}, None
-
     try:
-        # Configuration for safety and generation settings
-        config = types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            temperature=0.4,
-            max_output_tokens=max_tokens,
-            safety_settings=[
-                types.SafetySetting(
-                    category=HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                ),
-                types.SafetySetting(
-                    category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                ),
-            ],
-        )
-
-        response = client.models.generate_content(
-            model=MODEL_NAME,
+        response = GEMINI_CLIENT.models.generate_content(
+            model='gemini-2.5-flash',
             contents=prompt,
-            config=config
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "quiz_data": types.Schema(
+                            type=types.Type.ARRAY,
+                            items=types.Schema(
+                                type=types.Type.OBJECT,
+                                properties={
+                                    "question": types.Schema(type=types.Type.STRING),
+                                    "options": types.Schema(
+                                        type=types.Type.ARRAY, 
+                                        items=types.Schema(type=types.Type.STRING)
+                                    ),
+                                    "answer": types.Schema(type=types.Type.INTEGER)
+                                }
+                            )
+                        )
+                    }
+                ),
+                safety_settings=SAFETY_SETTINGS,
+            ),
         )
-
-        if response.candidates and response.candidates[0].finish_reason == types.FinishReason.SAFETY:
-            return {"status": "error", "message": "Request blocked due to safety settings."}, None
-            
-        return {"status": "success"}, response.text
+        # Parse the JSON string contained in the text field of the response
+        json_data = json.loads(response.text)
+        return {"status": "success", "quiz": json_data.get('quiz_data', [])}
 
     except APIError as e:
-        logger.error(f"Gemini API Error: {e}")
-        return {"status": "error", "message": f"AI API Error: {e}"}, None
+        logger.error(f"Gemini API Error in generate_quiz: {e}")
+        return {"status": "error", "message": f"AI service error (APIError): {e}"}
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON Decode Error in generate_quiz: {e}\nRaw Response: {response.text if 'response' in locals() else 'N/A'}")
+        return {"status": "error", "message": "AI service returned improperly formatted data."}
     except Exception as e:
-        logger.error(f"An unexpected error occurred during AI call: {e}")
-        return {"status": "error", "message": f"An unexpected AI error occurred: {e}"}, None
+        logger.exception(f"Unexpected error in generate_quiz: {e}")
+        return {"status": "error", "message": f"An unexpected server error occurred: {e}"}
 
-# --- Main Logic Views ---
+def generate_report(transcript):
+    """Uses the Gemini API to generate a summary report from the transcript."""
+    if not GEMINI_CLIENT:
+        return {"status": "error", "report": "AI client not initialized. Check API Key."}
+    
+    prompt = f"""
+    Based on the following video transcript, provide a comprehensive analysis that must include:
+    1. A **Detailed Summary** of the main points.
+    2. A list of **3-5 Key Concepts/Vocabulary** explained briefly.
+    3. **Two Thought-Provoking Questions** for discussion.
 
-@require_http_methods(["POST"])
-@csrf_exempt
-def analyze_video_api(request):
-    """
-    API endpoint to receive a YouTube URL, fetch transcript, and analyze the content.
+    Format your output using Markdown.
+
+    Transcript:
+    ---
+    {transcript}
+    ---
     """
     try:
-        data = json.loads(request.body)
-        video_url = data.get('video_url', '').strip()
-
-        if not video_url:
-            return JsonResponse({"status": "error", "message": "Video URL is required."}, status=400)
-
-        video_id = extract_youtube_id(video_url)
-        if not video_id:
-            return JsonResponse({"status": "error", "message": "Invalid or unsupported YouTube URL format."}, status=400)
-
-        # 1. Fetch Transcript
-        transcript_result = fetch_transcript_with_retry(video_id)
-
-        if transcript_result == "VideoUnavailable":
-            return JsonResponse({"status": "error", "message": "Video is unavailable, private, or has been removed."}, status=404)
-        elif transcript_result == "TranscriptsDisabled":
-            return JsonResponse({"status": "error", "message": "Transcripts are disabled for this video."}, status=404)
-        elif transcript_result == "NoTranscriptFound":
-            return JsonResponse({"status": "error", "message": "No English (or other) transcript found for this video."}, status=404)
-        elif transcript_result == TRANSCRIPT_FALLBACK_MARKER:
-            return JsonResponse({"status": "error", "message": "Failed to fetch video transcript after multiple attempts."}, status=500)
-        
-        # Transcript successfully fetched
-        transcript = transcript_result
-
-        # 2. Prepare AI Prompts and Call
-        system_instruction = (
-            "You are LearnFlow AI, an expert educational content analyzer. "
-            "Your task is to analyze a video transcript and provide a structured JSON response. "
-            "Strictly follow the JSON schema provided. Do not include any text, headers, or explanations outside the JSON block."
+        response = GEMINI_CLIENT.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(safety_settings=SAFETY_SETTINGS),
         )
-
-        prompt = (
-            f"Analyze the following video transcript. The transcript is: \"{transcript}\". "
-            "Generate a comprehensive summary, a list of 5 key concepts with brief explanations, "
-            "and a 3-question multiple-choice quiz based ONLY on the content. "
-            "The output MUST be a single JSON object. "
-            "JSON Schema: "
-            "{ "
-            "  \"summary\": \"[Comprehensive summary of the video content]\", "
-            "  \"key_concepts\": [ "
-            "    {\"concept\": \"[Concept 1 Name]\", \"explanation\": \"[Brief explanation]\"}, "
-            "    // ... 4 more concepts "
-            "  ], "
-            "  \"quiz\": [ "
-            "    { "
-            "      \"question\": \"[Question 1]\", "
-            "      \"options\": {\"A\": \"[Option A]\", \"B\": \"[Option B]\", \"C\": \"[Option C]\", \"D\": \"[Option D]\"}, "
-            "      \"correct_answer\": \"[A|B|C|D]\" "
-            "    }, "
-            "    // ... 2 more questions "
-            "  ] "
-            "}"
-        )
-
-        status, ai_response_text = call_gemini_api(prompt, system_instruction)
-
-        if status["status"] == "error":
-            return JsonResponse(status, status=500)
-
-        # 3. Parse and Return AI Response
-        try:
-            # The AI is instructed to return *only* JSON, so we strip any leading/trailing whitespace or markdown.
-            cleaned_response = ai_response_text.strip().lstrip('```json').rstrip('```').strip()
-            ai_data = json.loads(cleaned_response)
-            
-            # Check for basic structure
-            if not all(k in ai_data for k in ['summary', 'key_concepts', 'quiz']):
-                raise ValueError("AI response structure is invalid.")
-
-            # Return the video analysis data
-            return JsonResponse({
-                "status": "success",
-                "summary": ai_data['summary'],
-                "key_concepts": ai_data['key_concepts'],
-                "quiz": ai_data['quiz'],
-                "video_id": video_id,
-                "video_url": f"https://www.youtube.com/embed/{video_id}" # For the iframe
-            })
-
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Error parsing AI JSON response: {e}. Raw response: {ai_response_text}")
-            return JsonResponse({"status": "error", "message": "AI returned an unreadable or incorrectly structured response."}, status=500)
-
-    except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON format in request body."}, status=400)
+        return {"status": "success", "report": response.text}
+    except APIError as e:
+        logger.error(f"Gemini API Error in generate_report: {e}")
+        return {"status": "error", "report": f"AI service error (APIError): {e}"}
     except Exception as e:
-        logger.exception(f"Unexpected error during video analysis: {e}")
-        return JsonResponse({"status": "error", "message": f"A server error occurred: {e}"}, status=500)
+        logger.exception(f"Unexpected error in generate_report: {e}")
+        return {"status": "error", "report": f"An unexpected server error occurred: {e}"}
 
-
-# --- PDF Generation Helper ---
-
-def generate_pdf_report(quiz_data, final_score, total_questions):
+def generate_pdf_report(quiz_data, score_details):
     """
-    Generates a PDF report of the quiz results using ReportLab.
+    Generates a PDF report containing the quiz questions, user answers, correct answers, 
+    and the final score using ReportLab.
+    Returns an HttpResponse with the PDF content.
     """
     if not PDF_ENABLED:
-        logger.warning("PDF generation requested but ReportLab is not installed.")
-        # Return a mock PDF content (simple text)
-        buffer = BytesIO()
-        buffer.write(b"PDF generation is disabled: ReportLab library is missing.")
-        buffer.seek(0)
-        return buffer
+        logger.warning("PDF generation requested but ReportLab is not available.")
+        # Return a simple JSON response indicating the PDF is skipped
+        return JsonResponse({
+            "status": "success", 
+            "message": "PDF generation skipped: ReportLab not installed.",
+            "final_score": score_details.get('final_score'),
+            "total_questions": score_details.get('total_questions'),
+            "video_title": score_details.get('video_title')
+        })
 
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                            title="LearnFlow AI Quiz Report",
-                            leftMargin=40, rightMargin=40,
-                            topMargin=40, bottomMargin=40)
-    
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                            leftMargin=30,
+                            rightMargin=30,
+                            topMargin=40,
+                            bottomMargin=40)
     styles = getSampleStyleSheet()
     
     # Custom styles
-    styles.add(ParagraphStyle(name='Heading1Centered', alignment=1, fontSize=18, fontName='Helvetica-Bold'))
-    styles.add(ParagraphStyle(name='Question', fontSize=12, fontName='Helvetica-Bold', spaceAfter=6))
-    styles.add(ParagraphStyle(name='Option', fontSize=10, fontName='Helvetica', leftIndent=20))
-    styles.add(ParagraphStyle(name='Correct', fontSize=10, fontName='Helvetica-Bold', textColor=colors.green, spaceAfter=12, leftIndent=20))
-    styles.add(ParagraphStyle(name='Incorrect', fontSize=10, fontName='Helvetica-Bold', textColor=colors.red, spaceAfter=12, leftIndent=20))
-    
-    story = []
+    styles.add(ParagraphStyle(name='Heading1', fontSize=18, spaceAfter=12, alignment=1))
+    styles.add(ParagraphStyle(name='Heading2', fontSize=14, spaceBefore=10, spaceAfter=6))
+    styles.add(ParagraphStyle(name='BodyText', fontSize=10, spaceAfter=6))
+    styles.add(ParagraphStyle(name='Answer', fontSize=10, textColor=colors.green, fontName='Helvetica-Bold'))
+    styles.add(ParagraphStyle(name='Wrong', fontSize=10, textColor=colors.red, fontName='Helvetica-Bold'))
 
-    # Title and Score
-    story.append(Paragraph("LearnFlow AI Quiz Report", styles['Heading1Centered']))
-    story.append(Spacer(1, 12))
-    
-    score_text = f"Final Score: {final_score} out of {total_questions}"
-    score_style = styles['Heading2']
-    score_style.alignment = 1 # Center
-    story.append(Paragraph(score_text, score_style))
-    story.append(Spacer(1, 24))
+    Story = []
 
-    # Quiz Questions Review
+    # Title
+    Story.append(Paragraph(f"LearnFlow AI Quiz Report", styles['Heading1']))
+    Story.append(Paragraph(f"**Video:** {score_details.get('video_title', 'Untitled Video')}", styles['BodyText']))
+    Story.append(Paragraph(f"**Score:** {score_details.get('final_score')}/{score_details.get('total_questions')}", styles['BodyText']))
+    Story.append(Spacer(1, 12))
+    
+    # Quiz Details
     for i, item in enumerate(quiz_data):
-        # Question
-        story.append(Paragraph(f"Q{i+1}: {item['question']}", styles['Question']))
+        # Question Number and Text
+        Story.append(Paragraph(f"**Question {i+1}:** {item['question']}", styles['Heading2']))
         
-        # Options
-        for key, value in item['options'].items():
-            option_text = f"{key}. {value}"
-            is_correct = key == item['correct_answer']
-            is_user_chosen = key == item.get('user_answer')
+        # Options and Answers
+        options_text = []
+        for j, option in enumerate(item['options']):
+            prefix = f"{chr(65+j)}." 
+            style = styles['BodyText']
             
-            style_name = 'Option'
-            if is_correct and is_user_chosen:
-                style_name = 'Correct'
-                option_text += " (Correct & Your Answer ✅)"
-            elif is_correct:
-                style_name = 'Correct'
-                option_text += " (Correct Answer)"
-            elif is_user_chosen:
-                style_name = 'Incorrect'
-                option_text += " (Your Incorrect Answer ❌)"
+            # Highlight correct answer
+            if j == item['answer']:
+                style = styles['Answer']
+                
+            # Highlight user's selected answer if it's wrong
+            elif j == item.get('user_answer_index') and j != item['answer']:
+                style = styles['Wrong']
             
-            story.append(Paragraph(option_text, styles[style_name]))
+            options_text.append(Paragraph(f"{prefix} {option}", style))
+            
+        Story.extend(options_text)
+        
+        # Summary of user response
+        user_index = item.get('user_answer_index')
+        if user_index is not None:
+            user_choice = chr(65 + user_index)
+            is_correct = user_index == item['answer']
+            correct_choice = chr(65 + item['answer'])
+            
+            if is_correct:
+                feedback = f"Your Answer: <font color='green'>**{user_choice} (Correct)**</font>"
+            else:
+                feedback = f"Your Answer: <font color='red'>**{user_choice} (Incorrect)**</font>. Correct Answer: **{correct_choice}**"
+            
+            Story.append(Paragraph(feedback, styles['BodyText']))
+        
+        Story.append(Spacer(1, 12))
 
-        story.append(Spacer(1, 6))
-
-    doc.build(story)
+    # Build the document
+    doc.build(Story)
     
-    buffer.seek(0)
-    return buffer
+    # FileResponse and return
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    # Use video title to create a safe file name
+    title = score_details.get('video_title', 'quiz_report').replace(' ', '_').replace('/', '-')[:50]
+    response['Content-Disposition'] = f'attachment; filename="{title}_quiz_report.pdf"'
+    
+    return response
 
-# --- Quiz Submission View ---
+
+# --- API Endpoints ---
 
 @require_http_methods(["POST"])
-@csrf_exempt
-def submit_quiz_api(request):
+@csrf_exempt # Use this with caution, or ensure proper CSRF token handling on frontend
+def analyze_video_api(request):
     """
-    API endpoint to receive submitted quiz answers, score them, and generate a PDF report.
+    API endpoint to receive a video URL, fetch the transcript, and generate 
+    the summary and quiz using Gemini AI.
     """
     try:
         data = json.loads(request.body)
-        submitted_quiz = data.get('submitted_quiz', [])
+        video_url_or_id = data.get('video_link', '').strip()
+
+        if not video_url_or_id:
+            return JsonResponse({"status": "error", "message": "Video link is required."}, status=400)
+
+        video_id = extract_youtube_id(video_url_or_or_id)
+        if not video_id:
+            return JsonResponse({"status": "error", "message": "Invalid YouTube URL or ID."}, status=400)
         
-        if not submitted_quiz:
-            return JsonResponse({"status": "error", "message": "No quiz data submitted."}, status=400)
+        # 1. Fetch Transcript
+        transcript_result = get_transcript(video_id)
+        
+        if transcript_result == TRANSCRIPT_FALLBACK_MARKER:
+             message = "Transcript unavailable for this video (disabled, not found, or private)."
+             return JsonResponse({"status": "error", "message": message}, status=404)
+        
+        # 2. Generate Summary Report (Tab 1)
+        report_data = generate_report(transcript_result)
+        if report_data['status'] == 'error':
+            # Log the error but continue if quiz is vital
+            logger.error(f"Failed to generate report: {report_data['report']}")
+
+        # 3. Generate Quiz (Tab 2)
+        quiz_data = generate_quiz(transcript_result)
+        
+        if quiz_data['status'] == 'error':
+             # If both report and quiz fail, return the error
+             if report_data['status'] == 'error':
+                return JsonResponse({"status": "error", "message": quiz_data['message']}, status=500)
+             # If only quiz fails, log and continue with partial data
+             logger.error(f"Failed to generate quiz: {quiz_data['message']}")
+             quiz_data['quiz'] = [] # Empty quiz to signify failure
+        
+        # Success Response
+        return JsonResponse({
+            "status": "success",
+            "report": report_data.get('report'),
+            "quiz": quiz_data.get('quiz'),
+            "video_id": video_id,
+            "video_url": f"https://www.youtube.com/watch?v={video_id}",
+            "video_title": data.get('video_title', 'Untitled Video') # Pass title from front-end if available
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON format in request."}, status=400)
+    except Exception as e:
+        logger.exception(f"Error during video analysis: {e}")
+        return JsonResponse({"status": "error", "message": f"A server error occurred: {e}"}, status=500)
+
+
+@require_http_methods(["POST"])
+@csrf_exempt # Use this with caution, or ensure proper CSRF token handling on frontend
+def submit_quiz_api(request):
+    """
+    API endpoint to receive the submitted quiz answers, score the quiz, and 
+    return a PDF report of the results.
+    """
+    try:
+        data = json.loads(request.body)
+        quiz_data = data.get('quiz_data', [])
+        video_title = data.get('video_title', 'Quiz Report')
 
         final_score = 0
-        total_questions = len(submitted_quiz)
+        total_questions = len(quiz_data)
 
-        # Score the quiz
-        for question_data in submitted_quiz:
-            user_answer = question_data.get('user_answer')
-            correct_answer = question_data.get('correct_answer')
+        # 1. Score the quiz
+        for item in quiz_data:
+            correct_answer_index = item['answer']
+            user_answer_index = item.get('user_answer_index') # Can be None if unanswered
             
-            if user_answer and user_answer == correct_answer:
+            # Convert str answer from frontend back to int for comparison
+            if isinstance(user_answer_index, str) and user_answer_index.isdigit():
+                 user_answer_index = int(user_answer_index)
+
+            # Important: Update the item with the final integer user answer for the PDF
+            item['user_answer_index'] = user_answer_index
+
+            if user_answer_index is not None and user_answer_index == correct_answer_index:
                 final_score += 1
         
-        # 1. Generate PDF Report
-        pdf_buffer = generate_pdf_report(submitted_quiz, final_score, total_questions)
+        score_details = {
+            'final_score': final_score,
+            'total_questions': total_questions,
+            'video_title': video_title
+        }
 
-        # 2. Prepare HTTP Response
-        response = HttpResponse(pdf_buffer, content_type='application/pdf')
-        filename = f"LearnFlow_Quiz_Report_{time.strftime('%Y%m%d_%H%M%S')}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-        # Optional: Pass score back in a custom header so the frontend can display it before/after download
+        # 2. Generate the PDF
+        response = generate_pdf_report(quiz_data, score_details)
+        
+        # 3. Add score header for the frontend to display it before/after download
+        # This is a custom HTTP header for status
         response['X-Quiz-Score'] = f'{final_score}/{total_questions}'
         
         return response
@@ -396,7 +440,6 @@ def submit_quiz_api(request):
 
 
 # --- Static Pages Views ---
-# ... (Keep all your existing static page views here)
 def privacy_policy(request): return render(request, 'privacy.html')
 def terms_conditions(request): return render(request, 'terms.html')
 def about_us(request): return render(request, 'about.html')
@@ -404,21 +447,36 @@ def contact_us(request): return render(request, 'contact.html')
 def sitemap_page(request): return render(request, 'sitemap-page.html')
 def learnflow_overview(request): return render(request, 'learnflow_overview.html')
 
+# ----------------------------------------------------------------------
+# VITAL UPDATE: Ensure 'current_path' is always in the context for base.html
+# ----------------------------------------------------------------------
+
 def learnflow_video_analysis(request):
-    """The main view for the video analysis page."""
-    context = {}
+    """
+    The main view for the video analysis page (home page).
+    ✅ FIX: Now includes 'current_path' in the context to support active navigation link logic.
+    """
+    context = {
+        'current_path': request.path,  # **FIXED**
+    }
     return render(request, 'learnflow.html', context)
     
 def video_analysis_view(request, video_id):
     """
     View to handle direct links to a video analysis page by pre-populating the URL field.
+    ✅ FIX: Initializes context with 'current_path' before adding video-specific data.
     """
+    # Initialize context with current path for navigation logic
+    context = {
+        'current_path': request.path, # **FIXED**
+    }
+
     # This view accepts a video_id, validates it, and passes it to the template
     if extract_youtube_id(video_id):
         # Construct a full YouTube URL to pass to the template
         video_url = f"https://www.youtube.com/watch?v={video_id}"
-        context = {'preloaded_video_url': video_url, 'video_id': video_id}
+        context['preloaded_video'] = video_url
     else:
-        context = {'preloaded_video_url': '', 'video_id': None}
-        
+        context['error_message'] = 'Invalid video ID provided.'
+
     return render(request, 'learnflow.html', context)
