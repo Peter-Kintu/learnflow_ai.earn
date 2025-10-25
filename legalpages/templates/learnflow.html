@@ -194,7 +194,7 @@
         }
     }
 
-    // Manages button states (Now consistently looks up elements inside the function)
+    // Manages button states
     function setAnalysisState(isAnalyzing, isAnalyzed) {
         const analyzeButton = document.getElementById('analyzeButton');
         const videoLinkInput = document.getElementById('videoLink');
@@ -206,19 +206,23 @@
             return; 
         }
 
+        // Disable analysis/input while analyzing
         analyzeButton.disabled = isAnalyzing;
         videoLinkInput.disabled = isAnalyzing;
+        
+        // Disable scoring/export unless analysis is complete and not currently analyzing
         scoreButton.disabled = isAnalyzing || !isAnalyzed;
         exportButton.disabled = isAnalyzing || !isAnalyzed;
         
         if (isAnalyzing) {
             analyzeButton.textContent = 'Analyzing...';
             scoreButton.textContent = 'Score Quiz';
-            exportButton.textContent = 'Generate & Download PDF';
+            exportButton.textContent = 'Generating...'; // Shorter text during analysis/scoring
         } else {
             analyzeButton.textContent = 'Analyze Video';
             scoreButton.textContent = 'Score Quiz';
-            exportButton.textContent = 'Download Study Guide';
+            // ✅ FIX: Use innerHTML to restore the icon and full text.
+            exportButton.innerHTML = '<i class="fas fa-file-pdf mr-2"></i> Generate & Download PDF';
         }
     }
 
@@ -431,13 +435,13 @@
         
         
         // Initial state logic
+        // Set all buttons to the non-analyzing, not-analyzed state.
+        setAnalysisState(false, false); 
+        
+        // FIX: Remove the auto-analysis timeout which was causing button listener issues.
+        // If a URL is preloaded, manually ensure the analyze button is enabled.
         if (videoLinkInput && videoLinkInput.value.startsWith('http')) {
-            // If URL is preloaded, ensure button is enabled and auto-trigger analysis
             if (analyzeButton) analyzeButton.disabled = false;
-            setTimeout(analyzeVideo, 100); 
-        } else {
-             // Default state if no URL is present
-             setAnalysisState(false, false); 
         }
     });
 
