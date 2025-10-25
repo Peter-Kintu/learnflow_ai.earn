@@ -487,5 +487,3 @@ def video_analysis_view(request, video_id):
             'current_path': request.path # ✅ ENHANCEMENT: Added current_path
         }
     return render(request, 'learnflow.html', context)
-
-# ... (The rest of your views.py remains unchanged)
