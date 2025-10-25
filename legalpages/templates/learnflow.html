@@ -63,6 +63,8 @@
             </div>
         </div>
 
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"> 
+
         <div id="statusMessage" class="hidden p-3 mb-6 text-sm rounded-lg font-medium text-center" role="alert">
             Status will appear here.
         </div>
@@ -124,6 +126,14 @@
     // --- Global State ---
     let quizData = [];
     let videoId = null;
+
+    /**
+     * CRITICAL FIX: Helper to retrieve the CSRF token from the hidden input field.
+     */
+    function getCsrfToken() {
+        const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        return tokenInput ? tokenInput.value : '';
+    }
 
     /**
      * Extracts the YouTube video ID from a URL.
@@ -332,7 +342,10 @@
         try {
             const response = await fetch('/api/analyze_video/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() // 🔑 CRITICAL FIX: Include CSRF Token
+                },
                 body: JSON.stringify({ video_url: videoUrl, video_id: videoId })
             });
 
@@ -351,7 +364,7 @@
             renderMarkdown(data.summary, summaryTabContent);
 
             // 3. Render Quiz
-            renderQuiz(data.quiz_questions); // This internally updates setAnalysisState(false, true) if quiz is ready
+            renderQuiz(data.quiz_questions); 
 
             // 4. Render Transcript / Analysis
             const transcriptContent = data.transcript || '';
@@ -375,7 +388,6 @@
             displayStatus('Analysis complete! Summary and Quiz are ready.', 'success');
             switchTab('summary'); // Start on the Summary tab
             
-            // Final state update (redundant if renderQuiz worked, but safer)
             setAnalysisState(false, quizIsReady); 
 
         } catch (error) {
@@ -425,16 +437,27 @@
         try {
             const response = await fetch('/api/submit_quiz/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() // 🔑 CRITICAL FIX: Include CSRF Token
+                },
                 body: JSON.stringify({ video_id: videoId, quiz_data: quizData, user_answers: answers })
             });
 
             if (!response.ok) {
                 try {
-                    const errorData = await response.json();
+                    const errorText = await response.text();
+                    // Attempt to parse JSON error first, fall back to text
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        throw new Error(errorText || `Server responded with status ${response.status}.`);
+                    }
                     throw new Error(errorData.message || `Server responded with status ${response.status}`);
-                } catch {
-                    throw new Error(`Server responded with status ${response.status}. Could not generate PDF report.`);
+                } catch (e) {
+                     // Re-throw the error caught from the inner try/catch block
+                     throw e; 
                 }
             }
 
@@ -474,7 +497,7 @@
     }
 
 
-    // --- Event Listeners and Initial Setup (The CSP FIX) ---
+    // --- Event Listeners and Initial Setup ---
 
     document.addEventListener('DOMContentLoaded', () => {
         
