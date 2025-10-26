@@ -52,17 +52,13 @@
             padding-left: 1.5em;
         }
 
-        /* * CRITICAL FIX FOR DEPLOYMENT: Explicitly set the background color of the input 
-         * and the main page container using the hex code with !important to ensure 
-         * it overrides all conflicting styles on Render.
-         */
+        /* * SENIOR DESIGNER FIX: Set all input backgrounds to the deepest blue-black 
+        * color (#0A1428) for maximum contrast, overriding the Tailwind classes 
+        * used in the HTML and the JavaScript function without altering the function logic. 
+        */
         #video-link-input,
         #quiz-tab input[type="radio"] {
-            background-color: #0A1428 !important; /* Deep Blue-Black */
-        }
-
-        .bg-primary-bg {
-             background-color: #0A1428 !important; /* Force Deep Blue-Black for main page background */
+            background-color: #0A1428 !important; /* primary-bg: Deep Blue-Black */
         }
         
     </style>
@@ -86,7 +82,7 @@
                     <div class="flex-grow w-full">
                         <label for="video-link-input" class="block text-sm font-medium text-text-light mb-1">YouTube Video Link</label>
                         <input type="text" id="video-link-input" 
-                            class="w-full p-3 border border-card-bg focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan rounded-lg text-text-light placeholder-gray-500 transition duration-300"
+                            class="w-full p-3 bg-primary-bg border border-card-bg focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan rounded-lg text-text-light placeholder-gray-500 transition duration-300"
                             placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                             value="{{ initial_url|default:'' }}">
                     </div>
