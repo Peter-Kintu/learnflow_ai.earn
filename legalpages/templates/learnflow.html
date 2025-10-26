@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
     <script>
-        // Keeping Tailwind config for non-background colors/shadows, but backgrounds are now fixed via CSS
         tailwind.config = {
             theme: {
                 extend: {
@@ -53,11 +52,13 @@
             padding-left: 1.5em;
         }
 
-        /* * FIX: Ensure ALL background elements use the reliable hex code in case Tailwind config fails on deployment. */
-        .bg-primary-bg,
+        /* * SENIOR DESIGNER FIX: Set all input backgrounds to the deepest blue-black 
+        * color (#0A1428) for maximum contrast, overriding the Tailwind classes 
+        * used in the HTML and the JavaScript function without altering the function logic. 
+        */
         #video-link-input,
         #quiz-tab input[type="radio"] {
-            background-color: #0A1428 !important; /* Deep Blue-Black */
+            background-color: #0A1428 !important; /* primary-bg: Deep Blue-Black */
         }
         
     </style>
