@@ -5,29 +5,36 @@
 
 {% block extra_head %}
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
     <style>
-        /* Custom styles for the dark theme and responsive video player */
+        /* Custom styles for the dark theme */
         :root {
-            --color-background-dark: #1f2937; /* Gray-800 */
+            --color-background-dark: #111827; /* Gray-900 */
+            --color-card-dark: #1f2937; /* Gray-800 */
             --color-primary-blue: #3b82f6; /* Blue-500 */
             --color-text-light: #f3f4f6; /* Gray-100 */
         }
         .bg-background-dark { background-color: var(--color-background-dark); }
+        .bg-card-dark { background-color: var(--color-card-dark); }
         .text-text-light { color: var(--color-text-light); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .tab-button.active {
+            border-bottom-width: 3px;
+            border-color: var(--color-primary-blue);
+            color: var(--color-text-light);
+        }
 
         /* Aspect ratio container for responsive iframe */
         .video-container {
             position: relative;
             width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
             height: 0;
             overflow: hidden;
-            border-radius: 0.75rem; /* rounded-xl */
+            border-radius: 0.5rem;
         }
         .video-container iframe {
             position: absolute;
@@ -36,612 +43,480 @@
             width: 100%;
             height: 100%;
         }
-        /* Custom scrollbar for better look in dark mode */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #2f3e4e; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; }
+        .markdown-output ol { list-style-type: decimal; margin-left: 1.5rem; }
+        .markdown-output h1, .markdown-output h2 { font-size: 1.25em; font-weight: 700; margin-top: 1rem; }
     </style>
 {% endblock %}
 
-
 {% block content %}
-<main class="min-h-screen bg-background-dark text-text-light p-4 sm:p-6 lg:p-8 dark font-sans">
+<div class="min-h-screen bg-background-dark text-text-light p-4 md:p-8 font-sans">
     <div class="max-w-7xl mx-auto">
-        
-        <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
-
-        <header class="text-center py-8">
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-text-light mb-2">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-blue to-blue-start">LearnFlow AI</span> Video Analysis
-            </h1>
-            <p class="text-gray-400">Unlock educational insights from any YouTube video.</p>
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold text-white mb-2">LearnFlow: AI Video Analyst</h1>
+            <p class="text-gray-400">Unlock the knowledge within any YouTube video instantly.</p>
         </header>
 
-        <div class="bg-gray-700 p-6 rounded-xl shadow-2xl mb-8">
-            <div class="flex flex-col sm:flex-row gap-4">
-                <input 
-                    type="url" 
-                    id="videoLinkInput" 
-                    placeholder="Paste YouTube Video Link here (e.g., https://youtu.be/dQw4w9WgXcQ)"
-                    class="flex-grow p-3 rounded-lg bg-gray-600 text-text-light border border-gray-500 focus:border-primary-blue focus:ring-1 focus:ring-primary-blue transition-all"
-                    value="{{ preloaded_video_url|default:'' }}"
-                >
-                <button 
-                    id="analyzeButton" 
-                    class="px-6 py-3 bg-primary-blue hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
-                >
-                    <i class="fas fa-magic mr-2"></i> Analyze Video
-                </button>
-            </div>
-            <p id="errorMessage" class="text-red-400 text-sm mt-2 hidden"></p>
-        </div>
+        <!-- Main Card Container -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1">
-                <div class="bg-gray-700 p-4 rounded-xl shadow-lg">
-                    <h2 class="text-xl font-bold mb-3 border-b border-gray-600 pb-2">Video Player</h2>
-                    <div id="videoPlayerContainer" class="video-container">
-                        <div class="w-full h-full flex items-center justify-center text-gray-400">
-                             <p>Enter a video link to load the player.</p>
+            <!-- Left Column: Video Player and Input -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Video Player Card -->
+                <div class="bg-card-dark p-4 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-semibold mb-3">Video Source</h2>
+                    <div id="video-player-container" class="video-container bg-gray-700">
+                        <div class="flex items-center justify-center h-full text-gray-400">
+                            Enter a YouTube link above to load the player.
                         </div>
                     </div>
-                    <p id="videoTitleDisplay" class="text-center text-lg font-semibold mt-3 truncate"></p>
+                </div>
+
+                <!-- Input Card -->
+                <div class="bg-card-dark p-4 rounded-xl shadow-lg">
+                    <div class="flex flex-col space-y-3">
+                        <label for="video-link" class="text-sm font-medium text-gray-300">YouTube Video Link</label>
+                        <input type="text" id="video-link" placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                               class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500">
+                        
+                        <button id="analyze-button" disabled
+                                class="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-150 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                            <i class="fas fa-play mr-2"></i> Analyze Video
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2">
-                <div class="bg-gray-700 p-6 rounded-xl shadow-lg min-h-[500px] flex flex-col">
-                    
-                    <div class="flex border-b border-gray-600 mb-4 overflow-x-auto">
-                        <button data-tab="summary" class="tab-button active flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-primary-blue text-primary-blue hover:text-blue-400 transition duration-150"><i class="fas fa-clipboard-list mr-2"></i> Summary</button>
-                        <button data-tab="quiz" class="tab-button flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-text-light hover:border-gray-500 transition duration-150"><i class="fas fa-question-circle mr-2"></i> Quiz</button>
-                        <button data-tab="action_plan" class="tab-button flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-text-light hover:border-gray-500 transition duration-150"><i class="fas fa-running mr-2"></i> Action Plan</button>
-                    </div>
+            <!-- Right Column: Results and Tabs -->
+            <div class="lg:col-span-2 bg-card-dark p-6 rounded-xl shadow-lg">
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-700 mb-4 flex space-x-4 overflow-x-auto">
+                    <button data-tab="summary" class="tab-button active py-2 px-4 text-sm font-medium transition duration-150">
+                        <i class="fas fa-file-alt mr-1"></i> Summary
+                    </button>
+                    <button data-tab="quiz" class="tab-button py-2 px-4 text-sm font-medium transition duration-150">
+                        <i class="fas fa-question-circle mr-1"></i> Quiz
+                    </button>
+                    <button data-tab="action_plan" class="tab-button py-2 px-4 text-sm font-medium transition duration-150">
+                        <i class="fas fa-graduation-cap mr-1"></i> Action Plan
+                    </button>
+                </div>
 
-                    <div id="analysisContentContainer" class="flex-grow relative">
-                        <div id="loadingOverlay" class="absolute inset-0 bg-gray-700 bg-opacity-90 flex items-center justify-center rounded-lg z-10 hidden">
-                            <div class="flex flex-col items-center">
-                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue"></div>
-                                <p class="mt-4 text-primary-blue font-medium">Analyzing video content...</p>
-                            </div>
-                        </div>
-
-                        <div id="summaryContent" class="tab-content active h-full overflow-y-auto">
-                            <div id="summaryOutput" class="markdown-body p-2 prose prose-invert max-w-none text-text-light">
-                                <p class="text-gray-400">Analysis summary will appear here once the video is processed.</p>
-                            </div>
-                        </div>
-
-                        <div id="quizContent" class="tab-content h-full overflow-y-auto">
-                            <div id="quizOutput" class="p-2 space-y-4">
-                                <p class="text-gray-400">A multiple-choice quiz will be generated here.</p>
-                            </div>
-                            <div id="scoreContainer" class="p-4 bg-gray-600 rounded-lg mt-4 hidden">
-                                <p id="scoreMessage" class="font-bold text-lg"></p>
-                            </div>
-                        </div>
-
-                        <div id="action_planContent" class="tab-content h-full overflow-y-auto">
-                             <div id="action_planOutput" class="markdown-body p-2 prose prose-invert max-w-none text-text-light">
-                                <p class="text-gray-400">Personalized next steps and resources will appear here.</p>
-                            </div>
+                <!-- Content Area -->
+                <div class="relative min-h-[500px]">
+                    <!-- Loading Indicator/Overlay -->
+                    <div id="loading-overlay" class="absolute inset-0 bg-card-dark bg-opacity-90 flex items-center justify-center hidden rounded-lg z-10">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+                            <p class="text-lg font-semibold">Analyzing Video Content...</p>
+                            <p class="text-sm text-gray-400 mt-1">Fetching transcript and generating AI insights.</p>
                         </div>
                     </div>
 
-                    <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-600">
-                        <button 
-                            id="scoreButton" 
-                            class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hidden"
-                            disabled
-                        >
+                    <!-- Summary Tab -->
+                    <div id="summary-content" class="tab-content active markdown-output">
+                        <div id="summary-output">
+                            <p class="text-gray-400">The detailed summary and key takeaways will appear here once the video is processed.</p>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Tab -->
+                    <div id="quiz-content" class="tab-content">
+                        <div id="quiz-output" class="markdown-output">
+                            <p class="text-gray-400">A multiple-choice quiz will be generated here.</p>
+                        </div>
+                        <button id="score-button" disabled
+                                class="mt-4 py-2 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-150 disabled:bg-gray-600 disabled:cursor-not-allowed">
                             <i class="fas fa-check-circle mr-2"></i> Submit & Score Quiz
                         </button>
-                        <button 
-                            id="exportButton" 
-                            class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hidden"
-                            disabled
-                        >
-                            <i class="fas fa-file-download mr-2"></i> Export Report (PDF)
-                        </button>
+                        <div id="quiz-score-output" class="mt-3 font-semibold text-lg"></div>
                     </div>
 
+                    <!-- Action Plan Tab -->
+                    <div id="action_plan-content" class="tab-content markdown-output">
+                        <div id="action_plan-output">
+                            <p class="text-gray-400">Personalized next steps and resources will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action Buttons -->
+                <div class="mt-6 pt-4 border-t border-gray-700 flex justify-end">
+                    <button id="export-button" disabled
+                            class="py-2 px-4 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-file-pdf mr-2"></i> Export Analysis (PDF)
+                    </button>
                 </div>
             </div>
         </div>
-
     </div>
-</main>
+</div>
 
-
-<script type="text/javascript">
-    // Global state object
-    const appState = {
-        currentTab: 'summary',
-        isAnalyzing: false,
-        isAnalyzed: false,
-        videoID: "{{ video_id|default:'' }}",
-        analysisData: {},
-        quizAnswers: {}, // Stores user's selected answers {questionId: selectedOption}
-        // ✅ FIX APPLIED: Added the missing comma here
-        csrfToken: document.getElementById('csrfToken').value, 
-        // ✅ FIX: Define API URLs using Django's {% url %} tag for correct path resolution
-        apiUrls: {
-            analyze: "{% url 'legalpages:api_analyze_video' %}",
-            submitQuiz: "{% url 'legalpages:api_submit_quiz' %}",
-            // Note: export_pdf requires video_id, so it will be handled as a string interpolation later
-            // Trailing comma removed for strict compatibility
-            exportPdfTemplate: "{% url 'legalpages:api_export_pdf' video_id='00000000000' %}" 
-        },
+<script>
+    // Define the Django-resolved API URLs. THIS IS WHERE THE TEMPLATE ERROR IS FIXED.
+    // We correctly pass the URL pattern name to the 'url' tag.
+    const API_URLS = {
+        analyze: "{% url 'legalpages:api_analyze_video' %}",
+        submitQuiz: "{% url 'legalpages:api_submit_quiz' %}",
+        exportContent: "{% url 'legalpages:api_export_content' %}",
     };
 
-    // DOM Elements
+    // Global object for DOM elements
     const D = {
-        videoLinkInput: document.getElementById('videoLinkInput'),
-        analyzeButton: document.getElementById('analyzeButton'),
-        scoreButton: document.getElementById('scoreButton'),
-        exportButton: document.getElementById('exportButton'),
-        errorMessage: document.getElementById('errorMessage'),
-        loadingOverlay: document.getElementById('loadingOverlay'),
-        videoPlayerContainer: document.getElementById('videoPlayerContainer'),
-        videoTitleDisplay: document.getElementById('videoTitleDisplay'),
-        summaryOutput: document.getElementById('summaryOutput'),
-        quizOutput: document.getElementById('quizOutput'),
-        action_planOutput: document.getElementById('action_planOutput'),
-        scoreContainer: document.getElementById('scoreContainer'),
-        scoreMessage: document.getElementById('scoreMessage'),
+        videoLinkInput: document.getElementById('video-link'),
+        analyzeButton: document.getElementById('analyze-button'),
+        loadingOverlay: document.getElementById('loading-overlay'),
+        videoPlayerContainer: document.getElementById('video-player-container'),
+        summaryOutput: document.getElementById('summary-output'),
+        quizOutput: document.getElementById('quiz-output'),
+        action_planOutput: document.getElementById('action_plan-output'),
+        scoreButton: document.getElementById('score-button'),
+        quizScoreOutput: document.getElementById('quiz-score-output'),
+        exportButton: document.getElementById('export-button'),
         tabButtons: document.querySelectorAll('.tab-button'),
-        allTabContents: document.querySelectorAll('.tab-content'),
+        tabContents: document.querySelectorAll('.tab-content'),
     };
+
+    // State management
+    let currentVideoId = null;
+    let currentQuizData = null;
+    let currentSummary = '';
+    let currentActionPlan = '';
+    let currentQuizResults = null;
 
     /**
-     * Extracts the YouTube video ID from a URL or ID string.
-     * @param {string} urlOrId - The potential YouTube URL or ID.
-     * @returns {string|null} The video ID or null if invalid.
+     * Extracts a YouTube video ID from a variety of YouTube URLs.
+     * @param {string} url - The YouTube URL.
+     * @returns {string | null} The video ID or null if not found.
      */
-    function extractVideoId(urlOrId) {
-        if (!urlOrId) return null;
-        
-        // Check if it's already a valid-looking 11-char ID
-        if (urlOrId.length === 11 && /^[a-zA-Z0-9_-]+$/.test(urlOrId)) {
-            return urlOrId;
-        }
-
-        const patterns = [
-            /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i,
-        ];
-
-        for (const pattern of patterns) {
-            const match = urlOrId.match(pattern);
-            if (match && match[1].length === 11) {
-                return match[1];
+    function extractVideoId(url) {
+        if (!url) return null;
+        let videoId = null;
+        try {
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|\w+\/|watch\?v=|embed\/|v\/)|youtu\.be\/)([^&?%]{11})/;
+            const match = url.match(regex);
+            if (match && match[1]) {
+                videoId = match[1];
             }
+        } catch (e) {
+            console.error("URL parsing error:", e);
         }
-        return null;
+        return videoId;
     }
 
     /**
-     * Updates the UI state (buttons, loading overlay) based on analysis status.
-     * @param {boolean} isAnalyzing - True if an analysis request is in progress.
-     * @param {boolean} isAnalyzed - True if the video has been successfully analyzed.
+     * Loads the YouTube player iframe.
+     * @param {string | null} videoId - The video ID to load.
      */
-    function setAnalysisState(isAnalyzing, isAnalyzed) {
-        appState.isAnalyzing = isAnalyzing;
-        appState.isAnalyzed = isAnalyzed;
+    function loadVideoPlayer(videoId) {
+        D.videoPlayerContainer.innerHTML = ''; // Clear existing content
+        if (videoId) {
+            D.videoPlayerContainer.innerHTML = `
+                <iframe 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&showinfo=0&rel=0"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    title="YouTube video player">
+                </iframe>`;
+            currentVideoId = videoId;
+        } else {
+            D.videoPlayerContainer.innerHTML = `<div class="flex items-center justify-center h-full text-gray-400">
+                Enter a YouTube link above to load the player.
+            </div>`;
+            currentVideoId = null;
+        }
+    }
 
-        D.loadingOverlay.classList.toggle('hidden', !isAnalyzing);
-        
-        // Primary button state
-        D.analyzeButton.disabled = isAnalyzing || D.videoLinkInput.value.trim().length === 0;
-        D.analyzeButton.textContent = isAnalyzing ? 'Analyzing...' : 'Analyze Video';
+    /**
+     * Clears and resets all output panels to their initial state.
+     */
+    function resetOutputs() {
+        currentQuizData = null;
+        currentSummary = '';
+        currentActionPlan = '';
+        currentQuizResults = null;
+        D.summaryOutput.innerHTML = '<p class="text-gray-400">The detailed summary and key takeaways will appear here once the video is processed.</p>';
+        D.quizOutput.innerHTML = '<p class="text-gray-400">A multiple-choice quiz will be generated here.</p>';
+        D.action_planOutput.innerHTML = '<p class="text-gray-400">Personalized next steps and resources will appear here.</p>';
+        D.quizScoreOutput.textContent = '';
+        D.scoreButton.disabled = true;
+        D.exportButton.disabled = true;
+    }
 
-        // Secondary buttons visibility/state
-        const showActionButtons = isAnalyzed && !isAnalyzing;
-        D.scoreButton.classList.toggle('hidden', !showActionButtons);
-        D.exportButton.classList.toggle('hidden', !showActionButtons);
-        
-        // Only enable score/export if the process is complete
-        D.scoreButton.disabled = isAnalyzing;
-        D.exportButton.disabled = isAnalyzing;
+    /**
+     * Gets the CSRF token from the cookie.
+     */
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
-        // Clear errors when state changes
-        if (isAnalyzing) {
-            D.errorMessage.classList.add('hidden');
-            D.errorMessage.textContent = '';
+    /**
+     * Fetches analysis data from the server.
+     */
+    async function analyzeVideo() {
+        if (!currentVideoId) return;
+
+        resetOutputs(); // Clear previous results
+        D.loadingOverlay.classList.remove('hidden');
+        D.analyzeButton.disabled = true;
+        D.analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Analyzing...';
+
+        try {
+            const response = await fetch(API_URLS.analyze, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    video_url: D.videoLinkInput.value.trim(),
+                    video_id: currentVideoId
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "An unknown error occurred during analysis.");
+            }
+            
+            // Store raw results
+            currentSummary = data.summary || 'No summary generated.';
+            currentQuizData = data.quiz_data || null;
+            currentActionPlan = data.action_plan || 'No action plan generated.';
+
+            // Render results
+            D.summaryOutput.innerHTML = DOMPurify.sanitize(await marked.parse(currentSummary));
+            D.action_planOutput.innerHTML = DOMPurify.sanitize(await marked.parse(currentActionPlan));
+            renderQuiz(currentQuizData);
+
+            // Enable action buttons
+            D.exportButton.disabled = false;
+
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            // Display error message
+            D.summaryOutput.innerHTML = `<p class="text-red-400 font-semibold">Error: ${error.message}</p>`;
+            D.quizOutput.innerHTML = `<p class="text-red-400">Could not generate quiz: ${error.message}</p>`;
+        } finally {
+            D.loadingOverlay.classList.add('hidden');
+            D.analyzeButton.disabled = false;
+            D.analyzeButton.innerHTML = '<i class="fas fa-play mr-2"></i> Analyze Video';
+            // Only re-enable score button if quiz data exists
+            if (currentQuizData && currentQuizData.questions && currentQuizData.questions.length > 0) {
+                 D.scoreButton.disabled = false;
+            }
         }
     }
     
     /**
-     * Switches the active tab and updates button appearance.
-     * @param {string} tabName - The name of the tab to switch to ('summary', 'quiz', 'action_plan').
-     */
-    function switchTab(tabName) {
-        appState.currentTab = tabName;
-
-        D.allTabContents.forEach(content => {
-            content.classList.remove('active');
-            content.classList.add('hidden');
-        });
-        document.getElementById(`${tabName}Content`).classList.remove('hidden');
-        document.getElementById(`${tabName}Content`).classList.add('active');
-
-        D.tabButtons.forEach(button => {
-            const isActive = button.dataset.tab === tabName;
-            button.classList.toggle('active', isActive);
-            button.classList.toggle('text-primary-blue', isActive);
-            button.classList.toggle('border-primary-blue', isActive);
-            button.classList.toggle('text-gray-300', !isActive);
-            button.classList.toggle('border-transparent', !isActive);
-        });
-
-        // If switching to Quiz tab, ensure the Score button is visible if analyzed
-        if (appState.isAnalyzed) {
-            const isQuizTab = (tabName === 'quiz');
-            D.scoreButton.classList.toggle('hidden', !isQuizTab);
-            D.exportButton.classList.toggle('hidden', isQuizTab);
-        } else {
-             // Hide action buttons if no analysis is present
-            D.scoreButton.classList.add('hidden');
-            D.exportButton.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Loads the YouTube player iframe into the container.
-     * @param {string} videoId - The 11-character YouTube video ID.
-     */
-    function loadVideoPlayer(videoId) {
-        if (!videoId) {
-             D.videoPlayerContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400"><p>Enter a video link to load the player.</p></div>';
-             D.videoTitleDisplay.textContent = '';
-             return;
-        }
-        const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        D.videoPlayerContainer.innerHTML = `
-            <iframe 
-                src="${embedUrl}" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen
-                title="YouTube video player"
-            ></iframe>
-        `;
-    }
-
-    /**
-     * Safely renders Markdown content into the specified output element.
-     * @param {string} markdown - The raw markdown text.
-     * @param {HTMLElement} outputElement - The DOM element to render into.
-     */
-    function renderMarkdown(markdown, outputElement) {
-        try {
-            const html = marked.parse(markdown);
-            const sanitizedHtml = DOMPurify.sanitize(html);
-            outputElement.innerHTML = sanitizedHtml;
-        } catch (e) {
-            outputElement.innerHTML = `<p class="text-red-400">Error rendering content: ${e.message}</p>`;
-            console.error("Markdown or DOMPurify error:", e);
-        }
-    }
-
-    /**
-     * Renders the quiz structure into the quiz output container.
-     * @param {object} quizData - The parsed quiz JSON object.
+     * Renders the quiz from the fetched data.
+     * @param {Object} quizData - The quiz data object.
      */
     function renderQuiz(quizData) {
-        D.quizOutput.innerHTML = '';
-        D.scoreContainer.classList.add('hidden');
-
-        // REVIEW: The backend's analysis_schema defines 'quiz' as an array of question objects.
-        const quizArray = appState.analysisData.quiz; 
-        
-        if (!quizArray || quizArray.length === 0) {
-             D.quizOutput.innerHTML = '<p class="text-gray-400">No quiz questions were generated for this video.</p>';
-             return;
+        if (!quizData || !quizData.questions || quizData.questions.length === 0) {
+            D.quizOutput.innerHTML = '<p class="text-gray-400">Quiz generation failed or no questions were provided.</p>';
+            D.scoreButton.disabled = true;
+            return;
         }
 
-        const quizForm = document.createElement('form');
-        quizForm.id = 'quizForm';
-        quizForm.classList.add('space-y-6');
-
-        // Iterate over the quiz array (which is the correct structure based on views.py)
-        quizArray.forEach((q, index) => {
-            const questionDiv = document.createElement('div');
-            questionDiv.classList.add('p-4', 'bg-gray-600', 'rounded-lg', 'shadow-md');
-            questionDiv.innerHTML = `<p class="font-semibold text-lg mb-3">Q${index + 1}: ${q.question}</p>`; // Use q.question from backend schema
-
-            // q.options is an object {A: '...', B: '...', ...}
-            Object.entries(q.options).forEach(([letter, text]) => {
-                const optionId = `q${index}-${letter}`;
-                const optionLabel = document.createElement('label');
-                optionLabel.htmlFor = optionId;
-                optionLabel.classList.add('flex', 'items-center', 'space-x-3', 'py-2', 'px-3', 'rounded-md', 'hover:bg-gray-500', 'cursor-pointer', 'transition-colors');
-                
-                optionLabel.innerHTML = `
-                    <input 
-                        type="radio" 
-                        id="${optionId}" 
-                        name="question_${index}" 
-                        value="${letter}" 
-                        data-question-index="${index}"
-                        class="form-radio h-4 w-4 text-primary-blue bg-gray-700 border-gray-500 focus:ring-primary-blue"
-                    >
-                    <span><b>${letter}:</b> ${text}</span>
-                `;
-
-                questionDiv.appendChild(optionLabel);
+        let html = '<h3 class="text-xl font-bold mb-4">Multiple Choice Quiz</h3>';
+        
+        quizData.questions.forEach((q, qIndex) => {
+            html += `<div class="mb-6 p-4 rounded-lg bg-gray-700">`;
+            html += `<p class="font-semibold mb-3 text-blue-300">Question ${qIndex + 1}: ${q.question}</p>`;
+            
+            q.options.forEach((option, oIndex) => {
+                const optionId = `q${qIndex}-o${oIndex}`;
+                html += `
+                    <div class="flex items-center mb-2">
+                        <input type="radio" id="${optionId}" name="question-${qIndex}" value="${option}" 
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="${optionId}" class="ml-3 text-sm font-medium text-gray-300">${option}</label>
+                    </div>`;
             });
-            quizForm.appendChild(questionDiv);
+            html += `</div>`;
         });
 
-        quizForm.addEventListener('change', (e) => {
-            if (e.target.type === 'radio') {
-                const qIndex = e.target.getAttribute('data-question-index');
-                // Store the selected letter (A, B, C, D)
-                appState.quizAnswers[qIndex] = e.target.value; 
-            }
-        });
-        D.quizOutput.appendChild(quizForm);
-
-        // Enable score button once the quiz is rendered
+        D.quizOutput.innerHTML = DOMPurify.sanitize(html);
         D.scoreButton.disabled = false;
     }
 
     /**
-     * Handles the initial video analysis API call.
-     */
-    async function analyzeVideo() {
-        const videoLink = D.videoLinkInput.value.trim();
-        const videoId = extractVideoId(videoLink);
-
-        if (!videoId) {
-            D.errorMessage.textContent = 'Invalid YouTube link or video ID. Please check the format.';
-            D.errorMessage.classList.remove('hidden');
-            return;
-        }
-
-        appState.videoID = videoId;
-        setAnalysisState(true, false);
-        D.videoTitleDisplay.textContent = 'Processing...';
-        loadVideoPlayer(videoId);
-
-        try {
-            // ✅ FIX: Use the namespaced URL from appState
-            const response = await fetch(appState.apiUrls.analyze, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': appState.csrfToken,
-                },
-                // NOTE: The backend expects 'video_url', not 'video_id', based on its logic. 
-                // Passing the original link here is safer for the backend's `extract_youtube_id`.
-                body: JSON.stringify({ video_url: videoLink }), 
-            });
-
-            if (!response.ok) {
-                // Ensure proper error handling for non-200 responses
-                const errorData = await response.json().catch(() => ({ error: 'Server error occurred.' }));
-                throw new Error(`Analysis failed: ${errorData.error || response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success && data.analysis_data) {
-                appState.analysisData = data.analysis_data;
-                // NOTE: The title is not returned by the API, using a placeholder for now.
-                D.videoTitleDisplay.textContent = 'Analysis Complete (YouTube Title N/A)'; 
-                
-                // 1. Render Summary
-                renderMarkdown(data.analysis_data.summary, D.summaryOutput);
-
-                // 2. Render Action Plan
-                renderMarkdown(data.analysis_data.action_plan, D.action_planOutput);
-
-                // 3. Render Quiz (analysis_data.quiz is already the parsed array)
-                renderQuiz(data.analysis_data.quiz);
-
-                setAnalysisState(false, true);
-                switchTab('summary'); // Switch to Summary on success
-            } else {
-                // Handle success=false responses from the server
-                throw new Error(data.error || 'Analysis failed with no specific error message.');
-            }
-
-        } catch (error) {
-            D.errorMessage.textContent = `Analysis Error: ${error.message}`;
-            D.errorMessage.classList.remove('hidden');
-            D.videoTitleDisplay.textContent = 'Error during analysis';
-            setAnalysisState(false, false);
-        }
-    }
-
-    /**
-     * Handles the quiz submission API call.
+     * Collects user answers and submits them for scoring.
      */
     async function submitQuiz() {
-        if (!appState.isAnalyzed) return;
-
-        // The backend expects the original quiz structure and user answers dictionary
-        // We'll reconstruct the data expected by the submit_quiz_api view
-        const quizDataForBackend = appState.analysisData.quiz.map((q, index) => {
-            // Add a temporary 'question_id' to satisfy the client-side logic's use of it, 
-            // even though the backend iterates over the questions array.
-            return {...q, question_id: index.toString()}; 
-        });
-
-        // Map the stored quizAnswers to the format the backend expects 
-        // (which is a dict of questionId: answerLetter)
-        const userAnswersForBackend = {};
-        Object.entries(appState.quizAnswers).forEach(([index, answerLetter]) => {
-            // The key is the index used as question_id, the value is the selected letter
-            userAnswersForBackend[index.toString()] = answerLetter; 
-        });
-
-        if (Object.keys(userAnswersForBackend).length === 0) {
-            D.scoreMessage.textContent = 'Please select at least one answer before scoring.';
-            D.scoreContainer.classList.remove('hidden');
-            D.scoreContainer.classList.remove('bg-green-600', 'bg-red-600');
-            D.scoreContainer.classList.add('bg-yellow-600');
-            return;
-        }
+        if (!currentQuizData || !currentQuizData.questions) return;
 
         D.scoreButton.disabled = true;
-        D.scoreButton.textContent = 'Scoring...';
-        D.scoreContainer.classList.add('hidden');
+        D.quizScoreOutput.textContent = 'Scoring...';
+
+        const userAnswers = [];
+        currentQuizData.questions.forEach((q, qIndex) => {
+            const selected = document.querySelector(`input[name="question-${qIndex}"]:checked`);
+            userAnswers.push({
+                question: q.question,
+                user_answer: selected ? selected.value : null,
+                correct_answer: q.correct_answer,
+                explanation: q.explanation // Include explanation for grading
+            });
+        });
 
         try {
-            // ✅ FIX: Use the namespaced URL from appState
-            const response = await fetch(appState.apiUrls.submitQuiz, {
+            const response = await fetch(API_URLS.submitQuiz, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': appState.csrfToken,
+                    'X-CSRFToken': getCookie('csrftoken'),
                 },
                 body: JSON.stringify({
-                    quiz: quizDataForBackend, // Original quiz structure
-                    user_answers: userAnswersForBackend, // Dictionary of answers
-                    video_title: D.videoTitleDisplay.textContent, // Pass title for context
+                    video_id: currentVideoId,
+                    answers: userAnswers,
                 }),
             });
 
-            if (!response.ok) {
-                 const errorData = await response.json().catch(() => ({ error: 'Server error occurred during scoring.' }));
-                throw new Error(`Scoring failed: ${errorData.error || response.statusText}`);
-            }
-
             const data = await response.json();
-            
-            if (data.success && data.grading_data) {
-                // Store graded data for PDF export
-                appState.gradedData = data.grading_data; 
-                
-                // Calculate score: count correct answers
-                let score = 0;
-                data.grading_data.graded_quiz.forEach(q => {
-                    if (q.is_correct) score++;
-                });
-                const total = data.grading_data.graded_quiz.length;
 
-                // Update the score message
-                D.scoreMessage.innerHTML = data.grading_data.score_text || `<span class="text-2xl">${score}/${total}</span> Score: Review the feedback below.`;
-                D.scoreContainer.classList.remove('hidden');
-                D.scoreContainer.classList.remove('bg-yellow-600');
-                D.scoreContainer.classList.add(score / total >= 0.5 ? 'bg-green-600' : 'bg-red-600');
-                
-                // Render graded quiz feedback (TODO: Implementation for rendering feedback in quiz tab)
-                // For now, let's just make sure the data is stored for PDF export
-
-            } else {
-                throw new Error(data.error || 'Scoring failed.');
+            if (!response.ok) {
+                throw new Error(data.error || "An unknown error occurred during quiz submission.");
             }
 
+            currentQuizResults = data.grading_data;
+            renderQuizResults(currentQuizResults);
+            D.exportButton.disabled = false; // Enable export after scoring
+            
         } catch (error) {
-            D.scoreMessage.textContent = `Scoring Error: ${error.message}`;
-            D.scoreContainer.classList.remove('hidden');
-            D.scoreContainer.classList.remove('bg-green-600', 'bg-red-600');
-            D.scoreContainer.classList.add('bg-red-600');
+            console.error('Quiz submission failed:', error);
+            D.quizScoreOutput.innerHTML = `<p class="text-red-400">Scoring failed: ${error.message}</p>`;
         } finally {
             D.scoreButton.disabled = false;
-            D.scoreButton.textContent = 'Submit & Score Quiz';
         }
     }
 
     /**
-     * Triggers the PDF export download from the server.
+     * Renders the graded quiz results.
+     * @param {Object} results - The grading data object.
+     */
+    function renderQuizResults(results) {
+        if (!results || !results.graded_questions) return;
+        
+        let score = 0;
+        const total = results.graded_questions.length;
+        let resultHtml = '';
+
+        results.graded_questions.forEach(q => {
+            if (q.is_correct) {
+                score++;
+                resultHtml += `<p class="text-green-400"><i class="fas fa-check-circle mr-2"></i> **Question:** ${q.question}</p>`;
+            } else {
+                resultHtml += `<p class="text-red-400"><i class="fas fa-times-circle mr-2"></i> **Question:** ${q.question}</p>`;
+            }
+            // Add feedback
+            resultHtml += `<p class="text-sm text-gray-400 ml-6">**Your Answer:** ${q.user_answer || 'N/A'}</p>`;
+            resultHtml += `<p class="text-sm text-gray-400 ml-6">**Correct Answer:** ${q.correct_answer}</p>`;
+            resultHtml += `<p class="text-sm text-gray-300 ml-6 mb-3">**Explanation:** ${q.explanation}</p>`;
+        });
+
+        D.quizOutput.innerHTML = DOMPurify.sanitize(marked.parse(resultHtml));
+        D.quizScoreOutput.innerHTML = `<p class="text-2xl font-bold mt-4">Score: <span class="text-blue-500">${score}</span> / ${total} (Accuracy: <span class="text-blue-500">${((score / total) * 100).toFixed(0)}%</span>)</p>`;
+    }
+
+    /**
+     * Switches between content tabs.
+     * @param {string} targetTab - The name of the tab to switch to ('summary', 'quiz', 'action_plan').
+     */
+    function switchTab(targetTab) {
+        D.tabButtons.forEach(btn => btn.classList.remove('active'));
+        D.tabContents.forEach(content => content.classList.remove('active'));
+
+        document.querySelector(`.tab-button[data-tab="${targetTab}"]`).classList.add('active');
+        document.getElementById(`${targetTab}-content`).classList.add('active');
+    }
+
+    /**
+     * Initiates the PDF export process.
      */
     async function exportContent() {
-        if (!appState.isAnalyzed || !appState.videoID) return;
+        if (!currentVideoId) return;
 
         D.exportButton.disabled = true;
-        D.exportButton.textContent = 'Generating PDF...';
+        D.exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating PDF...';
+
+        // Prepare data for export
+        const exportData = {
+            video_title: document.title, // Use the default page title or fetch the actual video title
+            summary: currentSummary,
+            quiz_data: currentQuizResults, // Send graded results if available
+            action_plan: currentActionPlan,
+            video_id: currentVideoId,
+        };
 
         try {
-            // Construct the URL using the template and replacing the placeholder
-            const exportUrl = appState.apiUrls.exportPdfTemplate.replace('00000000000', appState.videoID);
-            
-            // NOTE: The backend's export_content_api is defined as POST in views.py,
-            // but the client-side code is calling it with GET. Changing client to POST
-            // to match the server definition (`@require_http_methods(["POST"])`).
-            const response = await fetch(exportUrl, {
+            const response = await fetch(API_URLS.exportContent, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': appState.csrfToken,
+                    'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({
-                    video_title: D.videoTitleDisplay.textContent || 'Video Analysis Report',
-                    summary: appState.analysisData.summary,
-                    // Send graded data if available, otherwise an empty object
-                    quiz_data: appState.gradedData || {}, 
-                    action_plan: appState.analysisData.action_plan,
-                }),
+                body: JSON.stringify(exportData),
             });
 
             if (!response.ok) {
-                // Try to parse JSON error message if possible
-                const errorData = await response.json().catch(() => ({ error: `Server returned ${response.status}` }));
-                throw new Error(`Failed to generate PDF: ${errorData.error || response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to generate PDF report.");
             }
 
-            // The response should be a file stream (Blob)
+            // Get blob and create a download link
             const blob = await response.blob();
-            // Extract filename from Content-Disposition header
-            const contentDisposition = response.headers.get('Content-Disposition');
-            const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+?)"/) : null;
-            const filename = filenameMatch ? filenameMatch[1] : `analysis_report_${appState.videoID}.pdf`;
-            
-            // Create a temporary link and click it to trigger the download
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = filename;
+            a.download = `LearnFlow_Report_${currentVideoId}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
             
+            // Notification (optional, replacing alert)
+            console.log("PDF download initiated successfully.");
+
         } catch (error) {
-            D.errorMessage.textContent = `Export Error: ${error.message}`;
-            D.errorMessage.classList.remove('hidden');
-            console.error('Export Error:', error);
+            console.error('PDF Export Failed:', error);
+            D.summaryOutput.innerHTML += `<p class="text-red-400 mt-4">PDF Export Failed: ${error.message}</p>`;
         } finally {
             D.exportButton.disabled = false;
-            D.exportButton.textContent = 'Export Report (PDF)';
+            D.exportButton.innerHTML = '<i class="fas fa-file-pdf mr-2"></i> Export Analysis (PDF)';
         }
     }
 
 
-    // --- Initialization and Event Listeners ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Initial setup
-        setAnalysisState(false, false);
-        
-        // Load initial video if a preloaded URL is present in the input field
-        const initialVideoId = extractVideoId(D.videoLinkInput.value);
-        if (initialVideoId) {
-            appState.videoID = initialVideoId;
-            D.analyzeButton.disabled = false;
-            loadVideoPlayer(initialVideoId);
-        } else {
-            // Set initial content placeholders
-            D.summaryOutput.innerHTML = '<p class="text-gray-400">Analysis summary will appear here once the video is processed.</p>';
-            D.quizOutput.innerHTML = '<p class="text-gray-400">A multiple-choice quiz will be generated here.</p>';
-            D.action_planOutput.innerHTML = '<p class="text-gray-400">Personalized next steps and resources will appear here.</p>';
-        }
-
-        // 1. URL Input Listener: Enable/Disable Analyze button
+        // 1. URL Input Listener: Enable/Disable Analyze button and load player
         D.videoLinkInput.addEventListener('input', () => {
-            const isValid = extractVideoId(D.videoLinkInput.value.trim()) !== null;
+            const videoLink = D.videoLinkInput.value.trim();
+            const videoId = extractVideoId(videoLink);
+            const isValid = videoId !== null;
+
             D.analyzeButton.disabled = !isValid;
             
-            // Update the player on input change, but only if it's valid
             if (isValid) {
-                 loadVideoPlayer(extractVideoId(D.videoLinkInput.value.trim()));
+                 loadVideoPlayer(videoId);
+                 resetOutputs();
             } else {
                  loadVideoPlayer(null); // Clear player if invalid
+                 resetOutputs();
             }
         });
 
@@ -655,11 +530,13 @@
         // 3. Main Action Button Listeners
         D.analyzeButton.addEventListener('click', analyzeVideo);
         D.scoreButton.addEventListener('click', submitQuiz); 
-        D.exportButton.addEventListener('click', exportContent); // Now calling the correct export function
+        D.exportButton.addEventListener('click', exportContent);
         
-        // Initial Tab Activation
+        // Initial setup
+        resetOutputs();
         switchTab('summary');
     });
 
 </script>
+
 {% endblock %}
