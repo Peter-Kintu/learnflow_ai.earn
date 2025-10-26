@@ -75,11 +75,13 @@ def learnflow_overview(request):
 
 def learnflow_video_analysis(request):
     """Renders the main video analysis tool (the home page)."""
+    # When hitting the home page, initial_url will be empty, which is handled by the template
     return render(request, 'learnflow.html', {}) 
 
 def video_analysis_view(request, video_id):
     """
     Renders a specific video analysis page based on a URL parameter.
+    Passes the full initial_url for the fixed template.
     """
     context = {
         'video_id': video_id,
@@ -132,7 +134,7 @@ def call_gemini_api_with_retry(prompt, system_instruction=None, response_schema=
     Handles API calls to Gemini with built-in exponential backoff retry logic.
     Returns (result_text, error_message).
     """
-    # FIX: Initialize the client using the hardcoded API key for testing
+    # Initialize the client using the hardcoded API key for testing
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     # Configure generation

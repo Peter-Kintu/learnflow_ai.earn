@@ -53,7 +53,7 @@
                         <input type="text" id="video-link-input" 
                             class="w-full p-3 bg-card-bg border border-card-bg focus:border-accent-cyan rounded-lg text-text-light placeholder-gray-500 transition duration-300"
                             placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                            value="{{ video_id | default:'' | prepend:'https://www.youtube.com/watch?v=' }}">
+                            value="{{ initial_url|default:'' }}">
                     </div>
 
                     <button id="analyze-button" 
@@ -234,64 +234,334 @@
                     button.classList.add('border-transparent');
                 }
             });
-
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
             });
             document.getElementById(`${tabName}-tab`).classList.remove('hidden');
         };
-        
+
         // Function to create a placeholder/container for the YouTube player
         const createPlayerContainer = () => {
             // Remove existing player element to prevent memory leaks/re-init issues
             while (D.playerContainer.firstChild) {
                 D.playerContainer.removeChild(D.playerContainer.firstChild);
             }
-            D.playerPlaceholder = document.createElement('p');
-            D.playerPlaceholder.id = 'player-placeholder';
-            D.playerPlaceholder.className = 'text-text-light opacity-50 p-10';
-            D.playerPlaceholder.textContent = 'Paste a valid YouTube link above to load the video player.';
-            
+            // Re-create the placeholder if needed (though it should be the player itself)
             const newPlayerDiv = document.createElement('div');
             newPlayerDiv.id = 'youtube-player-actual';
+            newPlayerDiv.className = 'w-full h-full'; // Ensure it takes full space
             D.playerContainer.appendChild(newPlayerDiv);
             return newPlayerDiv.id;
         };
 
+
         const loadVideoPlayer = (videoId) => {
             if (!videoId) {
-                // If no video ID, clear the player area
-                while (D.playerContainer.firstChild) {
-                    D.playerContainer.removeChild(D.playerContainer.firstChild);
+                // If no valid ID, remove player and show placeholder
+                if (player) {
+                    player.destroy();
+                    player = null;
                 }
+                while (D.playerContainer.firstChild) { D.playerContainer.removeChild(D.playerContainer.firstChild); }
                 D.playerContainer.appendChild(D.playerPlaceholder);
                 return;
             }
 
-            const playerId = createPlayerContainer();
-            D.playerPlaceholder.classList.add('hidden');
+            const playerElementId = createPlayerContainer();
 
             if (typeof YT !== 'undefined' && YT.Player) {
+                // Destroy old player instance if it exists
                 if (player) {
-                    player.destroy(); // Destroy previous player instance if it exists
+                    player.destroy();
                 }
-                player = new YT.Player(playerId, {
+
+                player = new YT.Player(playerElementId, {
                     videoId: videoId,
                     playerVars: {
+                        'autoplay': 0,
                         'controls': 1,
-                        'rel': 0, // Disable related videos
-                        'modestbranding': 1, // Minimize YouTube logo
+                        'modestbranding': 1,
+                        'rel': 0
                     },
                     events: {
                         'onReady': (event) => {
-                            event.target.setVolume(50); // Set volume to 50%
-                            D.playerContainer.style.background = 'none'; // Clear background after load
+                            // Video ready, remove placeholder if still visible
+                            if (D.playerPlaceholder.parentNode) {
+                                D.playerPlaceholder.remove();
+                            }
+                        },
+                        'onError': (event) => {
+                            showErrorModal(`Youtubeer Error. Code: ${event.data}. The video may be unavailable, private, or restricted.`);
                         }
                     }
                 });
+            } else {
+                // If the API isn't ready yet, the onYouTubeIframeAPIReady will handle it.
             }
         };
 
+        const renderQuiz = (quizData) => {
+            D.quizForm.innerHTML = ''; // Clear previous quiz
+            D.scoreButton.disabled = false; // Enable score button
+            D.quizFeedback.classList.add('hidden');
+            
+            quizData.forEach((q, index) => {
+                const questionHtml = `
+                    <div class="bg-card-bg p-4 rounded-lg shadow-md mb-4 border border-secondary-bg">
+                        <p class="text-text-light font-semibold mb-3">
+                            <span class="text-accent-cyan mr-2">${index + 1}.</span> ${q.question}
+                        </p>
+                        <div class="space-y-2">
+                            ${q.options.map((option, oIndex) => `
+                                <label class="flex items-center text-text-light cursor-pointer p-2 rounded-md hover:bg-primary-bg transition duration-200">
+                                    <input type="radio" 
+                                        name="question-${index}" 
+                                        value="${DOMPurify.sanitize(option)}" 
+                                        data-correct-answer="${DOMPurify.sanitize(q.correct_answer)}" 
+                                        class="mr-3 text-accent-cyan bg-secondary-bg border-gray-600 focus:ring-accent-cyan"
+                                        required>
+                                    ${option}
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                D.quizForm.insertAdjacentHTML('beforeend', questionHtml);
+            });
+        };
+
+        const renderAnalysis = (data) => {
+            currentAnalysis = {
+                ...currentAnalysis,
+                video_title: data.video_title,
+                summary: data.summary,
+                quiz: data.quiz,
+                action_plan: data.action_plan,
+            };
+
+            // 1. Title
+            D.videoTitle.textContent = data.video_title;
+
+            // 2. Summary (Render Markdown to HTML)
+            D.summaryTab.innerHTML = DOMPurify.sanitize(marked.parse(data.summary));
+            
+            // 3. Quiz (Render form)
+            renderQuiz(data.quiz);
+
+            // 4. Action Plan (Render Markdown to HTML)
+            D.actionPlanTab.innerHTML = DOMPurify.sanitize(marked.parse(data.action_plan));
+
+            D.analysisContainer.classList.remove('hidden');
+            switchTab('summary'); // Default to summary tab
+            showStatus('Analysis complete. Please take the quiz.', false);
+        };
+
+
+        // --- 2. API Call Functions ---
+
+        const analyzeVideo = async () => {
+            const videoUrl = D.videoLinkInput.value.trim();
+            const videoId = extractVideoId(videoUrl);
+
+            if (!videoId) {
+                showErrorModal('Please enter a valid YouTube URL.');
+                return;
+            }
+
+            // Simple check to get the title from the player object if available
+            const videoTitle = player && player.getVideoData ? player.getVideoData().title : 'Analyzing Video...';
+
+            resetAnalysis();
+            D.analyzeButton.disabled = true;
+            showStatus('Fetching transcript and analyzing video with Gemini AI. This may take up to 30 seconds...');
+
+            try {
+                const response = await fetch('api/analyze_video/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        video_url: videoUrl,
+                        video_title: videoTitle // Send the title to the backend
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    renderAnalysis(data);
+                } else {
+                    showStatus(data.error || 'Failed to analyze video due to an unknown API error.', true);
+                    resetAnalysis();
+                }
+
+            } catch (error) {
+                console.error('Analyze Video Network Error:', error);
+                showStatus('Network error while communicating with the server. Check your connection.', true);
+                resetAnalysis();
+            } finally {
+                D.analyzeButton.disabled = false;
+            }
+        };
+
+        const submitQuiz = async () => {
+            const form = D.quizForm;
+            const quizResults = [];
+            let allAnswered = true;
+
+            // Collect user answers
+            currentAnalysis.quiz.forEach((q, index) => {
+                const radios = form.elements[`question-${index}`];
+                let userAnswer = 'N/A';
+                
+                if (radios) {
+                    // radios can be an element or a NodeList, so check for `value` on a radio group
+                    const checkedRadio = Array.from(radios).find(radio => radio.checked);
+                    if (checkedRadio) {
+                        userAnswer = checkedRadio.value;
+                    } else {
+                        allAnswered = false;
+                    }
+                }
+                
+                // Prepare data for the grading API
+                quizResults.push({
+                    question: q.question,
+                    user_answer: userAnswer,
+                    correct_answer: q.correct_answer // Send the correct answer for grading/comparison
+                });
+            });
+
+            if (!allAnswered) {
+                showStatus('Please answer all quiz questions before scoring.', true);
+                return;
+            }
+
+            D.scoreButton.disabled = true;
+            D.exportButton.disabled = true;
+            showStatus('Grading quiz with Gemini AI...');
+
+            try {
+                const response = await fetch('api/submit_quiz/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        quiz_data: quizResults
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const gradedData = data.grading_data;
+                    currentAnalysis.graded_quiz = gradedData;
+                    
+                    // Render feedback
+                    let feedbackHtml = `
+                        <p class="text-xl font-extrabold text-accent-cyan mb-4">
+                            Your Score: ${gradedData.score} / ${gradedData.total_questions}
+                        </p>
+                    `;
+
+                    gradedData.questions.forEach((q, index) => {
+                        const status = q.is_correct ? 'CORRECT' : 'INCORRECT';
+                        const color = q.is_correct ? 'text-success-green' : 'text-error-red';
+                        
+                        feedbackHtml += `
+                            <div class="mb-4 p-3 rounded-lg ${q.is_correct ? 'bg-success-green/10' : 'bg-error-red/10'} border ${q.is_correct ? 'border-success-green' : 'border-error-red'}">
+                                <p class="font-bold text-text-light">${index + 1}. ${q.question}</p>
+                                <p class="mt-1">Your Answer: <span class="${color} font-semibold">${q.user_answer} (${status})</span></p>
+                                ${!q.is_correct ? `<p class="mt-1">Correct Answer: <span class="text-success-green font-semibold">${q.correct_answer}</span></p>` : ''}
+                            </div>
+                        `;
+                    });
+
+                    D.feedbackContent.innerHTML = DOMPurify.sanitize(feedbackHtml);
+                    D.quizFeedback.classList.remove('hidden');
+                    D.exportButton.disabled = false; // Enable export after grading
+                    showStatus('Quiz scored successfully. You can now export your report.', false);
+
+                } else {
+                    showStatus(data.error || 'Failed to grade quiz due to an unknown API error.', true);
+                }
+
+            } catch (error) {
+                console.error('Submit Quiz Network Error:', error);
+                showStatus('Network error while communicating with the server.', true);
+            } finally {
+                D.scoreButton.disabled = false;
+            }
+        };
+
+        const exportContent = async () => {
+            if (!currentAnalysis.graded_quiz) {
+                showStatus('Please complete and score the quiz before exporting the report.', true);
+                return;
+            }
+
+            D.exportButton.disabled = true;
+            showStatus('Generating PDF report...');
+
+            try {
+                const response = await fetch('api/export_content/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        video_title: currentAnalysis.video_title,
+                        summary: currentAnalysis.summary,
+                        quiz_data: currentAnalysis.graded_quiz, // Send the graded data
+                        action_plan: currentAnalysis.action_plan
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    // Extract filename from Content-Disposition header if possible, otherwise use a default
+                    let filename = "learnflow_report.pdf";
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="(.+)"/);
+                        if (match && match[1]) {
+                            filename = match[1];
+                        }
+                    }
+
+                    // Create a link element, trigger download, and clean up
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showStatus('PDF successfully downloaded.', false);
+                } else {
+                    const errorText = await response.json().catch(() => ({error: 'Could not read server error message.'}));
+                    showStatus(errorText.error || 'Failed to generate PDF.', true);
+                }
+            } catch (error) {
+                console.error('Export Content Network Error:', error);
+                showStatus('Network error during PDF export.', true);
+            } finally {
+                D.exportButton.disabled = false;
+            }
+        };
+
+
+        // --- 3. CSRF Token Utility ---
+
+        // Function to get CSRF token from cookies
         const getCookie = (name) => {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -306,318 +576,13 @@
                 }
             }
             return cookieValue;
-        };
-
-        // --- 2. Content Rendering Functions ---
-
-        const renderQuiz = (quizData) => {
-            D.quizForm.innerHTML = '';
-            quizData.forEach((q, index) => {
-                const questionHtml = `
-                    <div class="bg-card-bg p-5 rounded-xl mb-4 shadow-md">
-                        <p class="text-lg font-semibold text-accent-cyan mb-3">Q${index + 1}: ${DOMPurify.sanitize(q.question)}</p>
-                        <div class="space-y-2">
-                            ${q.options.map((option, optIndex) => `
-                                <label class="flex items-center p-3 bg-secondary-bg hover:bg-secondary-bg/80 rounded-lg cursor-pointer transition duration-150">
-                                    <input type="radio" name="question_${index}" value="${DOMPurify.sanitize(option)}" class="h-4 w-4 text-accent-blue border-gray-300 focus:ring-accent-blue">
-                                    <span class="ml-3 text-text-light">${DOMPurify.sanitize(option)}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-                D.quizForm.insertAdjacentHTML('beforeend', questionHtml);
-            });
-            D.quizFeedback.classList.add('hidden'); // Hide feedback when rendering a fresh quiz
-            D.scoreButton.disabled = false; // ENABLE SCORE QUIZ BUTTON
-            D.exportButton.disabled = true; // Disable Export until score is submitted
-        };
-        
-        const renderGradedQuiz = (gradedQuiz, feedback) => {
-            const total = gradedQuiz.length;
-            const correct = gradedQuiz.filter(q => q.is_correct).length;
-            
-            D.quizForm.innerHTML = '';
-            
-            gradedQuiz.forEach((q, index) => {
-                const isCorrect = q.is_correct;
-                const resultClass = isCorrect ? 'border-success-green bg-success-green/20' : 'border-error-red bg-error-red/20';
-                const icon = isCorrect ? 'fa-check' : 'fa-times';
-                
-                const questionHtml = `
-                    <div class="p-5 rounded-xl mb-4 border-2 ${resultClass} shadow-md">
-                        <p class="text-lg font-semibold text-text-light mb-3 flex items-center">
-                            <i class="fas ${icon} mr-3 ${isCorrect ? 'text-success-green' : 'text-error-red'}"></i>
-                            Q${index + 1}: ${DOMPurify.sanitize(q.question)}
-                        </p>
-                        <div class="mt-2 space-y-1 text-sm">
-                            <p class="text-text-light/80">
-                                <strong>Your Answer:</strong> 
-                                <span class="${isCorrect ? 'text-success-green' : 'text-error-red'}">${DOMPurify.sanitize(q.user_answer || 'N/A')}</span>
-                            </p>
-                            <p class="text-text-light/80">
-                                <strong>Correct Answer:</strong> 
-                                <span class="text-success-green">${DOMPurify.sanitize(q.correct_answer)}</span>
-                            </p>
-                        </div>
-                    </div>
-                `;
-                D.quizForm.insertAdjacentHTML('beforeend', questionHtml);
-            });
-            
-            // Display Feedback
-            D.feedbackContent.innerHTML = marked.parse(DOMPurify.sanitize(feedback));
-            D.quizFeedback.classList.remove('hidden');
-            
-            // Update score button
-            D.scoreButton.textContent = `Score: ${correct} / ${total}`;
-            D.scoreButton.disabled = true; // Disable scoring again once graded
-            D.scoreButton.classList.remove('bg-success-green', 'hover:bg-green-700');
-            D.scoreButton.classList.add('bg-card-bg');
-            
-            D.exportButton.disabled = false; // ENABLE EXPORT BUTTON
-            
-            // Switch to quiz tab to show results
-            switchTab('quiz');
-        };
-
-        const renderAnalysis = (data) => {
-            D.videoTitle.textContent = DOMPurify.sanitize(data.video_title);
-            D.summaryTab.innerHTML = marked.parse(DOMPurify.sanitize(data.summary));
-            D.actionPlanTab.innerHTML = marked.parse(DOMPurify.sanitize(data.action_plan));
-            
-            // Set global analysis data
-            currentAnalysis.video_title = data.video_title;
-            currentAnalysis.summary = data.summary;
-            currentAnalysis.action_plan = data.action_plan;
-            currentAnalysis.quiz = data.quiz;
-            currentAnalysis.graded_quiz = null; // Reset graded quiz
-
-            // Handle Quiz Rendering and Button Enabling
-            if (data.quiz && data.quiz.length > 0) {
-                renderQuiz(data.quiz);
-            } else {
-                D.scoreButton.disabled = true; // No quiz, keep score button disabled
-            }
-            
-            // Handle Warning
-            if (data.warning) {
-                D.warningText.textContent = DOMPurify.sanitize(data.warning);
-                D.warningMessage.classList.remove('hidden');
-            } else {
-                D.warningMessage.classList.add('hidden');
-            }
-
-            D.analysisContainer.classList.remove('hidden');
-        };
-
-        // --- 3. Main Action Functions ---
-
-        const analyzeVideo = async () => {
-            const videoUrl = D.videoLinkInput.value.trim();
-            const videoId = extractVideoId(videoUrl);
-            
-            if (!videoId) {
-                showStatus('Please enter a valid YouTube video URL.', true);
-                return;
-            }
-            
-            // Lock button and show loading state
-            D.analyzeButton.disabled = true;
-            D.scoreButton.disabled = true;
-            D.exportButton.disabled = true;
-            const originalAnalyzeText = D.analyzeButton.innerHTML;
-            D.analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Analyzing...';
-            showStatus('Fetching transcript and generating analysis...');
-            resetAnalysis(); // Clear previous results
-
-            try {
-                // Fetch the video title (assuming there's a title fetch function or player property available)
-                // Since we don't have a direct backend endpoint for title only, we'll try to get it from the player
-                let videoTitle = "YouTube Video Analysis";
-                if (player && player.getVideoData) {
-                    videoTitle = player.getVideoData().title || videoTitle;
-                }
-                
-                const response = await fetch('/api/analyze_video/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify({ video_url: videoUrl, video_title: videoTitle }),
-                });
-
-                const data = await response.json();
-                
-                if (response.ok && data.success) {
-                    renderAnalysis(data);
-                    showStatus('Analysis complete! Check the tabs for your content.', false);
-                } else {
-                    const errorMessage = data.error || 'Unknown error occurred during video analysis.';
-                    showStatus(errorMessage, true);
-                    resetAnalysis();
-                }
-
-            } catch (error) {
-                console.error('Analysis API Error:', error);
-                showStatus('A network or server error occurred. Please check the URL and try again.', true);
-                resetAnalysis();
-            } finally {
-                // Always restore Analyze button state based on current input
-                const url = D.videoLinkInput.value.trim();
-                const isValid = extractVideoId(url) !== null;
-                D.analyzeButton.disabled = !isValid;
-                D.analyzeButton.innerHTML = originalAnalyzeText;
-                D.scoreButton.classList.remove('bg-card-bg');
-                D.scoreButton.classList.add('bg-success-green', 'hover:bg-green-700');
-                D.scoreButton.textContent = 'Score Quiz';
-            }
-        };
-
-
-        const submitQuiz = async () => {
-            if (currentAnalysis.quiz.length === 0) {
-                showStatus('No quiz data available to score.', true);
-                return;
-            }
-            
-            // Get user answers
-            const userAnswers = {};
-            currentAnalysis.quiz.forEach((q, index) => {
-                const radio = D.quizForm.querySelector(`input[name="question_${index}"]:checked`);
-                if (radio) {
-                    userAnswers[index] = radio.value;
-                }
-            });
-
-            // Check if all questions are answered (optional, but good UX)
-            // if (Object.keys(userAnswers).length !== currentAnalysis.quiz.length) {
-            //     showStatus('Please answer all questions before submitting.', true);
-            //     return;
-            // }
-
-            // Lock button and show loading state
-            D.scoreButton.disabled = true;
-            const originalScoreText = D.scoreButton.innerHTML;
-            D.scoreButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Grading...';
-            showStatus('Submitting answers and grading quiz...');
-
-            try {
-                const response = await fetch('/api/submit_quiz/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify({ 
-                        quiz: currentAnalysis.quiz, 
-                        user_answers: userAnswers, 
-                        video_title: currentAnalysis.video_title 
-                    }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    const gradedQuiz = data.grading_data.graded_quiz;
-                    const feedback = data.grading_data.feedback;
-                    
-                    currentAnalysis.graded_quiz = gradedQuiz; // Save graded quiz
-                    renderGradedQuiz(gradedQuiz, feedback);
-                    
-                    showStatus('Quiz graded successfully! See your results below.', false);
-                    D.exportButton.disabled = false; // **CRITICAL: Enable Export button here**
-
-                } else {
-                    const errorMessage = data.error || 'Unknown error occurred during quiz grading.';
-                    showStatus(errorMessage, true);
-                    D.scoreButton.disabled = false;
-                }
-                
-            } catch (error) {
-                console.error('Quiz API Error:', error);
-                showStatus('A network or server error occurred during quiz grading.', true);
-                D.scoreButton.disabled = false;
-
-            } finally {
-                // Restore button text (its disabled state is handled by success/failure logic)
-                if (!D.scoreButton.disabled) {
-                    D.scoreButton.innerHTML = originalScoreText;
-                }
-            }
-        };
-
-
-        const exportContent = async () => {
-            if (!currentAnalysis.summary || !currentAnalysis.quiz || !currentAnalysis.graded_quiz) {
-                showStatus('Analysis is incomplete or quiz is not scored.', true);
-                return;
-            }
-
-            D.exportButton.disabled = true;
-            const originalExportText = D.exportButton.innerHTML;
-            D.exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating PDF...';
-            showStatus('Generating PDF report...');
-
-            try {
-                const response = await fetch('/api/export_content/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify({ 
-                        video_title: currentAnalysis.video_title, 
-                        summary: currentAnalysis.summary,
-                        action_plan: currentAnalysis.action_plan,
-                        quiz_data: { graded_quiz: currentAnalysis.graded_quiz }
-                    }),
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const contentDisposition = response.headers.get('Content-Disposition');
-                    let filename = 'LearnFlow_Report.pdf';
-                    
-                    if (contentDisposition) {
-                        const filenameMatch = contentDisposition.match(/filename="(.+?)"/i);
-                        if (filenameMatch && filenameMatch[1]) {
-                            filename = filenameMatch[1];
-                        }
-                    }
-
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    
-                    showStatus('PDF successfully downloaded.', false);
-
-                } else {
-                    const data = await response.json();
-                    const errorMessage = data.error || 'Unknown error occurred during PDF export.';
-                    showStatus(errorMessage, true);
-                }
-
-            } catch (error) {
-                console.error('Export API Error:', error);
-                showStatus('A network or server error occurred during export.', true);
-            } finally {
-                D.exportButton.disabled = false;
-                D.exportButton.innerHTML = originalExportText;
-            }
-        };
+        }
 
 
         // --- 4. Initialization and Event Listeners ---
         
-        // Function to handle the YouTube Iframe API ready state
-        function onYouTubeIframeAPIReady() {
+        // Make sure the player logic runs after the YouTube Iframe API is loaded
+        const onYouTubeIframeAPIReady = () => {
             // Initial setup based on input value (for deep linking)
             if (D.videoLinkInput.value) {
                 const initialId = extractVideoId(D.videoLinkInput.value.trim());
