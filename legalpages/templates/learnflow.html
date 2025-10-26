@@ -5,18 +5,30 @@
 
 {% block extra_head %}
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
-    <style>
-        /* Custom styles for the dark theme and responsive video player */
-        :root {
-            --color-background-dark: #1f2937; /* Gray-800 */
-            --color-primary-blue: #3b82f6; /* Blue-500 */
-            --color-text-light: #f3f4f6; /* Gray-100 */
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-bg': '#0f172a', /* Slate 900 - Deep Blue/Gray */
+                        'secondary-bg': '#1e293b', /* Slate 800 */
+                        'card-bg': '#334155', /* Slate 700 */
+                        'accent-blue': '#3b82f6', /* Blue 500 */
+                        'text-light': '#f8fafc', /* Slate 50 */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
         }
-        .bg-background-dark { background-color: var(--color-background-dark); }
-        .text-text-light { color: var(--color-text-light); }
+    </script>
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
@@ -25,8 +37,9 @@
             position: relative;
             width: 100%;
             padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            border-radius: 0.5rem;
+            border-radius: 0.75rem; /* Smoother corners */
             overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
         }
         .video-container iframe {
             position: absolute;
@@ -35,95 +48,121 @@
             width: 100%;
             height: 100%;
         }
+
+        /* Improved Prose Styling for Dark Mode */
+        .prose-dark {
+            color: #d1d5db; /* Gray-300 */
+        }
+        .prose-dark h1, .prose-dark h2, .prose-dark h3, .prose-dark h4 {
+            color: #93c5fd; /* Blue-300 */
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.3rem;
+        }
+        .prose-dark ol li::marker, .prose-dark ul li::marker {
+            color: #60a5fa; /* Blue-400 */
+        }
+        .prose-dark a {
+            color: #60a5fa;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-900 text-text-light p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <h1 class="text-3xl font-extrabold text-blue-400 mb-6">LearnFlow AI: Video Analysis Tool</h1>
+<div class="min-h-screen bg-primary-bg text-text-light p-4 md:p-10">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+             <h1 class="text-4xl font-extrabold text-accent-blue tracking-tight mb-2">LearnFlow AI</h1>
+             <p class="text-gray-400">Transforming YouTube videos into structured learning modules.</p>
+        </header>
         
-        <!-- Global Alert Box for Errors and Success Messages (IMPROVED CLARITY) -->
+        <!-- Global Alert Box for Errors and Success Messages (Highly Visible and Professional) -->
         <div id="global-alert" role="alert" 
-             class="hidden p-4 mb-6 rounded-lg border-l-4 font-medium transition-opacity duration-300">
+             class="hidden p-4 mb-6 rounded-xl border border-opacity-70 font-medium shadow-lg transition-all duration-300 z-10 sticky top-4">
         </div>
         
         <!-- Input and Control Area -->
-        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl mb-8">
+        <div class="bg-secondary-bg p-6 rounded-xl shadow-2xl mb-10 border border-gray-700">
             <div class="flex flex-col md:flex-row gap-4 items-center">
                 <!-- Video Link Input -->
                 <input type="url" id="video-link-input" placeholder="Paste YouTube Video URL here..." 
-                       class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500" 
+                       class="flex-grow p-4 rounded-lg bg-secondary-bg border-2 border-gray-600 text-text-light placeholder-gray-400 focus:ring-2 focus:ring-accent-blue focus:border-accent-blue shadow-inner" 
                        value="{{ initial_url|default:'' }}"
                 >
                 
                 <!-- Analyze Button -->
                 <button id="analyze-button" disabled 
-                        class="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                        class="w-full md:w-auto px-8 py-3 bg-accent-blue hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02]">
                     <i class="fas fa-magic mr-2"></i> Analyze Video
                 </button>
             </div>
         </div>
 
         <!-- Main Content Layout (Video Player on Left, Analysis Tabs on Right) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
             
-            <!-- Left Column: Video Player and Score Button -->
+            <!-- Left Column: Video Player and Action Buttons -->
             <div class="lg:col-span-1 space-y-6">
                 <div class="video-container">
                     <div id="video-player">
                         <!-- YouTube iframe will be loaded here -->
-                        <div class="flex items-center justify-center w-full h-full bg-gray-700 absolute top-0 left-0">
-                            <p class="text-gray-400">Paste a YouTube URL to load the video.</p>
+                        <div class="flex flex-col items-center justify-center w-full h-full bg-gray-700 absolute top-0 left-0 p-8">
+                            <i class="fab fa-youtube text-4xl text-red-500 mb-3"></i>
+                            <p class="text-gray-300 font-medium text-center">Enter a valid YouTube link above to load the player and start the analysis.</p>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Score and Export Button -->
-                <div class="flex gap-4">
+                <!-- Score and Export Button Group -->
+                <div class="flex flex-col sm:flex-row gap-4">
                     <button id="score-button" disabled
-                            class="flex-grow px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed">
-                        <i class="fas fa-check-circle mr-2"></i> Score Quiz
+                            class="flex-grow px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02]">
+                        <i class="fas fa-calculator mr-2"></i> Score Quiz
                     </button>
                     <button id="export-button" disabled
-                            class="flex-grow px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                            class="flex-grow px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02]">
                         <i class="fas fa-file-pdf mr-2"></i> Export Report
                     </button>
                 </div>
             </div>
 
             <!-- Right Column: Analysis Tabs -->
-            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-2xl">
+            <div class="lg:col-span-2 bg-secondary-bg p-8 rounded-xl shadow-2xl border border-gray-700">
                 <!-- Tab Navigation -->
-                <div id="tab-buttons" class="flex border-b border-gray-700 mb-4">
-                    <button data-tab="summary" class="tab-button px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-500 transition duration-150 active-tab-class">Summary</button>
-                    <button data-tab="quiz" class="tab-button px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-500 transition duration-150">Quiz</button>
-                    <button data-tab="action-plan" class="tab-button px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-500 transition duration-150">Action Plan</button>
+                <div id="tab-buttons" class="flex border-b-2 border-gray-700 mb-6 space-x-2">
+                    <button data-tab="summary" class="tab-button px-4 py-3 text-base font-semibold border-b-4 border-transparent text-gray-400 hover:text-accent-blue transition duration-150 active-tab-class">
+                        <i class="fas fa-list-alt mr-2"></i> Summary
+                    </button>
+                    <button data-tab="quiz" class="tab-button px-4 py-3 text-base font-semibold border-b-4 border-transparent text-gray-400 hover:text-accent-blue transition duration-150">
+                        <i class="fas fa-question-circle mr-2"></i> Quiz
+                    </button>
+                    <button data-tab="action-plan" class="tab-button px-4 py-3 text-base font-semibold border-b-4 border-transparent text-gray-400 hover:text-accent-blue transition duration-150">
+                        <i class="fas fa-cogs mr-2"></i> Action Plan
+                    </button>
                 </div>
 
                 <!-- Tab Contents -->
-                <div class="min-h-[400px]">
+                <div class="min-h-[450px]">
                     <!-- Summary Tab -->
                     <div id="summary-content" data-tab="summary" class="tab-content active">
-                        <h2 class="text-2xl font-semibold mb-4 text-blue-400">Comprehensive Summary</h2>
-                        <div id="summary-output" class="prose max-w-none text-gray-200">
+                        <h2 class="text-2xl font-bold mb-4 text-accent-blue">Comprehensive Summary</h2>
+                        <div id="summary-output" class="prose prose-dark max-w-none text-gray-200">
                             <p class="text-gray-400">The detailed summary will appear here once the video is processed.</p>
                         </div>
                     </div>
 
                     <!-- Quiz Tab -->
                     <div id="quiz-content" data-tab="quiz" class="tab-content">
-                        <h2 class="2xl:text-2xl font-semibold mb-4 text-blue-400">Generated Quiz</h2>
+                        <h2 class="text-2xl font-bold mb-4 text-accent-blue">Generated Quiz</h2>
                         <div id="quiz-output" class="space-y-6">
-                            <p class="text-gray-400">A multiple-choice quiz will be generated here.</p>
+                            <p class="text-gray-400">A multiple-choice quiz will be generated here. Click "Score Quiz" to check your answers.</p>
                         </div>
-                        <div id="quiz-score-display" class="mt-6 text-xl font-bold hidden p-4 rounded-lg bg-gray-700"></div>
+                        <div id="quiz-score-display" class="mt-8 text-xl font-extrabold hidden p-4 rounded-lg bg-card-bg border border-gray-600"></div>
                     </div>
 
                     <!-- Action Plan Tab -->
                     <div id="action-plan-content" data-tab="action-plan" class="tab-content">
-                        <h2 class="text-2xl font-semibold mb-4 text-blue-400">Personalized Action Plan</h2>
-                        <div id="action-plan-output" class="prose max-w-none text-gray-200">
+                        <h2 class="text-2xl font-bold mb-4 text-accent-blue">Personalized Action Plan</h2>
+                        <div id="action-plan-output" class="prose prose-dark max-w-none text-gray-200">
                             <p class="text-gray-400">Personalized next steps and resources will appear here.</p>
                         </div>
                     </div>
@@ -141,7 +180,7 @@
             analyzeButton: document.getElementById('analyze-button'),
             scoreButton: document.getElementById('score-button'),
             exportButton: document.getElementById('export-button'),
-            globalAlert: document.getElementById('global-alert'), // Updated element for centralized errors/success
+            globalAlert: document.getElementById('global-alert'), 
             videoPlayer: document.getElementById('video-player'),
             tabButtons: document.querySelectorAll('.tab-button'),
             summaryOutput: document.getElementById('summary-output'),
@@ -158,13 +197,14 @@
             graded_quiz: null, // The scored quiz data after submission
         };
         
+        // Ensure this maps to your Django URL configuration in urls.py
         const API_URLS = {
             analyze: "{% url 'legalpages:api_analyze_video' %}",
             submit: "{% url 'legalpages:api_submit_quiz' %}",
             export: "{% url 'legalpages:api_export_content' %}",
         };
 
-        // --- 2. Helper Functions (Updated for Clarity) ---
+        // --- 2. Helper Functions ---
         
         /**
          * Displays a temporary alert message (success or error).
@@ -172,22 +212,20 @@
          * @param {string} type - 'error' (default) or 'success'.
          */
         function displayAlert(message, type = 'error') {
-            D.globalAlert.textContent = message;
             // Reset classes
-            D.globalAlert.classList.remove('hidden', 'bg-red-800', 'text-red-200', 'border-red-600', 
-                                              'bg-green-800', 'text-green-200', 'border-green-600');
+            D.globalAlert.className = 'p-4 mb-6 rounded-xl border border-opacity-70 font-medium shadow-lg transition-all duration-300 z-10 sticky top-4';
             
             if (type === 'error') {
-                D.globalAlert.classList.add('bg-red-800', 'text-red-200', 'border-red-600', 'border-opacity-80');
-                D.globalAlert.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> ${message}`;
+                D.globalAlert.classList.add('bg-red-900/40', 'text-red-300', 'border-red-500');
+                D.globalAlert.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> <span class="font-bold">Error:</span> ${message}`;
             } else {
-                D.globalAlert.classList.add('bg-green-800', 'text-green-200', 'border-green-600', 'border-opacity-80');
-                D.globalAlert.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+                D.globalAlert.classList.add('bg-green-900/40', 'text-green-300', 'border-green-500');
+                D.globalAlert.innerHTML = `<i class="fas fa-check-circle mr-2"></i> <span class="font-bold">Success:</span> ${message}`;
             }
             D.globalAlert.classList.remove('hidden');
 
-            // Auto-hide after 8 seconds
-            setTimeout(() => D.globalAlert.classList.add('hidden'), 8000);
+            // Auto-hide after 10 seconds
+            setTimeout(() => D.globalAlert.classList.add('hidden'), 10000);
         }
 
         /**
@@ -199,6 +237,7 @@
             if (!url) return null;
             const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
+            // YouTube IDs are 11 characters long
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
@@ -216,8 +255,9 @@
                 D.videoPlayer.innerHTML = iframe;
             } else {
                  D.videoPlayer.innerHTML = `
-                    <div class="flex items-center justify-center w-full h-full bg-gray-700 absolute top-0 left-0">
-                        <p class="text-gray-400">Paste a YouTube URL to load the video.</p>
+                    <div class="flex flex-col items-center justify-center w-full h-full bg-secondary-bg absolute top-0 left-0 p-8">
+                        <i class="fab fa-youtube text-4xl text-red-500 mb-3"></i>
+                        <p class="text-gray-400 font-medium text-center">Enter a valid YouTube link above to load the player and start the analysis.</p>
                     </div>`;
             }
         }
@@ -230,12 +270,12 @@
             D.tabButtons.forEach(button => {
                 const tabContent = document.getElementById(`${button.dataset.tab}-content`);
                 if (button.dataset.tab === targetTab) {
-                    button.classList.add('border-blue-500', 'text-blue-400');
-                    button.classList.remove('border-transparent', 'text-gray-300');
+                    button.classList.add('border-accent-blue', 'text-accent-blue');
+                    button.classList.remove('border-transparent', 'text-gray-400');
                     tabContent.classList.add('active');
                 } else {
-                    button.classList.remove('border-blue-500', 'text-blue-400');
-                    button.classList.add('border-transparent', 'text-gray-300');
+                    button.classList.remove('border-accent-blue', 'text-accent-blue');
+                    button.classList.add('border-transparent', 'text-gray-400');
                     tabContent.classList.remove('active');
                 }
             });
@@ -247,7 +287,7 @@
         function resetAnalysis() {
             currentAnalysis = { video_title: '', summary: '', quiz: [], action_plan: '', graded_quiz: null };
             D.summaryOutput.innerHTML = '<p class="text-gray-400">The detailed summary will appear here once the video is processed.</p>';
-            D.quizOutput.innerHTML = '<p class="text-gray-400">A multiple-choice quiz will be generated here.</p>';
+            D.quizOutput.innerHTML = '<p class="text-gray-400">A multiple-choice quiz will be generated here. Click "Score Quiz" to check your answers.</p>';
             D.action_planOutput.innerHTML = '<p class="text-gray-400">Personalized next steps and resources will appear here.</p>';
             D.quizScoreDisplay.classList.add('hidden');
             D.scoreButton.disabled = true;
@@ -256,26 +296,30 @@
 
         /**
          * Renders the quiz based on the quiz data.
-         * (Rendering logic remains the same for correctness)
          */
         function renderQuiz(quizData, isGraded = false) {
             if (!quizData || quizData.length === 0) {
-                D.quizOutput.innerHTML = '<p class="text-red-400">Quiz generation failed or no content was available.</p>';
+                D.quizOutput.innerHTML = '<p class="text-red-400 font-medium">Quiz generation failed or no video transcript was available. Please ensure the video has English subtitles/captions enabled.</p>';
                 return;
             }
 
             let html = '';
             quizData.forEach((q, qIndex) => {
-                html += `<div class="p-4 rounded-lg bg-gray-700 shadow-inner">`;
-                html += `<p class="font-bold text-lg mb-3 text-blue-300">Question ${qIndex + 1}: ${DOMPurify.sanitize(q.question)}</p>`;
+                const isCorrectlyAnswered = isGraded && q.user_answer === q.correct_answer;
+                const questionBg = isGraded 
+                                   ? (isCorrectlyAnswered ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700') 
+                                   : 'bg-card-bg border-gray-600';
+
+                html += `<div class="p-5 rounded-lg border shadow-md ${questionBg}">`;
+                html += `<p class="font-bold text-lg mb-3 ${isGraded ? 'text-text-light' : 'text-accent-blue'}">Question ${qIndex + 1}: ${DOMPurify.sanitize(q.question)}</p>`;
                 
                 const selectedAnswer = currentAnalysis.graded_quiz ? q.user_answer : q.options.find(opt => q.user_answer === opt);
 
                 q.options.forEach((option, oIndex) => {
                     const optionId = `q${qIndex}-o${oIndex}`;
                     
-                    let inputClass = 'form-radio h-4 w-4 text-blue-600 bg-gray-600 border-gray-500 focus:ring-blue-500';
-                    let labelClass = 'ml-3 text-gray-200 cursor-pointer';
+                    let inputClass = 'form-radio h-5 w-5 text-accent-blue bg-gray-600 border-gray-500 focus:ring-accent-blue';
+                    let labelClass = 'ml-3 text-gray-200 cursor-pointer text-base';
                     let answerStatus = '';
 
                     if (isGraded) {
@@ -283,11 +327,13 @@
                         const isCorrect = (option === q.correct_answer);
                         
                         if (isCorrect) {
-                            labelClass += ' text-green-400 font-semibold';
-                            answerStatus = ' <i class="fas fa-check-circle ml-1"></i> (Correct Answer)';
+                            labelClass = 'ml-3 text-green-400 font-bold';
+                            answerStatus = ' <i class="fas fa-check-circle ml-1"></i> (Correct)';
                         } else if (isUserAnswer) {
-                            labelClass += ' text-red-400 line-through';
-                            answerStatus = ' <i class="fas fa-times-circle ml-1"></i> (Your Incorrect Answer)';
+                            labelClass = 'ml-3 text-red-400 font-bold line-through';
+                            answerStatus = ' <i class="fas fa-times-circle ml-1"></i> (Your Answer)';
+                        } else {
+                             labelClass = 'ml-3 text-gray-400';
                         }
                     }
 
@@ -305,6 +351,12 @@
                                 </label>
                             </div>`;
                 });
+                // Display the explanation if graded
+                if (isGraded && q.explanation) {
+                    html += `<div class="mt-3 p-3 text-sm rounded bg-secondary-bg text-gray-300 border-l-4 border-accent-blue">
+                        <span class="font-semibold text-accent-blue">Explanation:</span> ${DOMPurify.sanitize(q.explanation)}
+                    </div>`;
+                }
                 html += `</div>`;
             });
 
@@ -328,10 +380,9 @@
                 button.innerHTML = button.originalText;
                 button.originalText = null;
             }
-            // Button state (disabled/enabled) is managed by caller functions
         }
         
-        // --- 3. Main Logic Functions (Updated for Error Handling) ---
+        // --- 3. Main Logic Functions (With Enhanced Error Handling) ---
 
         /**
          * CORE FUNCTION: Fetches analysis data from the Django API.
@@ -344,12 +395,11 @@
 
             if (!videoId) {
                 displayAlert("Please enter a valid YouTube video URL.", 'error');
+                D.analyzeButton.disabled = false;
                 return;
             }
             
             startLoading(D.analyzeButton);
-            D.scoreButton.disabled = true;
-            D.exportButton.disabled = true;
             
             try {
                 const response = await fetch(API_URLS.analyze, {
@@ -370,15 +420,16 @@
                     // Attempt to extract specific error message from backend JSON
                     try {
                         const data = await response.json();
+                        // Backend is expected to send 'error' key for failures
                         if (data.error) {
-                            errorText = data.error;
+                            errorText = data.error; 
                         }
                     } catch (e) {
                         // If JSON parsing fails, use the default errorText
+                        console.error("Could not parse error JSON:", e);
                     }
                     
-                    displayAlert(`Analysis failed: ${errorText}`, 'error');
-                    D.analyzeButton.disabled = false;
+                    displayAlert(`Analysis failed (${response.status}): ${errorText}`, 'error');
                     return; // Exit function on failure
                 }
 
@@ -395,16 +446,22 @@
                 D.action_planOutput.innerHTML = DOMPurify.sanitize(marked.parse(data.action_plan));
                 renderQuiz(data.quiz, false); 
 
-                // Enable score button and switch to quiz tab
-                D.scoreButton.disabled = false;
-                switchTab('quiz');
-                displayAlert("Video analyzed successfully! Quiz and Summary are ready.", 'success');
+                // Enable score button and switch to quiz tab if quiz data exists
+                if (data.quiz && data.quiz.length > 0) {
+                    D.scoreButton.disabled = false;
+                    switchTab('quiz');
+                    displayAlert(`Video "${data.video_title || 'Untitled'}" analyzed successfully!`, 'success');
+                } else {
+                    switchTab('summary');
+                    displayAlert(`Video summarized successfully, but no quiz could be generated (transcript likely unavailable or foreign).`, 'success');
+                }
 
             } catch (e) {
                 console.error("Fetch error during analysis:", e);
-                displayAlert("A network error occurred. Check your connection and console for details.", 'error');
+                displayAlert("A network or unexpected error occurred. Check your connection and console for details.", 'error');
             } finally {
                 stopLoading(D.analyzeButton);
+                D.analyzeButton.disabled = false; // Always re-enable on completion (success or failure)
             }
         }
         
@@ -420,19 +477,33 @@
             startLoading(D.scoreButton);
             D.exportButton.disabled = true;
 
-            // 1. Collect user answers (as before)
+            // 1. Collect user answers
             const userAnswers = [];
+            let allAnswered = true;
             currentAnalysis.quiz.forEach((q, qIndex) => {
                 const checkedRadio = document.querySelector(`input[name="question-${qIndex}"]:checked`);
+                const userAnswer = checkedRadio ? checkedRadio.value : null;
+                
+                if (!userAnswer) {
+                    allAnswered = false;
+                }
+                
                 userAnswers.push({
                     question: q.question,
-                    correct_answer: q.correct_answer,
+                    correct_answer: q.correct_answer, // Send correct answer back for grading context
                     options: q.options,
-                    user_answer: checkedRadio ? checkedRadio.value : null
+                    user_answer: userAnswer
                 });
             });
+            
+            if (!allAnswered) {
+                stopLoading(D.scoreButton);
+                D.scoreButton.disabled = false; // Re-enable
+                displayAlert("Please answer all questions before submitting the quiz.", 'error');
+                return;
+            }
 
-            // 2. Call the grading API (Updated Error Handling)
+            // 2. Call the grading API 
             try {
                 const response = await fetch(API_URLS.submit, {
                     method: 'POST',
@@ -451,10 +522,11 @@
                         if (data.error) {
                             errorText = data.error;
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error("Could not parse error JSON:", e);
+                    }
 
-                    displayAlert(`Grading failed: ${errorText}`, 'error');
-                    D.scoreButton.disabled = false; // Re-enable for another try
+                    displayAlert(`Grading failed (${response.status}): ${errorText}`, 'error');
                     return;
                 }
 
@@ -466,15 +538,14 @@
                 // 3. Render graded results
                 renderQuiz(gradedData.questions, true); 
                 
-                D.quizScoreDisplay.innerHTML = `<span class="${gradedData.score >= (gradedData.total_questions / 2) ? 'text-green-400' : 'text-red-400'}">
-                    Your Score: ${gradedData.score} / ${gradedData.total_questions}
-                </span>`;
+                const scoreColor = gradedData.score >= (gradedData.total_questions / 2) ? 'text-green-400' : 'text-red-400';
+                D.quizScoreDisplay.innerHTML = `Your Score: <span class="${scoreColor}">${gradedData.score} / ${gradedData.total_questions}</span>`;
                 D.quizScoreDisplay.classList.remove('hidden');
 
-                // 4. Enable Export
+                // 4. Enable Export and disable score
                 D.exportButton.disabled = false;
                 D.scoreButton.disabled = true; 
-                displayAlert("Quiz successfully scored!", 'success');
+                displayAlert("Quiz successfully scored! Check the explanations below and export your report.", 'success');
 
             } catch (e) {
                 console.error("Fetch error during quiz submission:", e);
@@ -514,7 +585,8 @@
 
                 if (response.ok) {
                     // Get the file name from the Content-Disposition header
-                    const filenameMatch = response.headers.get('Content-Disposition').match(/filename="(.+)"/);
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+)"/) : null;
                     const filename = filenameMatch ? filenameMatch[1] : 'analysis_report.pdf';
 
                     // Create a blob from the response and trigger download
@@ -534,17 +606,16 @@
                 } else {
                     let errorText = `HTTP Error ${response.status}: ${response.statusText}.`;
                     
-                    // Try to parse error from backend (Django JsonResponse)
                     try {
                         const data = await response.json();
                         if (data.error) {
                             errorText = data.error;
                         }
                     } catch (e) {
-                        // If it's not JSON, just use the status text
+                         console.error("Could not parse error JSON:", e);
                     }
                     
-                    displayAlert(`Export failed: ${errorText}`, 'error');
+                    displayAlert(`Export failed (${response.status}): ${errorText}`, 'error');
                 }
 
             } catch (e) {
@@ -591,11 +662,10 @@
             const videoId = extractVideoId(url);
             const isValid = videoId !== null;
             
-            // Re-enable/disable the analyze button
             D.analyzeButton.disabled = !isValid;
-            
-            // Reset and load player
             resetAnalysis(); 
+            
+            // Only load the player if a valid ID is found, otherwise reset it
             loadVideoPlayer(videoId);
         });
 
