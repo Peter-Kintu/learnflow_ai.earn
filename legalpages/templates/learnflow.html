@@ -4,10 +4,8 @@
 {% block title %}Video Analysis - LearnFlow AI{% endblock %}
 
 {% block extra_head %}
-    <!-- Using latest Tailwind CDN for modern utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Sanitization and Markdown Rendering Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
     <style>
@@ -51,7 +49,6 @@
 <main class="min-h-screen bg-background-dark text-text-light p-4 sm:p-6 lg:p-8 dark font-sans">
     <div class="max-w-7xl mx-auto">
         
-        <!-- CSRF Token for API calls -->
         <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
 
         <header class="text-center py-8">
@@ -61,7 +58,6 @@
             <p class="text-gray-400">Unlock educational insights from any YouTube video.</p>
         </header>
 
-        <!-- Main Input and Controls -->
         <div class="bg-gray-700 p-6 rounded-xl shadow-2xl mb-8">
             <div class="flex flex-col sm:flex-row gap-4">
                 <input 
@@ -82,10 +78,8 @@
             <p id="errorMessage" class="text-red-400 text-sm mt-2 hidden"></p>
         </div>
 
-        <!-- Analysis and Output Panel -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Video Player Column (Col 1/3) -->
             <div class="lg:col-span-1">
                 <div class="bg-gray-700 p-4 rounded-xl shadow-lg">
                     <h2 class="text-xl font-bold mb-3 border-b border-gray-600 pb-2">Video Player</h2>
@@ -98,20 +92,16 @@
                 </div>
             </div>
 
-            <!-- Analysis Tabs and Content Column (Col 2/3) -->
             <div class="lg:col-span-2">
                 <div class="bg-gray-700 p-6 rounded-xl shadow-lg min-h-[500px] flex flex-col">
                     
-                    <!-- Tabs Navigation -->
                     <div class="flex border-b border-gray-600 mb-4 overflow-x-auto">
                         <button data-tab="summary" class="tab-button active flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-primary-blue text-primary-blue hover:text-blue-400 transition duration-150"><i class="fas fa-clipboard-list mr-2"></i> Summary</button>
                         <button data-tab="quiz" class="tab-button flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-text-light hover:border-gray-500 transition duration-150"><i class="fas fa-question-circle mr-2"></i> Quiz</button>
                         <button data-tab="action_plan" class="tab-button flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-text-light hover:border-gray-500 transition duration-150"><i class="fas fa-running mr-2"></i> Action Plan</button>
                     </div>
 
-                    <!-- Analysis Content -->
                     <div id="analysisContentContainer" class="flex-grow relative">
-                        <!-- Loading State Overlay -->
                         <div id="loadingOverlay" class="absolute inset-0 bg-gray-700 bg-opacity-90 flex items-center justify-center rounded-lg z-10 hidden">
                             <div class="flex flex-col items-center">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue"></div>
@@ -119,14 +109,12 @@
                             </div>
                         </div>
 
-                        <!-- Tab: Summary -->
                         <div id="summaryContent" class="tab-content active h-full overflow-y-auto">
                             <div id="summaryOutput" class="markdown-body p-2 prose prose-invert max-w-none text-text-light">
                                 <p class="text-gray-400">Analysis summary will appear here once the video is processed.</p>
                             </div>
                         </div>
 
-                        <!-- Tab: Quiz -->
                         <div id="quizContent" class="tab-content h-full overflow-y-auto">
                             <div id="quizOutput" class="p-2 space-y-4">
                                 <p class="text-gray-400">A multiple-choice quiz will be generated here.</p>
@@ -136,7 +124,6 @@
                             </div>
                         </div>
 
-                        <!-- Tab: Action Plan -->
                         <div id="action_planContent" class="tab-content h-full overflow-y-auto">
                              <div id="action_planOutput" class="markdown-body p-2 prose prose-invert max-w-none text-text-light">
                                 <p class="text-gray-400">Personalized next steps and resources will appear here.</p>
@@ -144,7 +131,6 @@
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
                     <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-600">
                         <button 
                             id="scoreButton" 
@@ -176,10 +162,19 @@
         currentTab: 'summary',
         isAnalyzing: false,
         isAnalyzed: false,
-        videoID: '{{ video_id|default:'' }}',
+        videoID: "{{ video_id|default:'' }}",
         analysisData: {},
         quizAnswers: {}, // Stores user's selected answers {questionId: selectedOption}
-        csrfToken: document.getElementById('csrfToken').value,
+        // ✅ FIX APPLIED: Added the missing comma here
+        csrfToken: document.getElementById('csrfToken').value, 
+        // ✅ FIX: Define API URLs using Django's {% url %} tag for correct path resolution
+        apiUrls: {
+            analyze: "{% url 'legalpages:api_analyze_video' %}",
+            submitQuiz: "{% url 'legalpages:api_submit_quiz' %}",
+            // Note: export_pdf requires video_id, so it will be handled as a string interpolation later
+            // Trailing comma removed for strict compatibility
+            exportPdfTemplate: "{% url 'legalpages:api_export_pdf' video_id='00000000000' %}" 
+        },
     };
 
     // DOM Elements
@@ -339,7 +334,10 @@
         D.quizOutput.innerHTML = '';
         D.scoreContainer.classList.add('hidden');
 
-        if (!quizData || !quizData.questions || quizData.questions.length === 0) {
+        // REVIEW: The backend's analysis_schema defines 'quiz' as an array of question objects.
+        const quizArray = appState.analysisData.quiz; 
+        
+        if (!quizArray || quizArray.length === 0) {
              D.quizOutput.innerHTML = '<p class="text-gray-400">No quiz questions were generated for this video.</p>';
              return;
         }
@@ -348,13 +346,15 @@
         quizForm.id = 'quizForm';
         quizForm.classList.add('space-y-6');
 
-        quizData.questions.forEach((q, index) => {
+        // Iterate over the quiz array (which is the correct structure based on views.py)
+        quizArray.forEach((q, index) => {
             const questionDiv = document.createElement('div');
             questionDiv.classList.add('p-4', 'bg-gray-600', 'rounded-lg', 'shadow-md');
-            questionDiv.innerHTML = `<p class="font-semibold text-lg mb-3">Q${index + 1}: ${q.text}</p>`;
+            questionDiv.innerHTML = `<p class="font-semibold text-lg mb-3">Q${index + 1}: ${q.question}</p>`; // Use q.question from backend schema
 
-            q.options.forEach(option => {
-                const optionId = `q${q.id}-${option.replace(/\s/g, '_')}`;
+            // q.options is an object {A: '...', B: '...', ...}
+            Object.entries(q.options).forEach(([letter, text]) => {
+                const optionId = `q${index}-${letter}`;
                 const optionLabel = document.createElement('label');
                 optionLabel.htmlFor = optionId;
                 optionLabel.classList.add('flex', 'items-center', 'space-x-3', 'py-2', 'px-3', 'rounded-md', 'hover:bg-gray-500', 'cursor-pointer', 'transition-colors');
@@ -363,12 +363,12 @@
                     <input 
                         type="radio" 
                         id="${optionId}" 
-                        name="question_${q.id}" 
-                        value="${option}" 
-                        data-question-id="${q.id}"
+                        name="question_${index}" 
+                        value="${letter}" 
+                        data-question-index="${index}"
                         class="form-radio h-4 w-4 text-primary-blue bg-gray-700 border-gray-500 focus:ring-primary-blue"
                     >
-                    <span>${option}</span>
+                    <span><b>${letter}:</b> ${text}</span>
                 `;
 
                 questionDiv.appendChild(optionLabel);
@@ -378,8 +378,9 @@
 
         quizForm.addEventListener('change', (e) => {
             if (e.target.type === 'radio') {
-                const qId = e.target.getAttribute('data-question-id');
-                appState.quizAnswers[qId] = e.target.value;
+                const qIndex = e.target.getAttribute('data-question-index');
+                // Store the selected letter (A, B, C, D)
+                appState.quizAnswers[qIndex] = e.target.value; 
             }
         });
         D.quizOutput.appendChild(quizForm);
@@ -407,45 +408,45 @@
         loadVideoPlayer(videoId);
 
         try {
-            const response = await fetch('/api/analyze_video/', {
+            // ✅ FIX: Use the namespaced URL from appState
+            const response = await fetch(appState.apiUrls.analyze, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': appState.csrfToken,
                 },
-                body: JSON.stringify({ video_id: videoId }),
+                // NOTE: The backend expects 'video_url', not 'video_id', based on its logic. 
+                // Passing the original link here is safer for the backend's `extract_youtube_id`.
+                body: JSON.stringify({ video_url: videoLink }), 
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Server error occurred.' }));
-                throw new Error(`Analysis failed: ${errorData.message || response.statusText}`);
+                // Ensure proper error handling for non-200 responses
+                const errorData = await response.json().catch(() => ({ error: 'Server error occurred.' }));
+                throw new Error(`Analysis failed: ${errorData.error || response.statusText}`);
             }
 
             const data = await response.json();
             
-            if (data.status === 'success' && data.analysis_data) {
+            if (data.success && data.analysis_data) {
                 appState.analysisData = data.analysis_data;
-                D.videoTitleDisplay.textContent = data.video_title || 'Analysis Complete';
-
+                // NOTE: The title is not returned by the API, using a placeholder for now.
+                D.videoTitleDisplay.textContent = 'Analysis Complete (YouTube Title N/A)'; 
+                
                 // 1. Render Summary
                 renderMarkdown(data.analysis_data.summary, D.summaryOutput);
 
                 // 2. Render Action Plan
                 renderMarkdown(data.analysis_data.action_plan, D.action_planOutput);
 
-                // 3. Render Quiz
-                try {
-                    const quizJson = JSON.parse(data.analysis_data.quiz);
-                    renderQuiz(quizJson);
-                } catch (e) {
-                    D.quizOutput.innerHTML = '<p class="text-red-400">Error parsing quiz data. Quiz may be unavailable.</p>';
-                    console.error("Quiz JSON parse error:", e);
-                }
-                
+                // 3. Render Quiz (analysis_data.quiz is already the parsed array)
+                renderQuiz(data.analysis_data.quiz);
+
                 setAnalysisState(false, true);
                 switchTab('summary'); // Switch to Summary on success
             } else {
-                throw new Error(data.message || 'Analysis failed with no specific error message.');
+                // Handle success=false responses from the server
+                throw new Error(data.error || 'Analysis failed with no specific error message.');
             }
 
         } catch (error) {
@@ -462,13 +463,23 @@
     async function submitQuiz() {
         if (!appState.isAnalyzed) return;
 
-        // Collect all quiz answers
-        const answersArray = Object.entries(appState.quizAnswers).map(([qId, answer]) => ({
-            question_id: parseInt(qId),
-            answer: answer,
-        }));
-        
-        if (answersArray.length === 0) {
+        // The backend expects the original quiz structure and user answers dictionary
+        // We'll reconstruct the data expected by the submit_quiz_api view
+        const quizDataForBackend = appState.analysisData.quiz.map((q, index) => {
+            // Add a temporary 'question_id' to satisfy the client-side logic's use of it, 
+            // even though the backend iterates over the questions array.
+            return {...q, question_id: index.toString()}; 
+        });
+
+        // Map the stored quizAnswers to the format the backend expects 
+        // (which is a dict of questionId: answerLetter)
+        const userAnswersForBackend = {};
+        Object.entries(appState.quizAnswers).forEach(([index, answerLetter]) => {
+            // The key is the index used as question_id, the value is the selected letter
+            userAnswersForBackend[index.toString()] = answerLetter; 
+        });
+
+        if (Object.keys(userAnswersForBackend).length === 0) {
             D.scoreMessage.textContent = 'Please select at least one answer before scoring.';
             D.scoreContainer.classList.remove('hidden');
             D.scoreContainer.classList.remove('bg-green-600', 'bg-red-600');
@@ -481,32 +492,49 @@
         D.scoreContainer.classList.add('hidden');
 
         try {
-            const response = await fetch('/api/submit_quiz/', {
+            // ✅ FIX: Use the namespaced URL from appState
+            const response = await fetch(appState.apiUrls.submitQuiz, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': appState.csrfToken,
                 },
                 body: JSON.stringify({
-                    video_id: appState.videoID,
-                    answers: answersArray,
+                    quiz: quizDataForBackend, // Original quiz structure
+                    user_answers: userAnswersForBackend, // Dictionary of answers
+                    video_title: D.videoTitleDisplay.textContent, // Pass title for context
                 }),
             });
 
             if (!response.ok) {
-                 const errorData = await response.json().catch(() => ({ message: 'Server error occurred during scoring.' }));
-                throw new Error(`Scoring failed: ${errorData.message || response.statusText}`);
+                 const errorData = await response.json().catch(() => ({ error: 'Server error occurred during scoring.' }));
+                throw new Error(`Scoring failed: ${errorData.error || response.statusText}`);
             }
 
             const data = await response.json();
             
-            if (data.status === 'success') {
-                D.scoreMessage.innerHTML = `<span class="text-2xl">${data.score}/${data.total}</span> Score: ${data.feedback}`;
+            if (data.success && data.grading_data) {
+                // Store graded data for PDF export
+                appState.gradedData = data.grading_data; 
+                
+                // Calculate score: count correct answers
+                let score = 0;
+                data.grading_data.graded_quiz.forEach(q => {
+                    if (q.is_correct) score++;
+                });
+                const total = data.grading_data.graded_quiz.length;
+
+                // Update the score message
+                D.scoreMessage.innerHTML = data.grading_data.score_text || `<span class="text-2xl">${score}/${total}</span> Score: Review the feedback below.`;
                 D.scoreContainer.classList.remove('hidden');
                 D.scoreContainer.classList.remove('bg-yellow-600');
-                D.scoreContainer.classList.add(data.score / data.total >= 0.5 ? 'bg-green-600' : 'bg-red-600');
+                D.scoreContainer.classList.add(score / total >= 0.5 ? 'bg-green-600' : 'bg-red-600');
+                
+                // Render graded quiz feedback (TODO: Implementation for rendering feedback in quiz tab)
+                // For now, let's just make sure the data is stored for PDF export
+
             } else {
-                throw new Error(data.message || 'Scoring failed.');
+                throw new Error(data.error || 'Scoring failed.');
             }
 
         } catch (error) {
@@ -530,21 +558,39 @@
         D.exportButton.textContent = 'Generating PDF...';
 
         try {
-            // New dedicated API endpoint
-            const response = await fetch(`/api/export_pdf/${appState.videoID}/`, {
-                method: 'GET',
-                // No need for CSRF token on a GET request if the endpoint is correctly configured
+            // Construct the URL using the template and replacing the placeholder
+            const exportUrl = appState.apiUrls.exportPdfTemplate.replace('00000000000', appState.videoID);
+            
+            // NOTE: The backend's export_content_api is defined as POST in views.py,
+            // but the client-side code is calling it with GET. Changing client to POST
+            // to match the server definition (`@require_http_methods(["POST"])`).
+            const response = await fetch(exportUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': appState.csrfToken,
+                },
+                body: JSON.stringify({
+                    video_title: D.videoTitleDisplay.textContent || 'Video Analysis Report',
+                    summary: appState.analysisData.summary,
+                    // Send graded data if available, otherwise an empty object
+                    quiz_data: appState.gradedData || {}, 
+                    action_plan: appState.analysisData.action_plan,
+                }),
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to generate PDF. Server returned ${response.status}`);
+                // Try to parse JSON error message if possible
+                const errorData = await response.json().catch(() => ({ error: `Server returned ${response.status}` }));
+                throw new Error(`Failed to generate PDF: ${errorData.error || response.statusText}`);
             }
 
             // The response should be a file stream (Blob)
             const blob = await response.blob();
-            const filename = response.headers.get('Content-Disposition') ? 
-                             response.headers.get('Content-Disposition').split('filename=')[1].replace(/\"/g, '') : 
-                             `analysis_report_${appState.videoID}.pdf`;
+            // Extract filename from Content-Disposition header
+            const contentDisposition = response.headers.get('Content-Disposition');
+            const filenameMatch = contentDisposition ? contentDisposition.match(/filename="(.+?)"/) : null;
+            const filename = filenameMatch ? filenameMatch[1] : `analysis_report_${appState.videoID}.pdf`;
             
             // Create a temporary link and click it to trigger the download
             const url = window.URL.createObjectURL(blob);

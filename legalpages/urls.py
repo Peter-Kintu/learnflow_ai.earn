@@ -24,5 +24,6 @@ urlpatterns = [
     # API endpoint for scoring and reporting
     path('api/submit_quiz/', views.submit_quiz_api, name='api_submit_quiz'),
     # FIX: Corrected the view function name from 'export_analysis_pdf' to 'export_content_api'
+    # This path is now correctly configured to use the namespaced URL in the frontend.
     path('api/export_pdf/<str:video_id>/', views.export_content_api, name='api_export_pdf'),
 ]
