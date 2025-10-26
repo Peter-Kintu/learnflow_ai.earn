@@ -119,7 +119,7 @@ def fetch_transcript(video_id):
         
         # Fallback to the first available auto-generated transcript if no human one is found
         if not transcript and transcript_list:
-             for t in transcript_list:
+              for t in transcript_list:
                 if t.is_generated == True:
                     transcript = t
                     break
@@ -226,8 +226,8 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                            leftMargin=0.75*inch, rightMargin=0.75*inch,
-                            topMargin=0.75*inch, bottomMargin=0.75*inch)
+                             leftMargin=0.75*inch, rightMargin=0.75*inch,
+                             topMargin=0.75*inch, bottomMargin=0.75*inch)
     styles = getSampleStyleSheet()
     story = []
 
@@ -422,7 +422,7 @@ def analyze_video_api(request):
         return JsonResponse({"error": f"AI Generation Failed: {api_error}"}, status=500)
     
     if not analysis_result:
-         return JsonResponse({"error": "AI response was empty."}, status=500)
+          return JsonResponse({"error": "AI response was empty."}, status=500)
     
     # Check if the result matches the expected structure
     if not all(key in analysis_result for key in ["summary", "quiz", "action_plan"]):
@@ -459,7 +459,10 @@ def submit_quiz_api(request):
     # Combine quiz and user answers for the AI prompt
     grading_input = []
     for q in quiz:
-        question_id = q.get('question_id') # Assuming the client sends this identifier
+        # Assuming the client sends the question itself as a unique identifier for mapping
+        # Since the question structure is rich, we can just use its index or a synthetic ID.
+        # For simplicity in this back-end, we assume the quiz and answers are aligned by index/order.
+        question_id = str(q.get('question_id')) # Ensure question_id is a string key
         user_answer_letter = user_answers.get(question_id)
         
         # Find the text of the user's selected answer
@@ -529,7 +532,6 @@ def submit_quiz_api(request):
 def export_content_api(request):
     """
     API endpoint to generate and return the PDF report.
-    NOTE: This view requires a corresponding path in urls.py (e.g., 'api/export_content/').
     """
     try:
         data = json.loads(request.body)
