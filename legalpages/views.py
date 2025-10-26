@@ -344,6 +344,7 @@ def video_analysis_view(request, video_id):
 def analyze_video_api(request):
     """
     API endpoint to fetch transcript and generate initial analysis (summary, quiz, action plan).
+    Implements a fallback mechanism to use Gemini's general knowledge if transcripts are disabled.
     """
     try:
         data = json.loads(request.body)
@@ -358,10 +359,26 @@ def analyze_video_api(request):
     if not video_id:
         return JsonResponse({"error": "Invalid or unsupported YouTube URL. Please check the link."}, status=400)
         
-    # --- 1. Fetch Transcript ---
+    # --- 1. Fetch Transcript and Handle Fallback ---
     transcript, error_message = fetch_transcript(video_id)
+
+    # Define transcript errors where we can attempt an AI fallback
+    SOFT_ERRORS = [
+        "Transcripts are disabled for this video.",
+        "No transcript (not even auto-generated) found for this video."
+    ]
+    
+    use_fallback = False
+    
     if error_message:
-        return JsonResponse({"error": error_message, "video_id": video_id}, status=500)
+        if error_message in SOFT_ERRORS:
+            # Set up for AI fallback: clear transcript, enable flag
+            transcript = ""
+            use_fallback = True
+            logger.warning(f"Transcript unavailable for {video_id} (Reason: {error_message}). Using AI fallback.")
+        else:
+            # Hard error (Video unavailable, network failure, etc.)
+            return JsonResponse({"error": error_message, "video_id": video_id}, status=500)
     
     # --- 2. Generate Content with Gemini ---
     
@@ -397,20 +414,31 @@ def analyze_video_api(request):
         required=["summary", "quiz", "action_plan"]
     )
     
-    # System Instruction: Define the AI's role
-    system_instruction = (
-        "You are LearnFlow AI, an expert educational content analyst. Your task is to process the "
-        "provided YouTube video transcript and generate a structured JSON object containing: "
-        "1. A detailed, multi-paragraph summary of the key concepts (in Markdown). "
-        "2. A multiple-choice quiz of 5 questions with 4 options each. "
-        "3. A 3-5 point action plan for further study (in Markdown). "
-        "All output must adhere strictly to the provided JSON schema."
-    )
+    # System Instruction: Define the AI's role and modify for fallback
+    if use_fallback:
+        system_instruction = (
+            "You are LearnFlow AI, an expert educational content analyst. A transcript was NOT provided. "
+            "You must generate the content based only on the context of the YouTube Video ID, general knowledge, "
+            "and common themes associated with such content. The summary and quiz MUST be general and related "
+            f"to the likely topic of the video ID '{video_id}'. You MUST preface the summary with a warning: "
+            "**'⚠️ WARNING: Transcript unavailable. This analysis is based on the video ID and general knowledge, and may not perfectly match the video content.'**"
+            "Generate a structured JSON object containing: 1. A detailed summary (in Markdown). 2. A multiple-choice quiz of 5 questions. 3. A 3-5 point action plan. "
+            "All output must adhere strictly to the provided JSON schema."
+        )
+        prompt = f"The transcript for YouTube video ID '{video_id}' is unavailable. Please analyze the likely content/topic and generate the required JSON structure."
+    else:
+        system_instruction = (
+            "You are LearnFlow AI, an expert educational content analyst. Your task is to process the "
+            "provided YouTube video transcript and generate a structured JSON object containing: "
+            "1. A detailed, multi-paragraph summary of the key concepts (in Markdown). "
+            "2. A multiple-choice quiz of 5 questions with 4 options each. "
+            "3. A 3-5 point action plan for further study (in Markdown). "
+            "All output must adhere strictly to the provided JSON schema."
+        )
+        # User Prompt: The data to be analyzed
+        prompt = f"Analyze the following video transcript and generate the required content:\n\nTRANSCRIPT:\n{transcript}"
     
-    # User Prompt: The data to be analyzed
-    prompt = f"Analyze the following video transcript and generate the required content:\n\nTRANSCRIPT:\n{transcript}"
-    
-    logger.info(f"Calling Gemini for analysis of video ID: {video_id}...")
+    logger.info(f"Calling Gemini for analysis of video ID: {video_id} with fallback={use_fallback}...")
     
     analysis_result, api_error = call_gemini_with_retry(
         prompt=prompt, 
