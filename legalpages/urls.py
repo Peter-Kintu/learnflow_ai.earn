@@ -23,6 +23,6 @@ urlpatterns = [
     path('api/analyze_video/', views.analyze_video_api, name='api_analyze_video'),
     path('api/submit_quiz/', views.submit_quiz_api, name='api_submit_quiz'),
     
-    # FIX: This line explicitly defines the URL pattern name 'api_export_content'
+    # URL pattern for PDF export
     path('api/export_content/', views.export_content_api, name='api_export_content'),
 ]
