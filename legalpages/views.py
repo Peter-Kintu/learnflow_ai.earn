@@ -25,6 +25,13 @@ from google.genai.errors import APIError
 from google.genai import types 
 from google.genai.types import HarmCategory, HarmBlockThreshold
 
+# ----------------------------------------------------------------------
+# FOR TESTING ONLY: Hardcoded Gemini API Key as requested
+# WARNING: This key will be visible in source code. For production,
+# always use an environment variable (e.g., os.environ.get('GEMINI_API_KEY')).
+# ----------------------------------------------------------------------
+GEMINI_API_KEY = 'AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo'
+
 # Imports for PDF Generation
 try:
     from reportlab.pdfgen import canvas
@@ -125,7 +132,8 @@ def call_gemini_api_with_retry(prompt, system_instruction=None, response_schema=
     Handles API calls to Gemini with built-in exponential backoff retry logic.
     Returns (result_text, error_message).
     """
-    client = genai.Client()
+    # FIX: Initialize the client using the hardcoded API key for testing
+    client = genai.Client(api_key=GEMINI_API_KEY)
     
     # Configure generation
     generation_config = types.GenerateContentConfig(
