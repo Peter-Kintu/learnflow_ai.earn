@@ -5,35 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Results - {{ quiz.title }}</title>
 
-    <!-- Tailwind & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Open Graph Meta -->
     <meta property="og:title" content="Quiz Results - {{ quiz.title }}">
     <meta property="og:description" content="I scored {{ score }} out of {{ total_questions }} on '{{ quiz.title }}'.">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:type" content="article">
     <meta property="og:image" content="{{ quiz.cover_image.url|default:'https://yourdomain.com/static/default-quiz.png' }}">
-
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    <script>
-        (adsbygoogle = window.adsbygoogle || []).push({
-            google_ad_client: "ca-pub-9564790727166506",
-            enable_page_level_ads: true
-        });
-    </script>
-
-    <!-- Google CMP Consent Script -->
-    <script async src="https://fundingchoicesmessages.google.com/i/pub-9564790727166506?fc_cmp_id=9649739487"></script>
-    <script>
-        window.__fundingChoicesConfig = {
-            ui: {
-                locale: 'en'
-            }
-        };
-    </script>
 
     <style>
         body {
@@ -85,39 +64,33 @@
         {% endif %}
 
         <nav aria-label="Quiz Actions" class="flex flex-col md:flex-row flex-wrap justify-center gap-4 mt-6">
-            <!-- PDF Download -->
             <a href="{% url 'aiapp:quiz_report_pdf_for_attempt' attempt_id=attempt_id %}" target="_blank"
                class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 📄 Download PDF
             </a>
 
-            <!-- Word Download -->
             <a href="{% url 'aiapp:quiz_report_word_for_attempt' attempt_id=attempt_id %}" target="_blank"
                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 📝 Download Word
             </a>
 
-            <!-- Share via Email -->
             <a href="mailto:?subject=My Quiz Results&body=I scored {{ score }} out of {{ total_questions }} on '{{ quiz.title }}'. Check it out here: {{ request.build_absolute_uri }}"
                class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 ✉️ Share via Email
             </a>
 
-            <!-- Share via WhatsApp -->
             <a href="https://wa.me/?text=I scored {{ score }} out of {{ total_questions }} on '{{ quiz.title }}'! View it here: {{ request.build_absolute_uri }}"
                target="_blank"
                class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 📱 Share via WhatsApp
             </a>
 
-            <!-- Native Share Button -->
             <button onclick="nativeShare()"
                     class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 📤 Share via Device
             </button>
 
             {% if not passed %}
-            <!-- Retake Quiz -->
             <a href="{% url 'aiapp:retake_quiz' quiz_id=quiz.id %}"
                class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
                 🔁 Retake Quiz
@@ -126,6 +99,19 @@
         </nav>
     </div>
 
+    <div class="flex justify-center my-8">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '7f6534d747d7fc18ada93341f5afacd2',
+                'format' : 'iframe',
+                'height' : 60,
+                'width' : 468,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/7f6534d747d7fc18ada93341f5afacd2/invoke.js"></script>
+    </div>
+    
     <script>
         function nativeShare() {
             if (navigator.share) {
