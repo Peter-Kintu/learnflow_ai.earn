@@ -27,12 +27,13 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
-    # ⭐ CORRECTED PROFILE ROUTES
-    # Redirects logged-in user to their own profile: /profile/ -> /profile/username/
+    # ⭐ PROFILE ROUTES
     path('profile/', views.my_profile_redirect, name='my_profile'),
-    # Displays the profile detail: /profile/username/ (Note: function name changed to 'profile_detail')
     path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
+    
+    # ⭐ NEW: Image upload route
+    path('profile/upload_images/', views.upload_profile_image, name='upload_profile_image'),
 
-    # ⭐ NEW AD TRACKING API
-    path('track-ad-click/', views.track_ad_click, name='track_ad_click'),
+    # API/AJAX route
+    path('track_ad_click/', views.track_ad_click, name='track_ad_click'),
 ]

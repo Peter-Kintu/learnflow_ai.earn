@@ -1,46 +1,186 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}User Profile{% endblock %}
+{% block title %}{{ user_profile.username|title }}'s Profile{% endblock %}
 
 {% block content %}
     <style>
-        /* Custom CSS to ensure the profile card is centered and looks good */
-        .profile-card {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
+        /* Modern Profile Styling */
+        .cover-area {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            border-radius: 1rem 1rem 0 0;
+            /* Subtle dark fade at bottom for text visibility */
+            box-shadow: inset 0 -50px 50px -50px rgba(0, 0, 0, 0.7); 
+        }
+        .avatar-container {
+            position: absolute;
+            bottom: -60px; /* Overlap with cover */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        .avatar-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid #1e293b; /* slate-800 background color */
+            overflow: hidden;
+            box-shadow: 0 0 0 5px #4f46e5; /* indigo-600 ring */
+            transition: transform 0.3s ease-in-out;
+        }
+        .avatar-circle:hover {
+            transform: scale(1.05);
+        }
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        .modal-content {
+            animation: slide-in 0.3s ease-out;
+        }
+        @keyframes slide-in {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     </style>
+
     {% include "partials/ad_block.html" %}
-    <div class="bg-slate-950 min-h-screen py-8">
-        <div class="profile-card bg-slate-800 rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6 border border-indigo-700/50">
-            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0">
-                <img src="https://placehold.co/128x128/9f7aea/ffffff?text=U" alt="User Avatar" class="w-full h-full object-cover">
+
+    <div class="max-w-4xl mx-auto mt-8 mb-16">
+        <div class="bg-slate-800 rounded-xl shadow-2xl border border-indigo-700/50">
+            
+            <div 
+                class="cover-area" 
+                style="background-image: url('{{ user_profile.profile.cover_image.url }}');"
+            >
+                {% if is_owner %}
+                <button id="open-upload-modal" class="absolute top-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded-full font-semibold transition-colors flex items-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-1"><path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M19 6V3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M14 16h6"/></svg>
+                    Edit Images
+                </button>
+                {% endif %}
             </div>
 
-            <div class="flex-grow text-center md:text-left">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">{{ user_profile.username }}</h1>
+            <div class="relative pt-16 pb-8 px-8 flex flex-col items-center">
+                
+     <div class="avatar-circle">
+  <img 
+   
+  src="{{ user_profile.profile.avatar.url }}" 
+  alt="{{ user_profile.username }} Avatar" 
+  class="w-full h-full object-cover"
+  onerror="this.onerror=null;this.src='{% static 'avatars/default.png' %}';"
+/>
+
+</div>
+                </div>
+
+                <h1 class="text-4xl font-extrabold text-white mt-4 mb-2">{{ user_profile.username }}</h1>
                 
                 {% if user_profile.profile.role %}
-                    <p class="text-lg text-indigo-400 font-semibold mb-4">{{ user_profile.profile.get_role_display|title }}</p>
+                    <p class="text-xl text-indigo-400 font-semibold mb-6 uppercase tracking-wider">{{ user_profile.profile.get_role_display|title }}</p>
                 {% else %}
-                    <p class="text-lg text-gray-400 font-semibold mb-4">Role not defined</p>
+                    <p class="text-xl text-gray-400 font-semibold mb-6">Role not defined</p>
                 {% endif %}
 
-                <div class="mt-4 p-4 bg-slate-700 rounded-lg border border-indigo-600/50">
-                    <p class="text-sm text-gray-300 font-medium">📱 Mobile: <span class="font-bold text-gray-100">{{ user_profile.profile.mobile_number|default:"N/A" }}</span></p>
-                    <p class="text-sm text-gray-300 font-medium mt-1">✨ Points: <span class="font-bold text-green-400">{{ user_profile.profile.points|default:0 }}</span></p>
-                    <p class="text-sm text-gray-300 font-medium mt-1">💰 Reward: <span class="font-bold text-green-500">UGX {{ user_profile.profile.reward_amount|default:"0.00" }}</span></p>
+                <div class="grid grid-cols-3 gap-4 w-full max-w-lg text-center border-t border-slate-700 pt-6">
+                    <div class="p-3 bg-slate-700 rounded-lg shadow-md border border-slate-600">
+                        <p class="text-2xl font-black text-green-400">{{ user_profile.profile.points|default:0 }}</p>
+                        <p class="text-xs text-gray-400 mt-1 uppercase">Points</p>
+                    </div>
+                    <div class="p-3 bg-slate-700 rounded-lg shadow-md border border-slate-600">
+                        <p class="text-2xl font-black text-green-500">UGX {{ user_profile.profile.reward_amount|default:"0.00" }}</p>
+                        <p class="text-xs text-gray-400 mt-1 uppercase">Reward Balance</p>
+                    </div>
+                    <div class="p-3 bg-slate-700 rounded-lg shadow-md border border-slate-600">
+                        <p class="text-2xl font-black text-indigo-400">{{ user_profile.profile.total_clicks|default:0 }}</p>
+                        <p class="text-xs text-gray-400 mt-1 uppercase">Total Clicks</p>
+                    </div>
                 </div>
-                <p class="text-gray-400 leading-relaxed max-w-sm mt-4">
-                    Welcome to your profile page. This is a customizable space where you can share information about yourself.
-                </p>
 
-                <a href="{% url 'user:logout' %}" class="mt-6 inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-105">
-                    Logout
-                </a>
+                <div class="mt-8 text-center max-w-2xl">
+                    <h2 class="text-2xl font-bold text-white mb-3 border-b border-indigo-500/50 pb-2">About Me</h2>
+                    <p class="text-lg text-gray-300 leading-relaxed">
+                        Welcome to my LearnFlow AI profile! I'm dedicated to learning and expanding my knowledge flow. I use the points I earn from clicking ads to unlock premium educational content.
+                    </p>
+                </div>
+                
+                {% if is_owner %}
+                <div class="mt-8 w-full max-w-lg">
+                    <a href="{% url 'user:logout' %}" class="w-full inline-block text-center px-4 py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors shadow-lg font-semibold transform hover:scale-[1.01]">
+                        Log Out
+                    </a>
+                </div>
+                {% endif %}
+
             </div>
         </div>
     </div>
+
+
+    {% if is_owner and image_form %}
+    <div id="image-upload-modal" class="fixed inset-0 hidden items-center justify-center modal-backdrop transition-opacity duration-300">
+        <div class="bg-slate-800 modal-content w-full max-w-md p-6 rounded-xl shadow-2xl border border-indigo-600">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+                <h3 class="text-2xl font-bold text-white">Update Your Images</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+
+            <form method="post" action="{% url 'user:upload_profile_image' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ image_form.avatar.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-2">Profile Avatar (Square)</label>
+                    {{ image_form.avatar }}
+                    {% if user_profile.profile.avatar %}
+                    <p class="text-xs text-gray-400 mt-1">Current: <a href="{{ user_profile.profile.avatar.url }}" target="_blank" class="text-indigo-400 hover:underline">View Current Avatar</a></p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-6">
+                    <label for="{{ image_form.cover_image.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-2">Cover Image (Wide)</label>
+                    {{ image_form.cover_image }}
+                    {% if user_profile.profile.cover_image %}
+                    <p class="text-xs text-gray-400 mt-1">Current: <a href="{{ user_profile.profile.cover_image.url }}" target="_blank" class="text-indigo-400 hover:underline">View Current Cover</a></p>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-bold transition-colors shadow-lg">
+                    Save Images
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('image-upload-modal');
+        const openModalBtn = document.getElementById('open-upload-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+
+        openModalBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+        // Close modal when clicking outside of it
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        });
+    </script>
+    {% endif %}
+
 {% endblock %}
