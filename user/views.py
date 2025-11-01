@@ -176,7 +176,7 @@ def track_ad_click(request):
     API endpoint to track an ad click, update the user's points,
     and recalculate the reward amount.
     """
-    POINTS_PER_CLICK = 10 
+    POINTS_PER_CLICK = 1
     
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
