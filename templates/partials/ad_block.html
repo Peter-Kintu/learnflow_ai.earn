@@ -41,6 +41,8 @@
         </div>
     {% endif %}
 
+    <input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
+
 
     <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
        id="ad-button"
@@ -111,21 +113,44 @@
                  adButton.classList.add('opacity-50', 'pointer-events-none');
             }
 
-            const csrftoken = getCookie('csrftoken');
+            // ⭐ MODIFIED: Attempt to get token from the hidden input first (most reliable)
+            const tokenInput = document.getElementById('csrf-token-input');
+            let csrftoken = tokenInput ? tokenInput.value : null;
+
+            // Fallback to cookie retrieval if the hidden input fails
+            if (!csrftoken) {
+                csrftoken = getCookie('csrftoken');
+            }
+
             const pointsGained = 100; // Hardcoded, as determined by views.py
+
+            // ⭐ CRITICAL FIX ADDED: Check if the token is present before fetch.
+            if (!csrftoken) {
+                console.error('CSRF token is missing. The POST request will fail. Reverting state.');
+                // Revert visual changes immediately if token is missing
+                if (adContainer) {
+                    delete adContainer.dataset.clicked;
+                    adContainer.classList.remove('opacity-50', 'pointer-events-none');
+                }
+                if (adButton) {
+                    adButton.classList.remove('opacity-50', 'pointer-events-none');
+                }
+                return; // Stop the function
+            }
 
             // Send an AJAX POST request to the Django endpoint
             fetch("{% url 'user:track_ad_click' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
+                    'X-CSRFToken': csrftoken, // Use the retrieved token
                 },
                 body: JSON.stringify({})
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    // This will catch the 403 Forbidden error from Django
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 return response.json();
             })
@@ -142,7 +167,7 @@
                 console.error('Error tracking ad click:', error);
             })
             .finally(() => {
-                // Restore appearance after a delay
+                // Restore appearance after a delay (regardless of success/failure)
                 setTimeout(() => {
                     if (adContainer) {
                         delete adContainer.dataset.clicked;

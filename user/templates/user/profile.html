@@ -13,27 +13,27 @@
         }
     </style>
     {% include "partials/ad_block.html" %}
-    <div class="bg-gray-100 min-h-screen py-8">
-        <div class="profile-card bg-white rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6">
+    <div class="bg-slate-950 min-h-screen py-8">
+        <div class="profile-card bg-slate-800 rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6 border border-indigo-700/50">
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0">
                 <img src="https://placehold.co/128x128/9f7aea/ffffff?text=U" alt="User Avatar" class="w-full h-full object-cover">
             </div>
 
             <div class="flex-grow text-center md:text-left">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">{{ user_profile.username }}</h1>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">{{ user_profile.username }}</h1>
                 
                 {% if user_profile.profile.role %}
-                    <p class="text-lg text-indigo-600 font-semibold mb-4">{{ user_profile.profile.get_role_display|title }}</p>
+                    <p class="text-lg text-indigo-400 font-semibold mb-4">{{ user_profile.profile.get_role_display|title }}</p>
                 {% else %}
-                    <p class="text-lg text-gray-500 font-semibold mb-4">Role not defined</p>
+                    <p class="text-lg text-gray-400 font-semibold mb-4">Role not defined</p>
                 {% endif %}
 
-                <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                    <p class="text-sm text-gray-700 font-medium">📱 Mobile: <span class="font-bold text-gray-900">{{ user_profile.profile.mobile_number|default:"N/A" }}</span></p>
-                    <p class="text-sm text-gray-700 font-medium mt-1">✨ Points: <span class="font-bold text-green-600">{{ user_profile.profile.points|default:0 }}</span></p>
-                    <p class="text-sm text-gray-700 font-medium mt-1">💰 Reward: <span class="font-bold text-green-700">UGX {{ user_profile.profile.reward_amount|default:"0.00" }}</span></p>
+                <div class="mt-4 p-4 bg-slate-700 rounded-lg border border-indigo-600/50">
+                    <p class="text-sm text-gray-300 font-medium">📱 Mobile: <span class="font-bold text-gray-100">{{ user_profile.profile.mobile_number|default:"N/A" }}</span></p>
+                    <p class="text-sm text-gray-300 font-medium mt-1">✨ Points: <span class="font-bold text-green-400">{{ user_profile.profile.points|default:0 }}</span></p>
+                    <p class="text-sm text-gray-300 font-medium mt-1">💰 Reward: <span class="font-bold text-green-500">UGX {{ user_profile.profile.reward_amount|default:"0.00" }}</span></p>
                 </div>
-                <p class="text-gray-600 leading-relaxed max-w-sm mt-4">
+                <p class="text-gray-400 leading-relaxed max-w-sm mt-4">
                     Welcome to your profile page. This is a customizable space where you can share information about yourself.
                 </p>
 
