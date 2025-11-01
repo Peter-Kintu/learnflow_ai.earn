@@ -185,7 +185,7 @@ LOGGING = {
 
 # Auth Redirects
 LOGIN_URL = 'user:login'
-LOGIN_REDIRECT_URL = 'video:video_list'
+LOGIN_REDIRECT_URL = 'aiapp:home'
 LOGOUT_REDIRECT_URL = 'user:login'
 
 # External API Configurations
