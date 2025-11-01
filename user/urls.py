@@ -19,7 +19,7 @@ urlpatterns = [
     path('login/', views.login_request, name='login'),
     path('logout/', views.logout_request, name='logout'),
 
-    # Password management
+    # Password management (Preserved)
     path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
@@ -27,9 +27,12 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
-    # Profile
-    path('profile/<str:username>/', views.profile_view, name='profile'),
-    
-    # ⭐ NEW: Ad tracking API endpoint to grant points
+    # ⭐ CORRECTED PROFILE ROUTES
+    # Redirects logged-in user to their own profile: /profile/ -> /profile/username/
+    path('profile/', views.my_profile_redirect, name='my_profile'),
+    # Displays the profile detail: /profile/username/ (Note: function name changed to 'profile_detail')
+    path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
+
+    # ⭐ NEW AD TRACKING API
     path('track-ad-click/', views.track_ad_click, name='track_ad_click'),
 ]

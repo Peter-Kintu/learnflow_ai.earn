@@ -15,13 +15,15 @@ class Profile(models.Model):
     # The role field uses the imported choices for validation.
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     
-    # NEW: Mobile Number for registration requirement
+    # Mobile Number for registration requirement
     mobile_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Mobile Phone Number")
     
-    # NEW: Fields for point and reward system
+    # Fields for point and reward system
     points = models.IntegerField(default=0, verbose_name="Ad Click Points")
     reward_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Reward Amount (UGX)")
-
+    
+    # ⭐ NEW: Field to track total ad clicks for payout calculation
+    total_clicks = models.IntegerField(default=0, verbose_name="Total Clicks")
 
     def __str__(self):
         """
@@ -45,5 +47,5 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
             # This will work for users who already have a profile.
             instance.profile.save()
         except ObjectDoesNotExist:
-            # If a profile doesn't exist for an older user, we create one now.
+            # Handle the case where a User exists but no Profile was created (e.g., manual creation)
             Profile.objects.create(user=instance)

@@ -1,8 +1,7 @@
 {% load static %}
 
 <div id="point-notification" class="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-xl hidden z-[1000] transition-transform duration-300">
-    +<span id="points-gained">100</span> Points!
-</div>
+    +<span id="points-gained">1</span> Points! </div>
 
 {% if messages %}
     <div class="mb-4 max-w-4xl mx-auto">
@@ -113,7 +112,7 @@
                  adButton.classList.add('opacity-50', 'pointer-events-none');
             }
 
-            // ⭐ MODIFIED: Attempt to get token from the hidden input first (most reliable)
+            // ⭐ FIX: Attempt to get token from the hidden input first (most reliable)
             const tokenInput = document.getElementById('csrf-token-input');
             let csrftoken = tokenInput ? tokenInput.value : null;
 
@@ -122,9 +121,10 @@
                 csrftoken = getCookie('csrftoken');
             }
 
-            const pointsGained = 100; // Hardcoded, as determined by views.py
+            // ⭐ Set points gained to 1 to match backend logic
+            const pointsGained = 1; 
 
-            // ⭐ CRITICAL FIX ADDED: Check if the token is present before fetch.
+            // ⭐ CRITICAL FIX: Check if the token is present before fetch.
             if (!csrftoken) {
                 console.error('CSRF token is missing. The POST request will fail. Reverting state.');
                 // Revert visual changes immediately if token is missing

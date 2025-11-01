@@ -6,20 +6,20 @@ from .forms import CustomUserCreationForm
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required # ⭐ NEW IMPORT
-import json # ⭐ NEW IMPORT
+from django.contrib.auth.decorators import login_required 
+import json 
 
 # Get the custom User model
 User = get_user_model()
 
 
-# ⭐ NEW Helper Function to Calculate Reward
+# ⭐ UPDATED Helper Function to Calculate Reward (1 UGX per 2 points/clicks)
 def calculate_reward_amount(points):
     """
     Calculates the reward amount based on accumulated points.
-    Assuming a simple rate: 1 point = UGX 10.
+    Rate: 1 UGX for every 2 points (0.5 UGX per point).
     """
-    POINTS_TO_UGX_RATE = 10 
+    POINTS_TO_UGX_RATE = 0.5 # 1 UGX / 2 points = 0.5 UGX per point
     reward = points * POINTS_TO_UGX_RATE
     # Round to two decimal places for currency
     return round(reward, 2)
@@ -33,7 +33,9 @@ def loading_screen(request):
     Skips loading screen for authenticated users.
     """
     if request.user.is_authenticated:
+        # Redirect to the main application page
         return redirect("aiapp:home")
+    
     # Dynamic greeting based on time of day
     current_hour = timezone.now().hour
     if current_hour < 12:
@@ -42,51 +44,46 @@ def loading_screen(request):
         greeting = _("Good afternoon!")
     else:
         greeting = _("Good evening!")
-    context = {
-        "app_name": "LearnFlow AI",
-        "message": f"{greeting} {_('Preparing your personalized learning experience...')}",
-        "redirect": True  # Always trigger redirect logic
-    }
-    return render(request, "user/loading.html", context)
+        
+    return render(request, 'user/loading.html', {'greeting': greeting})
 
 
 def ping(request):
-    """
-    Health check endpoint for Render.
-    """
-    return JsonResponse({'status': 'ok'})
+    """ Health check endpoint """
+    return JsonResponse({"status": "ok", "message": "Server is up and running."})
 
 
 def register_request(request):
-    """
-    Handles user registration.
-    """
+    """ Handles user registration. """
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            # Create user but don't save the profile yet
+            # Create the User
             user = form.save()
             
-            # Save the mobile number and set the role on the Profile object
-            # The Profile is guaranteed to exist due to the post_save signal
-            user.profile.mobile_number = form.cleaned_data['mobile_number']
-            user.profile.role = form.cleaned_data['role']
-            user.profile.save()
+            # Get the role and mobile number from the form
+            role = form.cleaned_data.get('role')
+            mobile_number = form.cleaned_data.get('mobile_number')
             
-            username = form.cleaned_data.get('username')
-            messages.success(request, f"Account successfully created for {username}. Please log in.")
+            # Update the user's profile with role and mobile number
+            # This logic relies on the post_save signal in models.py to create the profile first
+            # The signal handler ensures instance.profile exists, so we use update_or_create for safety
+            # If the profile was created via signal, we update it here.
+            user.profile.role = role
+            user.profile.mobile_number = mobile_number
+            user.profile.save() # Manually save the profile after setting fields
+            
+            messages.success(request, "Registration successful. You can now log in.")
             return redirect("user:login")
-        messages.error(request, "Registration failed. Invalid information.")
+        messages.error(request, "Unsuccessful registration. Invalid information provided.")
     else:
         form = CustomUserCreationForm()
-    
+        
     return render(request, "user/register.html", {"register_form": form})
 
 
 def login_request(request):
-    """
-    Handles user login.
-    """
+    """ Handles user login. """
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -101,47 +98,48 @@ def login_request(request):
                 messages.error(request, "Invalid username or password.")
         else:
             messages.error(request, "Invalid username or password.")
-
+            
     form = AuthenticationForm()
     return render(request, "user/login.html", {"login_form": form})
 
 
 def logout_request(request):
-    """
-    Handles user logout.
-    """
+    """ Handles user logout. """
     logout(request)
     messages.info(request, "You have successfully logged out.")
     return redirect("user:login")
 
 
+@login_required
 def my_profile_redirect(request):
-    """
-    A view to handle redirection to the authenticated user's profile.
-    This is useful for providing a generic "my profile" link.
-    """
-    if request.user.is_authenticated:
-        return redirect('user:profile', username=request.user.username)
-    return redirect("user:login")
+    """ Redirects to the user's own profile page. """
+    return redirect('user:profile_detail', username=request.user.username)
 
 
-def profile_view(request, username):
-    """
-    Displays the profile page for a specific user based on their username.
-    """
-    user_profile = get_object_or_404(User, username=username)
-    return render(request, "user/profile.html", {"user_profile": user_profile})
+@login_required
+def profile_detail(request, username):
+    """ Displays the profile details for a specific user. """
+    # ⭐ FIX: Use select_related to efficiently fetch the related Profile data 
+    # This helps ensure the latest profile data is available.
+    user_profile = get_object_or_404(
+        User.objects.select_related('profile'), # Use select_related to fetch Profile data efficiently
+        username=username
+    )
+    
+    # Check if the fetched user is the request user (for context/permissions if needed)
+    is_owner = request.user == user_profile
+    
+    # The template uses user_profile (which is the User instance) to access profile data via user_profile.profile
+    return render(request, "user/profile_detail.html", {"user_profile": user_profile, "is_owner": is_owner})
 
 
-# ⭐ NEW: API to track ad clicks and update points/reward
+# ⭐ UPDATED: API to track ad clicks and update points/reward
 @login_required
 def track_ad_click(request):
     """
     API endpoint to track an ad click, grant points, and update the reward amount.
     """
     if request.method == 'POST':
-        # No need to parse JSON since the body is empty, but can keep a placeholder
-        # for future expansion.
         
         try:
             # Ensure the user has a profile attached
@@ -149,15 +147,29 @@ def track_ad_click(request):
         except:
             return JsonResponse({'success': False, 'message': 'User profile not found.'}, status=400)
             
-        # 1. Increment Points
-        POINTS_PER_CLICK = 100 # Adjust this value as needed
+        # ⭐ 1. Increment Total Clicks (for payout threshold)
+        user_profile.total_clicks += 1
+        
+        # ⭐ 2. Increment Points (1 point per click)
+        POINTS_PER_CLICK = 1 
         user_profile.points += POINTS_PER_CLICK
         
-        # 2. Recalculate Reward Amount
+        # ⭐ 3. Recalculate Reward Amount (0.5 UGX per point)
         user_profile.reward_amount = calculate_reward_amount(user_profile.points)
         
-        # 3. Save the Profile
+        # ⭐ 4. Save the Profile
         user_profile.save()
+
+        # ⭐ 5. Check for Payout Threshold (10,000 clicks)
+        if user_profile.total_clicks >= 10000:
+            # NOTE: This is where your custom payout trigger logic would go
+            # Example: Trigger payout and reset relevant fields:
+            # Payouts.record_payout(user_profile.user, user_profile.reward_amount)
+            # user_profile.points = 0
+            # user_profile.reward_amount = 0.00
+            # user_profile.total_clicks = 0
+            # user_profile.save()
+            pass
         
         # Return the new total points and reward amount to update the client side
         return JsonResponse({
@@ -168,4 +180,4 @@ def track_ad_click(request):
         }, status=200)
     
     # Return a 405 error if not a POST request
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+    return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
