@@ -4,16 +4,20 @@
      class="inline-block mt-4 px-6 py-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg font-semibold">
      Discover More Offers
   </a>
-  <div class="w-[468px] h-[60px] mt-4">
-    <script type="text/javascript">
-      atOptions = {
-        'key': '7f6534d747d7fc18ada93341f5afacd2',
-        'format': 'iframe',
-        'height': 60,
-        'width': 468,
-        'params': {}
-      };
-    </script>
-    <script src="//www.highperformanceformat.com/7f6534d747d7fc18ada93341f5afacd2/invoke.js"></script>
-  </div>
+
+  <!-- Ad container with explicit ID -->
+  <div id="ad-container" class="mt-4" style="width:468px; height:60px;"></div>
+
+  <!-- Adsterra script with container reference -->
+  <script type="text/javascript">
+    atOptions = {
+      'key': '7f6534d747d7fc18ada93341f5afacd2',
+      'format': 'iframe',
+      'height': 60,
+      'width': 468,
+      'params': {},
+      'container': 'ad-container'
+    };
+  </script>
+  <script src="//www.highperformanceformat.com/7f6534d747d7fc18ada93341f5afacd2/invoke.js"></script>
 </div>
