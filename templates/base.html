@@ -139,7 +139,7 @@
             {% with request.path as current_path %}
             
             {% if user.is_authenticated %}
-            <a href="{% url 'user:my_profile_redirect' %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
+            <a href="{% url 'user:profile' username=user.username %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
                  <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                     {{ user.username.0|upper }} 
                 </div>
