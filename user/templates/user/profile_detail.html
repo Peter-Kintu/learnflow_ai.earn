@@ -69,7 +69,7 @@
                 
                 <div class="avatar-container">
                     <div class="avatar-circle">
-                        {% with default_avatar_url='avatars/default.png'|static %}
+                        {% with default_avatar_url='/static/avatars/default.png' %}
                         <img 
                             src="{{ user_profile.profile.avatar.url }}" 
                             alt="{{ user_profile.username }} Avatar" 
