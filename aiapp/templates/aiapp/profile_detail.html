@@ -1,43 +1,46 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Profile{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
-    <div class="flex items-center mb-6">
-        <div class="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center text-white text-5xl font-bold mr-6">
-            {{ profile_user.username.0|upper }}
-        </div>
-        <div>
-            <h2 class="text-4xl font-bold text-gray-200 mb-1">
-                {{ profile_user.get_full_name|default:profile_user.username }}
-            </h2>
-            <p class="text-indigo-400 font-medium">Teacher</p>
-        </div>
-    </div>
-    
-    <div class="space-y-4 text-gray-400 mb-8">
-        <div class="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail mr-2 text-gray-500"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-            <span class="text-sm">{{ profile_user.email|default:"Email not provided" }}</span>
-        </div>
-        <div class="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days mr-2 text-gray-500"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
-            <span class="text-sm">Joined on {{ profile_user.date_joined|date:"F j, Y" }}</span>
-        </div>
-    </div>
-   {% include "partials/ad_block.html" %}
-    <!-- Section for user's uploaded videos -->
-    <div class="mt-8 pt-8 border-t border-slate-700">
-        <h3 class="text-2xl font-bold text-gray-200 mb-4">Videos by {{ profile_user.username }}</h3>
-        <div class="space-y-4">
-            {% for video in profile_user.video_set.all %}
-            <div class="bg-slate-700 p-4 rounded-xl shadow-md flex items-center justify-between">
-                <h4 class="text-lg font-semibold text-gray-200">{{ video.title }}</h4>
-                <a href="{% url 'video:video_detail' video.id %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-sm">View Video</a>
+    <style>
+        /* Custom CSS to ensure the profile card is centered and looks good */
+        .profile-card {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+    </style>
+    {% include "partials/ad_block.html" %}
+    <div class="bg-gray-100 min-h-screen py-8">
+        <div class="profile-card bg-white rounded-xl shadow-lg flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6">
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0">
+                <img src="https://placehold.co/128x128/9f7aea/ffffff?text=U" alt="User Avatar" class="w-full h-full object-cover">
             </div>
-            {% empty %}
-            <p class="text-gray-400 text-center">This user has not uploaded any videos yet.</p>
-            {% endfor %}
+
+            <div class="flex-grow text-center md:text-left">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">{{ user_profile.username }}</h1>
+                
+                {% if user_profile.profile.role %}
+                    <p class="text-lg text-indigo-600 font-semibold mb-4">{{ user_profile.profile.get_role_display|title }}</p>
+                {% else %}
+                    <p class="text-lg text-gray-500 font-semibold mb-4">Role not defined</p>
+                {% endif %}
+
+                <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <p class="text-sm text-gray-700 font-medium">📱 Mobile: <span class="font-bold text-gray-900">{{ user_profile.profile.mobile_number|default:"N/A" }}</span></p>
+                    <p class="text-sm text-gray-700 font-medium mt-1">✨ Points: <span class="font-bold text-green-600">{{ user_profile.profile.points|default:0 }}</span></p>
+                    <p class="text-sm text-gray-700 font-medium mt-1">💰 Reward: <span class="font-bold text-green-700">UGX {{ user_profile.profile.reward_amount|default:"0.00" }}</span></p>
+                </div>
+                <p class="text-gray-600 leading-relaxed max-w-sm mt-4">
+                    Welcome to your profile page. This is a customizable space where you can share information about yourself.
+                </p>
+
+                <a href="{% url 'user:logout' %}" class="mt-6 inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-105">
+                    Logout
+                </a>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
