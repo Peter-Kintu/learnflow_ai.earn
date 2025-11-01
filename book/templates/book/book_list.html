@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-4xl mx-auto p-4 sm:p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-gray-200">📚 Available Books</h2>
+        <h2 class="text-3xl font-bold text-gray-200">答 Available Books</h2>
         {% if user.is_authenticated %}
         <a href="{% url 'book:book_upload' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-sm">
             Upload Book
@@ -11,64 +11,89 @@
         {% endif %}
     </div>
 
-     {% include "partials/ad_block.html" %}
+    <div class="mb-8 p-6 bg-slate-700 rounded-xl text-center border-2 border-pink-600 shadow-2xl">
+        <h3 class="text-2xl font-extrabold text-white mb-4">A Quick Favor to View Books!</h3>
+        <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
+           target="_blank" rel="nofollow"
+           onclick="localStorage.setItem('adClicked', 'true')"
+           class="inline-block px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full hover:from-red-700 hover:to-pink-700 transition-all shadow-xl font-extrabold text-lg tracking-wide transform hover:scale-105">
+           🎁 Unlock Student Discounts & Free Tools
+        </a>
+        <p class="text-sm text-gray-400 mt-3">Clicking this helps pay for server costs and unlocks the book list below.</p>
+    </div>
+    {% include "partials/ad_block.html" %}
     <p class="text-gray-400 mb-8">
         Explore a curated collection of educational books. Click on a book to view its details and unlock access via mobile money or Visa card.
     </p>
 
-    <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        {% for book in books %}
-        <div class="bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
-            <a href="{% url 'book:book_detail' book.id %}">
-                <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}" alt="{{ book.title|default:'Untitled' }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
-                <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title|default:"Untitled" }}</h3>
-                <p class="text-sm text-gray-400 mb-4">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
+    <div class="requires-ad-click">
+        <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            {% for book in books %}
+            <div class="bg-slate-700 p-6 rounded-xl shadow-md transition-transform hover:scale-105 hover:bg-slate-600">
+                <a href="{% url 'book:book_detail' book.id %}">
+                    <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}" alt="{{ book.title|default:'Untitled' }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
+                    <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title|default:"Untitled" }}</h3>
+                    <p class="text-sm text-gray-400 mb-4">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
 
-                <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-                    <span class="flex items-center space-x-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <span>{{ book.uploaded_by.get_full_name|default:book.uploaded_by.username|default:"Unknown" }}</span>
-                    </span>
-                    <span class="flex items-center space-x-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days">
-                            <path d="M8 2v4"/><path d="M16 2v4"/>
-                            <rect width="18" height="18" x="3" y="4" rx="2"/>
-                            <path d="M3 10h18"/>
-                            <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
-                            <path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
-                        </svg>
-                        <span>{{ book.created_at|date:"F j, Y"|default:"Unknown date" }}</span>
-                    </span>
-                </div>
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <span class="flex items-center space-x-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <span>{{ book.uploaded_by.get_full_name|default:book.uploaded_by.username|default:"Unknown" }}</span>
+                        </span>
+                        <span class="flex items-center space-x-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days">
+                                <path d="M8 2v4"/><path d="M16 2v4"/>
+                                <rect width="18" height="18" x="3" y="4" rx="2"/>
+                                <path d="M3 10h18"/>
+                                <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
+                                <path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
+                            </svg>
+                            <span>{{ book.created_at|date:"F j, Y"|default:"Unknown date" }}</span>
+                        </span>
+                    </div>
 
-                <div class="text-sm text-green-400 font-semibold">
-                    💰 Price: UGX {{ book.price|default:"0.00" }}
-                </div>
-                <div class="text-xs text-gray-400 mt-1">
-                    📱 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
-                    💳 Or <a href="{% url 'book:pay_with_card' book.id %}" class="underline text-indigo-400">pay with Visa card</a> instantly.
-                </div>
-            </a>
-
-            {% if user == book.uploaded_by %}
-            <div class="mt-4 flex space-x-2">
-                <a href="{% url 'book:edit_book' book.id %}" class="px-3 py-1 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors shadow-sm text-xs font-semibold">
-                    Edit
+                    <div class="text-sm text-green-400 font-semibold">
+                        腸 Price: UGX {{ book.price|default:"0.00" }}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        導 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
+                        諜 Or <a href="{% url 'book:pay_with_card' book.id %}" class="underline text-indigo-400">pay with Visa card</a> instantly.
+                    </div>
                 </a>
-                <a href="{% url 'book:delete_book' book.id %}" class="px-3 py-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm text-xs font-semibold">
-                    Delete
-                </a>
+
+                {% if user == book.uploaded_by %}
+                <div class="mt-4 flex space-x-2">
+                    <a href="{% url 'book:edit_book' book.id %}" class="px-3 py-1 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors shadow-sm text-xs font-semibold">
+                        Edit
+                    </a>
+                    <a href="{% url 'book:delete_book' book.id %}" class="px-3 py-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors shadow-sm text-xs font-semibold">
+                        Delete
+                    </a>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
+            {% empty %}
+            <div class="md:col-span-3 text-center p-8 bg-slate-700 rounded-xl shadow-inner">
+                <p class="text-gray-400">No books are available at the moment. Please check back later.</p>
+            </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <div class="md:col-span-3 text-center p-8 bg-slate-700 rounded-xl shadow-inner">
-            <p class="text-gray-400">No books are available at the moment. Please check back later.</p>
-        </div>
-        {% endfor %}
     </div>
-</div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const accessGranted = localStorage.getItem('adClicked') === 'true';
+
+        if (!accessGranted) {
+          const protectedElements = document.querySelectorAll('.requires-ad-click');
+          protectedElements.forEach(el => {
+            el.classList.add('pointer-events-none', 'opacity-50', 'bg-slate-900', 'p-8', 'rounded-xl');
+            el.innerHTML = '<div class="text-center p-10"><p class="text-xl text-red-400 font-bold mb-4">🔒 Book List Locked</p><p class="text-gray-300">Please click the **"Unlock Student Discounts & Free Tools"** banner above to view all the available books.</p></div>';
+          });
+        }
+      });
+    </script>
+    </div>
 {% endblock %}

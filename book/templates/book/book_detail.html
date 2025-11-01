@@ -14,43 +14,54 @@
         </div>
     {% endif %}
 
+    <div class="mb-8 p-6 bg-slate-700 rounded-xl text-center border-2 border-pink-600 shadow-2xl">
+        <h3 class="text-2xl font-extrabold text-white mb-4">A Quick Favor to Keep Books Affordable!</h3>
+        <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
+           target="_blank" rel="nofollow"
+           onclick="localStorage.setItem('adClicked', 'true')"
+           class="inline-block px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full hover:from-red-700 hover:to-pink-700 transition-all shadow-xl font-extrabold text-lg tracking-wide transform hover:scale-105">
+           🎁 Unlock Student Discounts & Free Tools
+        </a>
+        <p class="text-sm text-gray-400 mt-3">Clicking this helps pay for server costs and unlocks the book details below.</p>
+    </div>
     {% if book %}
-    <div class="flex flex-col md:flex-row items-start md:space-x-8">
-        <div class="flex-shrink-0 mb-6 md:mb-0">
-            <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}"
-                 alt="Cover of {{ book.title|default:'Untitled Book' }}"
-                 class="w-full max-w-xs sm:w-64 h-auto rounded-lg shadow-xl mx-auto md:mx-0">
-        </div>
-
-        <div class="flex-grow">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-200 mb-2">{{ book.title|default:"Untitled Book" }}</h2>
-            <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round" class="lucide lucide-user">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                {% if book.uploaded_by %}
-                    <span>Uploaded by {{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
-                {% else %}
-                    <span>Uploader unknown</span>
-                {% endif %}
+    <div class="requires-ad-click">
+        <div class="flex flex-col md:flex-row items-start md:space-x-8">
+            <div class="flex-shrink-0 mb-6 md:mb-0">
+                <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}"
+                     alt="Cover of {{ book.title|default:'Untitled Book' }}"
+                     class="w-full max-w-xs sm:w-64 h-auto rounded-lg shadow-xl mx-auto md:mx-0">
             </div>
 
-            <p class="text-gray-400 mb-6">{{ book.description|default:"No description available." }}</p>
+            <div class="flex-grow">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-200 mb-2">{{ book.title|default:"Untitled Book" }}</h2>
+                <div class="flex items-center text-sm text-gray-400 mb-4 space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                         stroke-linejoin="round" class="lucide lucide-user">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    {% if book.uploaded_by %}
+                        <span>Uploaded by {{ book.uploaded_by.get_full_name|default:book.uploaded_by.username }}</span>
+                    {% else %}
+                        <span>Uploader unknown</span>
+                    {% endif %}
+                </div>
 
-            <div class="flex items-center mb-6">
-                <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price|default:"0" }}</span>
-                {% if has_paid %}
-                    <a href="{% url 'book:download_book' book.id %}"
-                       class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
-                        📘 Read Book
-                    </a>
-                {% endif %}
-            </div>
+                <p class="text-gray-400 mb-6">{{ book.description|default:"No description available." }}</p>
 
-            {% if not has_paid %}
+                <div class="flex items-center mb-6">
+                    <span class="text-indigo-400 text-3xl font-extrabold mr-4">UGX {{ book.price|default:"0" }}</span>
+                    {% if has_paid %}
+                        <a href="{% url 'book:download_book' book.id %}"
+                           class="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-lg font-semibold">
+                            📘 Read Book
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if not has_paid %}
 <div class="flex flex-col mb-6 space-y-6">
 
   <div class="border border-slate-600 p-4 rounded-xl bg-slate-700 shadow-md text-center space-y-4">
@@ -116,29 +127,30 @@
     });
   });
 </script>
-            {% else %}
-            <div class="mt-4 text-sm text-green-400 font-semibold">
-                ✅ Payment confirmed. Enjoy your reading journey!
-            </div>
-
-            {% if tx %}
-            <div class="mt-6">
-                <p class="text-gray-300 mb-2">📲 Scan to access your book:</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code|default:'XXXX-XXXX' }}"
-                     alt="QR Code for Book Access" class="rounded shadow-md">
-                <p class="text-xs text-gray-400 mt-2">
-                    Access Code: <span class="font-semibold text-green-400">{{ tx.access_code|default:"XXXX-XXXX" }}</span>
-                </p>
-                <p class="text-sm text-gray-400 mt-2">
-                    Or <a href="{% url 'book:download_book' book.id %}" class="underline text-indigo-400">click here to download</a>.
-                </p>
-
-                <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-                    🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title|default:'a book' }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code|default:'XXXX-XXXX' }}" target="_blank" class="underline">Share your achievement</a>
+                {% else %}
+                <div class="mt-4 text-sm text-green-400 font-semibold">
+                    ✅ Payment confirmed. Enjoy your reading journey!
                 </div>
+
+                {% if tx %}
+                <div class="mt-6">
+                    <p class="text-gray-300 mb-2">📲 Scan to access your book:</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://learnflow-ai.com/book/access/{{ tx.access_code|default:'XXXX-XXXX' }}"
+                         alt="QR Code for Book Access" class="rounded shadow-md">
+                    <p class="text-xs text-gray-400 mt-2">
+                        Access Code: <span class="font-semibold text-green-400">{{ tx.access_code|default:"XXXX-XXXX" }}</span>
+                    </p>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Or <a href="{% url 'book:download_book' book.id %}" class="underline text-indigo-400">click here to download</a>.
+                    </p>
+
+                    <div class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+                        🎉 Book unlocked! <a href="https://wa.me/?text=I%20just%20unlocked%20{{ book.title|default:'a book' }}%20on%20EduVerse!%20My%20access%20code%20is%20{{ tx.access_code|default:'XXXX-XXXX' }}" target="_blank" class="underline">Share your achievement</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
             </div>
-            {% endif %}
-            {% endif %}
         </div>
     </div>
     {% else %}
@@ -146,5 +158,19 @@
         🚫 Book not found or incomplete. Please check back later or contact support.
     </div>
     {% endif %}
-</div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const accessGranted = localStorage.getItem('adClicked') === 'true';
+
+        if (!accessGranted) {
+          const protectedElements = document.querySelectorAll('.requires-ad-click');
+          protectedElements.forEach(el => {
+            el.classList.add('pointer-events-none', 'opacity-50', 'bg-slate-900', 'p-8', 'rounded-xl');
+            el.innerHTML = '<div class="text-center p-10"><p class="text-xl text-red-400 font-bold mb-4">🔒 Content Locked</p><p class="text-gray-300">Please click the **"Unlock Student Discounts & Free Tools"** banner above to view book details and payment options.</p></div>';
+          });
+        }
+      });
+    </script>
+    </div>
 {% endblock %}
