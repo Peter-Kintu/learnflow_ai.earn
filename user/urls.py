@@ -28,5 +28,6 @@ urlpatterns = [
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
     # Profile
-    path('profile/', views.profile_view, name='profile'),
+    # 💥 FIX: Changed the path to accept a username string as a parameter 💥
+    path('profile/<str:username>/', views.profile_view, name='profile'),
 ]
