@@ -6,13 +6,14 @@ from .forms import CustomUserCreationForm
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required # NEW
-import json # NEW
+from django.contrib.auth.decorators import login_required # ⭐ NEW IMPORT
+import json # ⭐ NEW IMPORT
 
 # Get the custom User model
 User = get_user_model()
 
-# NEW Helper Function to Calculate Reward
+
+# ⭐ NEW Helper Function to Calculate Reward
 def calculate_reward_amount(points):
     """
     Calculates the reward amount based on accumulated points.
@@ -22,6 +23,46 @@ def calculate_reward_amount(points):
     reward = points * POINTS_TO_UGX_RATE
     # Round to two decimal places for currency
     return round(reward, 2)
+
+
+# ⭐ NEW: API to track ad clicks and update points/reward
+@login_required
+def track_ad_click(request):
+    """
+    API endpoint to track an ad click, grant points, and update the reward amount.
+    """
+    if request.method == 'POST':
+        # No need to parse JSON since the body is empty, but can keep a placeholder
+        # for future expansion.
+        
+        try:
+            # Ensure the user has a profile attached (assuming a 'profile' reverse relation exists)
+            user_profile = request.user.profile
+        except:
+            return JsonResponse({'success': False, 'message': 'User profile not found. Ensure profile model is linked.'}, status=400)
+            
+        # 1. Increment Points
+        POINTS_PER_CLICK = 100 # Adjust this value as needed
+        old_points = user_profile.points # Store current points for client feedback
+        user_profile.points += POINTS_PER_CLICK
+        
+        # 2. Recalculate Reward Amount
+        # NOTE: This assumes 'reward_amount' and 'points' fields exist on the Profile model.
+        user_profile.reward_amount = calculate_reward_amount(user_profile.points)
+        
+        # 3. Save the Profile
+        user_profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Ad click tracked and points awarded!',
+            'points': user_profile.points,
+            'old_points': old_points, # Return old points for client to calculate gain
+            'reward_amount': user_profile.reward_amount
+        }, status=200)
+
+    # Handle non-POST requests
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
 
 
 def loading_screen(request):
@@ -51,41 +92,39 @@ def loading_screen(request):
 
 def ping(request):
     """
-    Health check endpoint for uptime monitoring and deployment verification.
-    Returns a JSON response for easier integration with monitoring tools.
+    Health check endpoint for Render.
     """
-    return JsonResponse({
-        "status": "OK",
-        "service": "LearnFlow AI"
-    }, status=200)
+    return JsonResponse({"status": "ok"}, status=200)
 
 
 def register_request(request):
     """
-    Handles user registration with a custom form.
-    FIXED: Now correctly passes the form with errors back to the template
-           instead of overwriting it and redirecting to login page.
+    Handles user registration.
     """
+    if request.user.is_authenticated:
+        return redirect("aiapp:home")
+
     if request.method == "POST":
-        # Note: The mobile_number field is now handled in CustomUserCreationForm
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, "Registration successful.")
+            messages.success(request, "Registration successful. Welcome!")
             return redirect("aiapp:home")
-        else:
-            messages.error(request, "Unsuccessful registration. Invalid information. Please see the details below.")
-            return render(request, "user/register.html", {"register_form": form})
-
-    form = CustomUserCreationForm()
+        messages.error(request, "Unsuccessful registration. Invalid information.")
+    else:
+        form = CustomUserCreationForm()
+        
     return render(request, "user/register.html", {"register_form": form})
 
 
 def login_request(request):
     """
-    Handles user login using the built-in AuthenticationForm.
+    Handles user login.
     """
+    if request.user.is_authenticated:
+        return redirect("aiapp:home")
+    
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -130,37 +169,3 @@ def profile_view(request, username):
     """
     user_profile = get_object_or_404(User, username=username)
     return render(request, "user/profile.html", {"user_profile": user_profile})
-
-
-# NEW: API to track ad clicks and update points/reward
-@login_required
-def track_ad_click(request):
-    """
-    API endpoint to track an ad click, grant points, and update the reward amount.
-    """
-    if request.method == 'POST':
-        try:
-            # Ensure the user has a profile attached
-            user_profile = request.user.profile
-        except:
-            return JsonResponse({'success': False, 'message': 'User profile not found.'}, status=400)
-            
-        # 1. Increment Points
-        POINTS_PER_CLICK = 100 # Adjust this value as needed
-        user_profile.points += POINTS_PER_CLICK
-        
-        # 2. Recalculate Reward Amount
-        user_profile.reward_amount = calculate_reward_amount(user_profile.points)
-        
-        # 3. Save the Profile
-        user_profile.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Ad click tracked and points awarded!',
-            'points': user_profile.points,
-            'reward_amount': user_profile.reward_amount
-        }, status=200)
-    
-    # Optional: Log or return an error for non-POST requests
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
