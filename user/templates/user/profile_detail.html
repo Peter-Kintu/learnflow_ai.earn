@@ -17,7 +17,8 @@
         }
         .avatar-container {
             position: absolute;
-            bottom: -60px; /* Positions avatar 60px below the cover-area boundary */
+            /* FIX: Changed from bottom: -60px to top: 16px (1rem/4 units) to align with button */
+            top: 16px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -97,7 +98,7 @@
                     {% endif %}
                 </div>
             {% endif %}
-            <div class="pt-16 pb-8 px-8 flex flex-col items-center">
+            <div class="pb-8 px-8 flex flex-col items-center">
                 
                 <h1 class="text-4xl font-extrabold text-white mt-4 mb-2">{{ user_profile.username }}</h1>
                 

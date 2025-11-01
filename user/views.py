@@ -46,7 +46,14 @@ def loading_screen(request):
     else:
         greeting = _("Good evening!")
         
-    return render(request, 'user/loading.html', {'greeting': greeting})
+    return render(request, 'user/loading.html', {
+        'greeting': greeting,
+        # ⭐ FIX: Set 'redirect' to True to enable the JavaScript
+        'redirect': True,
+        # ⭐ FIX: Set template variables used in loading.html
+        'app_name': 'LearnFlow AI',
+        'message': _("Multilingual learning tools for African educators and students."),
+    })
 
 def ping(request):
     """Simple endpoint for health checks."""
