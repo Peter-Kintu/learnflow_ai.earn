@@ -30,19 +30,7 @@
                 <span>{{ quiz.questions.count }} Questions</span>
             </div>
         </div>
-
-        <div class="mb-8 text-center">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : '7f6534d747d7fc18ada93341f5afacd2',
-                    'format' : 'iframe',
-                    'height' : 60,
-                    'width' : 468,
-                    'params' : {}
-                };
-            </script>
-            <script type="text/javascript" src="//www.highperformanceformat.com/7f6534d747d7fc18ada93341f5afacd2/invoke.js"></script>
-        </div>
+      {% include "partials/ad_block.html" %}
 
         <div class="flex justify-end">
             {% if latest_attempt %}

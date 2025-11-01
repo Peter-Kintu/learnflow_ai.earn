@@ -9,11 +9,11 @@
         <h3 class="text-2xl font-extrabold text-white mb-4">A Quick Favor to Get Started!</h3>
         <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
            target="_blank" rel="nofollow"
-           onclick="localStorage.setItem('adClicked', 'true')"
+           onclick="trackAdClickAndGrantAccess()"
            class="inline-block px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full hover:from-red-700 hover:to-pink-700 transition-all shadow-xl font-extrabold text-lg tracking-wide transform hover:scale-105">
            🎁 Unlock Student Discounts & Free Tools
         </a>
-        <p class="text-sm text-gray-400 mt-3">Clicking this helps support the platform and unlocks the upload form below.</p>
+        <p class="text-sm text-gray-400 mt-3">Clicking this helps support the platform and unlocks the upload form below. (You earn points!)</p>
     </div>
     {% if messages %}
         <div class="mb-6">
@@ -104,19 +104,5 @@
     <div class="mt-6 text-center text-indigo-400 text-sm italic">
         Every book you share is a thread in Africa’s digital tapestry. Thank you for empowering learners.
     </div>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const accessGranted = localStorage.getItem('adClicked') === 'true';
-
-        if (!accessGranted) {
-          const protectedElements = document.querySelectorAll('.requires-ad-click');
-          protectedElements.forEach(el => {
-            el.classList.add('pointer-events-none', 'opacity-50', 'bg-slate-900', 'p-8', 'rounded-xl');
-            el.innerHTML = '<div class="text-center p-10"><p class="text-xl text-red-400 font-bold mb-4">🔒 Upload Form Locked</p><p class="text-gray-300">Please click the **"Unlock Student Discounts & Free Tools"** banner above to access the book upload form.</p></div>';
-          });
-        }
-      });
-    </script>
-    </div>
+</div>
 {% endblock %}

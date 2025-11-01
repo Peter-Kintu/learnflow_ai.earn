@@ -14,6 +14,14 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # The role field uses the imported choices for validation.
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    
+    # NEW: Mobile Number for registration requirement
+    mobile_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Mobile Phone Number")
+    
+    # NEW: Fields for point and reward system
+    points = models.IntegerField(default=0, verbose_name="Ad Click Points")
+    reward_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Reward Amount (UGX)")
+
 
     def __str__(self):
         """
@@ -25,8 +33,7 @@ class Profile(models.Model):
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     """
     This signal handler automatically creates a Profile for a new User
-    and ensures an existing profile is saved. This is the robust and
-    recommended way to handle this logic.
+    and ensures an existing profile is saved.
     """
     if created:
         # If a new User instance is created, a Profile is also created and linked.
@@ -34,10 +41,7 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     else:
         try:
             # For an existing user, we try to save their profile.
-            # This will work for users who already have a profile.
             instance.profile.save()
         except ObjectDoesNotExist:
             # If a profile doesn't exist for an older user, we create one now.
-            # This handles the exact error you were seeing.
             Profile.objects.create(user=instance)
-

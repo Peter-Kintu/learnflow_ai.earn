@@ -139,7 +139,7 @@
             {% with request.path as current_path %}
             
             {% if user.is_authenticated %}
-            <a href="{% url 'aiapp:user_profile' user.id %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
+            <a href="{% url 'user:my_profile_redirect' %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
                  <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                     {{ user.username.0|upper }} 
                 </div>
@@ -228,6 +228,24 @@
             </div>
         {% endif %}
 
+        {% if user.is_authenticated %}
+        <div id="ad-unit-container" 
+             onclick="trackAdClick()"
+             class="my-6 p-4 bg-slate-700/50 rounded-lg shadow-inner border border-indigo-600/50 text-center cursor-pointer transition-all duration-300 hover:bg-slate-700">
+            <h3 class="text-sm font-semibold text-gray-400 mb-2">Click this Ad to Earn Points (Testing Ad Unit)</h3>
+            <div class="bg-gray-800 p-4 rounded-md">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-9564790727166506"
+                     data-ad-slot="1234567890"  data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+            <p class="text-xs text-indigo-400 mt-2">Clicking this ad rewards your account. Thank you for supporting us!</p>
+        </div>
+        {% endif %}
         {% block content %}
         {% endblock %}
     </main>
@@ -278,6 +296,107 @@
             }
         });
 
+
+        // ----------------------------------------------------------------------------------
+        // NEW: Ad Click Tracking Functions (uses Django CSRF token for POST request)
+        // ----------------------------------------------------------------------------------
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+
+        function showPointNotification(points) {
+             const existingNotification = document.getElementById('point-notification');
+             if (existingNotification) {
+                 existingNotification.remove();
+             }
+
+             const notification = document.createElement('div');
+             notification.id = 'point-notification';
+             // Tailwind classes for a fixed, bottom-right notification with animation
+             notification.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-5 py-3 rounded-lg shadow-xl z-[1001] transition-all duration-300 transform translate-x-full';
+             notification.innerHTML = `🎉 **+${points} Points** Earned!`;
+             document.body.appendChild(notification);
+             
+             // Simple animation: slide in and then slide out
+             setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+                notification.classList.add('translate-x-0');
+             }, 100);
+
+             setTimeout(() => {
+                 notification.classList.remove('translate-x-0');
+                 notification.classList.add('translate-x-full');
+                 // Remove element after it slides out
+                 setTimeout(() => notification.remove(), 400); 
+             }, 3000); // Display for 3 seconds
+        }
+
+        function trackAdClick() {
+            // This function is triggered by the onclick event on the ad container.
+            
+            const adContainer = document.getElementById('ad-unit-container');
+            // Check for a flag to prevent multiple rapid requests
+            if (adContainer && adContainer.dataset.clicked === 'true') {
+                return;
+            }
+
+            if (adContainer) {
+                // Set the flag and visually indicate the click is registered
+                adContainer.dataset.clicked = 'true';
+                adContainer.classList.add('opacity-50', 'pointer-events-none'); 
+            }
+            
+            fetch('/api/track-ad-click/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({}) // Send empty JSON body
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Points awarded:', data.points);
+                    // Show a notification to the user with the new points
+                    showPointNotification(data.points - (data.points - 100)); // Assumes 100 points per click based on previous view logic
+                } else {
+                    console.error('Failed to track ad click:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error tracking ad click:', error);
+            })
+            .finally(() => {
+                // Remove the clicked state and restore appearance after a delay (e.g., 5 seconds)
+                setTimeout(() => {
+                    if (adContainer) {
+                        delete adContainer.dataset.clicked;
+                        adContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                }, 5000); 
+            });
+        }
     </script>
 
     {% block extra_js %}

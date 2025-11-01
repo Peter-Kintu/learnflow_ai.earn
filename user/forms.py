@@ -3,7 +3,8 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
 from .constants import ROLE_CHOICES
 from .models import Profile
-from book.models import Book  # ✅ Corrected import
+from book.models import Book
+import re # Import re for mobile number validation
 
 User = get_user_model()
 
@@ -29,6 +30,17 @@ class LoginForm(forms.Form):
     )
 
 class CustomUserCreationForm(UserCreationForm):
+    # NEW: Mobile Phone Number field
+    mobile_number = forms.CharField(
+        max_length=20,
+        required=True,
+        label="Mobile Phone Number",
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASSES,
+            'placeholder': 'e.g., +256771234567'
+        })
+    )
+
     email = forms.EmailField(
         required=True,
         label="Email Address",
@@ -57,7 +69,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'role',)
+        fields = ('username', 'email', 'mobile_number', 'role',) # ADDED 'mobile_number'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,6 +95,15 @@ class CustomUserCreationForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("This email address is already in use.")
         return email
+    
+    # NEW: Validation for mobile number
+    def clean_mobile_number(self):
+        mobile_number = self.cleaned_data.get('mobile_number')
+        # Simple validation: checks for digits, spaces, hyphens, and the '+' sign
+        if not re.match(r'^\+?[\d\s\-\(\)]+$', mobile_number):
+            raise forms.ValidationError("Please enter a valid phone number (e.g., +256771234567).")
+        return mobile_number
+
 
     def clean_teacher_code(self):
         code = self.cleaned_data.get('teacher_code')
@@ -114,10 +135,20 @@ class CustomUserCreationForm(UserCreationForm):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user._role = self.cleaned_data.get('role')
+        mobile_number = self.cleaned_data.get('mobile_number') # GET NEW FIELD
 
         if commit:
             user.save()
-            Profile.objects.update_or_create(user=user, defaults={'role': user._role})
+            # UPDATED: Save role AND mobile_number to the Profile
+            Profile.objects.update_or_create(
+                user=user, 
+                defaults={
+                    'role': user._role,
+                    'mobile_number': mobile_number, # SAVE MOBILE NUMBER
+                    'points': 0, # Initialize points
+                    'reward_amount': 0.00 # Initialize reward
+                }
+            )
         return user
 
 class CustomUserChangeForm(UserChangeForm):

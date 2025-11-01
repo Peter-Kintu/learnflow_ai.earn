@@ -59,6 +59,9 @@
         <div class="form-field">
           <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-200 mb-1">
             {{ field.label }}
+            {% if field.field.required %}
+              <span class="text-red-400">*</span>
+            {% endif %}
           </label>
 
           {% if field.name == 'role' %}

@@ -6,9 +6,24 @@ from .forms import CustomUserCreationForm
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required # NEW
+import json # NEW
 
 # Get the custom User model
 User = get_user_model()
+
+# NEW Helper Function to Calculate Reward
+def calculate_reward_amount(points):
+    """
+    Calculates the reward amount based on accumulated points.
+    Assuming a simple rate: 1 point = UGX 10.
+    """
+    POINTS_TO_UGX_RATE = 10 
+    reward = points * POINTS_TO_UGX_RATE
+    # Round to two decimal places for currency
+    return round(reward, 2)
+
+
 def loading_screen(request):
     """
     Public homepage with branded loading screen.
@@ -52,6 +67,7 @@ def register_request(request):
            instead of overwriting it and redirecting to login page.
     """
     if request.method == "POST":
+        # Note: The mobile_number field is now handled in CustomUserCreationForm
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
@@ -114,3 +130,37 @@ def profile_view(request, username):
     """
     user_profile = get_object_or_404(User, username=username)
     return render(request, "user/profile.html", {"user_profile": user_profile})
+
+
+# NEW: API to track ad clicks and update points/reward
+@login_required
+def track_ad_click(request):
+    """
+    API endpoint to track an ad click, grant points, and update the reward amount.
+    """
+    if request.method == 'POST':
+        try:
+            # Ensure the user has a profile attached
+            user_profile = request.user.profile
+        except:
+            return JsonResponse({'success': False, 'message': 'User profile not found.'}, status=400)
+            
+        # 1. Increment Points
+        POINTS_PER_CLICK = 100 # Adjust this value as needed
+        user_profile.points += POINTS_PER_CLICK
+        
+        # 2. Recalculate Reward Amount
+        user_profile.reward_amount = calculate_reward_amount(user_profile.points)
+        
+        # 3. Save the Profile
+        user_profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Ad click tracked and points awarded!',
+            'points': user_profile.points,
+            'reward_amount': user_profile.reward_amount
+        }, status=200)
+    
+    # Optional: Log or return an error for non-POST requests
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)

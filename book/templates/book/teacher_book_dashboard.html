@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% include "partials/ad_block.html" %}
 <div class="max-w-7xl mx-auto p-4 sm:p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl sm:text-3xl font-bold text-gray-200">📚 My Books Dashboard</h2>
@@ -12,7 +11,7 @@
             <span>Upload New Book</span>
         </a>
     </div>
-
+  {% include "partials/ad_block.html" %}
     <p class="text-gray-400 mb-8">
         Manage the books you’ve uploaded. Set prices, update details, and guide learners to unlock your content.
     </p>
