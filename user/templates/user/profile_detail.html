@@ -10,17 +10,17 @@
             height: 250px;
             background-size: cover;
             background-position: center;
-            position: relative; /* This is the anchor for the absolute avatar */
+            position: relative; /* Anchor for absolute avatar and button */
             border-radius: 1rem 1rem 0 0;
             /* Subtle dark fade at bottom for text visibility */
             box-shadow: inset 0 -50px 50px -50px rgba(0, 0, 0, 0.7); 
         }
         .avatar-container {
             position: absolute;
-            /* FIX: Changed from bottom: -60px to top: 16px (1rem/4 units) to align with button */
+            /* FIX: Top-left corner positioning (opposite Edit Images button) */
             top: 16px; 
-            left: 50%;
-            transform: translateX(-50%);
+            left: 16px;
+            transform: none; /* Remove horizontal centering */
             z-index: 10;
         }
         .avatar-circle {
@@ -54,7 +54,6 @@
     <div class="max-w-4xl mx-auto mt-8 mb-16">
         <div class="bg-slate-800 rounded-xl shadow-2xl border border-indigo-700/50">
             
-            {% if user_profile.profile.cover_image %}
             <div 
                 class="cover-area" 
                 style="background-image: url('{{ user_profile.profile.cover_image.url }}');"
@@ -68,6 +67,7 @@
                         />
                     </div>
                 </div>
+
                 {% if is_owner %}
                 <button id="open-upload-modal" class="absolute top-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded-full font-semibold transition-colors flex items-center shadow-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-1"><path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M19 6V3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M14 16h6"/></svg>
@@ -75,30 +75,8 @@
                 </button>
                 {% endif %}
             </div>
-            {% else %}
-                {% static 'covers/default_cover.jpg' as default_cover_url %}
-                <div 
-                    class="cover-area" 
-                    style="background-image: url('{{ default_cover_url }}');"
-                >
-                    <div class="avatar-container">
-                        <div class="avatar-circle">
-                            <img 
-                                src="{% if user_profile.profile.avatar %}{{ user_profile.profile.avatar.url }}{% else %}{% static 'avatars/default.png' %}{% endif %}" 
-                                alt="{{ user_profile.username }} Avatar" 
-                                class="w-full h-full object-cover"
-                            />
-                        </div>
-                    </div>
-                    {% if is_owner %}
-                    <button id="open-upload-modal" class="absolute top-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded-full font-semibold transition-colors flex items-center shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-1"><path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M19 6V3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M14 16h6"/></svg>
-                        Edit Images
-                    </button>
-                    {% endif %}
-                </div>
-            {% endif %}
-            <div class="pb-8 px-8 flex flex-col items-center">
+
+            <div class="relative pb-8 px-8 flex flex-col items-center">
                 
                 <h1 class="text-4xl font-extrabold text-white mt-4 mb-2">{{ user_profile.username }}</h1>
                 
