@@ -69,13 +69,14 @@
                 
                 <div class="avatar-container">
                     <div class="avatar-circle">
+                        {% with default_avatar_url='avatars/default.png'|static %}
                         <img 
                             src="{{ user_profile.profile.avatar.url }}" 
                             alt="{{ user_profile.username }} Avatar" 
                             class="w-full h-full object-cover"
-                            
-                            onerror="this.onerror=null;this.src='{% static &#39;avatars/default.png&#39; %}';"
+                            onerror="this.onerror=null;this.src='{{ default_avatar_url }}';"
                         >
+                        {% endwith %}
                     </div>
                 </div>
 
