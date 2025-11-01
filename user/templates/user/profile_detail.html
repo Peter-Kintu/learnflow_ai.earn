@@ -68,13 +68,12 @@
             <div class="relative pt-16 pb-8 px-8 flex flex-col items-center">
                 
      <div class="avatar-circle">
-  <img 
-   
-  src="{{ user_profile.profile.avatar.url }}" 
-  alt="{{ user_profile.username }} Avatar" 
-  class="w-full h-full object-cover"
-  onerror="this.onerror=null;this.src='{% static 'avatars/default.png' %}';"
-/>
+        <img 
+            src="{{ user_profile.profile.avatar.url }}" 
+            alt="{{ user_profile.username }} Avatar" 
+            class="w-full h-full object-cover"
+            onerror="this.onerror=null;this.src='{% static &#39;avatars/default.png&#39; %}';"
+        />
 
 </div>
                 </div>
