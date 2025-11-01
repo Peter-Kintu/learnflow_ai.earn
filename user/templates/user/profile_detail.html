@@ -58,14 +58,14 @@
                 class="cover-area" 
                 style="background-image: url('{{ user_profile.profile.cover_image.url }}');"
             >
-                <div class="avatar-container">
+                <!-- <div class="avatar-container">
                     <div class="avatar-circle">
                         <img 
                             src="{% if user_profile.profile.avatar %}{{ user_profile.profile.avatar.url }}{% else %}{% static 'avatars/default.png' %}{% endif %}" 
                             alt="{{ user_profile.username }} Avatar" 
                             class="w-full h-full object-cover"
                         />
-                    </div>
+                    </div> -->
                 </div>
 
                 {% if is_owner %}
