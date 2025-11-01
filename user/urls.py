@@ -27,13 +27,17 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
-    # ⭐ PROFILE ROUTES
-    path('profile/', views.my_profile_redirect, name='my_profile'),
-    path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
+    # ⭐ CORRECTED ORDER FOR PROFILE ROUTES
     
-    # ⭐ NEW: Image upload route
-    path('profile/upload_images/', views.upload_profile_image, name='upload_profile_image'),
+    # 1. SPECIFIC Route (Must come first)
+    path('profile/upload_images/', views.upload_profile_image, name='upload_profile_image'), # ⭐ FIX: Moved up
 
+    # 2. GENERIC Route (Must come after all specific paths starting with 'profile/')
+    path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
+
+    # My Profile redirect (Can be before or after the above, but kept together for clarity)
+    path('profile/', views.my_profile_redirect, name='my_profile'),
+    
     # API/AJAX route
     path('track_ad_click/', views.track_ad_click, name='track_ad_click'),
 ]
