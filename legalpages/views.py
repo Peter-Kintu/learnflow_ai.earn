@@ -88,7 +88,7 @@ def sitemap_page(request):
     return render(request, 'legalpages/sitemap.html', {})
 
 def learnflow_overview(request):
-    return render(request, 'learnflow/overview.html', {}) 
+    return render(request, 'learnflow_overview.html', {}) 
 
 def learnflow_video_analysis(request):
     return render(request, 'learnflow.html', {}) 
@@ -191,39 +191,37 @@ def markdown_to_story(markdown_text, styles):
     list_items = []
     in_list = False
     
+    # Process lines for markdown structure
     for line in lines:
-        if line.strip().startswith('* ') or line.strip().startswith('- '):
-            list_items.append(line.strip()[2:].strip())
-            in_list = True
-        else:
-            if in_list and list_items:
-                # End of list, flush the list flowable
-                flowable_list = ListFlowable(
-                    [ListItem(Paragraph(item, styles['Normal']), bulletText='•') for item in list_items],
-                    bulletType='bullet',
-                    start='bullet',
-                    indent=0.3 * inch,
-                    leftIndent=0.3 * inch
-                )
-                story.append(flowable_list)
+        line = line.strip()
+        
+        # Heading 1
+        if line.startswith('## '):
+            if in_list:
+                story.append(ListFlowable(list_items, bulletType='bullet', start='bulletchar', bulletColor=colors.black, leftIndent=0.3*inch))
                 list_items = []
                 in_list = False
-            
-            if line.strip():
-                # Treat other lines as normal paragraphs
-                story.append(Paragraph(line.strip(), styles['Normal']))
+            story.append(Paragraph(line[3:], styles['Heading1']))
+        # List item
+        elif line.startswith('* ') or line.startswith('- '):
+            list_items.append(ListItem(Paragraph(line[2:], styles['Normal'])))
+            in_list = True
+        else:
+            if in_list:
+                story.append(ListFlowable(list_items, bulletType='bullet', start='bulletchar', bulletColor=colors.black, leftIndent=0.3*inch))
+                list_items = []
+                in_list = False
+            if line:
+                story.append(Paragraph(line, styles['Normal']))
 
-    # Flush the final list if the text ended with one
-    if in_list and list_items:
-        flowable_list = ListFlowable(
-            [ListItem(Paragraph(item, styles['Normal']), bulletText='•') for item in list_items],
-            bulletType='bullet',
-            start='bullet',
-            indent=0.3 * inch,
-            leftIndent=0.3 * inch
-        )
-        story.append(flowable_list)
-        
+    # Finalize list if one was active
+    if in_list:
+        story.append(ListFlowable(list_items, bulletType='bullet', start='bulletchar', bulletColor=colors.black, leftIndent=0.3*inch))
+
+    # Fallback for empty story (shouldn't happen with valid markdown)
+    if not story and markdown_text:
+        story.append(Paragraph(markdown_text, styles['Normal']))
+    
     return story
 
 def generate_pdf_report(title, summary, quiz_data, action_plan):
@@ -233,18 +231,19 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
     """
     if not PDF_ENABLED:
         return None, "PDF generation library (ReportLab) is not installed."
-        
+
     buffer = BytesIO()
     doc = SimpleDocTemplate(
-        buffer, 
-        pagesize=A4, 
-        rightMargin=inch/2, 
-        leftMargin=inch/2, 
-        topMargin=inch/2, 
+        buffer,
+        pagesize=A4,
+        rightMargin=inch/2,
+        leftMargin=inch/2,
+        topMargin=inch/2,
         bottomMargin=inch/2
     )
-
     styles = getSampleStyleSheet()
+    
+    # Custom Styles
     styles.add(ParagraphStyle(name='TitleStyle', fontName='Helvetica-Bold', fontSize=24, alignment=1, spaceAfter=20, textColor=colors.HexColor('#00DDEB')))
     styles.add(ParagraphStyle(name='Heading1', fontName='Helvetica-Bold', fontSize=14, spaceBefore=15, spaceAfter=8, textColor=colors.HexColor('#3b82f6')))
     styles.add(ParagraphStyle(name='Normal', fontName='Helvetica', fontSize=10, spaceAfter=8))
@@ -252,7 +251,7 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
     styles.add(ParagraphStyle(name='AnswerCorrect', fontName='Helvetica', fontSize=10, spaceBefore=2, spaceAfter=10, textColor=colors.HexColor('#10B981')))
     styles.add(ParagraphStyle(name='AnswerIncorrect', fontName='Helvetica', fontSize=10, spaceBefore=2, spaceAfter=10, textColor=colors.HexColor('#EF4444')))
     styles.add(ParagraphStyle(name='Metadata', fontName='Helvetica-Oblique', fontSize=8, spaceAfter=10, alignment=1))
-
+    
     story = []
 
     # Report Title
@@ -263,35 +262,32 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
     # Summary Section
     story.append(Paragraph("--- 1. SUMMARY ---", styles['Heading1']))
     story.extend(markdown_to_story(summary, styles))
-    story.append(Spacer(1, 0.2 * inch))
+    story.append(Spacer(1, 0.1 * inch))
 
-    # Quiz Results Section
+    # Quiz Section
     story.append(Paragraph("--- 2. QUIZ RESULTS ---", styles['Heading1']))
-    quiz_results_found = False
-    
-    if quiz_data and quiz_data.get('questions'):
-        quiz_results_found = True
-        score = quiz_data.get('score', 0)
-        total = quiz_data.get('total_questions', 0)
-        story.append(Paragraph(f"Final Score: <font size='12' color='#00DDEB'><b>{score} / {total}</b></font>", styles['Normal']))
+    if quiz_data and isinstance(quiz_data, list):
+        for i, question_data in enumerate(quiz_data, 1):
+            question = question_data.get('question', 'N/A')
+            selected_answer = question_data.get('selected_answer', 'Not Answered')
+            correct_answer = question_data.get('correct_answer', 'N/A')
+            is_correct = question_data.get('is_correct', False)
 
-        for i, q in enumerate(quiz_data['questions']):
-            is_correct = q.get('is_correct', False)
-            style = styles['AnswerCorrect'] if is_correct else styles['AnswerIncorrect']
+            story.append(Paragraph(f"Q{i}: {question}", styles['Question']))
             
-            story.append(Paragraph(f"Question {i+1}: {q['question']}", styles['Question']))
-            story.append(Paragraph(f"Your Answer: <font color='{style.textColor.hexa() if is_correct else styles['AnswerIncorrect'].textColor.hexa()}'><b>{q['user_answer']} ({'CORRECT' if is_correct else 'INCORRECT'})</b></font>", styles['Normal']))
+            # Display Selected Answer
+            selected_style = styles['AnswerCorrect'] if is_correct else styles['AnswerIncorrect']
+            selected_label = "✅ Your Answer (Correct)" if is_correct else "❌ Your Answer (Incorrect)"
+            story.append(Paragraph(f"{selected_label}: {selected_answer}", selected_style))
             
+            # Display Correct Answer if incorrect
             if not is_correct:
-                 story.append(Paragraph(f"Correct Answer: <font color='{styles['AnswerCorrect'].textColor.hexa()}'><b>{q['correct_answer']}</b></font>", styles['Normal']))
+                story.append(Paragraph(f"Correct Answer: {correct_answer}", styles['AnswerCorrect']))
             
             story.append(Spacer(1, 0.1 * inch))
-
-    if not quiz_results_found:
-        story.append(Paragraph("Quiz results were not provided or the quiz was not scored.", styles['Normal']))
-
-    story.append(Spacer(1, 0.2 * inch))
-
+    else:
+        story.append(Paragraph("Quiz results were not available or the quiz was not taken.", styles['Normal']))
+    
     # Action Plan Section
     story.append(Paragraph("--- 3. ACTION PLAN ---", styles['Heading1']))
     story.extend(markdown_to_story(action_plan, styles))
@@ -302,127 +298,133 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
         buffer.close()
         return pdf_content, None
     except Exception as e:
-        logging.error(f"ReportLab PDF generation failed: {e}")
-        return None, "Failed to build PDF document. Check server logs."
+        logging.error(f"Error building PDF: {e}")
+        return None, f"Failed to generate PDF report: {e}"
 
 
-# --- API Views ---
+# --- API/AJAX Views ---
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def analyze_video_api(request):
     """
-    API endpoint to fetch transcript, analyze with Gemini, and return the structured data.
-    CRITICAL: Contains top-level error handling to prevent silent 500 errors.
+    API endpoint to fetch a transcript and send it to the Gemini API for analysis.
     """
     try:
         data = json.loads(request.body)
-        video_url = data.get('video_url')
-        video_title = data.get('video_title', 'Unknown Video')
-
-        if not video_url:
-            return JsonResponse({"success": False, "error": "Video URL is required."}, status=400)
-
-        # Robust YouTube ID extraction
-        video_id = urlparse(video_url).query
-        if 'v=' in video_id:
-            video_id = parse_qs(video_id).get('v', [''])[0]
-        else:
-            path_parts = urlparse(video_url).path.split('/')
-            video_id = path_parts[-1] if path_parts[-1] else path_parts[-2]
-
-        if not video_id or len(video_id) != 11:
-             return JsonResponse({"success": False, "error": "Invalid YouTube video ID extracted."}, status=400)
-
-        # 1. Fetch Transcript
-        transcript_text, error = get_transcript_from_youtube(video_id)
-
-        if error:
-            # Transcript errors are expected (e.g., disabled captions)
-            return JsonResponse({"success": False, "error": f"Transcript Error: {error}"}, status=404)
-
-        # 2. Prepare AI Prompt
-        system_instruction = (
-            "You are an expert educational assistant specializing in summarizing video transcripts, "
-            "creating challenging multiple-choice quizzes (3 questions, 4 options each), and generating a 3-5 step action plan. "
-            "Output MUST be in the requested JSON format."
-        )
-        prompt = (
-            f"Video Title: '{video_title}'.\n\n"
-            f"Transcript:\n---\n{transcript_text}\n---\n\n"
-            "Based on the transcript, generate a comprehensive summary, a 3-question quiz with 4 options each, and a 3-5 step action plan. Ensure the output strictly follows the provided JSON schema."
-        )
-
-        # 3. Call Gemini API
-        json_result_str, error = call_gemini_api_with_retry(
-            prompt=prompt,
-            system_instruction=system_instruction,
-            response_schema=ANALYSIS_SCHEMA
-        )
-
-        if error:
-            return JsonResponse({"success": False, "error": f"AI Generation Failed: {error}"}, status=500)
-
-        # 4. Parse and Return JSON
-        try:
-            analysis_result = json.loads(json_result_str)
-        except json.JSONDecodeError:
-            logging.error(f"AI returned non-JSON content: {json_result_str[:500]}...")
-            return JsonResponse({"success": False, "error": "AI returned invalid JSON format. Try again."}, status=500)
-
-        # Add the title back for the frontend
-        analysis_result['video_title'] = video_title
-
-        return JsonResponse({"success": True, **analysis_result}, status=200)
-
+        url = data.get('url')
+        video_title = data.get('title', 'YouTube Video')
     except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "Invalid JSON request body."}, status=400)
+        return JsonResponse({"success": False, "error": "Invalid JSON format in request body."}, status=400)
+    
+    if not url:
+        return JsonResponse({"success": False, "error": "URL parameter is missing."}, status=400)
+    
+    # Extract video ID
+    try:
+        # Check for standard URL
+        parsed_url = urlparse(url)
+        if parsed_url.hostname in ['youtu.be', 'www.youtu.be']:
+            video_id = parsed_url.path.lstrip('/')
+        else:
+            # Check for watch URL
+            query = parse_qs(parsed_url.query)
+            video_id = query.get('v', [None])[0]
+        
+        if not video_id:
+            raise ValueError("ID extraction failed.")
+        
+    except Exception:
+        return JsonResponse({"success": False, "error": "Invalid YouTube video ID extracted."}, status=400)
+
+    # 1. Fetch Transcript
+    transcript_text, error = get_transcript_from_youtube(video_id)
+    if error:
+        # Transcript errors are expected (e.g., disabled captions)
+        return JsonResponse({"success": False, "error": f"Transcript Error: {error}"}, status=404)
+
+    # 2. Prepare AI Prompt
+    system_instruction = (
+        "You are an expert educational assistant specializing in summarizing video transcripts, "
+        "creating challenging multiple-choice quizzes (3 questions, 4 options each), and generating a 3-5 step action plan. "
+        "Output MUST be in the requested JSON format."
+    )
+    prompt = (
+        f"Video Title: '{video_title}'.\n\n"
+        f"Transcript:\n---\n{transcript_text}\n---\n\n"
+        "Based on the transcript, generate a comprehensive summary, a 3-question quiz with 4 options each, and a 3-5 step action plan. Ensure the output strictly follows the provided JSON schema."
+    )
+
+    # 3. Call Gemini API
+    json_result_str, error = call_gemini_api_with_retry(
+        prompt=prompt, 
+        system_instruction=system_instruction, 
+        response_schema=ANALYSIS_SCHEMA
+    )
+
+    if error:
+        return JsonResponse({"success": False, "error": f"AI Generation Error: {error}"}, status=500)
+
+    # 4. Parse and Return Result
+    try:
+        # Clean the string, sometimes models add extra characters like ```json...```
+        json_result_str = json_result_str.strip().lstrip('```json').rstrip('```')
+        result_data = json.loads(json_result_str)
+        
+        # Add the video ID and title to the response
+        result_data['video_id'] = video_id
+        result_data['video_title'] = video_title
+        
+        return JsonResponse({"success": True, "data": result_data})
+
+    except json.JSONDecodeError as e:
+        logging.error(f"JSON Decoding Error after AI call: {e}")
+        return JsonResponse({"success": False, "error": "AI response was not valid JSON."}, status=500)
     except Exception as e:
-        # CATCH-ALL: This is the critical block that prevents silent 500 errors.
         logging.exception(f"CRITICAL UNHANDLED ERROR in analyze_video_api: {e}")
-        return JsonResponse({"success": False, "error": "A critical server error occurred. Check backend logs for a Python traceback."}, status=500)
+        return JsonResponse({"success": False, "error": "A critical server error occurred during analysis."}, status=500)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def submit_quiz_api(request):
     """
-    API endpoint to submit quiz results and get AI grading (simple echo for now).
+    API endpoint to check user's quiz answers against the correct answers provided by the client.
+    Note: In a production app, the correct answers should be stored server-side, not sent by the client.
     """
     try:
         data = json.loads(request.body)
-        quiz_data = data.get('quiz_data', [])
-        
-        # Simple grading logic (in a real app, this would use AI for more complex grading/feedback)
-        total_questions = len(quiz_data)
-        correct_count = 0
-        
-        graded_questions = []
-        for q in quiz_data:
-            is_correct = (q['user_answer'] == q['correct_answer'])
-            if is_correct:
-                correct_count += 1
-            graded_questions.append({
-                'question': q['question'],
-                'user_answer': q['user_answer'],
-                'correct_answer': q['correct_answer'],
-                'is_correct': is_correct
-            })
-
-        grading_result = {
-            "score": correct_count,
-            "total_questions": total_questions,
-            "questions": graded_questions
-        }
-
-        return JsonResponse({"success": True, "grading_data": grading_result})
-
+        submitted_quiz = data.get('quiz', []) # Quiz structure from client
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format for quiz submission."}, status=400)
-    except Exception as e:
-        logging.exception(f"CRITICAL UNHANDLED ERROR in submit_quiz_api: {e}")
-        return JsonResponse({"success": False, "error": "A critical server error occurred during quiz submission."}, status=500)
+    
+    graded_results = []
+    total_questions = len(submitted_quiz)
+    correct_count = 0
 
+    # The client sends the entire quiz structure including the correct_answer.
+    # We trust this structure for the grading logic here.
+    for q in submitted_quiz:
+        is_correct = q.get('selected_answer') == q.get('correct_answer')
+        if is_correct:
+            correct_count += 1
+        
+        # Prepare the result dictionary
+        graded_results.append({
+            'question': q.get('question'),
+            'options': q.get('options'),
+            'correct_answer': q.get('correct_answer'),
+            'selected_answer': q.get('selected_answer'),
+            'is_correct': is_correct
+        })
+
+    score = f"{correct_count}/{total_questions}"
+
+    return JsonResponse({
+        "success": True, 
+        "graded_quiz": graded_results, 
+        "score": score
+    })
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -447,7 +449,7 @@ def export_content_api(request):
     # Return the PDF file as a Django HttpResponse
     response = HttpResponse(pdf_content, content_type='application/pdf')
     # Use the video title for the filename, sanitized
-    filename = sanitize_filename(title)
-    response['Content-Disposition'] = f'attachment; filename="{filename}_report.pdf"'
+    sanitized_title = sanitize_filename(title)
+    response['Content-Disposition'] = f'attachment; filename="{sanitized_title}.pdf"'
     
     return response
