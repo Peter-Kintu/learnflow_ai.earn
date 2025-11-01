@@ -61,22 +61,8 @@
     </div>
 
     <script>
-        // Function to get CSRF token from cookies
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
+        // The getCookie function is now expected to be in base.html
+        
         // Function to show the points notification
         function showPointNotification(points) {
             const notification = document.getElementById('point-notification');
@@ -116,8 +102,8 @@
             const tokenInput = document.getElementById('csrf-token-input');
             let csrftoken = tokenInput ? tokenInput.value : null;
 
-            // Fallback to cookie retrieval if the hidden input fails
-            if (!csrftoken) {
+            // Fallback to cookie retrieval if the hidden input fails (uses the function from base.html)
+            if (!csrftoken && typeof getCookie === 'function') {
                 csrftoken = getCookie('csrftoken');
             }
 

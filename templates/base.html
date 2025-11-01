@@ -139,7 +139,7 @@
             {% with request.path as current_path %}
             
             {% if user.is_authenticated %}
-            <a href="{% url 'user:user_profile' user.id %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
+            <a href="{% url 'user:profile_detail' user.username %}" class="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors duration-300 cursor-pointer border border-slate-700 hover:border-indigo-600">
                  <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                     {{ user.username.0|upper }} 
                 </div>
@@ -281,6 +281,24 @@
     </script>
 
     {% block extra_js %}
+    <script>
+        // NEW: Helper function to retrieve the CSRF token from the cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
     {% endblock %}
 </body>
 </html>
