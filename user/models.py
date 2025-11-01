@@ -33,7 +33,8 @@ class Profile(models.Model):
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     """
     This signal handler automatically creates a Profile for a new User
-    and ensures an existing profile is saved.
+    and ensures an existing profile is saved. This is the robust and
+    recommended way to handle this logic.
     """
     if created:
         # If a new User instance is created, a Profile is also created and linked.
@@ -41,6 +42,7 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     else:
         try:
             # For an existing user, we try to save their profile.
+            # This will work for users who already have a profile.
             instance.profile.save()
         except ObjectDoesNotExist:
             # If a profile doesn't exist for an older user, we create one now.

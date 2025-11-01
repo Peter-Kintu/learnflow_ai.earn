@@ -25,46 +25,6 @@ def calculate_reward_amount(points):
     return round(reward, 2)
 
 
-# ⭐ NEW: API to track ad clicks and update points/reward
-@login_required
-def track_ad_click(request):
-    """
-    API endpoint to track an ad click, grant points, and update the reward amount.
-    """
-    if request.method == 'POST':
-        # No need to parse JSON since the body is empty, but can keep a placeholder
-        # for future expansion.
-        
-        try:
-            # Ensure the user has a profile attached (assuming a 'profile' reverse relation exists)
-            user_profile = request.user.profile
-        except:
-            return JsonResponse({'success': False, 'message': 'User profile not found. Ensure profile model is linked.'}, status=400)
-            
-        # 1. Increment Points
-        POINTS_PER_CLICK = 100 # Adjust this value as needed
-        old_points = user_profile.points # Store current points for client feedback
-        user_profile.points += POINTS_PER_CLICK
-        
-        # 2. Recalculate Reward Amount
-        # NOTE: This assumes 'reward_amount' and 'points' fields exist on the Profile model.
-        user_profile.reward_amount = calculate_reward_amount(user_profile.points)
-        
-        # 3. Save the Profile
-        user_profile.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Ad click tracked and points awarded!',
-            'points': user_profile.points,
-            'old_points': old_points, # Return old points for client to calculate gain
-            'reward_amount': user_profile.reward_amount
-        }, status=200)
-
-    # Handle non-POST requests
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
-
-
 def loading_screen(request):
     """
     Public homepage with branded loading screen.
@@ -94,27 +54,32 @@ def ping(request):
     """
     Health check endpoint for Render.
     """
-    return JsonResponse({"status": "ok"}, status=200)
+    return JsonResponse({'status': 'ok'})
 
 
 def register_request(request):
     """
     Handles user registration.
     """
-    if request.user.is_authenticated:
-        return redirect("aiapp:home")
-
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
+            # Create user but don't save the profile yet
             user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful. Welcome!")
-            return redirect("aiapp:home")
-        messages.error(request, "Unsuccessful registration. Invalid information.")
+            
+            # Save the mobile number and set the role on the Profile object
+            # The Profile is guaranteed to exist due to the post_save signal
+            user.profile.mobile_number = form.cleaned_data['mobile_number']
+            user.profile.role = form.cleaned_data['role']
+            user.profile.save()
+            
+            username = form.cleaned_data.get('username')
+            messages.success(request, f"Account successfully created for {username}. Please log in.")
+            return redirect("user:login")
+        messages.error(request, "Registration failed. Invalid information.")
     else:
         form = CustomUserCreationForm()
-        
+    
     return render(request, "user/register.html", {"register_form": form})
 
 
@@ -122,9 +87,6 @@ def login_request(request):
     """
     Handles user login.
     """
-    if request.user.is_authenticated:
-        return redirect("aiapp:home")
-    
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -169,3 +131,41 @@ def profile_view(request, username):
     """
     user_profile = get_object_or_404(User, username=username)
     return render(request, "user/profile.html", {"user_profile": user_profile})
+
+
+# ⭐ NEW: API to track ad clicks and update points/reward
+@login_required
+def track_ad_click(request):
+    """
+    API endpoint to track an ad click, grant points, and update the reward amount.
+    """
+    if request.method == 'POST':
+        # No need to parse JSON since the body is empty, but can keep a placeholder
+        # for future expansion.
+        
+        try:
+            # Ensure the user has a profile attached
+            user_profile = request.user.profile
+        except:
+            return JsonResponse({'success': False, 'message': 'User profile not found.'}, status=400)
+            
+        # 1. Increment Points
+        POINTS_PER_CLICK = 100 # Adjust this value as needed
+        user_profile.points += POINTS_PER_CLICK
+        
+        # 2. Recalculate Reward Amount
+        user_profile.reward_amount = calculate_reward_amount(user_profile.points)
+        
+        # 3. Save the Profile
+        user_profile.save()
+        
+        # Return the new total points and reward amount to update the client side
+        return JsonResponse({
+            'success': True,
+            'message': 'Ad click tracked and points awarded!',
+            'points': user_profile.points,
+            'reward_amount': user_profile.reward_amount
+        }, status=200)
+    
+    # Return a 405 error if not a POST request
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)

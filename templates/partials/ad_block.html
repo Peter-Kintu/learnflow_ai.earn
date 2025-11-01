@@ -30,7 +30,8 @@
                             'format' : 'iframe',
                             'height' : 60,
                             'width' : 468,
-                            'params' : {}
+                            'params' : {},
+                            'container' : 'ad-unit-container'
                         };
                     </script>
                     <script type="text/javascript" src="//www.highperformanceformat.com/7f6534d747d7fc18ada93341f5afacd2/invoke.js"></script>
@@ -39,6 +40,7 @@
             <p class="text-xs text-indigo-400 mt-2">Clicking this ad rewards your account. Thank you for supporting us!</p>
         </div>
     {% endif %}
+
 
     <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
        id="ad-button"
@@ -56,102 +58,107 @@
     <div id="ad-feedback-container" class="mt-2 text-center">
         <p class="text-sm text-gray-400">Click the button above to support us and earn points!</p>
     </div>
+
+    <script>
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Function to show the points notification
+        function showPointNotification(points) {
+            const notification = document.getElementById('point-notification');
+            const pointsGainedSpan = document.getElementById('points-gained');
+
+            if (notification && pointsGainedSpan) {
+                pointsGainedSpan.textContent = points;
+                notification.classList.remove('hidden');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        function trackAdClick() {
+            // Prevent multiple clicks immediately after the first one
+            const adButton = document.getElementById('ad-button');
+            const adContainer = document.getElementById('ad-unit-container'); 
+
+            if (adContainer && adContainer.dataset.clicked) {
+                console.log("Ad click already tracked recently. Ignoring.");
+                return; // Stop if already clicked recently
+            }
+
+            // Visually disable the ad button/container to prevent double counting
+            if (adContainer) {
+                adContainer.dataset.clicked = 'true';
+                adContainer.classList.add('opacity-50', 'pointer-events-none');
+            }
+            if (adButton) {
+                 adButton.classList.add('opacity-50', 'pointer-events-none');
+            }
+
+            const csrftoken = getCookie('csrftoken');
+            const pointsGained = 100; // Hardcoded, as determined by views.py
+
+            // Send an AJAX POST request to the Django endpoint
+            fetch("{% url 'user:track_ad_click' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Points awarded:', data.points);
+                    // Show a notification to the user with the points gained
+                    showPointNotification(pointsGained); 
+                } else {
+                    console.error('Failed to track ad click:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error tracking ad click:', error);
+            })
+            .finally(() => {
+                // Restore appearance after a delay
+                setTimeout(() => {
+                    if (adContainer) {
+                        delete adContainer.dataset.clicked;
+                        adContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                    if (adButton) {
+                        adButton.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                }, 5000); 
+            });
+        }
+    </script>
     
     <div class="requires-ad-click w-full mt-6 p-4 bg-slate-700 rounded-xl shadow-inner text-center text-gray-300">
       <p class="text-lg font-semibold">🔒 This feature is locked</p>
-      <p class="text-sm text-gray-400 mt-2">Please click the offer above to unlock access to this service.</p>
+      <p class="text-sm text-gray-400 mt-2">Please click the offer button above to unlock this feature and earn points!</p>
     </div>
+
 </div>
-
-<script>
-    // Helper function to get the CSRF token from cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Function to show point notification
-    function showPointNotification(points) {
-        const notification = document.getElementById('point-notification');
-        const pointsGainedSpan = document.getElementById('points-gained');
-
-        pointsGainedSpan.textContent = points;
-        notification.classList.remove('hidden');
-        notification.classList.add('animate-fadeInUp'); 
-        
-        setTimeout(() => {
-            notification.classList.remove('animate-fadeInUp');
-            notification.classList.add('animate-fadeOutDown'); 
-        }, 2500);
-
-        setTimeout(() => {
-            notification.classList.add('hidden');
-            notification.classList.remove('animate-fadeOutDown'); 
-        }, 3000); 
-    }
-
-    // This function executes when the Ad unit container or the Smartlink button is clicked.
-    function trackAdClick() {
-        // Check both ad unit container and the button's parent (for the Smartlink)
-        const adContainer = document.getElementById('ad-unit-container') || document.getElementById('ad-button').closest('.flex-col');
-        
-        if (adContainer && adContainer.dataset.clicked) {
-            return; // Do nothing if already clicked
-        }
-
-        if (adContainer) {
-            adContainer.dataset.clicked = 'true';
-            adContainer.classList.add('opacity-50', 'pointer-events-none'); 
-        }
-
-        const csrftoken = getCookie('csrftoken');
-        const pointsGained = 100; // Hardcoded, as determined by views.py
-
-        // Send an AJAX POST request to the Django endpoint
-        fetch("{% url 'user:track_ad_click' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                console.log('Points awarded:', data.points);
-                // Show a notification to the user with the points gained
-                showPointNotification(pointsGained); 
-            } else {
-                console.error('Failed to track ad click:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error tracking ad click:', error);
-        })
-        .finally(() => {
-            // Restore appearance after a delay
-            setTimeout(() => {
-                if (adContainer) {
-                    delete adContainer.dataset.clicked;
-                    adContainer.classList.remove('opacity-50', 'pointer-events-none');
-                }
-            }, 5000); 
-        });
-    }
-</script>
