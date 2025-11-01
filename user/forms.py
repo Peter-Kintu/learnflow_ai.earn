@@ -151,6 +151,23 @@ class CustomUserCreationForm(UserCreationForm):
             )
         return user
 
+
+# ⭐ FIX: THE MISSING ProfileImageForm CLASS
+class ProfileImageForm(forms.ModelForm):
+    """
+    Form for updating a user's avatar and cover image.
+    This class is required by user/views.py.
+    """
+    class Meta:
+        model = Profile
+        fields = ['avatar', 'cover_image']
+        # Styling for file inputs
+        widgets = {
+            'avatar': forms.FileInput(attrs={'class': 'w-full text-gray-300 bg-slate-700 rounded-md border border-slate-600 p-2'}),
+            'cover_image': forms.FileInput(attrs={'class': 'w-full text-gray-300 bg-slate-700 rounded-md border border-slate-600 p-2'}),
+        }
+
+
 class CustomUserChangeForm(UserChangeForm):
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
