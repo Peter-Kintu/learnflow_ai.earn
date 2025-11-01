@@ -15,6 +15,8 @@ CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
 
 # Installed Apps
 INSTALLED_APPS = [
+    'cloudinary_storage', # Cloudinary storage engine (Keep first to handle static/media precedence)
+    'cloudinary',
     # --- ADDED: CSP ---
     'csp',
     # ------------------
@@ -26,8 +28,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage',
-    'cloudinary',
     'aiapp',
     'video',
     'user',
@@ -143,14 +143,30 @@ TIME_ZONE = 'Africa/Kampala'
 USE_I18N = True
 USE_TZ = True
 
-# Static & Media
+# --- STATIC FILES ---
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# --- MEDIA FILES (Cloudinary Configuration) ---
 MEDIA_URL = '/media/'
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Set DEFAULT_FILE_STORAGE to Cloudinary storage handler
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage' 
+
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+
+CLOUDINARY_STORAGE = {
+    # Credentials are automatically picked up from the top-level variables, but explicitly define if needed
+    'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+    'API_KEY': CLOUDINARY_API_KEY,
+    'API_SECRET': CLOUDINARY_API_SECRET,
+    # Standard settings for file types
+    'OVERWRITE': True,
+    'RESOURCE_TYPE': 'image',
+}
 
 # Logging (for template/static errors)
 LOGGING = {
@@ -175,13 +191,6 @@ LOGOUT_REDIRECT_URL = 'user:login'
 # External API Configurations
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
-
-# Cloudinary Configuration (ADDED for completeness)
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
-}
 
 # --- Content Security Policy (CSP) Configuration (django-csp v4.0+ format) ---
 CONTENT_SECURITY_POLICY = {
@@ -231,6 +240,8 @@ CONTENT_SECURITY_POLICY = {
             'https://i.ytimg.com',
             'https://ep1.adtrafficquality.google',
             'https://ep2.adtrafficquality.google', 
+            # ⭐ CRITICAL FIX: Add Cloudinary's CDN host for images
+            'https://res.cloudinary.com',
         ),
         'connect-src': (
             "'self'",
@@ -246,6 +257,7 @@ CONTENT_SECURITY_POLICY = {
         'frame-ancestors': ("'self'",),
     }
 }
+
 # Jazzmin Admin
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow Admin",
