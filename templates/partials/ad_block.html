@@ -42,17 +42,22 @@
 
     <input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
 
-    <div class="mb-8 p-6 bg-slate-700 rounded-xl text-center border-2 border-pink-600 shadow-2xl">
-        <h3 class="text-2xl font-extrabold text-white mb-4">A Quick Favor to View Books!</h3>
-        <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
-           target="_blank" rel="nofollow"
-           onclick="trackAdClickAndGrantAccess()"
-           class="inline-block px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full hover:from-red-700 hover:to-pink-700 transition-all shadow-xl font-extrabold text-lg tracking-wide transform hover:scale-105">
-           🎁 CLICK TO EARN POINTS AND MONEY
-        </a>
+
+    <a href="https://galeindelicatedrove.com/xa0dwpgpev?key=69191c2b5ac00672ced97515583f6477"
+       id="ad-button"
+       target="_blank" 
+       rel="nofollow"
+       onclick="trackAdClick();"
+       class="w-full sm:w-fit inline-block px-6 py-3 sm:px-8 sm:py-4 
+              bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full 
+              hover:from-red-700 hover:to-pink-700 transition-all shadow-2xl 
+              font-black text-base sm:text-xl tracking-wider uppercase 
+              transform hover:scale-105 text-center">
+        🎁 Click to Earn Points and money
+    </a>
 
     <div id="ad-feedback-container" class="mt-2 text-center">
-        <p class="text-sm text-gray-400">study while earning points and money! click the button above to earn</p>
+        <p class="text-sm text-gray-400">Click the button above to support us and earn points!</p>
     </div>
 
     <script>
