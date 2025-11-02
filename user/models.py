@@ -23,7 +23,7 @@ class Profile(models.Model):
     mobile_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Mobile Phone Number")
     
     # Fields for point and reward system
-    points = models.IntegerField(default=0, verbose_name="Ad Click Points")
+    points = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Ad Click Points") 
     reward_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Reward Amount (UGX)")
     
     # ⭐ NEW: Fields for user-uploaded images
