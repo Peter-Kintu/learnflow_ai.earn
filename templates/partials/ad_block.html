@@ -15,7 +15,7 @@
 
 <div class="flex flex-col items-center gap-4 mb-10" role="complementary" aria-label="Advertisement">
 
-    {% if user.is_authenticated %}
+    <!-- {% if user.is_authenticated %}
         <div id="ad-unit-container" 
              onclick="trackAdClick()"
              class="my-6 p-2 bg-slate-700/50 rounded-lg shadow-inner border border-indigo-600/50 text-center cursor-pointer transition-all duration-300 hover:bg-slate-700 w-fit mx-auto">
@@ -38,7 +38,7 @@
             </div>
             <p class="text-xs text-indigo-400 mt-2">Clicking this ad rewards your account. Thank you for supporting us!</p>
         </div>
-    {% endif %}
+    {% endif %} -->
 
     <input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
 
@@ -53,7 +53,7 @@
               hover:from-red-700 hover:to-pink-700 transition-all shadow-2xl 
               font-black text-base sm:text-xl tracking-wider uppercase 
               transform hover:scale-105 text-center">
-        🎁 Click to Unlock Access & Earn Points
+        🎁 Click to Earn Points and money
     </a>
 
     <div id="ad-feedback-container" class="mt-2 text-center">
