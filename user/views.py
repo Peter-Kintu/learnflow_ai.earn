@@ -9,21 +9,24 @@ from django.utils.translation import gettext as _
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required 
 import json 
+# ⭐ FIX 1: Import the Decimal class
+from decimal import Decimal 
 
 # Get the custom User model
 User = get_user_model()
 
-# --- Helper Functions (Preserved) ---
+# --- Helper Functions (Updated to use Decimal) ---
 
 def calculate_reward_amount(points):
     """
     Calculates the reward amount based on accumulated points.
     Rate: 1 UGX for every 2 points (0.5 UGX per point).
     """
-    POINTS_TO_UGX_RATE = 0.5 # 1 UGX / 2 points = 0.5 UGX per point
+    # ⭐ FIX 2: POINTS_TO_UGX_RATE must be a Decimal for calculation with DecimalField 'points'
+    POINTS_TO_UGX_RATE = Decimal('0.5') # 1 UGX / 2 points = 0.5 UGX per point
     reward = points * POINTS_TO_UGX_RATE
-    # Round to two decimal places for currency
-    return round(reward, 2)
+    # Use quantize for precise Decimal rounding to two decimal places
+    return reward.quantize(Decimal('0.01'))
 
 
 def loading_screen(request):
@@ -112,7 +115,7 @@ def logout_request(request):
     messages.info(request, "You have successfully logged out.") 
     return redirect("user:login")
 
-# --- Profile Views ---
+# --- Profile Views (Preserved) ---
 
 @login_required
 def my_profile_redirect(request):
@@ -168,7 +171,7 @@ def upload_profile_image(request):
     return redirect('user:my_profile')
 
 
-# --- API/AJAX Views (Preserved) ---
+# --- API/AJAX Views (Updated and Cleaned) ---
 
 @login_required
 def track_ad_click(request):
@@ -176,7 +179,8 @@ def track_ad_click(request):
     API endpoint to track an ad click, update the user's points,
     and recalculate the reward amount.
     """
-    POINTS_PER_CLICK = 0.5
+    # ⭐ FIX 3: POINTS_PER_CLICK must be a Decimal
+    POINTS_PER_CLICK = Decimal('0.5')
     
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
@@ -189,7 +193,7 @@ def track_ad_click(request):
     # ⭐ 1. Increment Total Clicks (for payout threshold)
     user_profile.total_clicks += 1
     
-    # ⭐ 2. Increment Points (1 point per click)
+    # ⭐ 2. Increment Points (Decimal + Decimal is now supported)
     user_profile.points += POINTS_PER_CLICK
     
     # ⭐ 3. Recalculate Reward Amount (0.5 UGX per point)
@@ -207,6 +211,7 @@ def track_ad_click(request):
     return JsonResponse({
         'success': True,
         'message': 'Ad click tracked and points awarded!',
-        'points': user_profile.points,
-        'reward_amount': str(user_profile.reward_amount) # Convert Decimal to string for JSON safety
+        # The points field is a DecimalField, so we convert it to string for JSON safety
+        'points': str(user_profile.points), 
+        'reward_amount': str(user_profile.reward_amount) 
     })
