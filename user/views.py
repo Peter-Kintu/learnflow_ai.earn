@@ -180,7 +180,7 @@ def track_ad_click(request):
     and recalculate the reward amount.
     """
     # ⭐ FIX 3: POINTS_PER_CLICK must be a Decimal
-    POINTS_PER_CLICK = Decimal('0.5')
+    POINTS_PER_CLICK = Decimal('0.1')
     
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
@@ -196,7 +196,7 @@ def track_ad_click(request):
     # ⭐ 2. Increment Points (Decimal + Decimal is now supported)
     user_profile.points += POINTS_PER_CLICK
     
-    # ⭐ 3. Recalculate Reward Amount (0.5 UGX per point)
+    # ⭐ 3. Recalculate Reward Amount (0.1 UGX per point)
     user_profile.reward_amount = calculate_reward_amount(user_profile.points)
     
     # ⭐ 4. Save the Profile
