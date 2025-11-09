@@ -20,10 +20,10 @@ User = get_user_model()
 def calculate_reward_amount(points):
     """
     Calculates the reward amount based on accumulated points.
-    Rate: 1 UGX for every 2 points (0.5 UGX per point).
+    Rate: 1 UGX for every 10 points (0.1 UGX per point).
     """
     # ⭐ FIX 2: POINTS_TO_UGX_RATE must be a Decimal for calculation with DecimalField 'points'
-    POINTS_TO_UGX_RATE = Decimal('0.5') # 1 UGX / 2 points = 0.5 UGX per point
+    POINTS_TO_UGX_RATE = Decimal('0.1') # 1 UGX / 10 points = 0.1 UGX per point
     reward = points * POINTS_TO_UGX_RATE
     # Use quantize for precise Decimal rounding to two decimal places
     return reward.quantize(Decimal('0.01'))
