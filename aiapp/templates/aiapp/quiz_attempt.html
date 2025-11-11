@@ -25,7 +25,7 @@
             30:00
         </div>
     </div>
-    {% include "partials/ad_block.html" %}
+    
     <form method="post" id="quiz-form" class="space-y-6">
         {% csrf_token %}
         {% for question in quiz.questions.all %}
