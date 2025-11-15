@@ -93,6 +93,7 @@ if DATABASE_URL:
             # Add connection timeout for resilience in cloud environments
             'OPTIONS': {
                 'connect_timeout': 10,
+                 'options': '-c search_path=public'
             },
         }
     }
@@ -101,6 +102,7 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'options': '-c search_path=public'
         }
     }
 
