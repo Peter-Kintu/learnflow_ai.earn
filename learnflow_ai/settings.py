@@ -11,7 +11,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,learnflow-ai-0fdz.onrender.com').split(',')
 
-CSRF_TRUSTED_ORIGINS = ['https://learnflow-ai-0fdz.onrender.com']
+CSRF_TRUSTED_ORIGINS = [
+    'https://learnflow-ai-0fdz.onrender.com',
+    'dangerous-lorine/learnflow-ai-earn'
+    ]
 
 # Installed Apps
 INSTALLED_APPS = [
