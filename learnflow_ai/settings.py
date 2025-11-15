@@ -11,12 +11,12 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 
-    'learnflow-ai-0fdz.onrender.com,dangerous-lorine-learnflowai-dba49c58.koyeb.app'
+    'learnflow-ai-0fdz.onrender.com,artificial-shirlee-learnflow-8ec0e7a0.koyeb.app'
     ).split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'https://learnflow-ai-0fdz.onrender.com',
-    'https://dangerous-lorine-learnflowai-dba49c58.koyeb.app'
+    'https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/'
 
     ]
 
