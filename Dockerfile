@@ -6,7 +6,6 @@ COPY . /app
 
 RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && python manage.py migrate --noinput \
     && python manage.py collectstatic --noinput
 
-CMD gunicorn learnflow_ai.wsgi --bind 0.0.0.0:$PORT
+CMD bash -c "python manage.py migrate --noinput && gunicorn learnflow_ai.wsgi --bind 0.0.0.0:$PORT"
