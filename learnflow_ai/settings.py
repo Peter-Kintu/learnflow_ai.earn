@@ -81,32 +81,34 @@ WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
 
 # Database (Neon.tech or fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
 if DATABASE_URL:
     DATABASES = {
         'default': {
-            # Syntax corrected for OPTIONS merging
             **dj_database_url.config(
                 default=DATABASE_URL,
                 conn_max_age=600,
                 ssl_require=True,
             ),
-            # Add connection timeout for resilience in cloud environments
             'OPTIONS': {
                 'connect_timeout': 10,
-                 'options': '-c search_path=public'
+                'options': '-c search_path=public'
             },
         }
     }
 else:
+    # Use SQLite only during build or local dev
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-            'options': '-c search_path=public'
         }
     }
-if not DATABASE_URL:
+
+# Optional: raise error only during runtime, not build
+if os.environ.get('KOYEB_ENV') == 'runtime' and not DATABASE_URL:
     raise Exception("DATABASE_URL is not set — refusing to use SQLite fallback.")
+
 # 🔐 Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
