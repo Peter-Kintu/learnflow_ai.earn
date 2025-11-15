@@ -16,7 +16,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://learnflow-ai-earn.koyeb.app',
     'https://dangerous-lorine-learnflowai-dba49c58.koyeb.app'
 
-
     ]
 
 # Installed Apps
