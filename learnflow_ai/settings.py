@@ -128,6 +128,7 @@ USE_ETAGS = True               # Helps with Cache-Control/Expires warnings
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Pro-Level Additions for Enhanced Security
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin' # Mitigates referrer leakage
