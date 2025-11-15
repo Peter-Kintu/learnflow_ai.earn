@@ -13,7 +13,9 @@ ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,lear
 
 CSRF_TRUSTED_ORIGINS = [
     'https://learnflow-ai-0fdz.onrender.com',
-    'https://learnflow-ai-earn.koyeb.app'
+    'https://learnflow-ai-earn.koyeb.app',
+    'dangerous-lorine-learnflowai-dba49c58.koyeb.app'
+
     ]
 
 # Installed Apps
