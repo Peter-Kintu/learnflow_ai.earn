@@ -105,7 +105,8 @@ else:
             'options': '-c search_path=public'
         }
     }
-
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL is not set — refusing to use SQLite fallback.")
 # 🔐 Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
