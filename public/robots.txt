@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://learnflow-ai-0fdz.onrender.com/sitemap.xml
+Sitemap: https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/sitemap.xml
