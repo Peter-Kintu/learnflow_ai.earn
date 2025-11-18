@@ -92,7 +92,6 @@ if DATABASE_URL:
             ),
             'OPTIONS': {
                 'connect_timeout': 10,
-                'options': '-c search_path=public',
                 'sslmode': 'require',
 
             },
