@@ -27,7 +27,10 @@ from video.forms import VideoForm
 from book.models import Book
 from django.contrib.auth.decorators import login_required
 from urllib.parse import urljoin
-from django.http import HttpResponse
+
+
+
+
 
 # from django.views.decorators.csrf import csrf_exempt
 
@@ -738,7 +741,15 @@ def ai_quiz_generator(request):
 
 
 def sitemap_view(request):
-    base_url = "https://learnflow-ai-0fdz.onrender.com"
+    # Detect host and set base_url accordingly
+    host = request.get_host()
+    if "onrender.com" in host:
+        base_url = "https://learnflow-ai-0fdz.onrender.com"
+    elif "koyeb.app" in host:
+        base_url = "https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app"
+    else:
+        base_url = request.build_absolute_uri("/")[:-1]  # fallback to current host
+
     urls = [
         urljoin(base_url, "/"),
         urljoin(base_url, "/aiapp/"),
