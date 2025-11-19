@@ -510,7 +510,7 @@
                 
                 // IMPORTANT: The API key is assigned here for runtime execution.
                 const apiKey = "AIzaSyD-gBjm-9ectc1R-heErSiTThS2xGUVvAI"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
                 const result = await fetchWithRetry(apiUrl, payload);
                 const candidate = result.candidates?.[0];
