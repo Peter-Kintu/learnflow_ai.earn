@@ -603,31 +603,26 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
         // Enhanced Voice Selection for Multilingual/African Languages
        const voicePreferences = [
-    // 🔥 NEW PRIORITY 1: Highest Quality & Multilingual Voices (e.g., Duolingo quality) 🔥
-    // These are often the most natural and handle pronunciation best across languages.
-    { name: 'Google', keyword: 'Multi' },      // Prioritize Google voices first (often the best)
+    // Priority 1: Highest Quality & Multilingual Voices 
+    // (These are superior to default voices like Daniel or Samantha and should always be first)
+    { name: 'Google', keyword: 'Multi' },      // Prioritize Google voices (highest quality)
     { name: 'Microsoft', keyword: 'Multi' },   // Prioritize Microsoft/Azure voices (excellent quality)
     { name: 'Amazon', keyword: 'Multi' },      // Include Amazon voices for broader coverage
     
     // Priority 2: African-related languages (Explicit Regional Match)
-    // Important for local relevance and accurate regional pronunciation.
     { lang: 'en-ZA', name: 'South African' }, // Regional English accent
     { lang: 'zu', name: 'Zulu' }, 
     { lang: 'sw', name: 'Swahili' }, 
     { lang: 'ha', name: 'Hausa' }, 
     
-    // Priority 3: Widely Available High-Quality Defaults (Clarity & Professionalism)
-    // These are reliable voices on most major OS/browsers.
-    // { name: 'Samantha', keyword: 'Samantha' }, // Friendly, clear, American female (Good for education)
-    // { name: 'Zira', keyword: 'Zira' },         // Warm, professional American female
-    { name: 'Daniel', keyword: 'Daniel' },     // Formal, articulate British male (Good for professionalism)
+    // Priority 3: THE TARGET VOICE
+    // Formal, articulate British male - User's primary default choice
+    { name: 'Daniel', keyword: 'Daniel' },     
     
-    // NEW FALLBACK 4: Broader Default Coverage
-    { name: 'Kate', keyword: 'Kate' },         // General clear female voice
-    { name: 'Tessa', keyword: 'Tessa' },       // Regional/Unique flavor voice
-    { name: 'Alex', keyword: 'Alex' },         // High-quality macOS default voice
-    { name: 'Ting-Ting', keyword: 'Ting-Ting'} // Another common multilingual default
- ];
+    // Priority 4: SINGLE FALLBACK
+    // Clear, friendly American female - The single reliable fallback if Daniel fails
+    { name: 'Samantha', keyword: 'Samantha' }
+];
         let selectedVoice = null;
         
         // 1. Check for a voice that matches the GUESSED base language (e.g., find any voice with 'sw' language code for 'sw-TZ' text)
