@@ -181,20 +181,25 @@
 </div>
 
 <script>
-// // --- Define keys for specific roles (Used for Gemini API calls) ---
-// // 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
-// // You can obtain keys from Google AI Studio.
-// const API_KEYS = {
-//     // Key used for generating the high-level course outline (less intensive)
-//     OUTLINE: "",
-   
-//     // Key used for generating the detailed lessons and quizzes (more intensive)
-//     DETAIL:  "",
-//     // "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
-//     // "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
-  
-   
-// };
+
+// --- Proxy endpoint for Gemini requests ---
+const proxyUrl = "/api/gemini_proxy/";
+// --- Proxy endpoint for Gemini requests ---// --- Helper to get CSRF token ---
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i].trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
@@ -391,7 +396,7 @@ function generateResearchLinks(query, fullContext) {
 
 // --- Course Generation Functions ---
 // Use the same proxy endpoint as your other script
-const proxyUrl = "/api/gemini_proxy/";
+
 async function fetchAiContent(prompt, keyRole, model) {
   const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Output must be in clean Markdown.";
 
