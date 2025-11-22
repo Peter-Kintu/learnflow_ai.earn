@@ -16,7 +16,7 @@ ALLOWED_HOSTS = os.environ.get(
 
 CSRF_TRUSTED_ORIGINS = [
     'https://learnflow-ai-0fdz.onrender.com',
-    'https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/'
+    'https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app'
 
     ]
 
