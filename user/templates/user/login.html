@@ -547,10 +547,22 @@ async function sendMessage(finalMessages) {
   const data = await response.json();
   return data.text;
 }
+const result = await fetch(proxyUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': getCookie('csrftoken')
+  },
+  body: JSON.stringify(payload)
+});
 
-                const result = await fetchWithRetry(apiUrl, payload);
-                const candidate = result.candidates?.[0];
+if (!result.ok) {
+  const errorBody = await result.json().catch(() => ({}));
+  throw new Error(errorBody.error || `HTTP error! Status: ${result.status}`);
+}
 
+const data = await result.json();
+const candidate = data.candidates?.[0];
                 if (candidate && candidate.content?.parts?.[0]?.text) {
                     const text = candidate.content.parts[0].text;
                     aiResponse.textContent = text; 
