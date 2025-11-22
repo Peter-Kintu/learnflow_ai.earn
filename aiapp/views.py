@@ -914,6 +914,35 @@ def create_quiz(request):
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
+
+# --- Utility function to clean history format ---
+def clean_contents(messages):
+    """
+    Ensures messages conform to the Gemini API format:
+    1. Standardizes role: 'Ai' -> 'model'
+    2. Standardizes content: 'text' property is moved into 'parts' array.
+    """
+    cleaned = []
+    for msg in messages:
+        # Standardize role: 'Ai' -> 'model'
+        role = msg.get("role", "").lower()
+        if role == "ai":
+            role = "model"
+        
+        # Standardize content format: 'text' -> 'parts'
+        # This handles the legacy format from localStorage
+        if "text" in msg and not msg.get("parts"):
+            cleaned.append({
+                "role": role,
+                "parts": [{"text": msg["text"]}]
+            })
+        else:
+            # Assume it's already in the correct Gemini format
+            cleaned.append(msg)
+    return cleaned
+# ---------------------------------------------
+
+
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -931,13 +960,16 @@ def gemini_proxy(request):
         model = "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-        # 2. Extract Contents (Chat History)
+        # 2. Extract and Clean Contents (Chat History)
         contents = body.get("contents")
         if not contents:
             # Fallback for testing
             contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
 
-        # 3. Define System Instruction (CRITICAL FIX: Should be a plain string for REST API)
+        # CRITICAL FIX: Clean the history structure before sending
+        contents = clean_contents(contents)
+
+        # 3. Define System Instruction (Plain string for REST API)
         system_instruction_text = (
             "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
             "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
