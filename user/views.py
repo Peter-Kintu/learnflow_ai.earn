@@ -222,8 +222,7 @@ def track_ad_click(request):
         'reward_amount': str(user_profile.reward_amount) 
     })
 
- 
-# --- Utility function to clean history format ---
+ # --- Utility function to clean history format ---
 def clean_contents(messages):
     """
     Ensures messages conform to the Gemini API format:
@@ -260,10 +259,16 @@ def gemini_proxy(request):
         # Request body handling
         body = json.loads(request.body.decode("utf-8"))
 
-        # 1. Setup API Key and URL
+        # 1. Setup API Key and URL 
+        # We prioritize the OS environment key (for Koyeb), but fall back to the Canvas global key
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
+            # Fallback for local testing/Canvas environment where the key is auto-injected
+            api_key = globals().get('__api_key', '')
+            if not api_key:
+                 # This check should theoretically never be reached in the Canvas environment
+                 return JsonResponse({"error": "Missing GEMINI_API_KEY in environment or globals."}, status=500)
+
 
         model = "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -277,11 +282,17 @@ def gemini_proxy(request):
         # CRITICAL FIX: Clean the history structure before sending
         contents = clean_contents(contents)
 
-        # 3. Define System Instruction (Plain string for REST API)
+        # 3. Define System Instruction Text
         system_instruction_text = (
             "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
             "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
         )
+        
+        # CRITICAL FIX: Format the System Instruction as a Content object for the REST API
+        system_instruction_content = {
+            "role": "system",
+            "parts": [{"text": system_instruction_text}]
+        }
 
         # 4. Construct Generation Config (Type Casting Fixes)
         config = body.get("config") or {}
@@ -295,8 +306,8 @@ def gemini_proxy(request):
         # 5. Construct Final Payload
         payload = {
             "contents": contents,
-            # Pass the instruction as a simple string
-            "systemInstruction": system_instruction_text, 
+            # PASS THE CORRECTLY STRUCTURED CONTENT OBJECT
+            "systemInstruction": system_instruction_content, 
             "generationConfig": generation_config,
         }
 
