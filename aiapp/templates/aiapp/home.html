@@ -419,18 +419,21 @@ async function sendMessage(finalMessages) {
   }
 
   const data = await response.json();
-  return data.text;
+
+  // Always use the simplified text field returned by the proxy
+  const text = data.text || "[No text returned]";
+  return text;
 }
 
     // 🔥 MODIFIED: systemInstruction - Updated for Location Link, Match Prediction, and Dynamic Context Handling 🔥
     const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
 
 **INSTRUCTIONS FOR CONTEXT HANDLING:**
-1.  **ACCURATE USER CONTEXT:** The **CURRENT CONTEXT** section below will be dynamically updated by the user's browser (NOT by you). If a **Latitude/Longitude** is present, the user has explicitly shared their location, and you **MUST** use it for location-aware requests (like weather, directions, or local information).
-2.  **LOCATION LINK:** When location is successfully obtained, you **ARE PERMITTED** to provide a Google Maps URL for the user's current coordinates using the format: [View on Map](https://www.google.com/maps/search/?api=1&query=LAT,LNG).
-3.  **FALLBACK:** If no Latitude/Longitude is provided, use your **Virtual Location** (Kampala, Uganda) as a default.
-4.  **PRIVACY:** If the user asks *why* you know their location, state that it was explicitly provided by the browser after the user clicked 'Share Location.'
-5.  **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
+1. **ACCURATE USER CONTEXT:** The **CURRENT CONTEXT** section below will be dynamically updated by the user's browser (NOT by you). If a **Latitude/Longitude** is present, the user has explicitly shared their location, and you **MUST** use it for location-aware requests (like weather, directions, or local information).
+2. **LOCATION LINK:** When location is successfully obtained, you **ARE PERMITTED** to provide a Google Maps URL for the user's current coordinates using the format: [View on Map](https://www.google.com/maps/search/?api=1&query=LAT,LNG).
+3. **FALLBACK:** If no Latitude/Longitude is provided, use your **Virtual Location** (Kampala, Uganda) as a default.
+4. **PRIVACY:** If the user asks *why* you know their location, state that it was explicitly provided by the browser after the user clicked 'Share Location.'
+5. **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
 
 CURRENT CONTEXT:
 - The user's accurate local date is **Friday, October 17, 2025**.
@@ -442,7 +445,6 @@ CURRENT CONTEXT:
 - If the user asks for **match predictions (e.g., football, soccer)**, use your vast knowledge base and current data to provide a detailed analysis and a most likely outcome, acting as an expert sports analyst.
 
 Always respond in the language the user is using, maintaining context and educational quality.`;
-    
     // --- Function to get and display accurate local date/time ---
     function updateAccurateLocalTime() {
         const now = new Date();
@@ -499,9 +501,8 @@ Always respond in the language the user is using, maintaining context and educat
                     // STICKING TO THE INSTRUCTION'S FORMAT:
                     // NOTE: The instruction's format (https://www.google.com/maps/search/?api=1&query=LAT,LNG) is non-standard and likely non-functional outside the system's own interpreter. 
                     // To follow the instruction's *intent* (provide a map link) and structure:
-                    const mapLink = `http://googleusercontent.com/maps.google.com/${lat},${lng}`;
+                    const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
                     const mapLinkMarkdown = `[View Your Location on Google Maps](${mapLink})`;
-                    
                     // 3. Inform the user in the chat (NOW INCLUDES LINK)
                     const aiMessage = `Location update successful! Your coordinates (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}) have been saved with an accuracy of ${accuracy.toFixed(0)} meters. I will now use this for location-aware queries and directions.
 
