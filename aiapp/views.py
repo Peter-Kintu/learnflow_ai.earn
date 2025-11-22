@@ -921,10 +921,13 @@ def gemini_proxy(request):
 
     try:
         body = json.loads(request.body.decode("utf-8"))
+
+        # Ensure contents is never empty
         contents = body.get("contents")
         if not contents:
             contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
 
+        # Provide safe defaults for config
         config = body.get("config") or {"temperature": 0.7, "maxOutputTokens": 1024}
 
         api_key = os.environ.get("GEMINI_API_KEY")
