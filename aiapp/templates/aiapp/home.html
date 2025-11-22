@@ -932,108 +932,102 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
     function summarizeChat() {
-        stopSpeaking(); // Stop current speech
-        
-        const history = getChatHistory();
-        if (history.length === 0) {
-            appendMessage('ai', "There is no conversation history to summarize.", true);
-            return;
-        }
+    stopSpeaking(); // Stop current speech
+    
+    const history = getChatHistory();
+    if (history.length === 0) {
+        appendMessage('ai', "There is no conversation history to summarize.", true);
+        return;
+    }
 
-        const summaryPrompt = "Please generate a concise, bullet-point summary of the key topics, concepts, and conclusions from the following conversation history. Respond in a professional, educational tone.";
-        
-        // Add a temporary loader message
-        const loaderMsgDiv = document.createElement('div');
-        loaderMsgDiv.className = 'chat-message ai';
-        loaderMsgDiv.id = 'summaryLoader';
-        loaderMsgDiv.innerHTML = '<strong>Ai (Summary):</strong> <div class="loader-small"></div> Generating summary...';
-        chatLog.appendChild(loaderMsgDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
-        
-        // Prepare the conversation payload for the summary request
-       const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
-       const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
-        // FIX: Use the correct 'user' role for the system instruction and set up contents array
-        const summaryContents = [
-            { role: "user", parts: [{ text: summaryRequestContent }] }
-        ];
+    const summaryPrompt = "Please generate a concise, bullet-point summary of the key topics, concepts, and conclusions from the following conversation history. Respond in a professional, educational tone.";
+    
+    // Add a temporary loader message
+    const loaderMsgDiv = document.createElement('div');
+    loaderMsgDiv.className = 'chat-message ai';
+    loaderMsgDiv.id = 'summaryLoader';
+    loaderMsgDiv.innerHTML = '<strong>Ai (Summary):</strong> <div class="loader-small"></div> Generating summary...';
+    chatLog.appendChild(loaderMsgDiv);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    
+    // Prepare the conversation payload for the summary request
+    const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
+    const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
+    
+    const summaryContents = [
+        { role: "user", parts: [{ text: summaryRequestContent }] }
+    ];
 
-        // Send a dedicated API call for the summary
-        fetch(proxyUrl, { 
+    // Send a dedicated API call for the summary
+    fetch(proxyUrl, { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            // 🔥 ADDED: CSRF Token for Django
             'X-CSRFToken': getCookie('csrftoken') 
         },
         body: JSON.stringify({
             contents: summaryContents,
-            // 🔥 CHANGED: Use 'config' to match sendMessage() structure
             config: { 
                 temperature: 0.2,
                 maxOutputTokens: 1024
             }
         })
     })
-        .then(response => {
-            if (!response.ok) {
-                // Improved error handling for summarize
-                return response.text().then(text => { // Read as text first
-                    try {
-                        const err = JSON.parse(text); // Try parsing as JSON
-                        throw new Error(err.error?.message || `Status ${response.status}: Unknown API Error`);
-                    } catch (e) {
-                         // Non-JSON error (e.g., HTML response)
-                        throw new Error(`Non-JSON response (Status ${response.status}). Check server/proxy connection.`);
-                    }
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            const displayText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate summary.";
-            
-            const loader = document.getElementById('summaryLoader');
-            if (loader) { loader.remove(); }
-            
-            const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = "chat-message ai";
-            
-            // Create a span for the typewriter effect
-            const contentSpan = document.createElement('span');
-            aiMsgDiv.appendChild(contentSpan);
-            chatLog.appendChild(aiMsgDiv); // Append before starting the type effect
-            
-            let i = 0;
-            function typeSummary() {
-                if (i < displayText.length) { // Use uncleaned text for display
-                    contentSpan.textContent += displayText.charAt(i); 
-                    i++;
-                    setTimeout(typeSummary, 10);
-                } else {
-                    saveChatHistory();
-                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
-                    const speakableText = cleanText(displayText);
-                    speakText(speakableText); 
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                try {
+                    const err = JSON.parse(text);
+                    throw new Error(err.error?.message || `Status ${response.status}: Unknown API Error`);
+                } catch (e) {
+                    throw new Error(`Non-JSON response (Status ${response.status}). Check server/proxy connection.`);
                 }
-                chatLog.scrollTop = chatLog.scrollHeight;
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // ✅ FIX: use simplified proxy response
+        const displayText = data.text || "Could not generate summary.";
+        
+        const loader = document.getElementById('summaryLoader');
+        if (loader) { loader.remove(); }
+        
+        const aiMsgDiv = document.createElement('div');
+        aiMsgDiv.className = "chat-message ai";
+        
+        const contentSpan = document.createElement('span');
+        aiMsgDiv.appendChild(contentSpan);
+        chatLog.appendChild(aiMsgDiv);
+        
+        let i = 0;
+        function typeSummary() {
+            if (i < displayText.length) {
+                contentSpan.textContent += displayText.charAt(i);
+                i++;
+                setTimeout(typeSummary, 10);
+            } else {
+                saveChatHistory();
+                const speakableText = cleanText(displayText);
+                speakText(speakableText);
             }
-            typeSummary();
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+        typeSummary();
+    })
+    .catch(error => {
+        const loader = document.getElementById('summaryLoader');
+        if (loader) { loader.remove(); }
+        const errorMsgDiv = document.createElement('div');
+        errorMsgDiv.className = "chat-message error";
+        const summaryErrorText = "Could not generate summary due to a connection error: " + error.message;
+        errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(summaryErrorText)}`;
+        chatLog.appendChild(errorMsgDiv);
+        saveChatHistory();
+        speakText("I encountered an error while generating the summary.");
+    });
+}
             
-        }) 
-        .catch(error => {
-             const loader = document.getElementById('summaryLoader');
-             if (loader) { loader.remove(); }
-             const errorMsgDiv = document.createElement('div');
-             errorMsgDiv.className = "chat-message error";
-             const summaryErrorText = "Could not generate summary due to a connection error: " + error.message;
-             errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(summaryErrorText)}`;
-             chatLog.appendChild(errorMsgDiv);
-             saveChatHistory();
-             speakText("I encountered an error while generating the summary.");
-        });
-    }
-
     function exportChat() {
         const history = getChatHistory();
         if (history.length === 0) {
