@@ -832,114 +832,72 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     // ## API Interaction ##
 
     async function generateAiResponse(prompt) {
-        // Prevent sending empty queries or if a query is already running
-        if (!prompt || sendChatButton.disabled) {
-            return;
-        }
-        
-        // --- Limit Check ---
-        if (responseCount >= responseLimit) {
-            // Instead of blocking, show a warning and let the user decide.
-            // For a production app, this would be a hard block. For this example, we warn but proceed.
-            // console.warn("Response limit reached. Blocking API call.");
-            // appendMessage('ai', "🚨 **Limit Warning:** You have reached your current response limit. Please upgrade or try again tomorrow.", true);
-            // return;
-        }
-        
-        appendMessage('user', prompt);
-        chatInput.value = ''; // Clear input immediately
-        sendChatButton.disabled = true; // Disable button
-        addLoader();
-        
-        // 1. Convert history to API format
-        const history = getChatHistory().map(item => ({
-            // 🔥 FIX: Map local 'ai' role to API 'model' role 🔥
-            role: item.role === 'ai' ? 'model' : item.role, 
-            parts: [{ text: item.text }]
-        }));
+  if (!prompt || sendChatButton.disabled) return;
 
-        // 2. Add the system instruction at the beginning
-        let currentSystemInstruction = systemInstruction;
-        
-        // Inject the current local time and date
-        if (userCurrentContext.currentTimeAndDate) {
-            // Overwrite the placeholder date/time in the original instruction
-            const [datePart, timePart] = userCurrentContext.currentTimeAndDate.split(', and the time is ');
-            currentSystemInstruction = currentSystemInstruction.replace(/The user's accurate local date is \*\*(.*?)\*\*/, `The user's accurate local date is **${datePart}**`);
-            currentSystemInstruction = currentSystemInstruction.replace(/The user's accurate local time is \*\*(.*?)\*\*/, `The user's accurate local time is **${timePart}**`);
-        }
-        
-        // Inject the current location if available
-        if (userCurrentContext.latitude && userCurrentContext.longitude) {
-            // Inject the user's specific coordinates as context for the AI
-            currentSystemInstruction += `\n- The user's specific coordinates are: **Lat ${userCurrentContext.latitude}, Lng ${userCurrentContext.longitude}**. Use this for location-aware requests and directions.`;
-        }
-        
-        const fullContents = [{ role: "user", parts: [{ text: currentSystemInstruction }] }];
-        
-        // 3. Add relevant conversation history (last 10 messages)
-        // This line is key for remembering older conversation context
-        const relevantHistory = history.slice(-10); // Last 10 messages (5 turns)
-        fullContents.push(...relevantHistory);
-        
-        // 4. Add the new user message
-        fullContents.push({ role: 'user', parts: [{ text: prompt }] });
+  appendMessage('user', prompt);
+  chatInput.value = '';
+  sendChatButton.disabled = true;
+  addLoader();
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: fullContents, 
-                    // FIX VERIFIED: generationConfig is a top-level field
-                    generationConfig: { 
-                        temperature: 0.7,
-                        maxOutputTokens: 2048
-                    }
-                })
-            });
+  const history = getChatHistory().map(item => ({
+    role: item.role === 'ai' ? 'model' : item.role,
+    parts: [{ text: item.text }]
+  }));
 
-            if (!response.ok) {
-                // Try to parse JSON for a detailed API error message
-                let errorBody = null;
-                try {
-                    errorBody = await response.json();
-                } catch (e) {
-                    // Fallback if the body is not JSON (e.g., HTML error page, which causes the '<' token error)
-                    throw new Error(`Non-JSON response (Status ${response.status}). Check server/proxy connection.`);
-                }
-                // If JSON parsing was successful, use the specific error message
-                throw new Error(`API Error ${response.status}: ${errorBody.error?.message || 'Unknown API Error'}`);
-            }
+  let currentSystemInstruction = systemInstruction;
 
-            const data = await response.json();
-            
-            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, I could not generate a response. Please try again.";
-            
-            // Increment and save response count
-            responseCount++;
-            localStorage.setItem(responseCountKey, responseCount);
-            
-            removeLoader();
-            // Append the raw AI text for typewriter effect (cleaning for speech later)
-            appendMessage('ai', aiText); 
-            
-        } catch (error) {
-            console.error('Gemini API Error:', error);
-            removeLoader();
-            // UPDATED ERROR MESSAGE as requested by the prompt:
-            const errorMessage = `🚨 Could not connect to the AI service. Error: ${error.message}`;
-            // Append cleaned error message
-            appendMessage('ai', errorMessage, true); 
-            // Speak the cleaned error message
-            speakText(cleanText(errorMessage));
-        } finally {
-            sendChatButton.disabled = false; // Re-enable button
-        }
+  if (userCurrentContext.currentTimeAndDate) {
+    const [datePart, timePart] = userCurrentContext.currentTimeAndDate.split(', and the time is ');
+    currentSystemInstruction = currentSystemInstruction.replace(/The user's accurate local date is \*\*(.*?)\*\*/, `The user's accurate local date is **${datePart}**`);
+    currentSystemInstruction = currentSystemInstruction.replace(/The user's accurate local time is \*\*(.*?)\*\*/, `The user's accurate local time is **${timePart}**`);
+  }
+
+  if (userCurrentContext.latitude && userCurrentContext.longitude) {
+    currentSystemInstruction += `\n- The user's specific coordinates are: **Lat ${userCurrentContext.latitude}, Lng ${userCurrentContext.longitude}**. Use this for location-aware requests and directions.`;
+  }
+
+  const fullContents = [
+    { role: "user", parts: [{ text: currentSystemInstruction }] },
+    ...history.slice(-10),
+    { role: "user", parts: [{ text: prompt }] }
+  ];
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        contents: fullContents,
+        config: { temperature: 0.7, maxOutputTokens: 2048 }
+      })
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
     }
 
+    const data = await response.json();
+    const aiText = data.text || "I apologize, I could not generate a response.";
+
+    responseCount++;
+    localStorage.setItem(responseCountKey, responseCount);
+
+    removeLoader();
+    appendMessage('ai', aiText);
+  } catch (error) {
+    console.error('Gemini Proxy Error:', error);
+    removeLoader();
+    const errorMessage = `🚨 Could not connect to the AI service. Error: ${error.message}`;
+    appendMessage('ai', errorMessage, true);
+    speakText(cleanText(errorMessage));
+  } finally {
+    sendChatButton.disabled = false;
+  }
+}
     // --- User Actions ---
     function typeQuery() {
         const query = chatInput.value.trim();
@@ -993,13 +951,11 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         chatLog.scrollTop = chatLog.scrollHeight;
         
         // Prepare the conversation payload for the summary request
-        const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
-        const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
-
+       const conversationContent = history.map(item => `${item.role.toUpperCase()}: ${item.text}`).join('\n');
+       const summaryRequestContent = summaryPrompt + "\n\n--- Conversation History ---\n" + conversationContent;
         // FIX: Use the correct 'user' role for the system instruction and set up contents array
         const summaryContents = [
-             { role: "user", parts: [{ text: systemInstruction }] },
-             { role: "user", parts: [{ text: summaryRequestContent }] }
+            { role: "user", parts: [{ text: summaryRequestContent }] }
         ];
 
         // Send a dedicated API call for the summary
