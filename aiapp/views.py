@@ -1,5 +1,7 @@
 import io
 import json
+import os
+import requests
 from .tasks import ask_learnflow_ai
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -792,6 +794,16 @@ def retake_quiz(request, quiz_id):
     return redirect('aiapp:quiz_attempt', quiz_id=quiz.id)
 
 
+def gemini_proxy(request):
+    api_key = os.environ["GEMINI_API_KEY"]
+    model = "gemini-2.5-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+    payload = {
+        "contents": [{"parts": [{"text": "Hello Gemini!"}]}]
+    }
+    resp = requests.post(url, json=payload)
+    return JsonResponse(resp.json())
 
 # Replace with your actual Botlhale token
 BOTLHALE_API_TOKEN = "Bearer YOUR_BOTLHALE_TOKEN"

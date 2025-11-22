@@ -9,6 +9,10 @@ from django.utils.translation import gettext as _
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required 
 import json 
+import os
+import requests
+
+
 # ⭐ FIX 1: Import the Decimal class
 from decimal import Decimal 
 
@@ -55,7 +59,7 @@ def loading_screen(request):
         'redirect': True,
         # ⭐ FIX: Set template variables used in loading.html
         'app_name': 'LearnFlow AI',
-        'message': _("Multilingual learning tools for African educators and students."),
+        'message': _("Multilingual learning tools for the World educators and students."),
     })
 
 def ping(request):
@@ -215,3 +219,15 @@ def track_ad_click(request):
         'points': str(user_profile.points), 
         'reward_amount': str(user_profile.reward_amount) 
     })
+
+
+def gemini_proxy(request):
+    api_key = os.environ["GEMINI_API_KEY"]
+    model = "gemini-2.5-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+    payload = {
+        "contents": [{"parts": [{"text": "Hello Gemini!"}]}]
+    }
+    resp = requests.post(url, json=payload)
+    return JsonResponse(resp.json())
