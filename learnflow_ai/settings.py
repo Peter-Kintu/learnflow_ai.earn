@@ -196,6 +196,16 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+# --- Gemini API Configuration ---
+# The google-genai SDK automatically looks for GEMINI_API_KEY in the environment.
+# However, defining it here makes it explicit and easily accessible for logging/config if needed.
+# CRITICAL: This value MUST be set as an environment variable (e.g., in Render/Koyeb dashboard).
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_FALLBACK_KEY_FOR_DEV_ONLY")
+
+if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_FALLBACK_KEY_FOR_DEV_ONLY":
+    # In production, this should ideally raise an error or log a warning if the key is missing.
+    print("WARNING: GEMINI_API_KEY environment variable is not set. API calls will fail.")
+
 
 # Auth Redirects
 LOGIN_URL = 'user:login'
