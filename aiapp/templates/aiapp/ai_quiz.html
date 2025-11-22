@@ -390,7 +390,8 @@ function generateResearchLinks(query, fullContext) {
 
 
 // --- Course Generation Functions ---
-
+// Use the same proxy endpoint as your other script
+const proxyUrl = "/api/gemini_proxy/";
 async function fetchAiContent(prompt, keyRole, model) {
   const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Output must be in clean Markdown.";
 
