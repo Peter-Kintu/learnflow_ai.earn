@@ -230,8 +230,8 @@ def gemini_proxy(request):
 
     try:
         body = json.loads(request.body.decode("utf-8"))
-        
-        # 1. Initial Setup and Defaults
+
+        # 1. Setup
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
@@ -240,51 +240,54 @@ def gemini_proxy(request):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
         # 2. Extract Contents
-        # Ensure contents is never empty, falling back to a default "Hello Gemini" prompt
         contents = body.get("contents")
         if not contents:
             contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
 
-        # 3. Define System Instruction as a simple string
-        system_instruction_text = "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
-        
+        # 3. Define System Instruction as a Content object (CRITICAL FIX)
+        system_instruction = {
+            "role": "system",
+            "parts": [
+                {
+                    "text": (
+                        "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
+                        "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
+                    )
+                }
+            ]
+        }
+
         # 4. Construct Generation Config
-        # Start with defaults, then update with system instruction
         config = body.get("config") or {}
-        # Ensure base defaults are present, or use request body if provided
         generation_config = {
             "temperature": config.get("temperature", 0.7),
             "maxOutputTokens": config.get("maxOutputTokens", 1024),
-            "systemInstruction": system_instruction_text # ADDED: Correct string format
         }
 
-        # 5. Construct Final Payload
+        # 5. Construct Final Payload (Corrected REST structure)
         payload = {
             "contents": contents,
-            "config": generation_config, # CHANGED: Uses the combined config object
+            "systemInstruction": system_instruction,  # ✅ Full Content object
+            "generationConfig": generation_config,
         }
-        
-        # Optionally print the payload here for verification in Koyeb logs
-        # print(f"OUTBOUND PAYLOAD: {json.dumps(payload)}") 
-        
+
+        # Debug log: Ensure this line outputs to your Koyeb logs!
+        print("Outbound Gemini payload:", json.dumps(payload, indent=2))
+
         # 6. Make the API Request
-        # The 'json=' parameter automatically sets the Content-Type header
         resp = requests.post(url, json=payload)
-        
-        # 7. Error Handling (Improved for debugging)
         if resp.status_code != 200:
-            # Crucial for finding the exact error message from Google
-            print(f"Gemini API Error Details: {resp.text}") 
+            # Print the detailed error message from Google's server
+            print("Gemini API Error Details:", resp.text)
             return JsonResponse(
                 {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
                 status=resp.status_code,
             )
 
-        # 8. Success Response Handling
+        # 7. Success Response Handling
         data = resp.json()
         text = ""
         if "candidates" in data and data["candidates"]:
-            # Safely extract text from the parts list
             parts = data["candidates"][0].get("content", {}).get("parts", [])
             text = " ".join(p.get("text", "") for p in parts if "text" in p)
 
