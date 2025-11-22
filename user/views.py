@@ -221,6 +221,7 @@ def track_ad_click(request):
         'points': str(user_profile.points), 
         'reward_amount': str(user_profile.reward_amount) 
     })
+
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -229,7 +230,7 @@ def gemini_proxy(request):
     try:
         body = json.loads(request.body.decode("utf-8"))
         contents = body.get("contents", [])
-        config = body.get("config", {})
+        config = body.get("config") or {"temperature": 0.7, "maxOutputTokens": 1024}
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -251,14 +252,16 @@ def gemini_proxy(request):
             "generationConfig": config,
         }
 
-        resp = requests.post(url, json=payload)
+        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+        if resp.status_code != 200:
+            return JsonResponse({"error": f"Gemini API error {resp.status_code}", "details": resp.text}, status=resp.status_code)
+
         data = resp.json()
 
         text = ""
-        if "candidates" in data and len(data["candidates"]) > 0:
+        if "candidates" in data and data["candidates"]:
             parts = data["candidates"][0].get("content", {}).get("parts", [])
-            if parts and "text" in parts[0]:
-                text = parts[0]["text"]
+            text = " ".join(p.get("text", "") for p in parts if "text" in p)
 
         return JsonResponse({"text": text, "raw": data})
 
