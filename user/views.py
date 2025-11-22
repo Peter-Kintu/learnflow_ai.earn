@@ -222,8 +222,7 @@ def track_ad_click(request):
         'reward_amount': str(user_profile.reward_amount) 
     })
 
-
-@csrf_exempt  # allow POST from JS (you can tighten with CSRF later)
+@csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
@@ -244,7 +243,9 @@ def gemini_proxy(request):
         payload = {
             "contents": contents,
             "systemInstruction": {
-                "parts": [{"text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."}]
+                "parts": [{
+                    "text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."
+                }]
             },
             "generationConfig": config,
         }
@@ -254,10 +255,12 @@ def gemini_proxy(request):
 
         # Extract text safely
         text = ""
-        if "candidates" in data and len(data["candidates"]) > 0:
-            parts = data["candidates"][0].get("content", {}).get("parts", [])
-            if parts and "text" in parts[0]:
-                text = parts[0]["text"]
+        if isinstance(data, dict) and "candidates" in data and len(data["candidates"]) > 0:
+            candidate = data["candidates"][0]
+            if "content" in candidate and "parts" in candidate["content"]:
+                parts = candidate["content"]["parts"]
+                if parts and isinstance(parts[0], dict):
+                    text = parts[0].get("text", "")
 
         return JsonResponse({"text": text, "raw": data})
 

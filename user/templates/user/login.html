@@ -547,55 +547,58 @@
     const data = await response.json();
     return data.text;
     }
-    const result = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify(payload)
+   const result = await fetch(proxyUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': getCookie('csrftoken')
+  },
+  body: JSON.stringify(payload)
+});
+
+if (!result.ok) {
+  const errorBody = await result.json().catch(() => ({}));
+  throw new Error(errorBody.error || `HTTP error! Status: ${result.status}`);
+}
+
+const data = await result.json();
+
+// Use the simplified text field returned by the proxy
+const text = data.text || "";
+if (text) {
+  aiResponse.textContent = text;
+
+  // Optional: extract sources from the raw Gemini payload
+  let sources = [];
+  const candidate = data.raw?.candidates?.[0];
+  const groundingMetadata = candidate?.groundingMetadata;
+  if (groundingMetadata && groundingMetadata.groundingAttributions) {
+    sources = groundingMetadata.groundingAttributions
+      .map(attribution => ({
+        uri: attribution.web?.uri,
+        title: attribution.web?.title,
+      }))
+      .filter(source => source.uri && source.title);
+  }
+
+  if (sources.length > 0) {
+    citationsDiv.innerHTML = '<p class="font-semibold text-gray-400">Sources:</p>';
+    const sourceList = document.createElement('ul');
+    sourceList.classList.add('list-disc', 'list-inside', 'mt-1', 'space-y-1');
+    sources.forEach(source => {
+      const listItem = document.createElement('li');
+      listItem.innerHTML = `<a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-400">${source.title || source.uri}</a>`;
+      sourceList.appendChild(listItem);
     });
-
-    if (!result.ok) {
-    const errorBody = await result.json().catch(() => ({}));
-    throw new Error(errorBody.error || `HTTP error! Status: ${result.status}`);
-    }
-
-    const data = await result.json();
-    const candidate = data.candidates?.[0];
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const text = candidate.content.parts[0].text;
-                        aiResponse.textContent = text; 
-
-                        let sources = [];
-                        const groundingMetadata = candidate.groundingMetadata;
-                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                            sources = groundingMetadata.groundingAttributions
-                                .map(attribution => ({
-                                    uri: attribution.web?.uri,
-                                    title: attribution.web?.title,
-                                }))
-                                .filter(source => source.uri && source.title);
-                        }
-
-                        if (sources.length > 0) {
-                            citationsDiv.innerHTML = '<p class="font-semibold text-gray-400">Sources:</p>';
-                            const sourceList = document.createElement('ul');
-                            sourceList.classList.add('list-disc', 'list-inside', 'mt-1', 'space-y-1');
-                            sources.forEach(source => {
-                                const listItem = document.createElement('li');
-                                listItem.innerHTML = `<a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-400">${source.title || source.uri}</a>`;
-                                sourceList.appendChild(listItem);
-                            });
-                            citationsDiv.appendChild(sourceList);
-                            citationsDiv.classList.remove('hidden');
-                        } else {
-                            citationsDiv.innerHTML = '';
-                        }
-                    } else {
-                        errorMessage.textContent = 'Received an empty or malformed response from the AI.';
-                        errorMessage.classList.remove('hidden');
-                    }
+    citationsDiv.appendChild(sourceList);
+    citationsDiv.classList.remove('hidden');
+  } else {
+    citationsDiv.innerHTML = '';
+  }
+} else {
+  errorMessage.textContent = 'Received an empty or malformed response from the AI.';
+  errorMessage.classList.remove('hidden');
+}
 
                 } catch (error) {
                     errorMessage.textContent = `An error occurred: ${error.message}. Please check your input and try again.`;
