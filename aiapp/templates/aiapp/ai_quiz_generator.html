@@ -181,20 +181,20 @@
 </div>
 
 <script>
-// --- Define keys for specific roles (Used for Gemini API calls) ---
-// 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
-// You can obtain keys from Google AI Studio.
-const API_KEYS = {
-    // Key used for generating the high-level course outline (less intensive)
-    OUTLINE: "",
+// // --- Define keys for specific roles (Used for Gemini API calls) ---
+// // 🚨 CRITICAL: Replace the placeholder values below with your own valid Gemini API keys.
+// // You can obtain keys from Google AI Studio.
+// const API_KEYS = {
+//     // Key used for generating the high-level course outline (less intensive)
+//     OUTLINE: "",
    
-    // Key used for generating the detailed lessons and quizzes (more intensive)
-    DETAIL:  "",
-    // "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
-    // "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
+//     // Key used for generating the detailed lessons and quizzes (more intensive)
+//     DETAIL:  "",
+//     // "AIzaSyApueEMzhLqmY8WiK99paKikfMAnvALgQY"
+//     // "AIzaSyCQyFKkQWHKJCKtSNlzggDzCT4u5EnzHFw",
   
    
-};
+// };
 const CACHE_KEY_PREFIX = "learnflow_outline_";
 
 /**
@@ -392,49 +392,32 @@ function generateResearchLinks(query, fullContext) {
 // --- Course Generation Functions ---
 
 async function fetchAiContent(prompt, keyRole, model) {
-    const apiKey = API_KEYS[keyRole];
-    // Check for placeholder key before calling API
-    if (apiKey.includes("YOUR_GEMINI_API_KEY")) {
-        throw new Error("API Key Missing: Please replace the placeholder API key in the 'API_KEYS' block within the <script> tag with a valid key for the respective role.");
-    }
+  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Output must be in clean Markdown.";
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    
-    if (!apiKey) {
-        throw new Error(`API Key for role ${keyRole} is missing.`);
-    }
+  const contents = [
+    { role: "user", parts: [{ text: systemInstructionText }] },
+    { role: "user", parts: [{ text: prompt }] }
+  ];
 
-    // Renamed local variable to avoid conflict and clearly define the text.
-    const systemInstructionText = `You are a world-class educational AI, specializing in creating personalized, structured learning content. You must respond strictly in the requested language. Your output must be in plain, clean Markdown format, designed for a step-by-step course or quiz.`;
-    
-    // ✅ CRITICAL FIX: The systemInstruction is correctly formatted as a Content object.
-    const payload = {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: {
-            role: 'system',
-            parts: [{ text: systemInstructionText }]
-        }, 
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048
-        }
-    };
-    
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      contents,
+      config: { temperature: 0.7, maxOutputTokens: 2048 }
+    })
+  });
 
-    if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(`API Error ${response.status}: ${errorBody.error.message}`);
-    }
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
+  }
 
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Content generation failed.";
+  const data = await response.json();
+  return data.text || "Content generation failed.";
 }
 
 // Function to handle the initial course outline generation
