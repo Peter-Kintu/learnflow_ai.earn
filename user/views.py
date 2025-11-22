@@ -221,7 +221,6 @@ def track_ad_click(request):
         'points': str(user_profile.points), 
         'reward_amount': str(user_profile.reward_amount) 
     })
-
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -231,7 +230,6 @@ def gemini_proxy(request):
         body = json.loads(request.body.decode("utf-8"))
         contents = body.get("contents", [])
         config = body.get("config", {})
-        action = body.get("action", "chat")
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -243,9 +241,12 @@ def gemini_proxy(request):
         payload = {
             "contents": contents,
             "systemInstruction": {
-                "parts": [{
-                    "text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."
-                }]
+                "role": "system",
+                "parts": [
+                    {
+                        "text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."
+                    }
+                ]
             },
             "generationConfig": config,
         }
@@ -253,14 +254,11 @@ def gemini_proxy(request):
         resp = requests.post(url, json=payload)
         data = resp.json()
 
-        # Extract text safely
         text = ""
-        if isinstance(data, dict) and "candidates" in data and len(data["candidates"]) > 0:
-            candidate = data["candidates"][0]
-            if "content" in candidate and "parts" in candidate["content"]:
-                parts = candidate["content"]["parts"]
-                if parts and isinstance(parts[0], dict):
-                    text = parts[0].get("text", "")
+        if "candidates" in data and len(data["candidates"]) > 0:
+            parts = data["candidates"][0].get("content", {}).get("parts", [])
+            if parts and "text" in parts[0]:
+                text = parts[0]["text"]
 
         return JsonResponse({"text": text, "raw": data})
 

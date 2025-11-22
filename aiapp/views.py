@@ -914,8 +914,7 @@ def create_quiz(request):
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
-
-@csrf_exempt  # allow POST from JS (you can tighten with CSRF later)
+@csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
@@ -924,7 +923,6 @@ def gemini_proxy(request):
         body = json.loads(request.body.decode("utf-8"))
         contents = body.get("contents", [])
         config = body.get("config", {})
-        action = body.get("action", "chat")
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -936,7 +934,12 @@ def gemini_proxy(request):
         payload = {
             "contents": contents,
             "systemInstruction": {
-                "parts": [{"text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."}]
+                "role": "system",
+                "parts": [
+                    {
+                        "text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."
+                    }
+                ]
             },
             "generationConfig": config,
         }
@@ -944,7 +947,6 @@ def gemini_proxy(request):
         resp = requests.post(url, json=payload)
         data = resp.json()
 
-        # Extract text safely
         text = ""
         if "candidates" in data and len(data["candidates"]) > 0:
             parts = data["candidates"][0].get("content", {}).get("parts", [])
