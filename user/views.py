@@ -11,6 +11,8 @@ from django.contrib.auth.decorators import login_required
 import json 
 import os
 import requests
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 # ⭐ FIX 1: Import the Decimal class
@@ -221,13 +223,43 @@ def track_ad_click(request):
     })
 
 
+@csrf_exempt  # allow POST from JS (you can tighten with CSRF later)
 def gemini_proxy(request):
-    api_key = os.environ["GEMINI_API_KEY"]
-    model = "gemini-2.5-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
 
-    payload = {
-        "contents": [{"parts": [{"text": "Hello Gemini!"}]}]
-    }
-    resp = requests.post(url, json=payload)
-    return JsonResponse(resp.json())
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        contents = body.get("contents", [])
+        config = body.get("config", {})
+        action = body.get("action", "chat")
+
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
+
+        model = "gemini-2.5-flash"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+        payload = {
+            "contents": contents,
+            "systemInstruction": {
+                "parts": [{"text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."}]
+            },
+            "generationConfig": config,
+        }
+
+        resp = requests.post(url, json=payload)
+        data = resp.json()
+
+        # Extract text safely
+        text = ""
+        if "candidates" in data and len(data["candidates"]) > 0:
+            parts = data["candidates"][0].get("content", {}).get("parts", [])
+            if parts and "text" in parts[0]:
+                text = parts[0]["text"]
+
+        return JsonResponse({"text": text, "raw": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

@@ -2,6 +2,9 @@ from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
 
+from aiapp.views import gemini_proxy
+
+
 app_name = "user"
 
 urlpatterns = [
@@ -13,6 +16,8 @@ urlpatterns = [
 
     # Alias for landing page (login is your public entry point)
     path('landing/', views.login_request, name='landing'),
+    path("api/gemini_proxy/", gemini_proxy, name="gemini_proxy"),
+
 
     # Authentication routes
     path('register/', views.register_request, name='register'),

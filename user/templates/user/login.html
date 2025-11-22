@@ -509,9 +509,61 @@
                 };
                 
                 // IMPORTANT: The API key is assigned here for runtime execution.
-                const apiKey = ""; 
-                // "AIzaSyD7qFbJEPymG61gEMBKFG6nHlh7Zcfs1mg"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+             
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// --- New Proxy URL ---
+const proxyUrl = "/api/gemini_proxy/";
+
+async function sendMessage(finalMessages) {
+    try {
+        const response = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                contents: finalMessages,
+                config: {
+                    temperature: 0.7,
+                    maxOutputTokens: 512
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const aiResponseText = data.text;
+
+        // Display in chat
+        console.log("AI Response:", aiResponseText);
+        return aiResponseText;
+
+    } catch (error) {
+        console.error("Error calling proxy:", error);
+    }
+}
+
+// 🔥 System Instruction
+// const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.`;
 
                 const result = await fetchWithRetry(apiUrl, payload);
                 const candidate = result.candidates?.[0];
