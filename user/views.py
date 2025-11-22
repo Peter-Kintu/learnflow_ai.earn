@@ -222,7 +222,6 @@ def track_ad_click(request):
         'reward_amount': str(user_profile.reward_amount) 
     })
 
-
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -244,7 +243,7 @@ def gemini_proxy(request):
         if not contents:
             contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
 
-        # 3. Define System Instruction as a Content object (CRITICAL FIX)
+        # 3. Define System Instruction
         system_instruction = {
             "role": "system",
             "parts": [
@@ -257,34 +256,38 @@ def gemini_proxy(request):
             ]
         }
 
-        # 4. Construct Generation Config
+        # 4. Construct Generation Config (CRITICAL FIX: Explicit Type Casting)
         config = body.get("config") or {}
         generation_config = {
-            "temperature": config.get("temperature", 0.7),
-            "maxOutputTokens": config.get("maxOutputTokens", 1024),
+            # Ensure temperature is a float and defaults to 0.7
+            "temperature": float(config.get("temperature", 0.7)), 
+            # Ensure maxOutputTokens is an integer and defaults to 1024
+            "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
         }
 
-        # 5. Construct Final Payload (Corrected REST structure)
+        # 5. Construct Final Payload
         payload = {
             "contents": contents,
-            "systemInstruction": system_instruction,  # ✅ Full Content object
+            "systemInstruction": system_instruction,
             "generationConfig": generation_config,
         }
 
-        # Debug log: Ensure this line outputs to your Koyeb logs!
+        # Debug log: This should appear in your Koyeb logs!
         print("Outbound Gemini payload:", json.dumps(payload, indent=2))
 
         # 6. Make the API Request
         resp = requests.post(url, json=payload)
+        
+        # 7. Error Handling
         if resp.status_code != 200:
-            # Print the detailed error message from Google's server
+            # THIS IS THE LOG YOU NEED TO CHECK IN KOYEB
             print("Gemini API Error Details:", resp.text)
             return JsonResponse(
                 {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
                 status=resp.status_code,
             )
 
-        # 7. Success Response Handling
+        # 8. Success Response Handling
         data = resp.json()
         text = ""
         if "candidates" in data and data["candidates"]:
@@ -294,5 +297,4 @@ def gemini_proxy(request):
         return JsonResponse({"text": text, "raw": data})
 
     except Exception as e:
-        # Catch any unexpected Python/network errors
         return JsonResponse({"error": str(e)}, status=500)
