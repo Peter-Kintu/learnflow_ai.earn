@@ -914,6 +914,8 @@ def create_quiz(request):
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
+
+
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -921,15 +923,8 @@ def gemini_proxy(request):
 
     try:
         body = json.loads(request.body.decode("utf-8"))
-
-        # Ensure contents is never empty
-        contents = body.get("contents")
-        if not contents:
-            contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
-
-        # Provide safe defaults for config
-        config = body.get("config") or {"temperature": 0.7, "maxOutputTokens": 1024}
-
+        
+        # 1. Initial Setup and Defaults
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
@@ -937,34 +932,57 @@ def gemini_proxy(request):
         model = "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-        payload = {
-            "contents": contents,
-            "systemInstruction": {
-                "role": "system",
-                "parts": [
-                    {
-                        "text": "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies."
-                    }
-                ]
-            },
-            "generationConfig": config,
+        # 2. Extract Contents
+        # Ensure contents is never empty, falling back to a default "Hello Gemini" prompt
+        contents = body.get("contents")
+        if not contents:
+            contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
+
+        # 3. Define System Instruction as a simple string
+        system_instruction_text = "You are LearnFlow AI, an educational partner developed by Kintu Peter, CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
+        
+        # 4. Construct Generation Config
+        # Start with defaults, then update with system instruction
+        config = body.get("config") or {}
+        # Ensure base defaults are present, or use request body if provided
+        generation_config = {
+            "temperature": config.get("temperature", 0.7),
+            "maxOutputTokens": config.get("maxOutputTokens", 1024),
+            "systemInstruction": system_instruction_text # ADDED: Correct string format
         }
 
-        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+        # 5. Construct Final Payload
+        payload = {
+            "contents": contents,
+            "config": generation_config, # CHANGED: Uses the combined config object
+        }
+        
+        # Optionally print the payload here for verification in Koyeb logs
+        # print(f"OUTBOUND PAYLOAD: {json.dumps(payload)}") 
+        
+        # 6. Make the API Request
+        # The 'json=' parameter automatically sets the Content-Type header
+        resp = requests.post(url, json=payload)
+        
+        # 7. Error Handling (Improved for debugging)
         if resp.status_code != 200:
+            # Crucial for finding the exact error message from Google
+            print(f"Gemini API Error Details: {resp.text}") 
             return JsonResponse(
                 {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
                 status=resp.status_code,
             )
 
+        # 8. Success Response Handling
         data = resp.json()
-
         text = ""
         if "candidates" in data and data["candidates"]:
+            # Safely extract text from the parts list
             parts = data["candidates"][0].get("content", {}).get("parts", [])
             text = " ".join(p.get("text", "") for p in parts if "text" in p)
 
         return JsonResponse({"text": text, "raw": data})
 
     except Exception as e:
+        # Catch any unexpected Python/network errors
         return JsonResponse({"error": str(e)}, status=500)
