@@ -221,11 +221,7 @@ def track_ad_click(request):
         'points': str(user_profile.points), 
         'reward_amount': str(user_profile.reward_amount) 
     })
-import os
-import json
-import requests
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+
 
 @csrf_exempt
 def gemini_proxy(request):
