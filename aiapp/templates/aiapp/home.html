@@ -1003,20 +1003,22 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         ];
 
         // Send a dedicated API call for the summary
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: summaryContents, 
-                // FIX VERIFIED: generationConfig is a top-level field
-                generationConfig: { 
-                    temperature: 0.2, // Lower temperature for factual summary
-                    maxOutputTokens: 1024
-                }
-            })
+        fetch(proxyUrl, { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 🔥 ADDED: CSRF Token for Django
+            'X-CSRFToken': getCookie('csrftoken') 
+        },
+        body: JSON.stringify({
+            contents: summaryContents,
+            // 🔥 CHANGED: Use 'config' to match sendMessage() structure
+            config: { 
+                temperature: 0.2,
+                maxOutputTokens: 1024
+            }
         })
+    })
         .then(response => {
             if (!response.ok) {
                 // Improved error handling for summarize
