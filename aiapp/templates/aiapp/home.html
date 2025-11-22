@@ -382,61 +382,45 @@
 
     // --- API Configuration ---
     // NOTE: Replace the placeholder with your actual Gemini API key.
-
+  
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i].trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
     }
-    return cookieValue;
+  }
+  return cookieValue;
 }
-
-// --- New Proxy URL ---
+const apiUrl = "https://api.generativeai.google.com/v1beta2/models/gemini-1.5-chat:generateMessage";
 const proxyUrl = "/api/gemini_proxy/";
 
 async function sendMessage(finalMessages) {
-    try {
-        const response = await fetch(proxyUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                contents: finalMessages,
-                config: {
-                    temperature: 0.7,
-                    maxOutputTokens: 512
-                }
-            })
-        });
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      contents: finalMessages,
+      config: { temperature: 0.7, maxOutputTokens: 512 }
+    })
+  });
 
-        if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
-        }
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
+  }
 
-        const data = await response.json();
-        const aiResponseText = data.text;
-
-        // Display in chat
-        console.log("AI Response:", aiResponseText);
-        return aiResponseText;
-
-    } catch (error) {
-        console.error("Error calling proxy:", error);
-    }
+  const data = await response.json();
+  return data.text;
 }
-
-// 🔥 System Instruction
-
 
     // 🔥 MODIFIED: systemInstruction - Updated for Location Link, Match Prediction, and Dynamic Context Handling 🔥
     const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
