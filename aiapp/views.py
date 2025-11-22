@@ -914,17 +914,16 @@ def create_quiz(request):
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
-
-
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
 
     try:
+        # Request body handling
         body = json.loads(request.body.decode("utf-8"))
 
-        # 1. Setup
+        # 1. Setup API Key and URL
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
@@ -932,41 +931,36 @@ def gemini_proxy(request):
         model = "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-        # 2. Extract Contents
+        # 2. Extract Contents (Chat History)
         contents = body.get("contents")
         if not contents:
+            # Fallback for testing
             contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
 
-        # 3. Define System Instruction
-        system_instruction = {
-            "role": "system",
-            "parts": [
-                {
-                    "text": (
-                        "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
-                        "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
-                    )
-                }
-            ]
-        }
+        # 3. Define System Instruction (CRITICAL FIX: Should be a plain string for REST API)
+        system_instruction_text = (
+            "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
+            "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
+        )
 
-        # 4. Construct Generation Config (CRITICAL FIX: Explicit Type Casting)
+        # 4. Construct Generation Config (Type Casting Fixes)
         config = body.get("config") or {}
         generation_config = {
-            # Ensure temperature is a float and defaults to 0.7
+            # Ensure temperature is explicitly cast to a float
             "temperature": float(config.get("temperature", 0.7)), 
-            # Ensure maxOutputTokens is an integer and defaults to 1024
+            # Ensure maxOutputTokens is explicitly cast to an integer
             "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
         }
 
         # 5. Construct Final Payload
         payload = {
             "contents": contents,
-            "systemInstruction": system_instruction,
+            # Pass the instruction as a simple string
+            "systemInstruction": system_instruction_text, 
             "generationConfig": generation_config,
         }
 
-        # Debug log: This should appear in your Koyeb logs!
+        # Debug log: Log the final outbound payload before sending
         print("Outbound Gemini payload:", json.dumps(payload, indent=2))
 
         # 6. Make the API Request
@@ -974,7 +968,7 @@ def gemini_proxy(request):
         
         # 7. Error Handling
         if resp.status_code != 200:
-            # THIS IS THE LOG YOU NEED TO CHECK IN KOYEB
+            # CRITICAL LOG: This will show the exact reason for the 400 error.
             print("Gemini API Error Details:", resp.text)
             return JsonResponse(
                 {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
@@ -985,6 +979,7 @@ def gemini_proxy(request):
         data = resp.json()
         text = ""
         if "candidates" in data and data["candidates"]:
+            # Extracting text from parts, accommodating multiple parts if they exist
             parts = data["candidates"][0].get("content", {}).get("parts", [])
             text = " ".join(p.get("text", "") for p in parts if "text" in p)
 
