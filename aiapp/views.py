@@ -914,7 +914,6 @@ def create_quiz(request):
         
     return render(request, 'aiapp/create_quiz.html', {'quiz_form': quiz_form})
 
-    
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -922,7 +921,10 @@ def gemini_proxy(request):
 
     try:
         body = json.loads(request.body.decode("utf-8"))
-        contents = body.get("contents", [])
+        contents = body.get("contents")
+        if not contents:
+            contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
+
         config = body.get("config") or {"temperature": 0.7, "maxOutputTokens": 1024}
 
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -947,7 +949,10 @@ def gemini_proxy(request):
 
         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
         if resp.status_code != 200:
-            return JsonResponse({"error": f"Gemini API error {resp.status_code}", "details": resp.text}, status=resp.status_code)
+            return JsonResponse(
+                {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
+                status=resp.status_code,
+            )
 
         data = resp.json()
 
