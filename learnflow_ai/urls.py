@@ -1,3 +1,4 @@
+from operator import index
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -29,7 +30,8 @@ urlpatterns = [
 
     # Sitemap index and sections
     path('sitemap.xml', sitemap_views.sitemap, {'sitemaps': sitemaps}, name='sitemap'),
-    path('sitemap-index.xml', sitemap_views.index, {'sitemaps': sitemaps}, name='sitemap-index'),
+   path('sitemap-index.xml', index, {'sitemaps': sitemaps}, name='sitemap-index'),
+
 
     # Health check endpoint
     path('ping/', ping, name='ping'),
