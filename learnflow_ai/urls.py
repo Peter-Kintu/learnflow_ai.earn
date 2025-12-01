@@ -3,14 +3,13 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
-from user.views import ping 
+from user.views import ping
 
-# FIX 1: Use the aliased import style to resolve the Pylance warning and keep the code clean.
-# FIX 2: Removed direct import of 'sitemap' and the unused 'sitemap_view'.
-from django.contrib.sitemaps import views as sitemap_views 
+# Aliased import for sitemap views
+from django.contrib.sitemaps import views as sitemap_views
 
-# Keep imports for your sitemap classes
-from .sitemap import StaticSitemap, QuizSitemap, BookSitemap, VideoSitemap 
+# Import your sitemap classes
+from .sitemap import StaticSitemap, QuizSitemap, BookSitemap, VideoSitemap
 
 sitemaps = {
     'static': StaticSitemap,
@@ -23,25 +22,26 @@ urlpatterns = [
     # Admin interface
     path('admin/', admin.site.urls),
 
-    # Serve robots.txt for SEO
-    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    # Robots.txt for SEO
+    path("robots.txt", TemplateView.as_view(
+        template_name="robots.txt", content_type="text/plain"
+    )),
 
-    # Serve sitemap for search engines
-    # FIX 3: Removed the duplicate path and kept only the standard, Django-contrib path
-    # using the corrected aliased view.
-    path('sitemap.xml', sitemap_views.sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    # Sitemap index and sections
+    path('sitemap.xml', sitemap_views.sitemap, {'sitemaps': sitemaps}, name='sitemap'),
+    path('sitemap-index.xml', sitemap_views.index, {'sitemaps': sitemaps}, name='sitemap-index'),
 
-    # Health check endpoint for uptime monitoring
+    # Health check endpoint
     path('ping/', ping, name='ping'),
 
-    # Route root URL '/' to user.urls — loading_screen is served here
+    # Root URL routed to user app
     path('', include('user.urls')),
 
     # Other app routes
     path('aiapp/', include('aiapp.urls')),
     path('video/', include('video.urls')),
     path('book/', include('book.urls')),
-    path('legal/', include('legalpages.urls', namespace='legalpages')),
+    path('legal/', include(('legalpages.urls', 'legalpages'), namespace='legalpages')),
 ]
 
 # Serve static and media files during development
