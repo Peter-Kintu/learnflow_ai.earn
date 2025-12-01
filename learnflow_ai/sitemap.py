@@ -1,7 +1,10 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from django.utils import timezone
-from .models import Quiz # Assuming Quiz is in the main app's models
+
+# FIX: Changed from a relative import ('from .models import Quiz') 
+# to the correct absolute import, assuming Quiz lives in the 'aiapp'.
+from aiapp.models import Quiz 
 from book.models import Book # Assuming Book is in the 'book' app
 from video.models import Video # Assuming Video is in the 'video' app
 
@@ -13,7 +16,6 @@ class StaticSitemap(Sitemap):
 
     def items(self):
         # List the view names for all important static pages
-        # NOTE: Make sure these names are defined in your urls.py (e.g., 'aiapp:home' should be the name for your home view)
         return ['aiapp:home', 'aiapp:quiz_list', 'video:video_list', 'book:book_list'] 
 
     def location(self, item):
