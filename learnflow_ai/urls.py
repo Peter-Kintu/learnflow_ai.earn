@@ -1,4 +1,3 @@
-from operator import index
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -6,8 +5,8 @@ from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from user.views import ping
 
-# Aliased import for sitemap views
-from django.contrib.sitemaps import views as sitemap_views
+# Correct import for sitemap views
+from django.contrib.sitemaps.views import sitemap, index
 
 # Import your sitemap classes
 from .sitemap import StaticSitemap, QuizSitemap, BookSitemap, VideoSitemap
@@ -29,9 +28,8 @@ urlpatterns = [
     )),
 
     # Sitemap index and sections
-    path('sitemap.xml', sitemap_views.sitemap, {'sitemaps': sitemaps}, name='sitemap'),
-   path('sitemap-index.xml', index, {'sitemaps': sitemaps}, name='sitemap-index'),
-
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
+    path('sitemap-index.xml', index, {'sitemaps': sitemaps}, name='sitemap-index'),
 
     # Health check endpoint
     path('ping/', ping, name='ping'),
