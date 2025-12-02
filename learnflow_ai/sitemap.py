@@ -14,16 +14,16 @@ from video.models import Video
 class StaticSitemap(Sitemap):
     """Sitemap for fixed, unchanging pages."""
     priority = 1.0
-    changefreq = 'weekly'
-    protocol = 'https'  # Ensures HTTPS links
+    changefreq = "weekly"
+    protocol = "https"
 
     def items(self):
         # List the view names for all important static pages
         return [
-            'aiapp:home',
-            'aiapp:quiz_list',
-            'video:video_list',
-            'book:book_list',
+            "aiapp:home",
+            "aiapp:quiz_list",
+            "video:video_list",
+            "book:book_list",
         ]
 
     def location(self, item):
@@ -38,18 +38,37 @@ class StaticSitemap(Sitemap):
 # --- 2. Base Class for Dynamic Content Sitemaps ---
 # ----------------------------------------------------------------------
 class BaseModelSitemap(Sitemap):
-    """Reusable base sitemap for models with created_at field."""
+    """
+    Reusable base sitemap for models.
+    Handles missing created_at gracefully.
+    """
     changefreq = "monthly"
-    protocol = 'https'
+    protocol = "https"
+
+    model = None
+    detail_view_name = None
 
     def items(self):
-        return self.model.objects.all().order_by('-created_at')
+        qs = self.model.objects.all()
+        # If created_at exists, order by it; otherwise just return all
+        if hasattr(self.model, "created_at"):
+            qs = qs.order_by("-created_at")
+        return qs
 
     def lastmod(self, obj):
-        return obj.created_at
+        # Use created_at if available, else updated_at, else now
+        if hasattr(obj, "created_at"):
+            return obj.created_at
+        if hasattr(obj, "updated_at"):
+            return obj.updated_at
+        return timezone.now()
 
     def location(self, obj):
-        return reverse(self.detail_view_name, args=[obj.pk])
+        try:
+            return reverse(self.detail_view_name, args=[obj.pk])
+        except Exception:
+            # Fallback: return homepage if reverse fails
+            return reverse("aiapp:home")
 
 
 # ----------------------------------------------------------------------
@@ -59,18 +78,18 @@ class QuizSitemap(BaseModelSitemap):
     """Sitemap for all Quiz objects."""
     priority = 0.8
     model = Quiz
-    detail_view_name = 'aiapp:quiz_detail'
+    detail_view_name = "aiapp:quiz_detail"
 
 
 class BookSitemap(BaseModelSitemap):
     """Sitemap for all Book objects."""
     priority = 0.9
     model = Book
-    detail_view_name = 'book:book_detail'
+    detail_view_name = "book:book_detail"
 
 
 class VideoSitemap(BaseModelSitemap):
     """Sitemap for all Video objects."""
     priority = 0.8
     model = Video
-    detail_view_name = 'video:video_detail'
+    detail_view_name = "video:video_detail"

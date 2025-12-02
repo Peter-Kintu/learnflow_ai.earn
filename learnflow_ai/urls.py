@@ -29,7 +29,7 @@ urlpatterns = [
 
     # Sitemap index and sections
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
-    path('sitemap-index.xml', index, {'sitemaps': sitemaps}, name='sitemap-index'),
+  
 
     # Health check endpoint
     path('ping/', ping, name='ping'),
