@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'cloudinary',
     # --- ADDED: CSP ---
     'csp',
+    'django.contrib.sitemaps',
     # ------------------
     'legalpages',
     'jazzmin',
