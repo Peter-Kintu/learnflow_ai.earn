@@ -11,9 +11,23 @@
         color: #e5e7eb;
     }
 
+    /* NEW: Neutral selection colors for cleaner copy/paste (Browser dependent) */
+    ::selection {
+      background: #4f46e5;
+      color: #ffffff;
+    }
+    .chat-message.ai::selection {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+    .chat-message.user::selection {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+    
     /* General container and card styling - Wider on all screens */
     .chat-container-card {
-        max-width: 95%; 
+        max-width: 98%; /* Wider for small screens */
         margin: 1rem auto;
         background-color: #1f2937;
         border-radius: 1.0rem;
@@ -21,6 +35,7 @@
         border: 1px solid #374151;
         overflow: hidden;
         transition: all 0.5s ease-in-out;
+        box-sizing: border-box; /* Ensures padding/border doesn't cause overflow */
     }
 
     /* Header styling */
@@ -38,20 +53,11 @@
         letter-spacing: -0.02em;
         line-height: 1.1;
     }
-    /*
-    .chat-header p {
-        font-size: 1.125rem;
-        color: #9ca3af;
-        margin-top: 0.5rem;
-        max-width: 32rem;
-        margin-left: auto;
-        margin-right: auto;
-    } */
-
+    
     /* Main chat area layout */
     .chat-area {
         display: flex;
-        flex-direction: column; /* Stacks on all screens now */
+        flex-direction: column; 
         padding: 0; 
         gap: 0;
     }
@@ -88,22 +94,44 @@
     .chat-message.user { 
         justify-content: flex-end; 
         align-self: flex-end; 
-        background-color: #6366f1; /* Brighter Indigo */
-        color: #ffffff; /* White text for contrast */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle lift */
+        background-color: #6366f1; 
+        color: #ffffff; 
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
     }
     
     /* MODIFIED: AI message to softer dark background with a modern accent bar */
     .chat-message.ai { 
         justify-content: flex-start; 
         align-self: flex-start; 
-        background-color: #1a222e; /* Softer Darker Blue-Gray */
+        background-color: #1a222e; 
         color: #e5e7eb; 
-        border-left: 4px solid #4f46e5; /* Modern accent bar */
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+        border-left: 4px solid #4f46e5; 
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
     }
     .chat-message.error { background-color: #b91c1c; color: #ffffff; border: 1px solid #dc2626; }
+    
+    /* NEW: Code Block Styling (Addresses Clean Code Formatting) */
+    .chat-message pre {
+        background-color: #0a0e16; 
+        color: #e5e7eb; 
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto; 
+        font-family: 'Consolas', 'Courier New', monospace; 
+        border: 1px solid #4b5563; 
+        width: 100%; 
+        box-sizing: border-box; 
+        white-space: pre; 
+        word-wrap: normal; 
+    }
 
+    .chat-message code {
+        font-family: 'Consolas', 'Courier New', monospace;
+        background-color: transparent; 
+        padding: 0;
+        color: #10b981; 
+    }
+    
     /* Input and button area */
     .chat-input-area {
         display: flex;
@@ -122,8 +150,9 @@
         background-color: #0a0e16; 
         border-radius: 1.0rem; 
         border: 1px solid #4b5563;
-        padding: 0.5rem 0.5rem; /* Reduced vertical padding for more space for input field */
+        padding: 0.5rem 0.5rem; 
         transition: border-color 0.3s, box-shadow 0.3s; 
+        box-sizing: border-box; /* Input fix */
     }
     
     /* NEW: Add a visual focus state to the container */
@@ -137,6 +166,7 @@
         flex-grow: 1; 
         width: 100%;
         padding: 0; 
+        padding-right: 0.5rem; /* Add small padding inside text area */
         border-radius: 0;
         border: none;
         background-color: transparent; 
@@ -149,6 +179,8 @@
         overflow: auto; 
         min-height: 1.5rem; 
         max-height: 10rem; 
+        word-wrap: break-word; /* Input fix */
+        overflow-wrap: break-word; /* Input fix */
     }
 
     #chatInput::placeholder {
@@ -164,8 +196,8 @@
     /* 🔥 MODIFIED: ICON BUTTON Base Styling - Reduced size for more input space 🔥 */
     .action-icon-button {
         flex-shrink: 0; 
-        width: 2.5rem; /* Reduced from 3rem */
-        height: 2.5rem; /* Reduced from 3rem */
+        width: 2.5rem; 
+        height: 2.5rem; 
         border: none;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
@@ -173,7 +205,7 @@
         align-items: center;
         justify-content: center;
         padding: 0; 
-        font-size: 1.2rem; /* Reduced icon size slightly */
+        font-size: 1.2rem; 
         border-radius: 50%; 
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); 
     }
@@ -182,7 +214,7 @@
     #recordButton {
         background-color: #ef4444; 
         color: white;
-        margin-right: 0.25rem; /* Reduced from 0.5rem */
+        margin-right: 0.25rem; 
     }
     
     #recordButton:hover {
@@ -212,7 +244,7 @@
     #sendChatButton {
         background-color: #4f46e5; 
         color: #fff; 
-        margin-left: 0.25rem; /* Reduced from 0.5rem */
+        margin-left: 0.25rem; 
     }
 
     #sendChatButton:hover { 
@@ -258,36 +290,33 @@
     
     /* 🔥 MODIFIED: Responsive adjustments for large screens (md: 768px and up) 🔥 */
     @media (min-width: 768px) {
-        /* 1. Maximize width and height for the large screen experience */
-        .chat-container-card { max-width: 95%; min-height: 95vh; } 
-        /* REMOVED two-column layout: */
-        /* .chat-area { flex-direction: row; min-height: 80vh; } */
+        .chat-container-card { max-width: 90%; min-height: 95vh; } /* Wider and taller on large screen */
         
         #chatLog { 
-            width: auto; /* Full width */
-            min-height: 75vh; /* Increase min height to use more vertical space */
-            max-height: 75vh; /* Constrain log height to 75% of viewport height */
-            border-radius: 0; /* Reset */
+            width: auto; 
+            min-height: 75vh; /* Increased chat area for large screens */
+            max-height: 75vh; 
+            border-radius: 0; 
             padding: 1.5rem; 
         }
         
         /* Input area now spans full width at the bottom: */
         .chat-input-area { 
             width: auto; 
-            border-top: 1px solid #374151; /* Restore border */
-            border-left: none; /* Remove side border */
-            border-radius: 0 0 1.5rem 1.5rem; /* Rounded bottom corners */
+            border-top: 1px solid #374151; 
+            border-left: none; 
+            border-radius: 0 0 1.5rem 1.5rem; 
             flex-direction: column; 
             justify-content: flex-start; 
         }
 
         /* Adjusted button group layout for larger screens: */
         .button-group { 
-            flex-direction: row; /* Buttons are side-by-side */
+            flex-direction: row; 
             gap: 1rem; 
         }
         .action-button { 
-            flex: 1; /* Equal width */
+            flex: 1; 
             max-width: 25%; 
         }
         .action-button.stop-speak { flex: 1; max-width: 25%; }
@@ -463,13 +492,17 @@ CURRENT CONTEXT:
 - If the user asks for **real-time information (like news or current scores)**, use your internal browsing/search capability to provide the most current and accurate answer, acknowledging the inherent latency in news.
 - If the user asks for **match predictions (e.g., football, soccer)**, use your vast knowledge base and current data to provide a detailed analysis and a most likely outcome, acting as an expert sports analyst.
 
+**INSTRUCTIONS FOR CODE/HTML:**
+- When providing code, use **markdown code blocks** (e.g., \`\`\`html) for clean, copy-pasteable output.
+- When the user pastes or asks about HTML code, advise them that their input is safely displayed as **text** in the chat (not rendered) for security and clean editing.
+
 Always respond in the language the user is using, maintaining context and educational quality.`;
     
     // --- Function to get and display accurate local date/time ---
     function updateAccurateLocalTime() {
         const now = new Date();
         
-        // Format the date (e.g., Friday, October 17, 2025)
+        // Format the date (e.g., Friday, December 6, 2025)
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const dateString = now.toLocaleDateString(undefined, dateOptions);
 
@@ -483,7 +516,7 @@ Always respond in the language the user is using, maintaining context and educat
         // Update the global context variable
         userCurrentContext.currentTimeAndDate = localTimeText;
         
-        // 🔥 NEW: Update the display element in the header
+        // 🔥 UPDATE: Update the display element in the header
         const displayElement = document.getElementById('localTimeDisplay');
         if (displayElement) {
             displayElement.textContent = `Your local time: ${timeString} on ${dateString}`;
@@ -520,12 +553,7 @@ Always respond in the language the user is using, maintaining context and educat
                     userCurrentContext.latitude = lat;
                     userCurrentContext.longitude = lng;
                     
-                    // 🔥 CRITICAL FIX: Use a standard, working Google Maps API URL format 🔥
-                    // The instruction requires: [View on Map](https://www.google.com/maps/search/?api=1&query=LAT,LNG)
-                    // The standard, working URL is more like: https://maps.google.com/?q=lat,lng
                     // STICKING TO THE INSTRUCTION'S FORMAT:
-                    // NOTE: The instruction's format (https://www.google.com/maps/search/?api=1&query=LAT,LNG) is non-standard and likely non-functional outside the system's own interpreter. 
-                    // To follow the instruction's *intent* (provide a map link) and structure:
                     const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
                     const mapLinkMarkdown = `[View Your Location on Google Maps](${mapLink})`;
                     // 3. Inform the user in the chat (NOW INCLUDES LINK)
@@ -591,6 +619,10 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
         // 4. Clean up excessive whitespace that might result from removals
         cleaned = cleaned.replace(/\s\s+/g, ' '); // Replace multiple spaces with a single space
+        
+        // 5. Specifically remove code blocks entirely for speech synthesis
+        cleaned = cleaned.replace(/```.*?```/gs, ' Code block output is not spoken. ');
+
 
         return cleaned.trim(); // Trim leading/trailing whitespace
     }
@@ -828,7 +860,11 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             typeWriter();
             
         } else {
-            messageDiv.innerHTML = `<strong>You:</strong> ${text}`;
+            // 🔥 CRITICAL FIX: Use textContent for user messages to prevent HTML rendering (XSS) 🔥
+            messageDiv.innerHTML = `<strong>You:</strong> `;
+            const textNode = document.createTextNode(text);
+            messageDiv.appendChild(textNode);
+            
             chatLog.appendChild(messageDiv);
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
@@ -1119,7 +1155,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
             if (role === 'user') {
                 // User messages are simple text
-                text = msgDiv.textContent.replace('You:', '').trim();
+                // Use the textContent of the messageDiv after the strong tag for maximum safety
+                const textNodes = Array.from(msgDiv.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
+                text = textNodes.map(node => node.textContent.trim()).join(' ').trim();
             } else {
                 // AI messages may have strong (role) and span (content)
                 const contentSpan = msgDiv.querySelector('span');
@@ -1165,7 +1203,12 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         history.forEach(item => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${item.role}`;
-            messageDiv.innerHTML = `<strong>${item.role === 'user' ? 'You' : 'Ai'}:</strong> ${item.text}`;
+            
+            // Render text content safely for both user and AI
+            messageDiv.innerHTML = `<strong>${item.role === 'user' ? 'You' : 'Ai'}:</strong> `;
+            const textNode = document.createTextNode(item.text);
+            messageDiv.appendChild(textNode);
+            
             chatLog.appendChild(messageDiv);
         });
 
