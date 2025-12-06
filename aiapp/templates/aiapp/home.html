@@ -367,7 +367,8 @@
     let userCurrentContext = {};
     
     // --- Speech Synthesis Variables (TTS) ---
-    let voices = [];
+    // 🔥 NEW GLOBAL VARIABLE for Male Voice Selection 🔥
+    let selectedMaleVoice = null; 
     let isSpeaking = false;
     
     // --- Speech Recognition Variables (STT) ---
@@ -497,10 +498,7 @@ Always respond in the language the user is using, maintaining context and educat
                     
                     // 🔥 CRITICAL FIX: Use a standard, working Google Maps API URL format 🔥
                     // The instruction requires: [View on Map](https://www.google.com/maps/search/?api=1&query=LAT,LNG)
-                    // The standard, working URL is more like: https://maps.google.com/?q=lat,lng
                     // STICKING TO THE INSTRUCTION'S FORMAT:
-                    // NOTE: The instruction's format (https://www.google.com/maps/search/?api=1&query=LAT,LNG) is non-standard and likely non-functional outside the system's own interpreter. 
-                    // To follow the instruction's *intent* (provide a map link) and structure:
                     const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
                     const mapLinkMarkdown = `[View Your Location on Google Maps](${mapLink})`;
                     // 3. Inform the user in the chat (NOW INCLUDES LINK)
@@ -526,7 +524,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                          errorMessage = `Location error (${error.code}): ${error.message}`;
                     }
                     
-                    // Show error message to the user in the chat log (using existing function)
+                    // Show error message to the user in the chat log (using existing function, which will speak it by default)
                     appendMessage('ai', errorMessage, true);
                 },
                 options // Pass the options object for high accuracy
@@ -609,87 +607,83 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         return 'en-US'; 
     }
     
-    // ## TTS Functions (MODIFIED: speakText) ##
-    function populateVoices() {
-        voices = speechSynthesis.getVoices();
-    }
-    populateVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = populateVoices;
-    }
+    // ## TTS Functions (MODIFIED FOR MALE VOICE) ##
 
-    function speakText(text) {
-        if (!'speechSynthesis' in window) {
-            console.warn("Speech Synthesis not supported in this browser.");
+    // 🔥 NEW FUNCTION: Selects the best available professional male voice 🔥
+    function populateAndSelectVoice() {
+        if (typeof speechSynthesis === 'undefined') {
+            console.warn('Speech Synthesis not supported on this browser.');
             return;
         }
 
-        stopSpeaking();
+        const availableVoices = speechSynthesis.getVoices();
+        
+        // --- Step 1: Define professional male voice names to prioritize (case-insensitive) ---
+        const preferredMaleVoiceNames = [
+            /Google.*Male/i, 
+            /Microsoft David/i, 
+            /Alex/i, // macOS male voice
+            /Daniel/i, // UK male voice
+            /Male/i, 
+            /George/i
+        ];
+        
+        // --- Step 2: Attempt to find the best English male voice match ---
+        for (const nameRegex of preferredMaleVoiceNames) {
+            selectedMaleVoice = availableVoices.find(voice => 
+                nameRegex.test(voice.name) && voice.lang.startsWith('en')
+            );
+            if (selectedMaleVoice) break; // Found a good one, stop searching
+        }
+        
+        // --- Step 3: Fallback to *any* English voice that doesn't sound female ---
+        if (!selectedMaleVoice) {
+             selectedMaleVoice = availableVoices.find(voice => 
+                voice.lang.startsWith('en') && !/(female|zira|samantha|susan|emma|heather)/i.test(voice.name)
+            );
+        }
+
+        if (selectedMaleVoice) {
+            console.log('Selected professional male voice:', selectedMaleVoice.name);
+        } else {
+            console.warn('Could not find a specific professional male voice. Will use browser default.');
+        }
+    }
+
+    // Initialize voice loading and selection
+    if (typeof speechSynthesis !== 'undefined') {
+        speechSynthesis.onvoiceschanged = populateAndSelectVoice;
+        // Call immediately in case voices are already loaded
+        populateAndSelectVoice(); 
+    }
+
+    // 🔥 MODIFIED speakText function to use the selected male voice and professional pitch 🔥
+    function speakText(text) {
+        if (!'speechSynthesis' in window || !text) {
+            return;
+        }
+
+        stopSpeaking(); // Stop any current speech
         isSpeaking = true;
         stopSpeakingButton.style.display = 'block';
 
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // 🔥 CRITICAL UPDATE: Guess the language of the text
-        const targetLangCode = guessTextLanguage(text);
-
-        // MODIFIED: Change the voice tone (pitch) and rate (speed)
-        utterance.pitch = 1.2; // Higher tone (e.g., 1.2)
-        utterance.rate = 0.95; // Slightly slower speed (e.g., 0.95)
-
-        // Enhanced Voice Selection for Multilingual/African Languages
-   const voicePreferences = [
-    // 🔥 PRIORITY 1: Highest Quality & Multilingual Voices (Best cross-device performance)
-    // These are often the most attractive, natural, and device-independent voices.
-    { name: 'Google', keyword: 'Multi' },
-    { name: 'Microsoft', keyword: 'Multi' },
-    { name: 'Amazon', keyword: 'Multi' },
-
-    // PRIORITY 2: User's Preferred Defaults (Clear/Friendly Female & Professional Male)
-    // By placing these immediately after the premium voices, you ensure they are the primary fallbacks 
-    // and will be used regardless of the device (PC or Phone/Tablet).
-    { name: 'Samantha', keyword: 'Samantha' }, // The preferred "clear, friendly" female voice.
-    { name: 'Daniel', keyword: 'Daniel' },     // The preferred male voice.
-    
-    // PRIORITY 3: African-related languages (Explicit Regional Match)
-    // Essential for the application's unique multilingual and regional focus.
-    { lang: 'en-ZA', name: 'South African' }, 
-    { lang: 'zu', name: 'Zulu' }, 
-    { lang: 'sw', name: 'Swahili' }, 
-    { lang: 'ha', name: 'Hausa' }
-];
-        let selectedVoice = null;
+        const speakableText = cleanText(text);
+        const utterance = new SpeechSynthesisUtterance(speakableText);
         
-        // 1. Check for a voice that matches the GUESSED base language (e.g., find any voice with 'sw' language code for 'sw-TZ' text)
-        const baseLang = targetLangCode.split('-')[0].toLowerCase();
-        selectedVoice = voices.find(voice => voice.lang.split('-')[0].toLowerCase() === baseLang);
+        // Guess the language of the text for pronunciation
+        const targetLangCode = guessTextLanguage(speakableText);
         
-        // 2. Fallback to preferred voices if no exact language base match
-        if (!selectedVoice) {
-            for (let pref of voicePreferences) {
-                // Find a voice by name OR by language code match
-                selectedVoice = voices.find(voice => 
-                    (voice.name.includes(pref.name || pref.keyword)) || 
-                    (pref.lang && voice.lang.toLowerCase().includes(pref.lang.toLowerCase()))
-                );
-                if (selectedVoice) break;
-            }
-        }
-
-        // Final fallback: any voice with an English language code
-        if (!selectedVoice) {
-            selectedVoice = voices.find(voice => voice.lang.includes('en'));
-        }
-
-        // If a voice is found, set it
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
-        }
+        // 1. Try to use the specifically selected professional male voice
+        if (selectedMaleVoice) {
+            utterance.voice = selectedMaleVoice;
+        } 
         
-        // 🔥 CRITICAL FIX: Always set the utterance language to the GUESSED language code.
-        // This is the most important step for correct pronunciation, even with an English voice.
+        // Always set the language for correct pronunciation, even if a custom voice is used
         utterance.lang = targetLangCode; 
 
+        // Voice properties for a professional male tone
+        utterance.rate = 0.95; // Slightly slower speed (Professional)
+        utterance.pitch = 1.0; // Standard pitch (deeper, more authoritative tone)
 
         utterance.onend = () => {
             isSpeaking = false;
@@ -780,7 +774,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
     // ## Chat UI Functions ##
-    function appendMessage(sender, text, isError = false) {
+
+    // 🔥 MODIFIED: Added `speakAfterType` to make TTS optional (UX Improvement) 🔥
+    function appendMessage(sender, text, isError = false, speakAfterType = true) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${sender} ${isError ? 'error' : ''}`;
         
@@ -798,9 +794,11 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                     setTimeout(typeWriter, 10);
                 } else {
                     saveChatHistory();
-                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
-                    const speakableText = cleanText(text);
-                    speakText(speakableText); 
+                    // 🔥 CRITICAL UX CHANGE: Speak ONLY if the flag is true 🔥
+                    if (speakAfterType) {
+                        const speakableText = cleanText(text);
+                        speakText(speakableText); 
+                    }
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
@@ -834,6 +832,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     async function generateAiResponse(prompt) {
   if (!prompt || sendChatButton.disabled) return;
 
+  // Since appendMessage now defaults to speaking, the AI response will be spoken.
   appendMessage('user', prompt);
   chatInput.value = '';
   sendChatButton.disabled = true;
@@ -887,13 +886,14 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     localStorage.setItem(responseCountKey, responseCount);
 
     removeLoader();
-    appendMessage('ai', aiText);
+    // appendMessage handles typing and speaking (default=true)
+    appendMessage('ai', aiText); 
   } catch (error) {
     console.error('Gemini Proxy Error:', error);
     removeLoader();
     const errorMessage = `🚨 Could not connect to the AI service. Error: ${error.message}`;
-    appendMessage('ai', errorMessage, true);
-    speakText(cleanText(errorMessage));
+    // Explicitly set speakAfterType=true for errors to ensure user gets auditory feedback on failure
+    appendMessage('ai', errorMessage, true, true); 
   } finally {
     sendChatButton.disabled = false;
   }
@@ -908,7 +908,8 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         const lowerQuery = query.toLowerCase();
         if (lowerQuery.includes('share my location') || lowerQuery.includes('get my location') || lowerQuery.includes('update location')) {
             // Since this is a user action, append the user's message first
-            appendMessage('user', query);
+            // We use the new function, which is fine for user messages as it doesn't try to speak
+            appendMessage('user', query); 
             
             // Clear the input and trigger the location request instead of the AI
             chatInput.value = ''; 
@@ -936,13 +937,14 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     
     const history = getChatHistory();
     if (history.length === 0) {
+        // Use the new function, speaking the error message (default=true)
         appendMessage('ai', "There is no conversation history to summarize.", true);
         return;
     }
 
     const summaryPrompt = "Please generate a concise, bullet-point summary of the key topics, concepts, and conclusions from the following conversation history. Respond in a professional, educational tone.";
     
-    // Add a temporary loader message
+    // Add a temporary loader message (must use direct DOM manipulation for the loader)
     const loaderMsgDiv = document.createElement('div');
     loaderMsgDiv.className = 'chat-message ai';
     loaderMsgDiv.id = 'summaryLoader';
@@ -993,38 +995,16 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         const loader = document.getElementById('summaryLoader');
         if (loader) { loader.remove(); }
         
-        const aiMsgDiv = document.createElement('div');
-        aiMsgDiv.className = "chat-message ai";
-        
-        const contentSpan = document.createElement('span');
-        aiMsgDiv.appendChild(contentSpan);
-        chatLog.appendChild(aiMsgDiv);
-        
-        let i = 0;
-        function typeSummary() {
-            if (i < displayText.length) {
-                contentSpan.textContent += displayText.charAt(i);
-                i++;
-                setTimeout(typeSummary, 10);
-            } else {
-                saveChatHistory();
-                const speakableText = cleanText(displayText);
-                speakText(speakableText);
-            }
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }
-        typeSummary();
+        // 🔥 CRITICAL FIX: Use the new appendMessage function to handle typing and speaking.
+        appendMessage('ai', displayText);
     })
     .catch(error => {
         const loader = document.getElementById('summaryLoader');
         if (loader) { loader.remove(); }
-        const errorMsgDiv = document.createElement('div');
-        errorMsgDiv.className = "chat-message error";
         const summaryErrorText = "Could not generate summary due to a connection error: " + error.message;
-        errorMsgDiv.innerHTML = `<strong>Ai (Summary):</strong> <span class="text-xl inline-block mr-2">🚨</span> ${cleanText(summaryErrorText)}`;
-        chatLog.appendChild(errorMsgDiv);
-        saveChatHistory();
-        speakText("I encountered an error while generating the summary.");
+        
+        // Use the new function to display error, ensuring it speaks
+        appendMessage('ai', summaryErrorText, true, true);
     });
 }
             
@@ -1051,23 +1031,23 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         URL.revokeObjectURL(url);
     }
 
+    // 🔥 MODIFIED clearChat to use the new appendMessage structure 🔥
     function clearChat() {
         if (confirm("Are you sure you want to clear the entire chat history? This action cannot be undone.")) {
             localStorage.removeItem(chatHistoryKey);
-            // Optionally, also clear the response count if the user is starting over fresh
             // localStorage.removeItem(responseCountKey);
             // responseCount = 0;
             
-            chatLog.innerHTML = `
-                <div class="chat-message ai">
-                    <strong>Ai:</strong>
-                    <span class="text-gray-400">
-                        Chat history cleared. How can I help you start your learning journey today?
-                    </span>
-                </div>
-            `;
             stopSpeaking();
-            speakText("Chat history cleared. How can I help you start your learning journey today?");
+            
+            // Reset the chatLog completely
+            chatLog.innerHTML = ''; 
+            
+            const confirmationText = "Chat history cleared. How can I help you start your learning journey today?";
+            
+            // Use the new function to append the welcome message, which will type and speak (default=true)
+            appendMessage('ai', confirmationText, false, true); 
+            
             chatLog.scrollTop = chatLog.scrollHeight;
         }
     }
@@ -1132,6 +1112,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             // Restore initial welcome message if history is empty
             chatLog.innerHTML = `
                 <div class="chat-message ai">
+                    <strong>Ai:</strong>
                     <span class="text-gray-400">
                         Am here to help you learn in any language
                     </span>
