@@ -69,7 +69,7 @@
         max-height: 70vh; /* Base height for small screens */
     }
 
-    /* Message styling (same) */
+    /* Message styling (MODERNIZED) */
     .chat-message {
         display: flex;
         align-items: flex-start;
@@ -83,8 +83,25 @@
         font-size: 1rem;
     }
     .chat-message strong { font-weight: 700; margin-right: 0.5rem; min-width: fit-content; }
-    .chat-message.user { justify-content: flex-end; align-self: flex-end; background-color: #4338ca; color: #e0e7ff; }
-    .chat-message.ai { justify-content: flex-start; align-self: flex-start; background-color: #2d3748; color: #e5e7eb; }
+    
+    /* MODIFIED: User message to brighter indigo with a subtle lift */
+    .chat-message.user { 
+        justify-content: flex-end; 
+        align-self: flex-end; 
+        background-color: #6366f1; /* Brighter Indigo */
+        color: #ffffff; /* White text for contrast */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle lift */
+    }
+    
+    /* MODIFIED: AI message to softer dark background with a modern accent bar */
+    .chat-message.ai { 
+        justify-content: flex-start; 
+        align-self: flex-start; 
+        background-color: #1a222e; /* Softer Darker Blue-Gray */
+        color: #e5e7eb; 
+        border-left: 4px solid #4f46e5; /* Modern accent bar */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    }
     .chat-message.error { background-color: #b91c1c; color: #ffffff; border: 1px solid #dc2626; }
 
     /* Input and button area */
@@ -295,7 +312,7 @@
             <div class="chat-message ai">
                 <strong>Ai:</strong>
                 <span class="text-gray-400">
-                    Hello, {{ user.username }}! 
+                    Hello, {{ user.username }}! I'm LearnFlow AI, your enthusiastic and modern learning guide. What fascinating topic are we exploring today?
                 </span>
             </div>
         </div>
@@ -425,8 +442,8 @@ async function sendMessage(finalMessages) {
   return text;
 }
 
-    // 🔥 MODIFIED: systemInstruction - Updated for Location Link, Match Prediction, and Dynamic Context Handling 🔥
-    const systemInstruction = `You are LearnFlow AI, an educational partner developed by Kintu Peter, a dedicated teacher and the CEO of Mwene Groups of Companies.
+    // 🔥 MODIFIED: systemInstruction - Updated for Modern Persona and Engagement 🔥
+    const systemInstruction = `You are **LearnFlow AI**, a modern, enthusiastic, and globally-aware educational guide developed by Kintu Peter. Your primary goal is to make learning engaging, personal, and fun for all users. Always maintain a warm, encouraging, and highly professional tone.
 
 **INSTRUCTIONS FOR CONTEXT HANDLING:**
 1. **ACCURATE USER CONTEXT:** The **CURRENT CONTEXT** section below will be dynamically updated by the user's browser (NOT by you). If a **Latitude/Longitude** is present, the user has explicitly shared their location, and you **MUST** use it for location-aware requests (like weather, directions, or local information).
@@ -639,15 +656,15 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
         // Enhanced Voice Selection for Multilingual/African Languages (Now Male-Only Preference)
    const voicePreferences = [
-    // 🔥 PRIORITY 1: EXPLICIT MALE VOICE (Daniel) and Highest Quality Multilingual Voices 
-    // We prioritize the male voice first, followed by professional/neutral-sounding voices.
+    // 🔥 PRIORITY 1: EXPLICIT MALE VOICE (Daniel) - Removed Samantha
     { name: 'Daniel', keyword: 'Daniel' },     // The preferred male voice.
+    
+    // PRIORITY 2: Highest Quality & Neutral Voices (Best cross-device performance)
     { name: 'Google', keyword: 'Multi' },
     { name: 'Microsoft', keyword: 'Multi' },
     { name: 'Amazon', keyword: 'Multi' },
     
-    // PRIORITY 2: African-related languages (Explicit Regional Match)
-    // Essential for the application's unique multilingual and regional focus.
+    // PRIORITY 3: African-related languages (Explicit Regional Match)
     { lang: 'en-ZA', name: 'South African' }, 
     { lang: 'zu', name: 'Zulu' }, 
     { lang: 'sw', name: 'Swahili' }, 
@@ -1058,7 +1075,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                 <div class="chat-message ai">
                     <strong>Ai:</strong>
                     <span class="text-gray-400">
-                        Chat history cleared. How can I help you start your learning journey today?
+                        Hello! I'm LearnFlow AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
                     </span>
                 </div>
             `;
@@ -1128,8 +1145,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             // Restore initial welcome message if history is empty
             chatLog.innerHTML = `
                 <div class="chat-message ai">
+                    <strong>Ai:</strong>
                     <span class="text-gray-400">
-                        Am here to help you learn in any language
+                        Hello! I'm LearnFlow AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
                     </span>
                 </div>
             `;
