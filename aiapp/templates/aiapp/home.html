@@ -13,74 +13,74 @@
 
     /* General container and card styling - Wider on all screens */
     .chat-container-card {
-        max-width: 95%; 
-        margin: 1rem auto;
+        /* CRITICAL CHANGE: Max width increased to 98% for near full-screen experience on small devices */
+        max-width: 98%; 
+        margin: 0.5rem auto; /* Tighter margin on small screens */
         background-color: #1f2937;
         border-radius: 1.0rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         border: 1px solid #374151;
         overflow: hidden;
         transition: all 0.5s ease-in-out;
+        /* NEW: Use flex to ensure container takes available viewport height (if parent allows) */
+        display: flex;
+        flex-direction: column;
+        /* Set a max height based on viewport to feel 'full screen' */
+        min-height: 95vh;
     }
 
     /* Header styling */
     .chat-header {
         background: linear-gradient(135deg, #2d3748, #1f2937);
-        padding: 2.5rem 1.5rem;
+        padding: 1.5rem 1rem; /* Reduced vertical padding for more space */
         border-bottom: 1px solid #374151;
         text-align: center;
+        flex-shrink: 0; /* Don't allow header to shrink */
     }
 
     .chat-header h1 {
-        font-size: 2rem;
+        font-size: 1.5rem; /* Smaller font on small screens */
         font-weight: 700;
         color: #ffffff;
         letter-spacing: -0.02em;
         line-height: 1.1;
     }
-    /*
-    .chat-header p {
-        font-size: 1.125rem;
-        color: #9ca3af;
-        margin-top: 0.5rem;
-        max-width: 32rem;
-        margin-left: auto;
-        margin-right: auto;
-    } */
 
     /* Main chat area layout */
     .chat-area {
         display: flex;
-        flex-direction: column; /* Stacks on all screens now */
+        flex-direction: column; 
         padding: 0; 
         gap: 0;
+        flex-grow: 1; /* Allows the chat area to take up remaining vertical space */
     }
 
     /* Chat log container - No boundaries */
     #chatLog {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 1.5rem; 
+        padding: 1rem 1rem 0.5rem 1rem; /* Adjusted padding, less bottom padding */
         background-color: transparent; 
         border: none;
         border-radius: 0;
         transition: all 0.3s ease-in-out;
         min-height: 50vh; 
-        max-height: 70vh; /* Base height for small screens */
+        /* CRITICAL CHANGE: Increased max-height for better visibility on all screens */
+        max-height: 75vh; 
     }
 
     /* Message styling (MODERNIZED) */
     .chat-message {
         display: flex;
         align-items: flex-start;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem; /* Slightly smaller margin */
         padding: 0.75rem 1rem;
         border-radius: 1rem;
         white-space: pre-wrap;
         word-wrap: break-word;
-        max-width: 95%; 
+        max-width: 90%; /* CRITICAL CHANGE: Reduced max width to 90% for better wrapping */
         line-height: 1.5;
-        font-size: 1rem;
+        font-size: 0.95rem; /* Slightly smaller font on small screens */
     }
     .chat-message strong { font-weight: 700; margin-right: 0.5rem; min-width: fit-content; }
     
@@ -88,19 +88,21 @@
     .chat-message.user { 
         justify-content: flex-end; 
         align-self: flex-end; 
-        background-color: #6366f1; /* Brighter Indigo */
-        color: #ffffff; /* White text for contrast */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle lift */
+        background-color: #6366f1; 
+        color: #ffffff; 
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
+        border-bottom-right-radius: 0.25rem; /* Sharp corner for modern look */
     }
     
     /* MODIFIED: AI message to softer dark background with a modern accent bar */
     .chat-message.ai { 
         justify-content: flex-start; 
         align-self: flex-start; 
-        background-color: #1a222e; /* Softer Darker Blue-Gray */
+        background-color: #1a222e; 
         color: #e5e7eb; 
-        border-left: 4px solid #4f46e5; /* Modern accent bar */
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+        border-left: 4px solid #4f46e5; 
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
+        border-bottom-left-radius: 0.25rem; /* Sharp corner for modern look */
     }
     .chat-message.error { background-color: #b91c1c; color: #ffffff; border: 1px solid #dc2626; }
 
@@ -108,21 +110,22 @@
     .chat-input-area {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        padding: 1.5rem;
+        gap: 0.75rem; /* Tighter gap */
+        padding: 1rem; /* Tighter padding */
         border-top: 1px solid #374151;
         background-color: #1f2937;
+        flex-shrink: 0; /* Don't allow input area to shrink */
     }
     
     /* MODIFIED: Integrated Input Container - Tighter vertical padding */
     .integrated-input-container {
         display: flex;
-        align-items: center; 
+        align-items: flex-end; /* Align to the bottom of the input/textarea */
         width: 100%;
         background-color: #0a0e16; 
         border-radius: 1.0rem; 
         border: 1px solid #4b5563;
-        padding: 0.5rem 0.5rem; /* Reduced vertical padding for more space for input field */
+        padding: 0.4rem 0.5rem; /* Tighter vertical padding */
         transition: border-color 0.3s, box-shadow 0.3s; 
     }
     
@@ -141,14 +144,14 @@
         border: none;
         background-color: transparent; 
         color: #e5e7eb;
-        font-size: 1.1rem; 
+        font-size: 1rem; /* Slightly smaller font */
         box-shadow: none; 
         display: block;
         margin: 0;
         resize: none; 
         overflow: auto; 
         min-height: 1.5rem; 
-        max-height: 10rem; 
+        max-height: 8rem; /* Reduced max-height for input to save vertical space */
     }
 
     #chatInput::placeholder {
@@ -164,8 +167,8 @@
     /* 🔥 MODIFIED: ICON BUTTON Base Styling - Reduced size for more input space 🔥 */
     .action-icon-button {
         flex-shrink: 0; 
-        width: 2.5rem; /* Reduced from 3rem */
-        height: 2.5rem; /* Reduced from 3rem */
+        width: 2.2rem; /* Reduced further from 2.5rem */
+        height: 2.2rem; /* Reduced further from 2.5rem */
         border: none;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
@@ -173,123 +176,103 @@
         align-items: center;
         justify-content: center;
         padding: 0; 
-        font-size: 1.2rem; /* Reduced icon size slightly */
+        font-size: 1.1rem; /* Reduced icon size slightly */
         border-radius: 50%; 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); 
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); /* Smaller shadow */
+        margin-bottom: 0.1rem; /* Small adjustment for alignment with textarea */
     }
-
+    
     /* Updated Microphone/Record Button */
     #recordButton {
         background-color: #ef4444; 
         color: white;
-        margin-right: 0.25rem; /* Reduced from 0.5rem */
-    }
-    
-    #recordButton:hover {
-        background-color: #dc2626;
-        transform: scale(1.05);
-    }
-
-    #recordButton.recording {
-        background-color: #10b981; 
-        animation: pulse 1.5s infinite;
-    }
-    
-    #recordButton:disabled {
-        background-color: #4b5563;
-        cursor: not-allowed;
-        animation: none;
-        transform: none;
-    }
-
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        margin-right: 0.4rem; /* Slightly larger margin for visual separation */
     }
     
     /* MODIFIED Send Button */
     #sendChatButton {
         background-color: #4f46e5; 
         color: #fff; 
-        margin-left: 0.25rem; /* Reduced from 0.5rem */
-    }
-
-    #sendChatButton:hover { 
-        background-color: #4338ca; 
-        transform: scale(1.05); 
-    } 
-    
-    /* Hide the old voice status div as it's not needed in this layout */
-    #voiceStatus {
-        display: none;
+        margin-left: 0.4rem; 
     }
     
-    /* Button Group Styling (Unchanged) */
+    /* Button Group Styling (Refined) */
     .button-group {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
-        justify-content: center;
+        gap: 0.5rem; /* Tighter gap for small screens */
+        justify-content: space-between; /* Spread buttons out more */
     }
     
     .action-button {
-        flex: 1 1 150px; 
-        padding: 0.75rem 1.5rem;
-        border-radius: 1.5rem;
+        flex: 1 1 45%; /* Allow wrapping and take up about half the width */
+        padding: 0.6rem 1rem; /* Reduced padding */
+        border-radius: 1rem; /* Tighter rounding */
+        font-size: 0.85rem; /* Smaller font for buttons on small screens */
         font-weight: 600;
         text-align: center;
         transition: all 0.3s ease-in-out;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
     .action-button.stop-speak { 
-        background-color: #f59e0b; 
-        color: #1f2937; 
-        display: none; 
+        flex: 1 1 100%; /* Stop button takes full width when visible */
         order: -1; 
+        font-size: 1rem;
     }
-    .action-button.stop-speak:hover { background-color: #d97706; transform: translateY(-2px); }
-    .action-button.summarize { background-color: #10b981; color: #fff; }
-    .action-button.summarize:hover { background-color: #059669; transform: translateY(-2px); }
-    .action-button.export { background-color: #3b82f6; color: #fff; }
-    .action-button.export:hover { background-color: #2563eb; transform: translateY(-2px); }
-    .action-button.clear { background-color: #ef4444; color: #fff; }
-    .action-button.clear:hover { background-color: #dc2626; transform: translateY(-2px); }
-    
+
     /* 🔥 MODIFIED: Responsive adjustments for large screens (md: 768px and up) 🔥 */
     @media (min-width: 768px) {
-        .chat-container-card { max-width: 80%; }
-        /* REMOVED two-column layout: */
-        /* .chat-area { flex-direction: row; min-height: 80vh; } */
+        .chat-container-card { 
+            max-width: 70%; /* Better fixed width on desktop */
+            margin: 2rem auto; 
+            min-height: 85vh; /* Larger on desktop */
+        }
+        
+        .chat-header h1 {
+            font-size: 2rem; /* Larger font on desktop */
+            padding: 2.5rem 1.5rem; /* Restore header padding */
+        }
         
         #chatLog { 
-            width: auto; /* Full width */
             min-height: 60vh; 
-            max-height: 60vh; /* Constrain log height */
-            border-radius: 0; /* Reset */
-            padding: 1.5rem; 
+            max-height: 60vh; /* Constrain log height to 60vh */
+            padding: 1.5rem; /* Restore padding */
+            font-size: 1rem;
+        }
+
+        .chat-message {
+            font-size: 1rem;
+            max-width: 70%; /* Wider messages on desktop */
         }
         
         /* Input area now spans full width at the bottom: */
         .chat-input-area { 
-            width: auto; 
-            border-top: 1px solid #374151; /* Restore border */
-            border-left: none; /* Remove side border */
-            border-radius: 0 0 1.5rem 1.5rem; /* Rounded bottom corners */
-            flex-direction: column; 
-            justify-content: flex-start; 
+            padding: 1.5rem; /* Restore padding */
         }
 
         /* Adjusted button group layout for larger screens: */
         .button-group { 
-            flex-direction: row; /* Buttons are side-by-side */
             gap: 1rem; 
+            justify-content: center;
         }
         .action-button { 
             flex: 1; /* Equal width */
             max-width: 25%; 
+            font-size: 1rem; /* Restore font size */
+            padding: 0.75rem 1.5rem; /* Restore padding */
         }
         .action-button.stop-speak { flex: 1; max-width: 25%; }
+        
+        #chatInput {
+             max-height: 10rem; 
+             font-size: 1.1rem;
+        }
+        
+        .action-icon-button {
+            width: 2.5rem; 
+            height: 2.5rem; 
+            font-size: 1.2rem; 
+        }
     }
 
     /* Loader styling (same) */
@@ -318,8 +301,8 @@
         </div>
 
         <div class="chat-input-area">
-            <h2 class="text-2xl font-semibold text-indigo-400 flex items-center gap-2">
-                <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            <h2 class="text-xl font-semibold text-indigo-400 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
