@@ -19,6 +19,10 @@ sitemaps = {
 }
 
 urlpatterns = [
+
+    path("googled5b56ec94e5b9cb2.html",
+         TemplateView.as_view(template_name="googled5b56ec94e5b9cb2.html")),
+
     # Admin interface
     path('admin/', admin.site.urls),
 
