@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'video',
     'user',
     'book',
-    'django-extensions',
+   
 ]
 
 # Middleware
