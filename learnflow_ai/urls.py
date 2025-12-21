@@ -43,9 +43,9 @@ urlpatterns = [
     path("ping/", ping, name="ping"),
 
     # ✅ Redirect old paths to new ones (fixes 404s)
-    path("quiz/<int:pk>/", RedirectView.as_view(pattern_name="aiapp:quiz_detail", permanent=True)),
-    path("books/<int:pk>/", RedirectView.as_view(pattern_name="book:book_detail", permanent=True)),
-    path("videos/<int:pk>/", RedirectView.as_view(pattern_name="video:video_detail", permanent=True)),
+    path("quiz/<int:quiz_id>/", RedirectView.as_view(pattern_name="aiapp:quiz_detail", permanent=True)),
+    path("books/<int:book_id>/", RedirectView.as_view(pattern_name="book:book_detail", permanent=True)),
+    path("videos/<int:video_id>/", RedirectView.as_view(pattern_name="video:video_detail", permanent=True)),
 
     # Root URL routed to user app
     path("", include("user.urls")),
