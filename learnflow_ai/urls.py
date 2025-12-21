@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.views.generic.base import RedirectView   # ✅ add this import
 from user.views import ping
 
 # Correct import for sitemap views
@@ -40,6 +41,11 @@ urlpatterns = [
 
     # Health check endpoint
     path("ping/", ping, name="ping"),
+
+    # ✅ Redirect old paths to new ones (fixes 404s)
+    path("quiz/<int:pk>/", RedirectView.as_view(pattern_name="aiapp:quiz_detail", permanent=True)),
+    path("books/<int:pk>/", RedirectView.as_view(pattern_name="book:book_detail", permanent=True)),
+    path("videos/<int:pk>/", RedirectView.as_view(pattern_name="video:video_detail", permanent=True)),
 
     # Root URL routed to user app
     path("", include("user.urls")),
