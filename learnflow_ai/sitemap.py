@@ -1,6 +1,5 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from django.utils import timezone
 
 # Absolute imports to avoid ModuleNotFoundError
 from aiapp.models import Quiz
@@ -18,7 +17,6 @@ class StaticSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # List the view names for all important static pages
         return [
             "aiapp:home",
             "aiapp:quiz_list",
@@ -30,8 +28,7 @@ class StaticSitemap(Sitemap):
         return reverse(item)
 
     def lastmod(self, item):
-        # Static pages can use the current date or a hardcoded date
-        return timezone.now()
+        return None  # static pages rarely change
 
 
 # ----------------------------------------------------------------------
@@ -40,9 +37,9 @@ class StaticSitemap(Sitemap):
 class BaseModelSitemap(Sitemap):
     """
     Reusable base sitemap for models.
-    Handles missing created_at gracefully.
+    Filters out inactive, redirected, or noindex pages if fields exist.
     """
-    changefreq = "monthly"
+    changefreq = "weekly"
     protocol = "https"
 
     model = None
@@ -50,24 +47,32 @@ class BaseModelSitemap(Sitemap):
 
     def items(self):
         qs = self.model.objects.all()
-        # If created_at exists, order by it; otherwise just return all
+
+        # Filter out objects that shouldn't be indexed
+        if hasattr(self.model, "is_active"):
+            qs = qs.filter(is_active=True)
+        if hasattr(self.model, "noindex"):
+            qs = qs.filter(noindex=False)
+        if hasattr(self.model, "redirect_url"):
+            qs = qs.filter(redirect_url__isnull=True)
+
+        # Order by created_at if available
         if hasattr(self.model, "created_at"):
             qs = qs.order_by("-created_at")
+
         return qs
 
     def lastmod(self, obj):
-        # Use created_at if available, else updated_at, else now
-        if hasattr(obj, "created_at"):
-            return obj.created_at
-        if hasattr(obj, "updated_at"):
+        if hasattr(obj, "updated_at") and obj.updated_at:
             return obj.updated_at
-        return timezone.now()
+        if hasattr(obj, "created_at") and obj.created_at:
+            return obj.created_at
+        return None
 
     def location(self, obj):
         try:
             return reverse(self.detail_view_name, args=[obj.pk])
         except Exception:
-            # Fallback: return homepage if reverse fails
             return reverse("aiapp:home")
 
 

@@ -19,33 +19,36 @@ sitemaps = {
 }
 
 urlpatterns = [
-
-    path("googled5b56ec94e5b9cb2.html",
-         TemplateView.as_view(template_name="googled5b56ec94e5b9cb2.html")),
+    # Google Search Console verification file
+    path(
+        "googled5b56ec94e5b9cb2.html",
+        TemplateView.as_view(template_name="googled5b56ec94e5b9cb2.html"),
+    ),
 
     # Admin interface
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
 
     # Robots.txt for SEO
-    path("robots.txt", TemplateView.as_view(
-        template_name="robots.txt", content_type="text/plain"
-    )),
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+    ),
 
     # Sitemap index and sections
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
-  
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+    path("sitemap-index.xml", index, {"sitemaps": sitemaps}, name="sitemap-index"),
 
     # Health check endpoint
-    path('ping/', ping, name='ping'),
+    path("ping/", ping, name="ping"),
 
     # Root URL routed to user app
-    path('', include('user.urls')),
+    path("", include("user.urls")),
 
     # Other app routes
-    path('aiapp/', include('aiapp.urls')),
-    path('video/', include('video.urls')),
-    path('book/', include('book.urls')),
-    path('legal/', include(('legalpages.urls', 'legalpages'), namespace='legalpages')),
+    path("aiapp/", include("aiapp.urls")),
+    path("video/", include("video.urls")),
+    path("book/", include("book.urls")),
+    path("legal/", include(("legalpages.urls", "legalpages"), namespace="legalpages")),
 ]
 
 # Serve static and media files during development
