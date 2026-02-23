@@ -38,8 +38,8 @@ def save_feedback(feedback_list: List[str]):
 
 # ─── FastAPI Application Initialization ───────────────────────────────────────
 app = FastAPI(
-    title="LearnFlow AI Chat API",
-    description="An API for a question-answering chatbot for the LearnFlow AI platform.",
+    title="Nakintu AI Chat API",
+    description="An API for a question-answering chatbot for the Nakintu AI platform.",
     version="1.0.0"
 )
 
@@ -62,7 +62,7 @@ app.add_middleware(
 # In a real-world scenario, this would likely be fetched from a dynamic
 # knowledge base or a database.
 CONTEXT = (
-    "LearnFlow AI is a platform designed to empower educators and learners across Africa. "
+    "Nakintu AI is a platform designed to empower educators and learners across Africa. "
     "It supports joyful onboarding, secure resource sharing, and culturally resonant feedback."
 )
 
