@@ -24,7 +24,7 @@ from google.genai.types import HarmCategory, HarmBlockThreshold
 # ----------------------------------------------------------------------
 # FOR TESTING ONLY: Hardcoded Gemini API Key
 # ----------------------------------------------------------------------
-GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Imports for PDF Generation
 try:
@@ -255,7 +255,7 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
     story = []
 
     # Report Title
-    story.append(Paragraph("LearnFlow AI - Video Analysis Report", styles['TitleStyle']))
+    story.append(Paragraph("Praise AI - Video Analysis Report", styles['TitleStyle']))
     story.append(Paragraph(f"Analysis for: {title}", styles['Metadata']))
     story.append(Spacer(1, 0.2 * inch))
 

@@ -60,7 +60,7 @@ def loading_screen(request):
         # ⭐ FIX: Set 'redirect' to True to enable the JavaScript
         'redirect': True,
         # ⭐ FIX: Set template variables used in loading.html
-        'app_name': 'LearnFlow AI',
+        'app_name': 'Praise AI',
         'message': _("Multilingual learning tools for the World educators and students."),
     })
 
@@ -78,7 +78,7 @@ def register_request(request):
             user = form.save()
             # Log the user in after successful registration
             login(request, user)
-            messages.success(request, "Registration successful. Welcome to LearnFlow AI!")
+            messages.success(request, "Registration successful. Welcome to Praise AI!")
             return redirect("aiapp:home") # Redirect to main app page
         
         # If form is invalid, messages should display errors on the form
@@ -284,7 +284,7 @@ def gemini_proxy(request):
 
         # 3. Define System Instruction Text
         system_instruction_text = (
-            "You are LearnFlow AI, an educational partner developed by Kintu Peter, "
+            "You are Praise AI, an educational partner developed by Kintu Peter, "
             "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
         )
         
