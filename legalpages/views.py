@@ -24,7 +24,7 @@ from google.genai.types import HarmCategory, HarmBlockThreshold
 # ----------------------------------------------------------------------
 # FOR TESTING ONLY: Hardcoded Gemini API Key
 # ----------------------------------------------------------------------
-GEMINI_API_KEY = 'AIzaSyAPPxFduurg61JsZTq5w9GI9HQPKHWheKo'
+GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'
 
 # Imports for PDF Generation
 try:

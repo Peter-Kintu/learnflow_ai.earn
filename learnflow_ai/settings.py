@@ -208,7 +208,12 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_FALLBACK_KEY_FOR_DEV_ONLY":
     # In production, this should ideally raise an error or log a warning if the key is missing.
     print("WARNING: GEMINI_API_KEY environment variable is not set. API calls will fail.")
 
-
+# HSTS Settings (Add these for better security scores)
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Auth Redirects
 LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'aiapp:home'

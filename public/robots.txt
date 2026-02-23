@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
 
 Sitemap: https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/sitemap.xml

@@ -2,50 +2,61 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-   
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}LearnFlow AI{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     
+    <title>{% block title %}Praise AI - AI-Powered Education{% endblock %}</title>
+    <meta name="description" content="Praise AI is a multilingual educational platform offering AI-powered quizzes, books, and videos for African educators and students.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app{{ request.path }}" />
+
+    <meta property="og:title" content="Praise AI - Empowering African Education">
+    <meta property="og:description" content="Transform your learning with AI-generated quizzes and study materials.">
+    <meta property="og:url" content="https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/">
+    <meta property="og:image" content="{% static 'logo.png' %}">
+    <meta property="og:type" content="website">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body { background-color: #0f172a; color: #f1f5f9; }
+    </style>
+
     {% if user.is_authenticated %}
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506"
-     crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9564790727166506" crossorigin="anonymous"></script>
     {% endif %}
-   
-     <script type="application/ld+json">
+
+    <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [{
         "@type": "Question",
-        "name": "What is LearnFlow AI?",
+        "name": "What is Praise AI?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "LearnFlow AI is a multilingual educational platform offering quizzes, books, and videos for African educators and students."
+          "text": "Praise AI is a multilingual educational platform offering AI-powered quizzes, books, and videos for African educators and students."
         }
       }]
     }
     </script>
-    
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "EducationalOrganization",
-      "name": "LearnFlow AI",
-      "url": "https://learnflow-ai-0fdz.onrender.com",
-      "logo": "https://learnflow-ai-0fdz.onrender.com/static/logo.png",
-      "sameAs": [
-        "https://twitter.com/learnflowai",
-        "https://facebook.com/learnflowai"
-      ],
-      "description": "LearnFlow AI empowers educators across Africa with multilingual quizzes, books, and videos."
+      "name": "Praise AI",
+      "url": "https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app",
+      "logo": "https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/static/logo.png",
+      "description": "Praise AI empowers educators across Africa with multilingual quizzes, books, and videos."
     }
-
-   </script>
-
-
+    </script>
     <style>
 
         
