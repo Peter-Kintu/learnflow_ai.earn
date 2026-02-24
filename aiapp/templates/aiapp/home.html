@@ -448,29 +448,96 @@ function getCookie(name) {
 
 const proxyUrl = "/api/gemini_proxy/";
 
+// Example of how to trigger the message
+async function handleUserSubmission() {
+    const userMessage = document.getElementById('chat-input').value;
+    
+    // ... logic to prepare finalMessages ...
+
+    const result = await sendMessage(finalMessages);
+
+    if (result.isError) {
+        // Display the error message in the chat bubble
+        appendMessage('bot', result.text);
+        
+        // If it was a rate limit, start the visual countdown
+        if (result.type === 'rate_limit') {
+            startCooldown(60); 
+        }
+    } else {
+        // It's a normal string response
+        appendMessage('bot', result);
+    }
+}
+
+function startCooldown(seconds) {
+    const btn = document.getElementById('send-btn'); // Ensure this matches your HTML button ID
+    const input = document.getElementById('chat-input');
+    if (!btn) return;
+
+    btn.disabled = true;
+    if (input) input.disabled = true;
+
+    let remaining = seconds;
+    const interval = setInterval(() => {
+        btn.innerText = `Wait (${remaining}s)`;
+        remaining--;
+
+        if (remaining < 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            if (input) input.disabled = false;
+            btn.innerText = "Send"; // Reset to original text
+        }
+    }, 1000);
+}
+
 async function sendMessage(finalMessages) {
-  const response = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      contents: finalMessages,
-      config: { temperature: 0.7, maxOutputTokens: 512 }
-    })
-  });
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        contents: finalMessages,
+        config: { temperature: 0.7, maxOutputTokens: 512 }
+      })
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
+    // 1. Handle Rate Limiting (429)
+    if (response.status === 429) {
+      return { 
+        isError: true, 
+        type: 'rate_limit', 
+        text: "Nakintu AI is a bit busy right now! Please wait about 60 seconds before your next question." 
+      };
+    }
+
+    // 2. Handle other non-OK responses
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      return { 
+        isError: true, 
+        type: 'server_error', 
+        text: errorBody.error || `Server error (Status: ${response.status}). Please try again later.` 
+      };
+    }
+
+    // 3. Handle Successful Response
+    const data = await response.json();
+    return data.text || "[No text returned]";
+
+  } catch (err) {
+    // 4. Handle Network/Connection Errors
+    console.error("Fetch error:", err);
+    return { 
+      isError: true, 
+      type: 'network_error', 
+      text: "Connection lost. Please check your internet and try again." 
+    };
   }
-
-  const data = await response.json();
-
-  // Always use the simplified text field returned by the proxy
-  const text = data.text || "[No text returned]";
-  return text;
 }
 
     // 🔥 MODIFIED: systemInstruction - Updated for Modern Persona and Engagement 🔥

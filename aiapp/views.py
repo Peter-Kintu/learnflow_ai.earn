@@ -1009,24 +1009,20 @@ def gemini_proxy(request):
         # 6. Make the API Request
         resp = requests.post(url, json=payload)
         
-        # 7. Error Handling
-        if resp.status_code != 200:
-            # CRITICAL LOG: This will show the exact reason for the 400 error.
-            print("Gemini API Error Details:", resp.text)
-            return JsonResponse(
-                {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
-                status=resp.status_code,
-            )
+        # Locate this section in your gemini_proxy view:
+if resp.status_code != 200:
+    print("Gemini API Error Details:", resp.text)
+    
+    # NEW: Specific handling for Rate Limits
+    if resp.status_code == 429:
+        return JsonResponse({
+            "error": "rate_limit_exceeded",
+            "message": "Nakintu AI is currently receiving a lot of requests.",
+            "suggestion": "Please wait about 60 seconds before asking another question.",
+            "retry_after": 60 
+        }, status=429)
 
-        # 8. Success Response Handling
-        data = resp.json()
-        text = ""
-        if "candidates" in data and data["candidates"]:
-            # Extracting text from parts, accommodating multiple parts if they exist
-            parts = data["candidates"][0].get("content", {}).get("parts", [])
-            text = " ".join(p.get("text", "") for p in parts if "text" in p)
-
-        return JsonResponse({"text": text, "raw": data})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse(
+        {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
+        status=resp.status_code,
+    )
