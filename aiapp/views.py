@@ -948,81 +948,64 @@ def gemini_proxy(request):
         return JsonResponse({"error": "Only POST allowed"}, status=405)
 
     try:
-        # Request body handling
         body = json.loads(request.body.decode("utf-8"))
 
-        # 1. Setup API Key and URL 
-        # We prioritize the OS environment key (for Koyeb), but fall back to the Canvas global key
-        api_key = os.environ.get("GEMINI_API_KEY")
+        api_key = os.environ.get("GEMINI_API_KEY") or globals().get('__api_key', '')
         if not api_key:
-            # Fallback for local testing/Canvas environment where the key is auto-injected
-            api_key = globals().get('__api_key', '')
-            if not api_key:
-                 # This check should theoretically never be reached in the Canvas environment
-                 return JsonResponse({"error": "Missing GEMINI_API_KEY in environment or globals."}, status=500)
-
+             return JsonResponse({"error": "Missing API Key"}, status=500)
 
         model = "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-        # 2. Extract and Clean Contents (Chat History)
-        contents = body.get("contents")
-        if not contents:
-            # Fallback for testing
-            contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
-
-        # CRITICAL FIX: Clean the history structure before sending
+        contents = body.get("contents") or [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
         contents = clean_contents(contents)
 
-        # 3. Define System Instruction Text
-        system_instruction_text = (
-            "You are Nakintu AI, an educational partner developed by Kintu Peter, "
-            "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
-        )
-        
-        # CRITICAL FIX: Format the System Instruction as a Content object for the REST API
         system_instruction_content = {
             "role": "system",
-            "parts": [{"text": system_instruction_text}]
+            "parts": [{"text": "You are Nakintu AI, developed by Kintu Peter. Provide accurate and empathetic answers."}]
         }
 
-        # 4. Construct Generation Config (Type Casting Fixes)
         config = body.get("config") or {}
         generation_config = {
-            # Ensure temperature is explicitly cast to a float
             "temperature": float(config.get("temperature", 0.7)), 
-            # Ensure maxOutputTokens is explicitly cast to an integer
             "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
         }
 
-        # 5. Construct Final Payload
         payload = {
             "contents": contents,
-            # PASS THE CORRECTLY STRUCTURED CONTENT OBJECT
             "systemInstruction": system_instruction_content, 
             "generationConfig": generation_config,
         }
 
-        # Debug log: Log the final outbound payload before sending
-        print("Outbound Gemini payload:", json.dumps(payload, indent=2))
-
         # 6. Make the API Request
         resp = requests.post(url, json=payload)
         
-        # Locate this section in your gemini_proxy view:
-if resp.status_code != 200:
-    print("Gemini API Error Details:", resp.text)
-    
-    # NEW: Specific handling for Rate Limits
-    if resp.status_code == 429:
-        return JsonResponse({
-            "error": "rate_limit_exceeded",
-            "message": "Nakintu AI is currently receiving a lot of requests.",
-            "suggestion": "Please wait about 60 seconds before asking another question.",
-            "retry_after": 60 
-        }, status=429)
+        # 7. Error Handling 
+        if resp.status_code != 200:
+            if resp.status_code == 429:
+                return JsonResponse({
+                    "error": "rate_limit_exceeded",
+                    "message": "Nakintu AI is currently receiving a lot of requests.",
+                    "suggestion": "Please wait about 60 seconds before asking another question.",
+                    "retry_after": 60 
+                }, status=429)
 
-    return JsonResponse(
-        {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
-        status=resp.status_code,
-    )
+            return JsonResponse(
+                {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
+                status=resp.status_code,
+            )
+
+        # 8. Success Response Handling (CRITICAL FIX HERE)
+        data = resp.json()
+        text = "[No text returned]"
+        
+        # We must extract the text from the Gemini response structure
+        if "candidates" in data and len(data["candidates"]) > 0:
+            parts = data["candidates"][0].get("content", {}).get("parts", [])
+            text = " ".join([p.get("text", "") for p in parts])
+
+        return JsonResponse({"text": text})
+
+    except Exception as e:
+        print(f"Error in gemini_proxy: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
