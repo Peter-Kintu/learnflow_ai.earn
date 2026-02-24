@@ -35,34 +35,34 @@ def calculate_reward_amount(points):
     return reward.quantize(Decimal('0.01'))
 
 
-def loading_screen(request):
-    """
-    Public homepage with branded loading screen.
-    Replaces Render's default splash page.
-    Always shows branded content first, then redirects to login once backend is ready.
-    Skips loading screen for authenticated users.
-    """
-    if request.user.is_authenticated:
-        # Redirect to the main AI tool page (using a guess for the app name)
-        return redirect('aiapp:home')
+# def loading_screen(request):
+#     """
+#     Public homepage with branded loading screen.
+#     Replaces Render's default splash page.
+#     Always shows branded content first, then redirects to login once backend is ready.
+#     Skips loading screen for authenticated users.
+#     """
+#     if request.user.is_authenticated:
+#         # Redirect to the main AI tool page (using a guess for the app name)
+#         return redirect('aiapp:home')
     
-    # Dynamic greeting based on time of day
-    current_hour = timezone.now().hour
-    if current_hour < 12:
-        greeting = _("Good morning!")
-    elif current_hour < 18:
-        greeting = _("Good afternoon!")
-    else:
-        greeting = _("Good evening!")
+#     # Dynamic greeting based on time of day
+#     current_hour = timezone.now().hour
+#     if current_hour < 12:
+#         greeting = _("Good morning!")
+#     elif current_hour < 18:
+#         greeting = _("Good afternoon!")
+#     else:
+#         greeting = _("Good evening!")
         
-    return render(request, 'user/loading.html', {
-        'greeting': greeting,
-        # ⭐ FIX: Set 'redirect' to True to enable the JavaScript
-        'redirect': True,
-        # ⭐ FIX: Set template variables used in loading.html
-        'app_name': 'Nakintu AI',
-        'message': _("Multilingual learning tools for the World educators and students."),
-    })
+#     return render(request, 'user/loading.html', {
+#         'greeting': greeting,
+#         # ⭐ FIX: Set 'redirect' to True to enable the JavaScript
+#         'redirect': True,
+#         # ⭐ FIX: Set template variables used in loading.html
+#         'app_name': 'Nakintu AI',
+#         'message': _("Multilingual learning tools for the World educators and students."),
+#     })
 
 def ping(request):
     """Simple endpoint for health checks."""
