@@ -502,7 +502,7 @@ async function generateCourseOutline(isRegenerate) {
     } catch (error) {
         console.error("Course Outline Error:", error);
         aiStatusDiv.textContent = `❌ Failed to generate course outline: ${error.message}`;
-        courseContentDiv.innerHTML = `<p class="text-red-400 py-8">Error loading content. Please try again or check your API key.</p>`;
+        courseContentDiv.innerHTML = `<p class="text-red-400 py-8">Error loading content. Please try again or check your network.</p>`;
         aiCourseOutputDiv.classList.remove('hidden');
 
     } finally {
@@ -568,7 +568,7 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
 
     } catch (error) {
         console.error("Detailed Lesson API Error (Detail):", error);
-        quizContentDiv.innerHTML = `<p class="text-red-400 py-8"> failed loading content: ${error.message}. Please check your  network connection.</p>`;
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8"> failed loading content: ${error.message}. Please check your network connection.</p>`;
         quizStatusDiv.textContent = " Failed to load lesson content.";
     }
 }
