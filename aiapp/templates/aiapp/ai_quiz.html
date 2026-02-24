@@ -568,7 +568,7 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
 
     } catch (error) {
         console.error("Detailed Lesson API Error (Detail):", error);
-        quizContentDiv.innerHTML = `<p class="text-red-400 py-8"> Error loading content: ${error.message}. Please check your DETAIL API Key or network connection.</p>`;
+        quizContentDiv.innerHTML = `<p class="text-red-400 py-8"> failed loading content: ${error.message}. Please check your  network connection.</p>`;
         quizStatusDiv.textContent = " Failed to load lesson content.";
     }
 }
