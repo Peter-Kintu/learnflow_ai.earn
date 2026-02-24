@@ -48,7 +48,7 @@ def home(request):
     return render(request, 'aiapp/home.html', {
         "user": request.user,
         "username": request.user.get_full_name() or request.user.username,
-        "ai_context": "Nakintu AI is here to empower educators and learners across Africa. Ask anything!",
+        "ai_context": "Praise AI is here to empower educators and learners across Africa. Ask anything!",
          "show_ads": True
     })
 
@@ -976,7 +976,7 @@ def gemini_proxy(request):
 
         # 3. Define System Instruction Text
         system_instruction_text = (
-            "You are Nakintu AI, an educational partner developed by Kintu Peter, "
+            "You are Praise AI, an educational partner developed by Kintu Peter, "
             "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
         )
         

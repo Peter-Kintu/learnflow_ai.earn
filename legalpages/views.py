@@ -255,7 +255,7 @@ def generate_pdf_report(title, summary, quiz_data, action_plan):
     story = []
 
     # Report Title
-    story.append(Paragraph("Nakintu AI - Video Analysis Report", styles['TitleStyle']))
+    story.append(Paragraph("Praise AI - Video Analysis Report", styles['TitleStyle']))
     story.append(Paragraph(f"Analysis for: {title}", styles['Metadata']))
     story.append(Spacer(1, 0.2 * inch))
 
