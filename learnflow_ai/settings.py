@@ -293,12 +293,12 @@ CONTENT_SECURITY_POLICY = {
 
 # Jazzmin Admin
 JAZZMIN_SETTINGS = {
-    "site_title": "Praise AI Admin",
-    "site_header": "Praise AI",
-    "site_brand": "Praise AI",
-    "site_logo": "static/images/praise_ai_logo.png",
+    "site_title": "Nakintu AI Admin",
+    "site_header": "Nakintu AI",
+    "site_brand": "Nakintu AI",
+    "site_logo": "static/images/nakintu_ai_logo.png",
     "site_icon": "static/images/favicon.ico",
-    "welcome_sign": "Welcome to Praise AI — where every click is a step toward wisdom.",
+    "welcome_sign": "Welcome to Nakintu AI — where every click is a step toward wisdom.",
     "search_model": ["auth.User", "aiapp.Question", "video.Video", "book.Book"],
     "user_avatar": None,
     "topmenu_links": [

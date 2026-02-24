@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Praise AI{% endblock %}
+{% block title %}Home - Nakintu AI{% endblock %}
 
 {% block content %}
 <style>
@@ -341,9 +341,9 @@
     <div class="chat-area">
         <div id="chatLog" class="overflow-y-auto">
             <div class="chat-message ai">
-                <strong>Praise AI:</strong>
+                <strong>Nakintu AI:</strong>
                 <span class="text-gray-400">
-                    Hello, {{ user.username }}! I'm Praise AI, your enthusiastic and modern learning guide. What fascinating topic are we exploring today?
+                    Hello, {{ user.username }}! I'm Nakintu AI, your enthusiastic and modern learning guide. What fascinating topic are we exploring today?
                 </span>
             </div>
         </div>
@@ -355,7 +355,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 10a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.549A9.863 9.863 0 0112 4c4.97 0 9 3.582 9 8z" />
                 </svg>
-                Ask Praise AI 
+                Ask Nakintu AI 
             </h2>
             
             {# MODIFIED: Buttons are now smaller, input area is wider #}
@@ -1092,7 +1092,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             return;
         }
 
-        let exportText = `Praise AI Chat Export for ${username}\nDate: ${new Date().toLocaleString()}\n\n`;
+        let exportText = ` Nakintu AI Chat Export for ${username}\nDate: ${new Date().toLocaleString()}\n\n`;
         history.forEach(item => {
             exportText += `${item.role.toUpperCase()}: ${item.text}\n\n`;
         });
@@ -1117,9 +1117,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             
             chatLog.innerHTML = `
                 <div class="chat-message ai">
-                    <strong>Praise AI:</strong>
+                    <strong>Nakintu AI:</strong>
                     <span class="text-gray-400">
-                        Hello! I'm Praise AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
+                        Hello! I'm Nakintu AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
                     </span>
                 </div>
             `;
@@ -1191,9 +1191,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             // Restore initial welcome message if history is empty
             chatLog.innerHTML = `
                 <div class="chat-message ai">
-                    <strong>Praise AI:</strong>
+                    <strong>Nakintu AI:</strong>
                     <span class="text-gray-400">
-                        Hello! I'm Praise AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
+                        Hello! I'm Nakintu AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
                     </span>
                 </div>
             `;
