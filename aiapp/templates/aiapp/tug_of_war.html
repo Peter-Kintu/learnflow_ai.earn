@@ -1,56 +1,68 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Math Tug-of-War - Nakintu AI{% endblock %}
+{% block title %}World Class Math Tug-of-War - Nakintu AI{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto">
-    <div class="bg-slate-800 p-4 rounded-t-2xl border-x border-t border-indigo-600/30 flex flex-wrap justify-center items-center gap-3">
-        <button class="mode-btn active bg-indigo-600 px-3 py-1 rounded-lg text-sm font-bold transition-all" onclick="setMode('+', this)">Add</button>
-        <button class="mode-btn bg-slate-700 px-3 py-1 rounded-lg text-sm font-bold transition-all" onclick="setMode('-', this)">Sub</button>
-        <button class="mode-btn bg-slate-700 px-3 py-1 rounded-lg text-sm font-bold transition-all" onclick="setMode('*', this)">Mult</button>
-        <button class="mode-btn bg-slate-700 px-3 py-1 rounded-lg text-sm font-bold transition-all" onclick="setMode('/', this)">Div</button>
-        <button id="ai-toggle" class="bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded-lg text-sm font-bold transition-colors" onclick="toggleAI()">AI: OFF</button>
+<div class="max-w-5xl mx-auto px-2">
+    <div class="bg-slate-800 p-4 rounded-t-2xl border-x border-t border-indigo-600/30 flex flex-wrap justify-center items-center gap-2 shadow-2xl">
+        <button class="mode-btn active bg-indigo-600 px-4 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all" onclick="setMode('+', this)">Add</button>
+        <button class="mode-btn bg-slate-700 px-4 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all" onclick="setMode('-', this)">Sub</button>
+        <button class="mode-btn bg-slate-700 px-4 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all" onclick="setMode('*', this)">Mult</button>
+        <button class="mode-btn bg-slate-700 px-4 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all" onclick="setMode('/', this)">Div</button>
+        <button id="ai-toggle" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all" onclick="toggleAI()">AI: OFF</button>
     </div>
 
-    <div id="stage" class="relative h-[30vh] bg-emerald-500 border-x border-indigo-600/30 overflow-hidden flex items-center justify-center shadow-inner">
-        <div class="absolute left-1/2 w-2 h-full bg-black/20 -translate-x-1/2"></div>
-        <div id="tug-container" class="absolute flex items-center justify-center w-[150%] transition-transform duration-300">
-            <div id="team1" class="text-6xl md:text-8xl select-none transition-transform">👦👦</div>
-            <div class="h-3 w-[40vw] bg-amber-900 border-2 border-amber-950 mx-2"></div>
-            <div id="team2" class="text-6xl md:text-8xl select-none transition-transform">👧👧</div>
+    <div id="stage" class="relative h-[35vh] md:h-[40vh] bg-gradient-to-b from-emerald-400 to-emerald-600 border-x border-indigo-600/30 overflow-hidden flex items-center justify-center shadow-[inset_0_0_50px_rgba(0,0,0,0.3)]">
+        <div class="absolute left-1/2 w-3 h-full bg-white/30 -translate-x-1/2 z-0"></div>
+        
+        <div id="tug-container" class="absolute flex items-center justify-center w-[200%] transition-transform duration-300 ease-out z-10">
+            <div id="team1" class="text-7xl md:text-9xl select-none drop-shadow-2xl transition-transform">👦👦</div>
+            <div class="h-4 w-[50vw] bg-amber-900 border-2 border-amber-950 mx-2 shadow-lg relative">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-8 bg-red-600 rounded-sm shadow-md"></div>
+            </div>
+            <div id="team2" class="text-7xl md:text-9xl select-none drop-shadow-2xl transition-transform">👧👧</div>
         </div>
         
-        <div id="win-overlay" class="absolute inset-0 bg-slate-900/95 z-50 hidden flex-col items-center justify-center text-center p-6">
-            <h2 id="win-text" class="text-4xl md:text-6xl font-black text-yellow-400 mb-6 drop-shadow-lg">WINNER!</h2>
-            <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-xl shadow-lg transform hover:scale-105 transition-all" onclick="resetGame()">REMATCH</button>
+        <canvas id="celebration-canvas" class="absolute inset-0 pointer-events-none z-40"></canvas>
+
+        <div id="win-overlay" class="absolute inset-0 bg-slate-900/90 z-50 hidden flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-300">
+            <div class="animate-bounce">
+                <span class="text-6xl mb-4 block">🏆</span>
+            </div>
+            <h2 id="win-text" class="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 mb-6 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] uppercase italic">VICTORY!</h2>
+            <button class="group relative bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black text-2xl shadow-[0_0_20px_rgba(79,70,229,0.6)] transform hover:scale-110 transition-all uppercase tracking-tighter" onclick="resetGame()">
+                Play Again
+            </button>
         </div>
     </div>
 
-    <div class="bg-slate-800 p-6 rounded-b-2xl border border-indigo-600/30 flex flex-col md:flex-row gap-6">
-        <div class="flex-1 bg-slate-900/50 p-4 rounded-xl border border-blue-500/30 flex flex-col items-center">
-            <input type="text" id="p1-name" value="{{ user.username|default:'Player 1' }}" class="bg-transparent text-blue-400 text-center font-bold mb-2 border-b border-blue-500/20 focus:outline-none">
-            <div class="w-full bg-black h-2 rounded-full mb-4 overflow-hidden">
-                <div id="p1-fill" class="h-full bg-blue-500 transition-all duration-100" style="width: 100%;"></div>
+    <div class="bg-slate-800 p-4 md:p-8 rounded-b-2xl border border-indigo-600/30 flex flex-col md:flex-row gap-4 md:gap-8 shadow-2xl">
+        <div class="flex-1 bg-slate-900/80 p-6 rounded-3xl border-2 border-blue-500/40 flex flex-col items-center transform transition-all hover:border-blue-400">
+            <input type="text" id="p1-name" value="{{ user.username|default:'PLAYER 1' }}" class="bg-transparent text-blue-400 text-center font-black text-xl mb-4 border-b-2 border-blue-500/20 focus:outline-none uppercase">
+            <div class="w-full bg-slate-800 h-4 rounded-full mb-6 p-1">
+                <div id="p1-fill" class="h-full bg-blue-500 rounded-full transition-all duration-100 shadow-[0_0_10px_#3b82f6]" style="width: 100%;"></div>
             </div>
-            <div id="q1" class="text-5xl font-black mb-4">?</div>
-            <input type="number" id="ans1" oninput="autoCheck(1)" class="w-32 bg-black text-yellow-400 text-4xl text-center p-2 rounded-lg border-2 border-blue-500 focus:border-yellow-400 outline-none" inputmode="numeric" placeholder="?">
+            <div id="q1" class="text-6xl font-black mb-6 text-white drop-shadow-md">?</div>
+            <input type="number" id="ans1" oninput="autoCheck(1)" class="w-full max-w-[180px] bg-slate-950 text-yellow-400 text-5xl font-black text-center p-4 rounded-2xl border-4 border-blue-600 focus:border-yellow-400 outline-none shadow-2xl transition-all" inputmode="numeric" placeholder="?">
         </div>
 
-        <div class="flex-1 bg-slate-900/50 p-4 rounded-xl border border-red-500/30 flex flex-col items-center">
-            <input type="text" id="p2-name" value="Guest" class="bg-transparent text-red-400 text-center font-bold mb-2 border-b border-red-500/20 focus:outline-none">
-            <div class="w-full bg-black h-2 rounded-full mb-4 overflow-hidden">
-                <div id="p2-fill" class="h-full bg-red-500 transition-all duration-100" style="width: 100%;"></div>
+        <div class="flex-1 bg-slate-900/80 p-6 rounded-3xl border-2 border-red-500/40 flex flex-col items-center transform transition-all hover:border-red-400">
+            <input type="text" id="p2-name" value="GUEST" class="bg-transparent text-red-400 text-center font-black text-xl mb-4 border-b-2 border-red-500/20 focus:outline-none uppercase">
+            <div class="w-full bg-slate-800 h-4 rounded-full mb-6 p-1">
+                <div id="p2-fill" class="h-full bg-red-500 rounded-full transition-all duration-100 shadow-[0_0_10px_#ef4444]" style="width: 100%;"></div>
             </div>
-            <div id="q2" class="text-5xl font-black mb-4">?</div>
-            <input type="number" id="ans2" oninput="autoCheck(2)" class="w-32 bg-black text-yellow-400 text-4xl text-center p-2 rounded-lg border-2 border-red-500 focus:border-yellow-400 outline-none" inputmode="numeric" placeholder="?">
+            <div id="q2" class="text-6xl font-black mb-6 text-white drop-shadow-md">?</div>
+            <input type="number" id="ans2" oninput="autoCheck(2)" class="w-full max-w-[180px] bg-slate-950 text-yellow-400 text-5xl font-black text-center p-4 rounded-2xl border-4 border-red-600 focus:border-yellow-400 outline-none shadow-2xl transition-all" inputmode="numeric" placeholder="?">
         </div>
     </div>
 </div>
 
 <style>
-    .pull-L { transform: scale(1.3) rotate(-20deg) translateX(-15px); }
-    .pull-R { transform: scale(1.3) rotate(20deg) translateX(15px); }
+    @keyframes pullEffectL { 0% { transform: scale(1.3) rotate(-25deg); } 100% { transform: scale(1) rotate(0deg); } }
+    @keyframes pullEffectR { 0% { transform: scale(1.3) rotate(25deg); } 100% { transform: scale(1) rotate(0deg); } }
+    .pull-L { animation: pullEffectL 0.4s ease-out; }
+    .pull-R { animation: pullEffectR 0.4s ease-out; }
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 </style>
 {% endblock %}
@@ -63,15 +75,16 @@
     let currentMode = '+';
     let audioCtx = null;
     let qs = [null, {}, {}];
+    let aiInterval = null;
 
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
-    function playSound(freq, type, duration) {
+    function playSound(freq, type, duration, vol=0.05) {
         if(!audioCtx) return;
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(); osc.stop(audioCtx.currentTime + duration);
@@ -80,59 +93,56 @@
     function toggleAI() {
         isAI = !isAI;
         const btn = document.getElementById('ai-toggle');
-        btn.innerText = isAI ? "AI: ON" : "AI: OFF";
-        btn.classList.toggle('bg-green-600', isAI);
+        btn.innerText = isAI ? "AI: FAST" : "AI: OFF";
+        btn.classList.toggle('bg-red-600', isAI);
         btn.classList.toggle('bg-purple-600', !isAI);
-        document.getElementById('p2-name').value = isAI ? "Nakintu AI" : "Guest";
+        document.getElementById('p2-name').value = isAI ? "BOT MASTER" : "GUEST";
         document.getElementById('ans2').disabled = isAI;
-        document.getElementById('ans2').value = '';
+        document.getElementById('ans2').placeholder = isAI ? "🤖" : "?";
     }
 
     function setMode(mode, btn) {
         currentMode = mode;
-        document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn bg-slate-700 px-3 py-1 rounded-lg text-sm font-bold transition-all');
-        btn.className = 'mode-btn active bg-indigo-600 px-3 py-1 rounded-lg text-sm font-bold transition-all';
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.classList.remove('bg-indigo-600', 'active');
+            b.classList.add('bg-slate-700');
+        });
+        btn.classList.add('bg-indigo-600', 'active');
+        btn.classList.remove('bg-slate-700');
         newQ(1); newQ(2);
     }
 
     function generate(mode) {
-        let m = mode;
         let a, b, ans;
-        if (m === '+') { a = Math.floor(Math.random()*20)+1; b = Math.floor(Math.random()*20)+1; ans = a+b; }
-        else if (m === '-') { a = Math.floor(Math.random()*20)+10; b = Math.floor(Math.random()*10)+1; ans = a-b; }
-        else if (m === '*') { a = Math.floor(Math.random()*10)+1; b = Math.floor(Math.random()*10)+1; ans = a*b; }
-        else { b = Math.floor(Math.random()*9)+1; ans = Math.floor(Math.random()*10)+1; a = b*ans; }
-        return { txt: `${a}${m==='*'?'×':m==='/'?'÷':m}${b}`, ans: ans };
+        if (mode === '+') { a = rand(30); b = rand(30); ans = a+b; }
+        else if (mode === '-') { a = rand(30)+20; b = rand(20); ans = a-b; }
+        else if (mode === '*') { a = rand(12); b = rand(12); ans = a*b; }
+        else { b = rand(10)+1; ans = rand(10)+1; a = b*ans; }
+        return { txt: `${a}${mode==='*'?'×':mode==='/'?'÷':mode}${b}`, ans: ans };
     }
+    function rand(n) { return Math.floor(Math.random()*n)+1; }
 
     function newQ(p) {
         qs[p] = generate(currentMode);
         document.getElementById('q' + p).innerText = qs[p].txt;
     }
 
-    // AUTOMATIC SUBMISSION LOGIC
     function autoCheck(p) {
         initAudio();
         let input = document.getElementById('ans' + p);
         let val = input.value;
+        let correctStr = qs[p].ans.toString();
 
-        // Only check if value length is equal or greater than answer length 
-        // (to prevent checking "1" if the answer is "10")
-        if (val.length >= qs[p].ans.toString().length) {
+        if (val.length >= correctStr.length) {
             if (parseInt(val) === qs[p].ans) {
-                // Correct
-                pull(p, 50); 
+                pull(p, window.innerWidth * 0.05); // Dynamic pull based on screen
                 p === 1 ? p1Time = 100 : p2Time = 100;
-                playSound(523, 'sine', 0.15);
+                playSound(600, 'sine', 0.1);
                 input.value = ''; 
                 newQ(p);
             } else {
-                // Wrong - only trigger sound and clear if length is matched
-                // This prevents buzzing while the user is still typing a multi-digit number
-                if (val.length >= qs[p].ans.toString().length) {
-                    playSound(150, 'sawtooth', 0.3);
-                    input.value = ''; 
-                }
+                playSound(100, 'sawtooth', 0.2);
+                input.value = ''; 
             }
         }
     }
@@ -140,42 +150,83 @@
     function pull(p, dist) {
         pos += (p === 1 ? -dist : dist);
         const kid = document.getElementById('team' + p);
+        kid.classList.remove('pull-L', 'pull-R');
+        void kid.offsetWidth; // Trigger reflow
         kid.classList.add(p === 1 ? 'pull-L' : 'pull-R');
-        setTimeout(() => kid.classList.remove('pull-L', 'pull-R'), 400);
         updateRope();
     }
 
     function updateRope() {
         document.getElementById('tug-container').style.transform = `translateX(${pos}px)`;
-        if (Math.abs(pos) > window.innerWidth * 0.4) win();
+        if (Math.abs(pos) > window.innerWidth * 0.42) win();
     }
 
+    // CELEBRATION EFFECTS
     function win() {
         const winner = pos < 0 ? document.getElementById('p1-name').value : document.getElementById('p2-name').value;
-        document.getElementById('win-text').innerText = winner.toUpperCase() + " WINS!";
+        document.getElementById('win-text').innerText = winner + " WINS!";
         document.getElementById('win-overlay').classList.remove('hidden');
         document.getElementById('win-overlay').classList.add('flex');
-        playSound(600, 'square', 0.5);
+        
+        // Victory Sound Sequence
+        playSound(523, 'square', 0.2, 0.1);
+        setTimeout(() => playSound(659, 'square', 0.2, 0.1), 150);
+        setTimeout(() => playSound(783, 'square', 0.4, 0.1), 300);
+        
+        startConfetti();
+    }
+
+    function startConfetti() {
+        const canvas = document.getElementById('celebration-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        let particles = Array.from({length: 100}, () => ({
+            x: canvas.width/2, y: canvas.height/2,
+            vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+            size: Math.random()*8+4, color: `hsl(${Math.random()*360}, 100%, 50%)`
+        }));
+        
+        function frame() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.2;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+            if (document.getElementById('win-overlay').classList.contains('flex')) requestAnimationFrame(frame);
+        }
+        frame();
     }
 
     function resetGame() {
         pos = 0; p1Time = 100; p2Time = 100;
         document.getElementById('win-overlay').classList.add('hidden');
+        document.getElementById('win-overlay').classList.remove('flex');
         updateRope(); newQ(1); newQ(2);
         document.getElementById('ans1').value = '';
         document.getElementById('ans2').value = '';
     }
 
+    // GAME LOOP (Timer & Faster AI)
     setInterval(() => {
-        if(document.getElementById('win-overlay').classList.contains('hidden')) {
-            p1Time -= 0.5; p2Time -= 0.5;
-            if (isAI && Math.random() < 0.02) { pull(2, 40); newQ(2); p2Time = 100; }
+        if(!document.getElementById('win-overlay').classList.contains('flex')) {
+            p1Time -= 0.6; p2Time -= 0.6;
+            
+            // AI logic: Faster and more aggressive
+            if (isAI && Math.random() < 0.045) { // Increased probability for speed
+                pull(2, window.innerWidth * 0.035);
+                newQ(2);
+                p2Time = 100;
+            }
+
             if (p1Time <= 0) { pos += 15; p1Time = 100; updateRope(); }
             if (p2Time <= 0) { pos -= 15; p2Time = 100; updateRope(); }
+            
             document.getElementById('p1-fill').style.width = p1Time + "%";
             document.getElementById('p2-fill').style.width = p2Time + "%";
         }
-    }, 100);
+    }, 80);
 
     newQ(1); newQ(2);
 </script>
