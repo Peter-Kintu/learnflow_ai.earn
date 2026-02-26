@@ -941,7 +941,6 @@ def clean_contents(messages):
     return cleaned
 # ---------------------------------------------
 
-
 @csrf_exempt
 def gemini_proxy(request):
     if request.method != "POST":
@@ -1009,3 +1008,6 @@ def gemini_proxy(request):
     except Exception as e:
         print(f"Error in gemini_proxy: {e}")
         return JsonResponse({"error": str(e)}, status=500)
+
+def tug_of_war_game(request):
+    return render(request, 'aiapp/tug_of_war.html')

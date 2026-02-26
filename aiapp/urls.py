@@ -46,6 +46,7 @@ urlpatterns = [
     path('profile/<int:user_id>/', views.user_profile, name='user_profile'),
     path('why-learnflow-ai/', views.why_learnflow_ai, name='why_learnflow_ai'),
     path('tts/', tts_proxy, name='tts_proxy'),
+    path('tug-of-war/', views.tug_of_war_game, name='tug_of_war'),
 
     
 ]
