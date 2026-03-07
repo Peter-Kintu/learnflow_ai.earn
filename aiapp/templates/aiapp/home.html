@@ -79,7 +79,7 @@
         font-size: 0.85rem;
     }
     
-    /* Main chat area layout */
+    /* Main chat area layout - Modern flex with proper scrolling */
     .chat-area {
         display: flex;
         flex-direction: column; 
@@ -87,16 +87,16 @@
         gap: 0;
         flex: 1;
         min-height: 0;
-        overflow: hidden;
+        overflow: visible;
     }
 
-    /* Chat log container - Responsive scrollable area */
+    /* Chat log container - Premium scrollable design */
     #chatLog {
         flex-grow: 1;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 1.5rem 1rem;
-        background-color: transparent; 
+        padding: 2rem 1rem 1.5rem 1rem;
+        background: linear-gradient(to bottom, rgba(31, 41, 55, 0.4) 0%, transparent 20%);
         border: none;
         border-radius: 0;
         transition: all 0.3s ease-in-out;
@@ -202,94 +202,105 @@
         color: #10b981; 
     }
     
-    /* Input and button area - Copilot style */
+    /* Input and button area - Premium design with sticky positioning */
     .chat-input-area {
         display: flex;
         flex-direction: column;
-        gap: 0.4rem;
-        padding: 0.6rem 0.875rem;
-        border-top: 1px solid #374151;
-        background: linear-gradient(180deg, transparent 0%, rgba(31, 41, 55, 0.5) 100%);
+        gap: 0.75rem;
+        padding: 1.25rem 1.25rem 1.5rem 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(31, 41, 55, 0.7) 0%, rgba(31, 41, 55, 0.95) 100%);
+        backdrop-filter: blur(10px);
         flex-shrink: 0;
         max-height: none;
         overflow-y: visible;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .chat-input-area h2 {
-        font-size: 0.7rem;
+        font-size: 0.8rem;
         font-weight: 600;
-        color: #9ca3af;
-        margin: 0 0 0.2rem 0;
-        text-transform: capitalize;
-        letter-spacing: 0.5px;
+        color: #d1d5db;
+        margin: 0 0 0.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         display: flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 0.5rem;
+        opacity: 0.9;
     }
 
     .chat-input-area h2 svg {
         flex-shrink: 0;
-        width: 0.875rem;
-        height: 0.875rem;
+        width: 1rem;
+        height: 1rem;
+        color: #6366f1;
     }
     
-    /* MODIFIED: Integrated Input Container - Very compact */
+    /* MODIFIED: Integrated Input Container - Premium design */
     .integrated-input-container {
         display: flex;
         align-items: flex-end; 
         width: 100%;
         max-width: 100%;
-        background-color: #111827; 
-        border-radius: 0.5rem; 
-        border: 1px solid #4b5563;
-        padding: 0.2rem 0.2rem; 
+        background-color: #0f1419; 
+        border-radius: 0.75rem; 
+        border: 1.5px solid #374151;
+        padding: 0.5rem 0.5rem; 
         transition: all 0.3s ease; 
         box-sizing: border-box;
-        gap: 0.15rem;
+        gap: 0.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     
-    /* NEW: Add a visual focus state to the container */
+    /* Premium focus state */
     .integrated-input-container:focus-within {
         border-color: #6366f1;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
-        background-color: #1a222e;
+        box-shadow: 0 4px 25px rgba(99, 102, 241, 0.25), inset 0 1px 3px rgba(99, 102, 241, 0.1);
+        background-color: #111827;
     }
 
-    /* MODIFIED: #chatInput - More compact */
+    /* Premium chat input styling */
     #chatInput {
         flex-grow: 1; 
         width: 100%;
-        padding: 0.375rem 0.6rem; 
-        border-radius: 0.4rem;
+        padding: 0.75rem 1rem; 
+        border-radius: 0.5rem;
         border: none;
-        background-color: transparent; 
-        color: #e5e7eb;
-        font-size: 0.9rem; 
-        box-shadow: none; 
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(31, 41, 55, 0.5));
+        color: #f3f4f6;
+        font-size: 0.95rem;
+        font-weight: 500;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         display: block;
         margin: 0;
         resize: none; 
         overflow: auto; 
-        min-height: 2rem; 
-        max-height: 6rem; 
+        min-height: 2.5rem; 
+        max-height: 8rem; 
         word-wrap: break-word;
         overflow-wrap: break-word;
         font-family: 'Inter', sans-serif;
+        line-height: 1.5;
+        transition: all 0.2s ease;
     }
 
     #chatInput::placeholder {
-        color: #9ca3af;
+        color: #6b7280;
+        font-weight: 400;
     }
     
     #chatInput:focus {
         outline: none;
+        background: linear-gradient(135deg, rgba(20, 28, 45, 0.95), rgba(31, 41, 55, 0.7));
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.2);
     }
 
-    /* 🔥 MODIFIED: ICON BUTTON Base Styling - Compact */
+    /* Premium icon buttons */
     .action-icon-button {
         flex-shrink: 0; 
-        width: 2.25rem; 
-        height: 2.25rem; 
+        width: 2.75rem; 
+        height: 2.75rem; 
         border: none;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -297,13 +308,15 @@
         align-items: center;
         justify-content: center;
         padding: 0; 
-        font-size: 1rem; 
-        border-radius: 0.4rem; 
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); 
+        font-size: 1.1rem; 
+        border-radius: 0.6rem; 
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
     }
 
     .action-icon-button:hover {
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     }
 
     .action-icon-button:active {
@@ -358,41 +371,43 @@
         display: none;
     }
     
-    /* Button Group Styling - Copilot style features */
+    /* Premium button group - World-class design */
     .button-group {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.3rem;
+        gap: 0.75rem;
         justify-content: flex-start;
         width: 100%;
-        margin-top: 0.2rem;
+        margin-top: 0.5rem;
     }
     
     .action-button {
         flex: 0 1 auto;
-        padding: 0.35rem 0.65rem;
-        border-radius: 0.4rem;
-        font-weight: 500;
-        font-size: 0.65rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 0.6rem;
+        font-weight: 600;
+        font-size: 0.8rem;
         text-align: center;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         cursor: pointer;
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
-        gap: 0.2rem;
-        min-height: 1.6rem;
+        gap: 0.4rem;
+        min-height: 2.125rem;
+        text-transform: capitalize;
+        letter-spacing: 0.3px;
     }
 
     .action-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
 
     .action-button:active {
-        transform: translateY(0);
+        transform: translateY(-1px);
     }
 
     .action-button span {
@@ -412,181 +427,199 @@
     }
 
     .action-button.summarize { 
-        background-color: #10b981; 
+        background: linear-gradient(135deg, #10b981, #059669);
         color: #fff; 
+        border-color: rgba(16, 185, 129, 0.3);
     }
 
     .action-button.summarize:hover { 
-        background-color: #059669;
+        background: linear-gradient(135deg, #059669, #047857);
+        border-color: rgba(16, 185, 129, 0.5);
     }
 
     .action-button.export { 
-        background-color: #3b82f6; 
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff; 
+        border-color: rgba(59, 130, 246, 0.3);
     }
 
     .action-button.export:hover { 
-        background-color: #2563eb;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border-color: rgba(59, 130, 246, 0.5);
     }
 
     .action-button.clear { 
-        background-color: #ef4444; 
+        background: linear-gradient(135deg, #ef4444, #dc2626);
         color: #fff; 
+        border-color: rgba(239, 68, 68, 0.3);
     }
 
     .action-button.clear:hover { 
-        background-color: #dc2626;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        border-color: rgba(239, 68, 68, 0.5);
     }
     
-    /* 🔥 MODIFIED: Responsive adjustments for medium screens and up 🔥 */
+    /* Premium responsive design - Mobile first */
     @media (min-width: 640px) {
         .chat-container-card { 
             min-height: 100vh;
         }
         
         .chat-header {
-            padding: 1rem 1.25rem;
+            padding: 1.25rem 1.5rem;
         }
 
         .chat-header h1 {
-            font-size: 1.35rem;
+            font-size: 1.5rem;
         }
 
         #chatLog {
-            padding: 1.5rem 2rem;
+            padding: 2rem 2.5rem 1.5rem 2.5rem;
         }
 
         .chat-input-area {
-            padding: 0.6rem 1.25rem;
-            gap: 0.4rem;
+            padding: 1.5rem 2rem;
+            gap: 0.875rem;
         }
 
         .action-button {
             flex: 0 1 auto;
-            padding: 0.35rem 0.7rem;
-            font-size: 0.7rem;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.85rem;
         }
 
         .button-group {
-            gap: 0.4rem;
+            gap: 1rem;
         }
 
         .integrated-input-container {
-            padding: 0.2rem;
+            padding: 0.5rem;
         }
 
         #chatInput {
-            min-height: 2.05rem;
-            max-height: 6rem;
-            padding: 0.4rem 0.6rem;
+            min-height: 2.75rem;
+            max-height: 8rem;
+            padding: 0.875rem 1.25rem;
         }
 
         .action-icon-button {
-            width: 2.35rem;
-            height: 2.35rem;
-            font-size: 1.05rem;
+            width: 3rem;
+            height: 3rem;
+            font-size: 1.2rem;
         }
     }
 
     @media (min-width: 768px) {
         .chat-header {
-            padding: 1.1rem 1.5rem;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, #2d3748, #1f2937);
         }
 
         .chat-header h1 {
-            font-size: 1.45rem;
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
         }
 
         .chat-header p {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            color: #9ca3af;
         }
 
         #chatLog {
-            padding: 2rem 2.5rem;
+            padding: 2.5rem 3rem 1.5rem 3rem;
         }
 
         .chat-input-area {
-            padding: 0.65rem 2.5rem;
-            gap: 0.4rem;
+            padding: 1.75rem 3rem 2rem 3rem;
+            gap: 1rem;
             max-height: none;
         }
 
         .chat-input-area h2 {
-            font-size: 0.75rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
         }
 
         .integrated-input-container {
-            padding: 0.25rem;
+            padding: 0.5rem 0.75rem;
         }
 
         #chatInput {
-            min-height: 2.2rem;
-            max-height: 7rem;
-            font-size: 0.95rem;
-            padding: 0.4rem 0.7rem;
+            min-height: 3rem;
+            max-height: 10rem;
+            font-size: 1rem;
+            padding: 1rem 1.25rem;
         }
 
         .action-icon-button {
-            width: 2.5rem;
-            height: 2.5rem;
-            font-size: 1.1rem;
+            width: 3.25rem;
+            height: 3.25rem;
+            font-size: 1.3rem;
         }
 
         .action-button {
             flex: 0 1 auto;
-            padding: 0.4rem 0.8rem;
-            font-size: 0.75rem;
+            padding: 0.875rem 1.75rem;
+            font-size: 0.9rem;
         }
 
         .button-group {
-            gap: 0.5rem;
+            gap: 1.25rem;
         }
 
         .chat-message {
-            max-width: 88%;
+            max-width: 80%;
         }
 
         .chat-message.user {
-            max-width: 88%;
+            max-width: 75%;
         }
 
         .chat-message.ai {
-            max-width: 88%;
+            max-width: 85%;
         }
     }
 
     @media (min-width: 1024px) {
         #chatLog {
-            padding: 2.5rem 5rem;
+            padding: 3rem 6rem 2rem 6rem;
         }
 
         .chat-input-area {
-            padding: 0.7rem 5rem;
-            gap: 0.4rem;
+            padding: 2rem 6rem 2.5rem 6rem;
+            gap: 1.25rem;
+        }
+
+        .chat-header {
+            padding: 2rem 4rem;
+        }
+
+        .chat-header h1 {
+            font-size: 2rem;
         }
 
         .chat-message {
-            max-width: 78%;
+            max-width: 70%;
         }
 
         .chat-message.user {
-            max-width: 78%;
+            max-width: 65%;
         }
 
         .chat-message.ai {
-            max-width: 78%;
+            max-width: 75%;
         }
 
         .action-button {
             flex: 0 1 auto;
-            padding: 0.4rem 0.9rem;
-            font-size: 0.8rem;
+            padding: 1rem 2rem;
+            font-size: 0.95rem;
         }
 
         .action-icon-button {
-            width: 2.65rem;
-            height: 2.65rem;
-            font-size: 1.15rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            font-size: 1.4rem;
         }
     }
 
@@ -606,26 +639,29 @@
     }
 
     /* Scrollbar styling for better appearance */
+    /* Premium scrollbar styling */
     #chatLog::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
     }
 
     #chatLog::-webkit-scrollbar-track {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
     }
 
     #chatLog::-webkit-scrollbar-thumb {
-        background: #4b5563;
-        border-radius: 3px;
+        background: linear-gradient(180deg, #6366f1, #4f46e5);
+        border-radius: 10px;
+        border: 2px solid rgba(31, 41, 55, 1);
     }
 
     #chatLog::-webkit-scrollbar-thumb:hover {
-        background: #6b7280;
+        background: linear-gradient(180deg, #4f46e5, #4338ca);
     }
 
-    /* Firefox scrollbar */
+    /* Firefox scrollbar - premium style */
     #chatLog {
-        scrollbar-color: #4b5563 transparent;
+        scrollbar-color: #6366f1 rgba(255, 255, 255, 0.02);
         scrollbar-width: thin;
     }
 </style>
