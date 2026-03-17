@@ -50,6 +50,12 @@
                 </div>
 
                 <div>
+                    <label for="{{ form.category.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Category</label>
+                    {{ form.category }}
+                    {{ form.category.errors }}
+                </div>
+
+                <div>
                     <label for="{{ form.cover_image_url.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Book Cover URL</label>
                     {{ form.cover_image_url }}
                     <p class="text-sm text-gray-500 mt-1">Provide a URL for the book's cover image (JPG, PNG, or SVG).</p>

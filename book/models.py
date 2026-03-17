@@ -9,8 +9,19 @@ class Book(models.Model):
     A model to represent a book resource uploaded by a teacher.
     Includes metadata, pricing, and file access.
     """
+    CATEGORY_CHOICES = [
+        ('fiction', 'Fiction'),
+        ('non-fiction', 'Non-Fiction'),
+        ('education', 'Education'),
+        ('science', 'Science'),
+        ('history', 'History'),
+        ('biography', 'Biography'),
+        ('self-help', 'Self-Help'),
+        ('other', 'Other'),
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     cover_image_url = models.URLField(
         max_length=500,
         default='https://placehold.co/400x600/1e293b/d1d5db?text=Book+Cover'
@@ -20,6 +31,8 @@ class Book(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')
     created_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, blank=True)
+    average_rating = models.FloatField(default=0.0)
+    total_ratings = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -35,14 +48,38 @@ class Book(models.Model):
     def total_earned(self):
         return sum(tx.amount for tx in self.transactions.filter(status='paid', verified=True))
 
-    def unlock_count(self):
-        return self.transactions.filter(status='paid', verified=True).count()
+    def update_ratings(self):
+        reviews = self.reviews.all()
+        if reviews:
+            self.average_rating = sum(r.rating for r in reviews) / len(reviews)
+            self.total_ratings = len(reviews)
+        else:
+            self.average_rating = 0.0
+            self.total_ratings = 0
+        self.save(update_fields=['average_rating', 'total_ratings'])
 
     def __str__(self):
         return f"{self.title} by {self.uploaded_by.get_full_name() or self.uploaded_by.username}"
 
     class Meta:
         ordering = ['-created_at']
+
+class Review(models.Model):
+    """
+    User reviews and ratings for books.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])  # 1-5 stars
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'book')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.book.title} ({self.rating} stars)"
 
 class Transaction(models.Model):
     """

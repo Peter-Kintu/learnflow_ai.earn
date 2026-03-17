@@ -1,5 +1,5 @@
 from django import forms
-from .models import Book
+from .models import Book, Review
 
 class BookForm(forms.ModelForm):
     """
@@ -23,7 +23,7 @@ class BookForm(forms.ModelForm):
 
     class Meta:
         model = Book
-        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
+        fields = ['title', 'description', 'category', 'cover_image_url', 'book_file_url', 'price']
 
         widgets = {
             'title': forms.TextInput(attrs={
@@ -34,6 +34,9 @@ class BookForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Provide a brief description',
                 'rows': 4
+            }),
+            'category': forms.Select(attrs={
+                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500'
             }),
             'cover_image_url': forms.URLInput(attrs={
                 'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
@@ -66,3 +69,21 @@ class BookForm(forms.ModelForm):
             )
 
         return code
+
+class ReviewForm(forms.ModelForm):
+    """
+    Form for users to submit reviews and ratings for books.
+    """
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.Select(attrs={
+                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500'
+            }),
+            'comment': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'placeholder': 'Share your thoughts about this book...',
+                'rows': 4
+            }),
+        }

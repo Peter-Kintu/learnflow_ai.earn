@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from aiapp.models import User
 from .models import Book, Transaction
-from .forms import BookForm
+from .forms import BookForm, ReviewForm
 from django.db import models
 import uuid
 # book/views.py (or wherever your views are)
@@ -37,45 +37,81 @@ def payment_callback(request):
 @login_required
 def book_list(request):
     books = Book.objects.all().order_by('-created_at')
-    return render(request, 'book/book_list.html', {'books': books, 'show_ads': True})
+    query = request.GET.get('q')
+    category = request.GET.get('category')
+    sort = request.GET.get('sort', '-created_at')
+
+    if query:
+        books = books.filter(title__icontains=query) | books.filter(description__icontains=query)
+    if category:
+        books = books.filter(category=category)
+    books = books.order_by(sort)
+
+    categories = Book.CATEGORY_CHOICES
+    return render(request, 'book/book_list.html', {
+        'books': books,
+        'categories': categories,
+        'query': query,
+        'selected_category': category,
+        'sort': sort,
+        'show_ads': True
+    })
 
 @login_required
 def book_detail(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     has_paid = Transaction.objects.filter(user=request.user, book=book, status='paid', verified=True).exists()
     tx = Transaction.objects.filter(user=request.user, book=book, verified=True).order_by('-verified_at').first()
+    reviews = book.reviews.all()
+    user_review = reviews.filter(user=request.user).first()
+    review_form = ReviewForm(instance=user_review)
 
     if request.method == 'POST':
-        try:
-            if 'confirm_payment' in request.POST:
-                tx, created = Transaction.objects.get_or_create(
-                    user=request.user,
-                    book=book,
-                    defaults={
-                        'amount': book.price,
-                        'status': 'paid',
-                        'reference': 'manual-confirmation',
-                        'verified': True,
-                        'verified_at': timezone.now(),
-                        'payment_method': 'manual',
-                        'access_code': uuid.uuid4().hex[:12].upper()
-                    }
-                )
-                messages.success(request, f"✅ Payment confirmed! Your access code: {tx.access_code}")
+        if 'confirm_payment' in request.POST:
+            # ... existing payment confirmation code ...
+            try:
+                if 'confirm_payment' in request.POST:
+                    tx, created = Transaction.objects.get_or_create(
+                        user=request.user,
+                        book=book,
+                        defaults={
+                            'amount': book.price,
+                            'status': 'paid',
+                            'reference': 'manual-confirmation',
+                            'verified': True,
+                            'verified_at': timezone.now(),
+                            'payment_method': 'manual',
+                            'access_code': uuid.uuid4().hex[:12].upper()
+                        }
+                    )
+                    messages.success(request, f"✅ Payment confirmed! Your access code: {tx.access_code}")
+                    return redirect('book:book_detail', book_id=book_id)
+                else:
+                    messages.warning(request, "⚠️ Payment confirmation missing. Please try again.")
+            except Exception as e:
+                print(f"[ERROR] Payment confirmation failed for book {book_id}: {e}")
+                messages.error(request, "🚫 Something went wrong while confirming payment. Please try again or contact support.")
+                return HttpResponseServerError("Internal Server Error")
+        elif 'submit_review' in request.POST and has_paid:
+            review_form = ReviewForm(request.POST, instance=user_review)
+            if review_form.is_valid():
+                review = review_form.save(commit=False)
+                review.user = request.user
+                review.book = book
+                review.save()
+                book.update_ratings()
+                messages.success(request, "✅ Review submitted!")
                 return redirect('book:book_detail', book_id=book_id)
-            else:
-                messages.warning(request, "⚠️ Payment confirmation missing. Please try again.")
-        except Exception as e:
-            print(f"[ERROR] Payment confirmation failed for book {book_id}: {e}")
-            messages.error(request, "🚫 Something went wrong while confirming payment. Please try again or contact support.")
-            return HttpResponseServerError("Internal Server Error")
 
     whatsapp_number = "+256789746493"
     return render(request, 'book/book_detail.html', {
         'book': book,
         'has_paid': has_paid,
         'whatsapp_number': whatsapp_number,
-        'tx': tx  # ✅ passed to template
+        'tx': tx,
+        'reviews': reviews,
+        'review_form': review_form,
+        'user_review': user_review
     })
 
 @login_required

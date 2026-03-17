@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-4 sm:p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
+<div class="max-w-6xl mx-auto p-4 sm:p-8 bg-slate-800 rounded-2xl shadow-lg mt-10">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-gray-200">答 Available Books</h2>
+        <h2 class="text-3xl font-bold text-gray-200">📚 Available Books</h2>
         {% if user.is_authenticated %}
         <a href="{% url 'book:book_upload' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm font-semibold text-sm">
             Upload Book
@@ -11,8 +11,25 @@
         {% endif %}
     </div>
 
-    
-        <p class="text-sm text-gray-400 mt-3">Clicking this helps pay for server costs and unlocks the book list below. (You earn points!)</p>
+    <!-- Search and Filters -->
+    <div class="mb-6 bg-slate-700 p-4 rounded-xl">
+        <form method="get" class="flex flex-col md:flex-row gap-4">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search books..." class="flex-1 px-4 py-2 bg-slate-600 border border-slate-500 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+            <select name="category" class="px-4 py-2 bg-slate-600 border border-slate-500 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+                <option value="">All Categories</option>
+                {% for cat_value, cat_name in categories %}
+                <option value="{{ cat_value }}" {% if cat_value == selected_category %}selected{% endif %}>{{ cat_name }}</option>
+                {% endfor %}
+            </select>
+            <select name="sort" class="px-4 py-2 bg-slate-600 border border-slate-500 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500">
+                <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Newest</option>
+                <option value="created_at" {% if sort == 'created_at' %}selected{% endif %}>Oldest</option>
+                <option value="-average_rating" {% if sort == '-average_rating' %}selected{% endif %}>Highest Rated</option>
+                <option value="price" {% if sort == 'price' %}selected{% endif %}>Price: Low to High</option>
+                <option value="-price" {% if sort == '-price' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Search</button>
+        </form>
     </div>
     
     <p class="text-gray-400 mb-8">
@@ -26,7 +43,15 @@
                 <a href="{% url 'book:book_detail' book.id %}">
                     <img src="{{ book.cover_image_url|default:'/static/images/default_cover.png' }}" alt="{{ book.title|default:'Untitled' }} Cover" class="w-full h-48 object-cover rounded-lg mb-4 shadow">
                     <h3 class="text-xl font-semibold text-gray-200 mb-2">{{ book.title|default:"Untitled" }}</h3>
-                    <p class="text-sm text-gray-400 mb-4">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
+                    <p class="text-sm text-gray-400 mb-2">{{ book.description|default:"No description available."|truncatechars:100 }}</p>
+                    <p class="text-xs text-indigo-400 mb-2">{{ book.get_category_display }}</p>
+
+                    <div class="flex items-center mb-2">
+                        {% for i in "12345" %}
+                        <span class="text-yellow-400">{% if forloop.counter <= book.average_rating|floatformat:0 %}★{% else %}☆{% endif %}</span>
+                        {% endfor %}
+                        <span class="text-xs text-gray-400 ml-2">({{ book.total_ratings }} reviews)</span>
+                    </div>
 
                     <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
                         <span class="flex items-center space-x-1">
@@ -49,11 +74,11 @@
                     </div>
 
                     <div class="text-sm text-green-400 font-semibold">
-                        腸 Price: UGX {{ book.price|default:"0.00" }}
+                        Price: UGX {{ book.price|default:"0.00" }}
                     </div>
                     <div class="text-xs text-gray-400 mt-1">
-                        導 Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
-                        諜 Or <a href="{% url 'book:pay_with_card' book.id %}" class="underline text-indigo-400">pay with Visa card</a> instantly.
+                        Pay via mobile money and confirm via <a href="https://wa.me/256789746493" target="_blank" class="underline text-indigo-400">WhatsApp</a><br>
+                        Or <a href="{% url 'book:pay_with_card' book.id %}" class="underline text-indigo-400">pay with Visa card</a> instantly.
                     </div>
                 </a>
 

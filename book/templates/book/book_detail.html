@@ -49,6 +49,15 @@
                     {% endif %}
                 </div>
 
+                <p class="text-xs text-indigo-400 mb-2">{{ book.get_category_display }}</p>
+
+                <div class="flex items-center mb-4">
+                    {% for i in "12345" %}
+                    <span class="text-yellow-400 text-lg">{% if forloop.counter <= book.average_rating|floatformat:0 %}★{% else %}☆{% endif %}</span>
+                    {% endfor %}
+                    <span class="text-sm text-gray-400 ml-2">({{ book.total_ratings }} reviews)</span>
+                </div>
+
                 <p class="text-gray-400 mb-6">{{ book.description|default:"No description available." }}</p>
 
                 <div class="flex items-center mb-6">
@@ -152,9 +161,51 @@
             {% endif %}
         </div>
     </div>
-    {% else %}
-    <div class="text-center text-red-500 font-bold mt-10">
-        🚫 Book not found or incomplete. Please check back later or contact support.
+
+    <!-- Reviews Section -->
+    {% if has_paid %}
+    <div class="mt-10 bg-slate-700 p-6 rounded-xl">
+        <h3 class="text-2xl font-bold text-gray-200 mb-4">Reviews</h3>
+        {% if reviews %}
+            {% for review in reviews %}
+            <div class="mb-4 p-4 bg-slate-600 rounded-lg">
+                <div class="flex items-center mb-2">
+                    <span class="font-semibold text-gray-200">{{ review.user.get_full_name|default:review.user.username }}</span>
+                    <div class="ml-4">
+                        {% for i in "12345" %}
+                        <span class="text-yellow-400">{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}</span>
+                        {% endfor %}
+                    </div>
+                    <span class="text-xs text-gray-400 ml-2">{{ review.created_at|date:"M j, Y" }}</span>
+                </div>
+                <p class="text-gray-300">{{ review.comment }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-gray-400">No reviews yet. Be the first to review this book!</p>
+        {% endif %}
+
+        <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-200 mb-2">Write a Review</h4>
+            <form method="post">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label for="{{ review_form.rating.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Rating</label>
+                        {{ review_form.rating }}
+                        {{ review_form.rating.errors }}
+                    </div>
+                    <div>
+                        <label for="{{ review_form.comment.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Comment</label>
+                        {{ review_form.comment }}
+                        {{ review_form.comment.errors }}
+                    </div>
+                    <button type="submit" name="submit_review" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg font-semibold">
+                        Submit Review
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
     {% endif %}
 </div>

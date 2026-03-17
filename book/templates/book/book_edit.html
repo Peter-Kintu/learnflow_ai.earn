@@ -33,6 +33,12 @@
                 {{ form.description.errors }}
             </div>
             
+            <div>
+                <label for="{{ form.category.id_for_label }}" class="block text-gray-300 font-semibold mb-2">Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+            
             <div class="space-y-2">
               <label for="id_seller_whatsapp" class="block text-gray-300 font-semibold">📞 Seller WhatsApp Number</label>
               <input type="text" id="id_seller_whatsapp" name="seller_whatsapp"
