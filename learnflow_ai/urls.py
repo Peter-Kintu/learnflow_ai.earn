@@ -55,6 +55,9 @@ urlpatterns = [
     path("video/", include("video.urls")),
     path("book/", include("book.urls")),
     path("legal/", include(("legalpages.urls", "legalpages"), namespace="legalpages")),
+    path("school/", include(("School.urls", "School"), namespace="School")),
+  
+    
 ]
 
 # Serve static and media files during development

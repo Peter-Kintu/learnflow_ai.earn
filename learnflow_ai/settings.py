@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'video',
     'user',
     'book',
+    'School',
    
 ]
 
@@ -209,6 +210,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_FALLBACK_KEY_FOR_DEV_ONL
 if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_FALLBACK_KEY_FOR_DEV_ONLY":
     # In production, this should ideally raise an error or log a warning if the key is missing.
     print("WARNING: GEMINI_API_KEY environment variable is not set. API calls will fail.")
+
+USE_THOUSAND_SEPARATOR = True
 
 # HSTS Settings (Add these for better security scores)
 if not DEBUG:
