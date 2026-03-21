@@ -20,33 +20,32 @@ CSRF_TRUSTED_ORIGINS = [
 
     ]
 
-# Installed Apps
 INSTALLED_APPS = [
-
-    'cloudinary_storage', # Cloudinary storage engine (Keep first to handle static/media precedence)
+    'cloudinary_storage',
     'cloudinary',
-    # --- ADDED: CSP ---
     'csp',
+    
+    # Move your custom apps HIGHER up
+    'School',      # <--- Move this up
+    'user', 
+    'aiapp',
+    'video',
+    'book',
+    'legalpages',
+
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.sitemaps',
-    # ------------------
-    'legalpages',
-    'jazzmin',
+    
+    'jazzmin', # Keep Jazzmin just above admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'aiapp',
-    'video',
-    'user',
-    'book',
-    'School',
-   
 ]
-
+  
 SITE_ID = 1
 # Middleware
 MIDDLEWARE = [
