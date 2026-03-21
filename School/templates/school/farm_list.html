@@ -1,47 +1,55 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Poultry Farm Records{% endblock %}
-
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary font-weight-bold">🐔 Poultry Farm Records</h2>
-        <a href="{% url 'school:dashboard' %}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+<div class="p-6 lg:p-12">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white">🐔 Poultry Sales</h1>
+        <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition">Dashboard</a>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="text-uppercase small font-weight-bold">Batch Name</th>
-                            <th class="text-uppercase small font-weight-bold text-center">Chickens</th>
-                            <th class="text-uppercase small font-weight-bold">Investment (UGX)</th>
-                            <th class="text-uppercase small font-weight-bold">Sales (UGX)</th>
-                            <th class="text-uppercase small font-weight-bold">Profit / Loss</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for b in batches %}
-                        <tr>
-                            <td class="font-weight-bold text-dark">{{ b.batch_name }}</td>
-                            <td class="text-center">{{ b.number_of_chickens|intcomma }}</td>
-                            <td class="text-muted">{{ b.total_investment|intcomma }}</td>
-                            <td class="text-dark font-weight-bold">{{ b.total_sales_revenue|intcomma }}</td>
-                            <td class="{% if b.profit_or_loss >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bold">
-                                UGX {{ b.profit_or_loss|intcomma }}
-                                {% if b.profit_or_loss >= 0 %} ↑ {% else %} ↓ {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="text-center py-5 text-muted">No poultry records available yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="glass p-6 mb-8 rounded-2xl border border-emerald-500/20">
+        <form method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {% csrf_token %}
+            <input type="text" name="batch_name" placeholder="Batch Name" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500" required>
+            <input type="number" name="number_of_chickens" placeholder="Birds Qty" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500" required>
+            <input type="number" name="chick_purchase_cost" placeholder="Purchase (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500" required>
+            <input type="number" name="total_sales_revenue" placeholder="Sales (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
+            <button type="submit" name="save_record" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SAVE BATCH</button>
+        </form>
+    </div>
+
+    <div class="glass rounded-2xl border border-white/10 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-white/5 text-gray-400">
+                <tr>
+                    <th class="p-5">Batch</th>
+                    <th class="p-5">Cost</th>
+                    <th class="p-5">Revenue</th>
+                    <th class="p-5">Profit</th>
+                    <th class="p-5 text-center">Clear</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-200">
+                {% for b in batches %}
+                <tr class="border-t border-white/5">
+                    <td class="p-5 font-medium">{{ b.batch_name }}</td>
+                    <td class="p-5 text-gray-400">{{ b.total_investment|intcomma }}</td>
+                    <td class="p-5 text-emerald-400">{{ b.total_sales_revenue|intcomma }}</td>
+                    <td class="p-5 font-bold {% if b.profit_or_loss >= 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
+                        {{ b.profit_or_loss|intcomma }}
+                    </td>
+                    <td class="p-5">
+                        <form method="POST" action="{% url 'school:delete_record' 'farm' b.id %}" class="flex gap-2 justify-center">
+                            {% csrf_token %}
+                            <input type="password" name="delete_password" placeholder="PIN" class="w-16 bg-black/20 border border-white/10 rounded px-2" required>
+                            <button class="text-rose-500 font-bold">X</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

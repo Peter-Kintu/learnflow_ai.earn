@@ -1,14 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 from .models import StudentFee, PoultryRecord
 
 @staff_member_required
 def dashboard_view(request):
-    """Financial overview for School Fees and Farm Revenue."""
     fees_data = StudentFee.objects.aggregate(total=Sum('amount_paid'))
     farm_data = PoultryRecord.objects.aggregate(total=Sum('total_sales_revenue'))
-    
     total_fees = fees_data['total'] or 0
     total_sales = farm_data['total'] or 0
     
@@ -21,10 +20,44 @@ def dashboard_view(request):
 
 @staff_member_required
 def fees_list(request):
+    if request.method == "POST" and 'save_record' in request.POST:
+        StudentFee.objects.create(
+            student_name=request.POST.get('student_name'),
+            total_fees_required=request.POST.get('total_fees_required'),
+            amount_paid=request.POST.get('amount_paid', 0)
+        )
+        messages.success(request, "Student added successfully!")
+        return redirect('school:fees_list')
+
     students = StudentFee.objects.all().order_by('-id')
     return render(request, 'school/fees_list.html', {'students': students})
 
 @staff_member_required
 def farm_list(request):
+    if request.method == "POST" and 'save_record' in request.POST:
+        PoultryRecord.objects.create(
+            batch_name=request.POST.get('batch_name'),
+            number_of_chickens=request.POST.get('number_of_chickens'),
+            chick_purchase_cost=request.POST.get('chick_purchase_cost'),
+            feed_cost=request.POST.get('feed_cost', 0),
+            total_sales_revenue=request.POST.get('total_sales_revenue', 0)
+        )
+        messages.success(request, "Farm batch saved!")
+        return redirect('school:farm_list')
+
     batches = PoultryRecord.objects.all().order_by('-id')
     return render(request, 'school/farm_list.html', {'batches': batches})
+
+@staff_member_required
+def delete_record(request, model_type, pk):
+    if request.method == "POST":
+        pin = request.POST.get('delete_password')
+        if pin == "12345": # Your 5-digit PIN
+            if model_type == 'fee':
+                get_object_or_404(StudentFee, pk=pk).delete()
+            else:
+                get_object_or_404(PoultryRecord, pk=pk).delete()
+            messages.success(request, "Record cleared successfully.")
+        else:
+            messages.error(request, "Invalid PIN. Access denied.")
+    return redirect('school:fees_list' if model_type == 'fee' else 'school:farm_list')

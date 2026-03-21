@@ -1,44 +1,56 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Student Fees Management{% endblock %}
-
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary font-weight-bold">🎓 Student Fees & Balances</h2>
-        <a href="{% url 'school:dashboard' %}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+<div class="p-6 lg:p-12">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white">🎓 Fees Ledger</h1>
+        <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition">Dashboard</a>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="text-uppercase small font-weight-bold">Student Name</th>
-                            <th class="text-uppercase small font-weight-bold">Required (UGX)</th>
-                            <th class="text-uppercase small font-weight-bold">Paid (UGX)</th>
-                            <th class="text-uppercase small font-weight-bold">Balance Remaining</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in students %}
-                        <tr>
-                            <td class="font-weight-bold text-dark">{{ s.student_name }}</td>
-                            <td>{{ s.total_fees_required|intcomma }}</td>
-                            <td class="text-success font-weight-bold">{{ s.amount_paid|intcomma }}</td>
-                            <td class="{% if s.balance_remaining > 0 %}text-danger{% else %}text-success{% endif %} font-weight-bold">
-                                UGX {{ s.balance_remaining|intcomma }}
-                                {% if s.balance_remaining == 0 %} ✅ {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="text-center py-5 text-muted">No student fee records found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="glass p-6 mb-8 rounded-2xl border border-white/10">
+        <h2 class="text-xl font-semibold text-white mb-4">Add New Student</h2>
+        <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {% csrf_token %}
+            <input type="text" name="student_name" placeholder="Student Name" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
+            <input type="number" name="total_fees_required" placeholder="Required (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
+            <input type="number" name="amount_paid" placeholder="Paid (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500">
+            <button type="submit" name="save_record" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SAVE STUDENT</button>
+        </form>
+    </div>
+
+    <div class="glass overflow-hidden rounded-2xl border border-white/10">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white/5 text-gray-400 uppercase text-sm">
+                        <th class="p-5">Student</th>
+                        <th class="p-5">Required</th>
+                        <th class="p-5">Paid</th>
+                        <th class="p-5">Balance</th>
+                        <th class="p-5 text-center">Clearance PIN</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-200">
+                    {% for s in students %}
+                    <tr class="border-t border-white/5 hover:bg-white/5 transition">
+                        <td class="p-5 font-medium text-white">{{ s.student_name }}</td>
+                        <td class="p-5">{{ s.total_fees_required|intcomma }}</td>
+                        <td class="p-5 text-emerald-400">{{ s.amount_paid|intcomma }}</td>
+                        <td class="p-5 {% if s.balance_remaining > 0 %}text-rose-400{% else %}text-emerald-400{% endif %}">
+                            {{ s.balance_remaining|intcomma }}
+                        </td>
+                        <td class="p-5">
+                            <form method="POST" action="{% url 'school:delete_record' 'fee' s.id %}" class="flex gap-2 justify-center">
+                                {% csrf_token %}
+                                <input type="password" name="delete_password" placeholder="PIN" class="w-20 bg-black/20 border border-white/10 rounded px-2 text-center text-sm" required>
+                                <button class="text-rose-500 hover:text-rose-400 font-bold">Clear</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
