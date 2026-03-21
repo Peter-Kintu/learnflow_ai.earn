@@ -32,12 +32,41 @@ class StudentFee(models.Model):
         return f"{self.student_name} (Bal: {self.balance_remaining:,.0f})"
 
 
+class SchoolExpense(models.Model):
+    category = models.CharField(max_length=100, help_text="e.g. Electricity, Water, Stationery")
+    description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date_spent = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_spent']
+
+    def __str__(self):
+        return f"{self.category}: {self.amount}"
+
+
 class PoultryRecord(models.Model):
     batch_name = models.CharField(max_length=100, help_text="e.g. Broilers March 2026")
     number_of_chickens = models.PositiveIntegerField()
-    chick_purchase_cost = models.DecimalField(max_digits=12, decimal_places=2)
-    feed_cost = models.DecimalField(max_digits=12, decimal_places=2)
-    other_costs = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Medicines, charcoal, etc.")
+    
+    # Separated Costs
+    chick_purchase_cost = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        verbose_name="Cost of Birds"
+    )
+    feed_cost = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        verbose_name="Cost of Food"
+    )
+    other_costs = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0, 
+        help_text="Medicines, charcoal, etc."
+    )
+    
     total_sales_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     date_started = models.DateField(auto_now_add=True)
 
@@ -56,11 +85,5 @@ class PoultryRecord(models.Model):
         """Net financial result."""
         return self.total_sales_revenue - self.total_investment
 
-    @property
-    def is_profitable(self):
-        """Quick boolean check for profit status."""
-        return self.profit_or_loss >= 0
-
     def __str__(self):
-        status = "Profit" if self.is_profitable else "Loss"
-        return f"{self.batch_name} ({status}: {abs(self.profit_or_loss):,.0f})"
+        return f"{self.batch_name} ({self.number_of_chickens} birds)"

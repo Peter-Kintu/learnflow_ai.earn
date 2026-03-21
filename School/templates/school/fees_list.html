@@ -8,6 +8,14 @@
         <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition">Dashboard</a>
     </div>
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-xl {% if message.tags == 'success' %}bg-emerald-500/20 text-emerald-400{% else %}bg-rose-500/20 text-rose-400{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="glass p-6 mb-8 rounded-2xl border border-white/10">
         <h2 class="text-xl font-semibold text-white mb-4">Add New Student</h2>
         <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -15,16 +23,16 @@
             <input type="text" name="student_name" placeholder="Student Name" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
             <input type="number" name="total_fees_required" placeholder="Required (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
             <input type="number" name="amount_paid" placeholder="Paid (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500">
-            <button type="submit" name="save_record" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SAVE STUDENT</button>
+            <button name="save_record" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition">Save Student</button>
         </form>
     </div>
 
-    <div class="glass overflow-hidden rounded-2xl border border-white/10">
+    <div class="glass rounded-2xl border border-white/10 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-white/5 text-gray-400 uppercase text-sm">
-                        <th class="p-5">Student</th>
+                <thead class="bg-white/5 text-gray-400 uppercase text-xs tracking-wider">
+                    <tr>
+                        <th class="p-5">Student Name</th>
                         <th class="p-5">Required</th>
                         <th class="p-5">Paid</th>
                         <th class="p-5">Balance</th>
@@ -43,7 +51,9 @@
                         <td class="p-5">
                             <form method="POST" action="{% url 'school:delete_record' 'fee' s.id %}" class="flex gap-2 justify-center">
                                 {% csrf_token %}
-                                <input type="password" name="delete_password" placeholder="PIN" class="w-20 bg-black/20 border border-white/10 rounded px-2 text-center text-sm" required>
+                                <input type="password" name="delete_password" placeholder="5 Digits" 
+                                       pattern="[0-9]{5}" title="Please enter exactly 5 digits"
+                                       class="w-24 bg-black/20 border border-white/10 rounded px-2 text-center text-sm" required>
                                 <button class="text-rose-500 hover:text-rose-400 font-bold">Clear</button>
                             </form>
                         </td>

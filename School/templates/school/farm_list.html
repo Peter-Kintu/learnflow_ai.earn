@@ -8,6 +8,14 @@
         <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition">Dashboard</a>
     </div>
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-xl {% if message.tags == 'success' %}bg-emerald-500/20 text-emerald-400{% else %}bg-rose-500/20 text-rose-400{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="glass p-6 mb-8 rounded-2xl border border-emerald-500/20">
         <form method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             {% csrf_token %}
@@ -15,41 +23,45 @@
             <input type="number" name="number_of_chickens" placeholder="Birds Qty" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500" required>
             <input type="number" name="chick_purchase_cost" placeholder="Purchase (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500" required>
             <input type="number" name="total_sales_revenue" placeholder="Sales (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-emerald-500">
-            <button type="submit" name="save_record" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SAVE BATCH</button>
+            <button name="save_record" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">Save Batch</button>
         </form>
     </div>
 
     <div class="glass rounded-2xl border border-white/10 overflow-hidden">
-        <table class="w-full text-left">
-            <thead class="bg-white/5 text-gray-400">
-                <tr>
-                    <th class="p-5">Batch</th>
-                    <th class="p-5">Cost</th>
-                    <th class="p-5">Revenue</th>
-                    <th class="p-5">Profit</th>
-                    <th class="p-5 text-center">Clear</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-200">
-                {% for b in batches %}
-                <tr class="border-t border-white/5">
-                    <td class="p-5 font-medium">{{ b.batch_name }}</td>
-                    <td class="p-5 text-gray-400">{{ b.total_investment|intcomma }}</td>
-                    <td class="p-5 text-emerald-400">{{ b.total_sales_revenue|intcomma }}</td>
-                    <td class="p-5 font-bold {% if b.profit_or_loss >= 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                        {{ b.profit_or_loss|intcomma }}
-                    </td>
-                    <td class="p-5">
-                        <form method="POST" action="{% url 'school:delete_record' 'farm' b.id %}" class="flex gap-2 justify-center">
-                            {% csrf_token %}
-                            <input type="password" name="delete_password" placeholder="PIN" class="w-16 bg-black/20 border border-white/10 rounded px-2" required>
-                            <button class="text-rose-500 font-bold">X</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/5 text-gray-400 uppercase text-xs tracking-wider">
+                    <tr>
+                        <th class="p-5">Batch</th>
+                        <th class="p-5">Investment</th>
+                        <th class="p-5">Revenue</th>
+                        <th class="p-5">Profit</th>
+                        <th class="p-5 text-center">Clearance PIN</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-200">
+                    {% for b in batches %}
+                    <tr class="border-t border-white/5">
+                        <td class="p-5 font-medium">{{ b.batch_name }}</td>
+                        <td class="p-5 text-gray-400">{{ b.total_investment|intcomma }}</td>
+                        <td class="p-5 text-emerald-400">{{ b.total_sales_revenue|intcomma }}</td>
+                        <td class="p-5 font-bold {% if b.profit_or_loss >= 0 %}text-emerald-500{% else %}text-rose-500{% endif %}\">
+                            {{ b.profit_or_loss|intcomma }}
+                        </td>
+                        <td class="p-5">
+                            <form method="POST" action="{% url 'school:delete_record' 'farm' b.id %}" class="flex gap-2 justify-center">
+                                {% csrf_token %}
+                                <input type="password" name="delete_password" placeholder="5 Digits" 
+                                       pattern="[0-9]{5}" title="Please enter exactly 5 digits"
+                                       class="w-24 bg-black/20 border border-white/10 rounded px-2 text-center text-sm" required>
+                                <button class="text-rose-500 hover:text-rose-400 font-bold">Clear</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

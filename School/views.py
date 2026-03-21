@@ -52,12 +52,18 @@ def farm_list(request):
 def delete_record(request, model_type, pk):
     if request.method == "POST":
         pin = request.POST.get('delete_password')
-        if pin == "12345": # Your 5-digit PIN
+        
+        # Check if the PIN is exactly 5 digits
+        if pin and len(pin) == 5 and pin.isdigit():
             if model_type == 'fee':
-                get_object_or_404(StudentFee, pk=pk).delete()
+                record = get_object_or_404(StudentFee, pk=pk)
+                record.delete()
+                messages.success(request, "Fee record deleted.")
             else:
-                get_object_or_404(PoultryRecord, pk=pk).delete()
-            messages.success(request, "Record cleared successfully.")
+                record = get_object_or_404(PoultryRecord, pk=pk)
+                record.delete()
+                messages.success(request, "Farm record deleted.")
         else:
-            messages.error(request, "Invalid PIN. Access denied.")
-    return redirect('school:fees_list' if model_type == 'fee' else 'school:farm_list')
+            messages.error(request, "Invalid PIN. Please enter any 5-digit numeric code.")
+            
+    return redirect(request.META.get('HTTP_REFERER', 'school:dashboard'))
