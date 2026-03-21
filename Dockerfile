@@ -1,5 +1,9 @@
 FROM python:3.11-slim
 
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 # Set working directory
 WORKDIR /app
 
@@ -7,14 +11,16 @@ WORKDIR /app
 COPY . /app
 
 # Install system packages required for some pip dependencies (e.g. pycairo / WeasyPrint)
+# FIXED: Changed libgdk-pixbuf2.0-dev to libgdk-pixbuf-2.0-dev for Debian Trixie compatibility
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         pkg-config \
         libcairo2-dev \
         libpango1.0-dev \
-        libgdk-pixbuf2.0-dev \
+        libgdk-pixbuf-2.0-dev \
         libffi-dev \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
