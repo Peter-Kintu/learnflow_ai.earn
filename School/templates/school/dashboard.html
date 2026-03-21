@@ -11,7 +11,7 @@
                 Finance Dashboard
             </span>
         </h1>
-        <p class="text-gray-400 mt-2 text-lg">Real-time overview of school fees and poultry farm performance.</p>
+        <p class="text-gray-400 mt-2 text-lg">Real-time overview of school fees and integrated farm performance.</p>
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -36,13 +36,13 @@
                 <i class="fas fa-kiwi-bird text-9xl"></i>
             </div>
             <div class="relative z-10">
-                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-sm mb-2">Farm Sales Revenue</h3>
+                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-sm mb-2">Total Farm Revenue</h3>
                 <div class="flex items-baseline gap-2">
                     <span class="text-3xl font-bold text-white">UGX</span>
                     <span class="text-4xl font-black text-emerald-400 tracking-tighter">{{ total_sales|intcomma }}</span>
                 </div>
                 <div class="mt-4 flex items-center text-emerald-400 text-sm font-semibold">
-                    <i class="fas fa-check-circle mr-2"></i> Poultry Units Synced
+                    <i class="fas fa-check-circle mr-2"></i> Combined Livestock Units
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
         <h4 class="text-xl font-bold text-white mb-6 flex items-center">
             <i class="fas fa-layer-group mr-3 text-blue-400"></i> Management Modules
         </h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <a href="{% url 'school:fees_list' %}" class="flex items-center justify-between p-6 rounded-2xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 hover:border-blue-500/50 transition-all group">
                 <div class="flex items-center">
                     <div class="w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center text-2xl text-white shadow-lg shadow-blue-900/40 mr-5">
@@ -89,10 +89,36 @@
                     </div>
                     <div>
                         <h5 class="text-white font-bold text-lg">Poultry Farm</h5>
-                        <p class="text-emerald-300/60 text-sm">Batches & Profits</p>
+                        <p class="text-emerald-300/60 text-sm">Broilers & Layers</p>
                     </div>
                 </div>
                 <i class="fas fa-chevron-right text-emerald-500 group-hover:translate-x-2 transition-transform"></i>
+            </a>
+
+            <a href="{% url 'school:piggery_list' %}" class="flex items-center justify-between p-6 rounded-2xl bg-orange-600/10 border border-orange-500/20 hover:bg-orange-600/20 hover:border-orange-500/50 transition-all group">
+                <div class="flex items-center">
+                    <div class="w-14 h-14 rounded-xl bg-orange-600 flex items-center justify-center text-2xl text-white shadow-lg shadow-orange-900/40 mr-5">
+                        <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-white font-bold text-lg">Piggery</h5>
+                        <p class="text-orange-300/60 text-sm">Swine Inventory</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-orange-500 group-hover:translate-x-2 transition-transform"></i>
+            </a>
+
+            <a href="{% url 'school:local_chicken_list' %}" class="flex items-center justify-between p-6 rounded-2xl bg-yellow-600/10 border border-yellow-500/20 hover:bg-yellow-600/20 hover:border-yellow-500/50 transition-all group">
+                <div class="flex items-center">
+                    <div class="w-14 h-14 rounded-xl bg-yellow-600 flex items-center justify-center text-2xl text-white shadow-lg shadow-yellow-900/40 mr-5">
+                        <i class="fas fa-feather-alt"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-white font-bold text-lg">Local Chicken</h5>
+                        <p class="text-yellow-300/60 text-sm">Indigenous Birds</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-yellow-500 group-hover:translate-x-2 transition-transform"></i>
             </a>
 
             <a href="{% url 'school:expense_list' %}" class="flex items-center justify-between p-6 rounded-2xl bg-rose-600/10 border border-rose-500/20 hover:bg-rose-600/20 hover:border-rose-500/50 transition-all group">
