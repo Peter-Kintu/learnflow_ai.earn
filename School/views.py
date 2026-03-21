@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-from .models import StudentFee, PoultryRecord
+from .models import StudentFee, PoultryRecord, SchoolExpense
 
 @staff_member_required
 def dashboard_view(request):
@@ -49,17 +49,30 @@ def farm_list(request):
     return render(request, 'school/farm_list.html', {'batches': batches})
 
 @staff_member_required
+def expense_list(request):
+    if request.method == "POST":
+        SchoolExpense.objects.create(
+            category=request.POST.get('category'),
+            amount=request.POST.get('amount'),
+            description=request.POST.get('description')
+        )
+        messages.success(request, "Expense logged successfully!")
+        return redirect('school:expense_list')
+
+    expenses = SchoolExpense.objects.all().order_by('-date_spent')
+    return render(request, 'school/expense_list.html', {'expenses': expenses})
+
+@staff_member_required
 def delete_record(request, model_type, pk):
     if request.method == "POST":
         pin = request.POST.get('delete_password')
         
-        # Check if the PIN is exactly 5 digits
         if pin and len(pin) == 5 and pin.isdigit():
             if model_type == 'fee':
                 record = get_object_or_404(StudentFee, pk=pk)
                 record.delete()
                 messages.success(request, "Fee record deleted.")
-            else:
+            elif model_type == 'farm':
                 record = get_object_or_404(PoultryRecord, pk=pk)
                 record.delete()
                 messages.success(request, "Farm record deleted.")

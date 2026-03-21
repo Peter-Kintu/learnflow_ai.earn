@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
     path('fees/', views.fees_list, name='fees_list'),
     path('farm/', views.farm_list, name='farm_list'),
+    path('expenses/', views.expense_list, name='expense_list'),
     path('delete/<str:model_type>/<int:pk>/', views.delete_record, name='delete_record'),
 ]
