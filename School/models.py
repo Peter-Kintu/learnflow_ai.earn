@@ -1,7 +1,24 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-class StudentFee(models.Model):
+class AcademicContext(models.Model):
+    """
+    Abstract base class to provide Term and Year tracking 
+    to Fees and Expenses without repeating code.
+    """
+    TERM_CHOICES = [
+        ('Term 1', 'Term 1'),
+        ('Term 2', 'Term 2'),
+        ('Term 3', 'Term 3'),
+    ]
+    term = models.CharField(max_length=10, choices=TERM_CHOICES, default='Term 1')
+    academic_year = models.IntegerField(default=timezone.now().year)
+
+    class Meta:
+        abstract = True
+
+class StudentFee(AcademicContext):
     student_name = models.CharField(max_length=150)
     total_fees_required = models.DecimalField(max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -29,10 +46,10 @@ class StudentFee(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.student_name} (Bal: {self.balance_remaining:,.0f})"
+        return f"{self.student_name} - {self.term} {self.academic_year} (Bal: {self.balance_remaining:,.0f})"
 
 
-class SchoolExpense(models.Model):
+class SchoolExpense(AcademicContext):
     category = models.CharField(max_length=100, help_text="e.g. Electricity, Water, Stationery")
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -42,7 +59,7 @@ class SchoolExpense(models.Model):
         ordering = ['-date_spent']
 
     def __str__(self):
-        return f"{self.category}: {self.amount}"
+        return f"{self.category}: {self.amount} ({self.term} {self.academic_year})"
 
 
 class PoultryRecord(models.Model):

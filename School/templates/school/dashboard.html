@@ -5,60 +5,72 @@
 
 {% block content %}
 <div class="p-6 lg:p-12 min-h-screen">
-    <div class="mb-10">
-        <h1 class="text-4xl font-extrabold text-white tracking-tight">
-            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-               Namatogonya Salvation School Finance Dashboard
-            </span>
-        </h1>
-        <p class="text-gray-400 mt-2 text-lg">Real-time overview of school fees and integrated farm performance.</p>
+    <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                   Namatogonya Salvation School Finance Dashboard
+                </span>
+            </h1>
+            <p class="text-gray-400 mt-2 text-lg">Real-time overview of school fees and integrated farm performance.</p>
+        </div>
+        <div class="glass px-6 py-3 rounded-2xl border border-white/10">
+            <span class="text-gray-400 text-sm uppercase tracking-widest font-bold">Academic Year</span>
+            <div class="text-white text-2xl font-black">{{ current_year }}</div>
+        </div>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        <div class="glass relative overflow-hidden group p-8 rounded-3xl border border-white/10 hover:border-blue-500/50 transition-all duration-500">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div class="glass relative overflow-hidden group p-6 rounded-3xl border border-white/10 hover:border-blue-500/50 transition-all duration-500">
             <div class="absolute -right-4 -top-4 text-blue-500/10 group-hover:text-blue-500/20 transition-colors">
-                <i class="fas fa-graduation-cap text-9xl"></i>
+                <i class="fas fa-graduation-cap text-8xl"></i>
             </div>
             <div class="relative z-10">
-                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-sm mb-2">Total Fees Collected</h3>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-bold text-white">UGX</span>
-                    <span class="text-4xl font-black text-blue-400 tracking-tighter">{{ total_fees|intcomma }}</span>
-                </div>
-                <div class="mt-4 flex items-center text-blue-400 text-sm font-semibold">
-                    <i class="fas fa-arrow-up mr-2"></i> Active Academic Year
+                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-xs mb-2">Fees ({{ current_year }})</h3>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-bold text-white">UGX</span>
+                    <span class="text-3xl font-black text-blue-400 tracking-tighter">{{ total_fees|intcomma }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="glass relative overflow-hidden group p-8 rounded-3xl border border-white/10 hover:border-emerald-500/50 transition-all duration-500">
+        <div class="glass relative overflow-hidden group p-6 rounded-3xl border border-white/10 hover:border-emerald-500/50 transition-all duration-500">
             <div class="absolute -right-4 -top-4 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors">
-                <i class="fas fa-kiwi-bird text-9xl"></i>
+                <i class="fas fa-kiwi-bird text-8xl"></i>
             </div>
             <div class="relative z-10">
-                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-sm mb-2">Total Farm Revenue</h3>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-bold text-white">UGX</span>
-                    <span class="text-4xl font-black text-emerald-400 tracking-tighter">{{ total_sales|intcomma }}</span>
-                </div>
-                <div class="mt-4 flex items-center text-emerald-400 text-sm font-semibold">
-                    <i class="fas fa-check-circle mr-2"></i> Combined Livestock Units
+                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-xs mb-2">Total Farm Revenue</h3>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-bold text-white">UGX</span>
+                    <span class="text-3xl font-black text-emerald-400 tracking-tighter">{{ total_sales|intcomma }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="glass relative overflow-hidden group p-8 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent hover:border-purple-500/50 transition-all duration-500">
+        <div class="glass relative overflow-hidden group p-6 rounded-3xl border border-white/10 hover:border-purple-500/50 transition-all duration-500">
             <div class="absolute -right-4 -top-4 text-purple-500/10 group-hover:text-purple-500/20 transition-colors">
-                <i class="fas fa-wallet text-9xl"></i>
+                <i class="fas fa-wallet text-8xl"></i>
             </div>
             <div class="relative z-10">
-                <h3 class="text-gray-100 font-bold uppercase tracking-wider text-sm mb-2">Total Cash Inflow</h3>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-bold text-white">UGX</span>
-                    <span class="text-4xl font-black text-white tracking-tighter">{{ grand_total|intcomma }}</span>
+                <h3 class="text-gray-400 font-medium uppercase tracking-wider text-xs mb-2">Total Inflow</h3>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-bold text-white">UGX</span>
+                    <span class="text-3xl font-black text-purple-400 tracking-tighter">{{ grand_total|intcomma }}</span>
                 </div>
-                <div class="mt-4 py-1 px-3 bg-white/10 rounded-full inline-block text-xs font-bold text-white uppercase tracking-widest">
-                    Combined Liquidity
+            </div>
+        </div>
+
+        <div class="glass relative overflow-hidden group p-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent hover:border-rose-500/50 transition-all duration-500">
+            <div class="absolute -right-4 -top-4 text-rose-500/10 group-hover:text-rose-500/20 transition-colors">
+                <i class="fas fa-chart-line text-8xl"></i>
+            </div>
+            <div class="relative z-10">
+                <h3 class="text-gray-100 font-bold uppercase tracking-wider text-xs mb-2">Net Position</h3>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-bold text-white">UGX</span>
+                    <span class="text-3xl font-black {% if net_position >= 0 %}text-emerald-400{% else %}text-rose-400{% endif %} tracking-tighter">
+                        {{ net_position|intcomma }}
+                    </span>
                 </div>
             </div>
         </div>
