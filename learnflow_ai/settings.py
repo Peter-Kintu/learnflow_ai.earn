@@ -22,10 +22,12 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Installed Apps
 INSTALLED_APPS = [
+
     'cloudinary_storage', # Cloudinary storage engine (Keep first to handle static/media precedence)
     'cloudinary',
     # --- ADDED: CSP ---
     'csp',
+    'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.sitemaps',
     # ------------------
