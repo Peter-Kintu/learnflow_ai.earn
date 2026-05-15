@@ -13,14 +13,32 @@
         
         body {  
             font-family: 'Inter', sans-serif;
-            background-color: #0c0d12;
-            color: #d1d5db;
+            background-color: #f8fafc;
+            color: #0f172a;
             overflow-x: hidden;
         }
         .bg-pattern {
-            background-image: radial-gradient(#1f2937 1px, transparent 1px);
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
             background-size: 20px 20px;
-            opacity: 0.2;
+            opacity: 0.3;
+        }
+        *[class*='text-gray-400'] {
+            color: #475569 !important;
+        }
+        *[class*='bg-slate-800'],
+        .card-bg {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
+        *[class*='bg-slate-800'] *,
+        .card-bg *,
+        *[class*='bg-gray-800'] * {
+            color: inherit !important;
+        }
+        *[class*='bg-gray-800'] {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
         }
         .text-gradient {
             display: inline-block;
@@ -39,8 +57,8 @@
             transform: translateY(-4px) scale(1.02);
         }
         .card-bg {
-            background-color: #111827;
-            border: 1px solid #1f2937;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
             transition: all 0.3s ease;
         }
         .card-bg:hover {
@@ -175,7 +193,7 @@
             <p class="text-gray-400 mb-8 leading-relaxed">Ask any question about a subject, get a summary of a text, or explore new educational topics with the help of our intelligent assistant.</p>
             
             <div class="space-y-6">
-                <textarea id="ai-input" rows="5" placeholder="Ask a question about Nakintu AI or a general topic..." class="w-full p-4 bg-gray-800 text-white border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <textarea id="ai-input" rows="5" placeholder="Ask a question about Nakintu AI or a general topic..." class="w-full p-4 bg-slate-100 text-slate-900 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 
                 <div class="flex flex-col sm:flex-row gap-4">
                     <button id="ask-button" class="flex-1 px-8 py-4 font-bold text-white rounded-full shadow-lg button-gradient flex items-center justify-center">
@@ -188,10 +206,10 @@
                 </div>
             </div>
             
-            <div id="ai-response-container" class="mt-8 p-6 bg-gray-800 rounded-2xl border border-gray-700 hidden">
-                <h3 class="text-xl font-bold text-white mb-4">Response:</h3>
-                <div id="ai-response-content" class="text-gray-300 leading-relaxed"></div>
-                <div id="citations" class="mt-4 text-sm text-gray-500"></div>
+            <div id="ai-response-container" class="mt-8 p-6 bg-slate-100 rounded-2xl border border-slate-300 hidden">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Response:</h3>
+                <div id="ai-response-content" class="text-slate-600 leading-relaxed"></div>
+                <div id="citations" class="mt-4 text-sm text-slate-500"></div>
             </div>
             <p id="error-message" class="mt-4 text-red-400 font-medium hidden"></p>
         </section>

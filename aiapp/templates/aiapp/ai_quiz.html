@@ -6,21 +6,48 @@
     <title>Generate AI-Powered Learning Paths</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles to set a dark background for the whole page and enable pulse for loading */
+        /* Custom styles to set a light background for the whole page */
         body {
-            background-color: #1e293b; /* slate-800 equivalent background */
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        *[class*='bg-slate-6'],
+        *[class*='bg-slate-7'],
+        *[class*='bg-slate-8'],
+        *[class*='bg-slate-9'],
+        *[class*='bg-gray-6'],
+        *[class*='bg-gray-7'],
+        *[class*='bg-gray-8'],
+        *[class*='bg-gray-9'],
+        *[class*='bg-black'],
+        *[class*='bg-dark'] {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+        }
+        *[class*='bg-slate-6'] *,
+        *[class*='bg-slate-7'] *,
+        *[class*='bg-slate-8'] *,
+        *[class*='bg-slate-9'] *,
+        *[class*='bg-gray-6'] *,
+        *[class*='bg-gray-7'] *,
+        *[class*='bg-gray-8'] *,
+        *[class*='bg-gray-9'] *,
+        *[class*='bg-black'] *,
+        *[class*='bg-dark'] *,
+        .question-block * {
+            color: inherit !important;
         }
         /* Style for the rendered Markdown (Adjusted to handle cleaner AI text) */
-        .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #a5b4fc; margin-top: 1.5rem; border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
-        .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #c7d2fe; margin-top: 1rem; }
-        .markdown-output p { margin-bottom: 0.75rem; }
+        .markdown-output h2 { font-size: 1.5rem; font-weight: bold; color: #3730a3; margin-top: 1.5rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.5rem; }
+        .markdown-output h3 { font-size: 1.25rem; font-weight: bold; color: #1f2937; margin-top: 1rem; }
+        .markdown-output p { margin-bottom: 0.75rem; color: #475569; }
         .markdown-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
         .markdown-output li { margin-bottom: 0.25rem; }
 
         /* Quiz/Lesson Modal Specific Styles */
-        .question-block { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #475569; }
-        .quiz-question { font-weight: bold; color: #f9fafb; margin-bottom: 0.75rem; }
-        .fill-in-box { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #1e293b; border: 1px solid #6366f1; color: #fff; margin-top: 0.5rem; }
+        .question-block { background-color: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; }
+        .quiz-question { font-weight: bold; color: #0f172a; margin-bottom: 0.75rem; }
+        .fill-in-box { width: 100%; padding: 0.5rem; border-radius: 0.375rem; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; margin-top: 0.5rem; }
         
         /* Rised Container Style for Clickable Steps */
         .clickable-step {
@@ -34,10 +61,10 @@
     </style>
 </head>
 <body>
-<div class="max-w-4xl mx-auto p-8 bg-slate-800 rounded-2xl shadow-lg w-full mt-10 relative">
+<div class="max-w-4xl mx-auto p-8 bg-white rounded-2xl shadow-lg w-full mt-10 relative">
 
     <div class="text-center mb-12">
-        <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Generate AI-Powered Learning Paths</h2>
+        <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Generate AI-Powered Learning Paths</h2>
         <p class="text-xl text-gray-400 max-w-2xl mx-auto">
             Create personalized courses for tech skills, digital marketing, or language learning!
             <div class="text-yellow-400 text-sm mt-2">🌍 Dynamic Content Mode Activated</div>

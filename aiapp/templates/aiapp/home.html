@@ -17,9 +17,9 @@
     }
 
     body {
-        background: linear-gradient(135deg, #101725, #0a0e16);
+        background: #f8fafc;
         font-family: 'Inter', sans-serif;
-        color: #e5e7eb;
+        color: #0f172a;
     }
 
     /* NEW: Neutral selection colors for cleaner copy/paste (Browser dependent) */
@@ -43,7 +43,7 @@
         min-height: 100vh;
         margin: 0;
         padding: 0;
-        background-color: #1f2937;
+        background-color: #f8fafc;
         border-radius: 0;
         box-shadow: none;
         border: none;
@@ -57,9 +57,9 @@
 
     /* Header styling */
     .chat-header {
-        background: linear-gradient(135deg, #2d3748, #1f2937);
+        background: linear-gradient(135deg, #ffffff, #f1f5f9);
         padding: 0.875rem 1.25rem;
-        border-bottom: 1px solid #374151;
+        border-bottom: 1px solid #e2e8f0;
         text-align: center;
         flex-shrink: 0;
     }
@@ -67,7 +67,7 @@
     .chat-header h1 {
         font-size: 1.15rem;
         font-weight: 700;
-        color: #ffffff;
+        color: #0f172a;
         letter-spacing: -0.02em;
         line-height: 1.2;
         margin: 0;
@@ -96,7 +96,7 @@
         overflow-y: auto;
         overflow-x: hidden;
         padding: 2rem 1rem 1.5rem 1rem;
-        background: linear-gradient(to bottom, rgba(31, 41, 55, 0.4) 0%, transparent 20%);
+        background: linear-gradient(to bottom, rgba(248, 250, 252, 0.9) 0%, transparent 20%);
         border: none;
         border-radius: 0;
         transition: all 0.3s ease-in-out;
@@ -159,10 +159,10 @@
     .chat-message.ai { 
         justify-content: flex-start; 
         align-self: flex-start; 
-        background-color: #111827; 
-        color: #e5e7eb; 
+        background-color: #e5e7eb; 
+        color: #0f172a; 
         border-left: 3px solid #6366f1; 
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); 
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); 
         max-width: 92%;
         flex-direction: column;
     }
@@ -182,8 +182,8 @@
     
     /* NEW: Code Block Styling (Addresses Clean Code Formatting) */
     .chat-message pre {
-        background-color: #0a0e16; 
-        color: #e5e7eb; 
+        background-color: #f1f5f9; 
+        color: #0f172a; 
         padding: 1rem;
         border-radius: 0.5rem;
         overflow-x: auto; 
@@ -208,13 +208,13 @@
         flex-direction: column;
         gap: 0.75rem;
         padding: 1.25rem 1.25rem 1.5rem 1.25rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(31, 41, 55, 0.7) 0%, rgba(31, 41, 55, 0.95) 100%);
+        border-top: 1px solid rgba(203, 213, 225, 1);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 1) 100%);
         backdrop-filter: blur(10px);
         flex-shrink: 0;
         max-height: none;
         overflow-y: visible;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
     }
 
     .chat-input-area h2 {
@@ -243,21 +243,21 @@
         align-items: flex-end; 
         width: 100%;
         max-width: 100%;
-        background-color: #0f1419; 
+        background-color: #ffffff; 
         border-radius: 0.75rem; 
-        border: 1.5px solid #374151;
+        border: 1.5px solid #cbd5e1;
         padding: 0.5rem 0.5rem; 
         transition: all 0.3s ease; 
         box-sizing: border-box;
         gap: 0.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
     }
     
     /* Premium focus state */
     .integrated-input-container:focus-within {
         border-color: #6366f1;
-        box-shadow: 0 4px 25px rgba(99, 102, 241, 0.25), inset 0 1px 3px rgba(99, 102, 241, 0.1);
-        background-color: #111827;
+        box-shadow: 0 4px 25px rgba(99, 102, 241, 0.15), inset 0 1px 3px rgba(99, 102, 241, 0.08);
+        background-color: #ffffff;
     }
 
     /* Premium chat input styling - Simple dark blue */
@@ -268,8 +268,8 @@
         padding: 1rem 1.25rem; 
         border-radius: 0.5rem;
         border: none;
-        background-color: #07080e;
-        color: #ffffff;
+        background-color: #f1f5f9;
+        color: #0f172a;
         font-size: 1rem;
         font-weight: 600;
         display: block;
@@ -292,7 +292,7 @@
     
     #chatInput:focus {
         outline: none;
-        background-color: #2563eb;
+        background-color: #ffffff;
     }
 
     /* Premium icon buttons */
@@ -499,12 +499,8 @@
             min-height: 3rem;
             max-height: 8rem;
             padding: 1rem 1.25rem;
-            background-color: #1e40af;
-            color: #ffffff;
-            border: none;
-        }
-
-        .action-icon-button {
+            background-color: #ebf2ff;
+            color: #0f172a;
             width: 3rem;
             height: 3rem;
             font-size: 1.2rem;
@@ -514,7 +510,7 @@
     @media (min-width: 768px) {
         .chat-header {
             padding: 1.5rem 2rem;
-            background: linear-gradient(135deg, #2d3748, #1f2937);
+            background: linear-gradient(135deg, #ffffff, #f1f5f9);
         }
 
         .chat-header h1 {
@@ -551,8 +547,8 @@
             max-height: 10rem;
             font-size: 1rem;
             padding: 1rem 1.25rem;
-            background-color: #1e40af;
-            color: #ffffff;
+            background-color: #ebf2ff;
+            color: #0f172a;
             border: none;
         }
 

@@ -93,7 +93,7 @@
             width: 80%; /* Takes up 80% of the screen width */
             max-width: 320px; /* Cap the width for large screens/desktop */
             height: 100%;
-            background-color: #1e293b; /* slate-800 - The drawer's main background */
+            background-color: #ffffff; /* light drawer background */
             /* Start off-screen to the LEFT, using a professional transition curve */
             transform: translateX(-100%); 
             transition: transform 0.4s cubic-bezier(0.8, 0, 0.2, 1);
@@ -114,6 +114,80 @@
         /* The menu button is now ALWAYS visible on all screens */
         @media (min-width: 768px) {
             /* Remove all old desktop nav overrides */
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        html, body {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        body {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        *[class*='bg-slate-6'],
+        *[class*='bg-slate-7'],
+        *[class*='bg-slate-8'],
+        *[class*='bg-slate-9'],
+        *[class*='bg-slate-95'],
+        *[class*='bg-gray-6'],
+        *[class*='bg-gray-7'],
+        *[class*='bg-gray-8'],
+        *[class*='bg-gray-9'],
+        *[class*='bg-black'],
+        *[class*='bg-dark'],
+        .bg-primary-bg,
+        .bg-secondary-bg,
+        .bg-card-bg,
+        .glass-card,
+        .glass-nav,
+        .modal-overlay,
+        .overlay,
+        #mobile-menu,
+        #mobile-menu-content {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+            background-image: none !important;
+        }
+        *[class*='bg-slate-6'] *,
+        *[class*='bg-slate-7'] *,
+        *[class*='bg-slate-8'] *,
+        *[class*='bg-slate-9'] *,
+        *[class*='bg-slate-95'] *,
+        *[class*='bg-gray-6'] *,
+        *[class*='bg-gray-7'] *,
+        *[class*='bg-gray-8'] *,
+        *[class*='bg-gray-9'] *,
+        *[class*='bg-black'] *,
+        *[class*='bg-dark'] * {
+            color: inherit !important;
+        }
+        *[class*='text-gray-200'],
+        *[class*='text-gray-300'],
+        *[class*='text-gray-400'],
+        *[class*='text-slate-200'],
+        *[class*='text-slate-300'],
+        *[class*='text-slate-400'],
+        .text-text-light {
+            color: #334155 !important;
+        }
+        *[class*='border-slate-6'],
+        *[class*='border-slate-7'],
+        *[class*='border-slate-8'],
+        *[class*='border-slate-9'],
+        *[class*='border-gray-6'],
+        *[class*='border-gray-7'],
+        *[class*='border-gray-8'],
+        *[class*='border-gray-9'],
+        .border-card-bg,
+        .border-secondary-bg {
+            border-color: #cbd5e1 !important;
         }
     </style>
 </head>

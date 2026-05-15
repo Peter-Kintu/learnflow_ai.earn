@@ -48,8 +48,8 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0d12;
-            color: #d1d5db;
+            background-color: #f8fafc;
+            color: #0f172a;
             overflow-x: hidden;
         }
 
@@ -60,34 +60,36 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: radial-gradient(#1f2937 1px, transparent 1px);
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
             background-size: 20px 20px;
-            opacity: 0.2;
+            opacity: 0.12;
             z-index: -3;
         }
 
         .bg-slideshow {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -2;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background-color: #f8fafc;
         }
 
         .bg-slideshow > div {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        opacity: 0;
-        animation: imageAnimation 25s linear infinite 0s; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: imageAnimation 25s linear infinite 0s; 
+            background-blend-mode: lighten;
+            filter: brightness(1.1) saturate(0.45);
         }
 
-        /* NOTE: These images rely on your Django static configuration */
         .bg-slideshow .slide-1 { background-image: url('{% static "images/image1.png" %}'); }
         .bg-slideshow .slide-2 { background-image: url('{% static "images/image2.png" %}'); animation-delay: 5s; }
         .bg-slideshow .slide-3 { background-image: url('{% static "images/image5.png" %}'); animation-delay: 10s; }
@@ -95,11 +97,11 @@
         .bg-slideshow .slide-5 { background-image: url('{% static "images/image7.png" %}'); animation-delay: 20s; }
 
         @keyframes imageAnimation {
-        0% { opacity: 0; animation-timing-function: ease-in; }
-        1% { opacity: 0.25; transform: scale(1.05); } 
-        19% { opacity: 0.25; transform: scale(1.00); } 
-        20% { opacity: 0; animation-timing-function: ease-out; } 
-        100% { opacity: 0; }
+            0% { opacity: 0; animation-timing-function: ease-in; }
+            1% { opacity: 0.25; transform: scale(1.05); } 
+            19% { opacity: 0.25; transform: scale(1.00); } 
+            20% { opacity: 0; animation-timing-function: ease-out; } 
+            100% { opacity: 0; }
         }
 
         .overlay {
@@ -108,25 +110,55 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.75); 
+            background-color: rgba(248, 250, 252, 0.95);
             z-index: -1;
         }
 
         /* Glassmorphism for Modal and Chat */
         .glass-card {
-            background-color: rgba(30, 41, 59, 0.85); /* Slate-800 with transparency */
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            color: #0f172a;
         }
-        
+
         /* Utility for Gradient Text (FIXED: Removed non-standard 'text-fill-color') */
         .text-gradient {
             background-image: linear-gradient(to right, var(--secondary-color), var(--primary-color), var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        /* Dark utility class overrides */
+        *[class*='bg-slate-'],
+        *[class*='bg-black'],
+        *[class*='bg-gray-9'],
+        *[class*='bg-gray-8'],
+        *[class*='bg-gray-7'],
+        *[class*='bg-gray-6'] {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            border-color: rgba(148, 163, 184, 0.35) !important;
+        }
+
+        .text-gray-200,
+        .text-gray-300,
+        .text-gray-400,
+        .text-gray-500,
+        .text-slate-200,
+        .text-slate-300,
+        .text-slate-400 {
+            color: #475569 !important;
+        }
+
+        .border-slate-700,
+        .border-slate-600,
+        .border-slate-800,
+        .border-black {
+            border-color: rgba(148, 163, 184, 0.35) !important;
         }
 
         /* Modal Styling (Hidden by default) */
@@ -136,7 +168,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(255, 255, 255, 0.85);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -167,11 +199,11 @@
     <header class="sticky top-0 z-30 w-full glass-card border-b border-white/10 p-4">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
         <div class="text-3xl font-extrabold tracking-tight">
-            <span class="text-white">Nakintu</span><span class="text-gradient"> AI</span>
+            <span class="text-slate-900">Nakintu</span><span class="text-gradient"> AI</span>
         </div>
         <nav class="space-x-4">
-            <a href="#hero" class="text-gray-300 hover:text-white transition duration-200 hidden sm:inline">Home</a>
-            <a href="#features" class="text-gray-300 hover:text-white transition duration-200 hidden sm:inline">Features</a>
+            <a href="#hero" class="text-slate-600 hover:text-slate-900 transition duration-200 hidden sm:inline">Home</a>
+            <a href="#features" class="text-slate-600 hover:text-slate-900 transition duration-200 hidden sm:inline">Features</a>
             <button id="login-toggle" 
                     class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-full shadow-lg hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105">
             Sign In
@@ -200,34 +232,34 @@
         </section>
 
         <section id="features" class="py-16">
-        <h2 class="text-4xl font-bold text-center mb-16 text-white">Why Choose Nakintu AI?</h2>
+        <h2 class="text-4xl font-bold text-center mb-16 text-slate-900">Why Choose Nakintu AI?</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
             
             <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
                 <div class="text-4xl mb-4 text-indigo-400">🌍</div>
-                <h3 class="text-xl font-semibold text-white mb-3">Built for the World</h3>
-                <p class="text-gray-400">Born in Africa, our platform ensures stable, affordable access for underserved regions. It is **truly multilingual**, allowing students to learn in their native tongue for maximum comprehension, overcoming geographical barriers.</p>
+                <h3 class="text-xl font-semibold text-slate-900 mb-3">Built for the World</h3>
+                <p class="text-slate-600">Born in Africa, our platform ensures stable, affordable access for underserved regions. It is **truly multilingual**, allowing students to learn in their native tongue for maximum comprehension, overcoming geographical barriers.</p>
             </div>
 
             <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
                 <div class="text-4xl mb-4 text-pink-400">💡</div>
-                <h3 class="text-xl font-semibold text-white mb-3">Personalized Learning Paths</h3>
-                <p class="text-gray-400">Our AI generates adaptive learning pathways, providing detailed content, integrated videos, and follow-up questions. This content is **multilingually generated** and tailored to specific curricula and the student's native language.</p>
+                <h3 class="text-xl font-semibold text-slate-900 mb-3">Personalized Learning Paths</h3>
+                <p class="text-slate-600">Our AI generates adaptive learning pathways, providing detailed content, integrated videos, and follow-up questions. This content is **multilingually generated** and tailored to specific curricula and the student's native language.</p>
             </div>
 
             <div class="glass-card p-6 rounded-xl transition hover:shadow-primary hover:scale-[1.02] duration-300">
                 <div class="text-4xl mb-4 text-yellow-400">📚</div>
-                <h3 class="text-xl font-semibold text-white mb-3">Dynamic Quizzing & Commerce</h3>
-                <p class="text-gray-400">Teachers can instantly generate and embed quizzes from any video or document, with **all materials and summaries supporting all major languages**. The platform also features a secure marketplace to buy and sell eBooks.</p>
+                <h3 class="text-xl font-semibold text-slate-900 mb-3">Dynamic Quizzing & Commerce</h3>
+                <p class="text-slate-600">Teachers can instantly generate and embed quizzes from any video or document, with **all materials and summaries supporting all major languages**. The platform also features a secure marketplace to buy and sell eBooks.</p>
             </div>
         </div>
         </section>
 
         <section id="chatbot-card" class="py-16">
-            <h2 class="text-4xl font-bold text-center mb-8 text-white">Your Universal Study Assistant</h2>
+            <h2 class="text-4xl font-bold text-center mb-8 text-slate-900">Your Universal Study Assistant</h2>
             <div class="max-w-4xl mx-auto glass-card p-6 sm:p-10 rounded-2xl">
                 
-                <p class="text-gray-400 mb-6 text-center">Ask our AI any question about learning, history, science, or how LearnFlow works. It understands all languages!</p>
+                <p class="text-slate-600 mb-6 text-center">Ask our AI any question about learning, history, science, or how LearnFlow works. It understands all languages!</p>
                 
                 <div class="mb-6">
                     <label for="user-prompt" class="block text-sm font-medium text-gray-200 mb-2">What would you like to know?</label>
@@ -248,14 +280,13 @@
                 </div>
 
                 <div id="response-container" class="mt-8 hidden p-5 bg-slate-900 rounded-lg border border-slate-700">
-                    <h3 class="text-xl font-bold mb-3 text-white">AI Response</h3>
-                    <div id="ai-response" class="text-gray-300 leading-relaxed whitespace-pre-wrap"></div>
-                    <div id="citations" class="mt-4 pt-3 border-t border-slate-700 text-sm text-gray-500 hidden">
-                        <p class="font-semibold text-gray-400">Sources:</p>
+                    <h3 class="text-xl font-bold mb-3 text-slate-900">AI Response</h3>
+                    <div id="ai-response" class="text-slate-600 leading-relaxed whitespace-pre-wrap"></div>
+                    <div id="citations" class="mt-4 pt-3 border-t border-slate-700 text-sm text-slate-500 hidden">
+                        <p class="font-semibold text-slate-600">Sources:</p>
                     </div>
                 </div>
 
-            </div>
         </section>
     </main>
 
@@ -265,8 +296,8 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
-            <h2 class="text-3xl font-bold text-white text-center mb-2">Welcome Back, Trailblazer</h2>
-            <p class="text-center text-gray-400 mb-8">Your journey of impact continues here</p>
+            <h2 class="text-3xl font-bold text-slate-900 text-center mb-2">Welcome Back, Trailblazer</h2>
+            <p class="text-center text-slate-600 mb-8">Your journey of impact continues here</p>
 
             {% if messages %}
                 <div class="mb-4">
