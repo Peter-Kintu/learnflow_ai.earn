@@ -26,7 +26,7 @@
                 <option value="Term 2" {% if selected_term == "Term 2" %}selected{% endif %}>Term 2</option>
                 <option value="Term 3" {% if selected_term == "Term 3" %}selected{% endif %}>Term 3</option>
             </select>
-            <input type="number" name="year" value="{{ selected_year }}" class="w-24 bg-black/40 border border-white/10 text-white p-2 rounded-xl text-sm outline-none focus:border-blue-500">
+            <input type="number" name="year" value="{{ selected_year }}" class="w-24 bg-gray-50 border border-gray-200 text-gray-800 p-2 rounded-xl text-sm outline-none focus:border-blue-500">
             <button type="submit" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold transition">
                 Switch Period
             </button>
@@ -47,9 +47,9 @@
             <input type="hidden" name="term" value="{{ selected_term }}">
             <input type="hidden" name="academic_year" value="{{ selected_year }}">
             
-            <input type="text" name="student_name" placeholder="Student Name" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
-            <input type="number" name="total_fees_required" placeholder="Required (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500" required>
-            <input type="number" name="amount_paid" placeholder="Paid (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500">
+            <input type="text" name="student_name" placeholder="Student Name" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 outline-none focus:border-blue-500" required>
+            <input type="number" name="total_fees_required" placeholder="Required (UGX)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 outline-none focus:border-blue-500" required>
+            <input type="number" name="amount_paid" placeholder="Paid (UGX)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 outline-none focus:border-blue-500">
             <button name="save_record" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-900/20">Save Student</button>
         </form>
     </div>

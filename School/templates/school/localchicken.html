@@ -11,10 +11,10 @@
     <div class="glass p-6 mb-8 rounded-2xl border border-yellow-500/20">
         <form method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             {% csrf_token %}
-            <input type="text" name="batch_name" placeholder="Batch Name" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white" required>
-            <input type="number" name="number_of_birds" placeholder="Bird Qty" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white" required>
-            <input type="number" name="purchase_cost" placeholder="Purchase (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white" required>
-            <input type="number" name="total_sales_revenue" placeholder="Sales (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white">
+                <input type="text" name="batch_name" placeholder="Batch Name" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900" required>
+                <input type="number" name="number_of_birds" placeholder="Bird Qty" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900" required>
+                <input type="number" name="purchase_cost" placeholder="Purchase (UGX)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900" required>
+                <input type="number" name="total_sales_revenue" placeholder="Sales (UGX)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900">
             <button name="save_record" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 rounded-xl">Save Batch</button>
         </form>
     </div>

@@ -19,7 +19,7 @@ class QuizForm(forms.ModelForm):
         label="Quiz Title",
         max_length=255,
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+            'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
             'placeholder': 'e.g., Introduction to Python',
             'required': 'true'
         })
@@ -28,7 +28,7 @@ class QuizForm(forms.ModelForm):
     description = forms.CharField(
         label="Description",
         widget=forms.Textarea(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+            'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
             'rows': 3,
             'placeholder': 'e.g., This quiz covers the basics of Python syntax and core concepts.',
             'required': 'true'
@@ -40,7 +40,7 @@ class QuizForm(forms.ModelForm):
         label="Teacher's Access Code (5 Digits)",
         max_length=5,
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+            'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
             'placeholder': 'Enter the 5-digit code',
             'required': 'true'
         })

@@ -15,7 +15,7 @@ class VideoForm(forms.ModelForm):
         required=True,
         label="Upload Access Code",
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+            'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
             'placeholder': 'Enter your upload access code'
         })
     )
@@ -26,20 +26,20 @@ class VideoForm(forms.ModelForm):
 
         widgets = {
             'title': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Enter video title'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Provide a brief description',
                 'rows': 4
             }),
             'url': forms.URLInput(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
+                'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500',
                 'placeholder': 'Enter the YouTube video embed URL'
             }),
             'quizzes': forms.SelectMultiple(attrs={
-                'class': 'w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-md text-gray-200 focus:outline-none focus:border-indigo-500'
+                'class': 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:border-indigo-500'
             })
         }
 

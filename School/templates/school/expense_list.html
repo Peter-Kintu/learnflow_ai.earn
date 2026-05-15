@@ -5,33 +5,33 @@
 <div class="p-6 lg:p-12">
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">💸 School Expenses</h1>
-            <p class="text-gray-400 text-sm mt-1">Tracking outgoing cash flow for {{ selected_term }} {{ selected_year }}</p>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">💸 School Expenses</h1>
+            <p class="text-gray-600 text-sm mt-1">Tracking outgoing cash flow for {{ selected_term }} {{ selected_year }}</p>
         </div>
-        <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-rose-400 hover:bg-rose-500/10 transition">Dashboard</a>
+        <a href="{% url 'school:dashboard' %}" class="glass px-4 py-2 rounded-lg text-rose-600 hover:bg-rose-100 transition">Dashboard</a>
     </div>
 
-    <div class="glass p-4 mb-6 rounded-2xl border border-white/5 flex flex-wrap gap-4 items-center justify-between">
+    <div class="glass p-4 mb-6 rounded-2xl border border-gray-100 flex flex-wrap gap-4 items-center justify-between">
         <form method="GET" class="flex flex-wrap gap-3 items-center">
-            <select name="term" class="bg-black/40 border border-white/10 text-white p-2 rounded-xl text-sm outline-none focus:border-rose-500">
+            <select name="term" class="bg-gray-50 border border-gray-200 text-gray-700 p-2 rounded-xl text-sm outline-none focus:border-rose-500">
                 <option value="Term 1" {% if selected_term == "Term 1" %}selected{% endif %}>Term 1</option>
                 <option value="Term 2" {% if selected_term == "Term 2" %}selected{% endif %}>Term 2</option>
                 <option value="Term 3" {% if selected_term == "Term 3" %}selected{% endif %}>Term 3</option>
             </select>
-            <input type="number" name="year" value="{{ selected_year }}" class="w-24 bg-black/40 border border-white/10 text-white p-2 rounded-xl text-sm outline-none focus:border-rose-500">
-            <button type="submit" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold transition">
+            <input type="number" name="year" value="{{ selected_year }}" class="w-24 bg-gray-50 border border-gray-200 text-gray-800 p-2 rounded-xl text-sm outline-none focus:border-rose-500">
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm font-bold transition">
                 Filter View
             </button>
         </form>
 
-        <div class="px-6 py-2 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
-            <span class="text-rose-300 text-xs uppercase font-bold tracking-widest block">Total for Period</span>
-            <span class="text-white font-black text-xl">UGX {{ term_expense_total|intcomma }}</span>
+        <div class="px-6 py-2 bg-rose-50 border border-rose-100 rounded-2xl">
+            <span class="text-rose-600 text-xs uppercase font-bold tracking-widest block">Total for Period</span>
+            <span class="text-gray-900 font-black text-xl">UGX {{ term_expense_total|intcomma }}</span>
         </div>
     </div>
 
-    <div class="glass p-6 mb-8 rounded-2xl border border-rose-500/20">
-        <h2 class="text-white font-bold mb-4 flex items-center gap-2">
+    <div class="glass p-6 mb-8 rounded-2xl border border-rose-100">
+        <h2 class="text-gray-900 font-bold mb-4 flex items-center gap-2">
             <i class="fas fa-plus-circle text-rose-500"></i> Log New Expense
         </h2>
         <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -39,9 +39,9 @@
             <input type="hidden" name="term" value="{{ selected_term }}">
             <input type="hidden" name="academic_year" value="{{ selected_year }}">
             
-            <input type="text" name="category" placeholder="Category (e.g. Water)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-rose-500" required>
-            <input type="number" name="amount" placeholder="Amount (UGX)" class="bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-rose-500" required>
-            <input type="text" name="description" placeholder="Notes..." class="bg-white/5 border border-white/10 p-3 rounded-xl text-white col-span-1 md:col-span-2 outline-none focus:border-rose-500">
+            <input type="text" name="category" placeholder="Category (e.g. Water)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 outline-none focus:border-rose-500" required>
+            <input type="number" name="amount" placeholder="Amount (UGX)" class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 outline-none focus:border-rose-500" required>
+            <input type="text" name="description" placeholder="Notes..." class="bg-white border border-gray-200 p-3 rounded-xl text-gray-900 col-span-1 md:col-span-2 outline-none focus:border-rose-500">
             
             <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-rose-900/20 col-span-1 md:col-span-4 lg:col-span-1">
                 LOG EXPENSE
@@ -52,7 +52,7 @@
     <div class="glass rounded-2xl overflow-hidden border border-white/10">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
-                <thead class="bg-white/5 text-gray-400">
+                <thead class="bg-gray-50 text-gray-600">
                     <tr>
                         <th class="p-5 text-sm font-bold uppercase tracking-wider">Date</th>
                         <th class="p-5 text-sm font-bold uppercase tracking-wider">Category</th>
@@ -60,13 +60,13 @@
                         <th class="p-5 text-sm font-bold uppercase tracking-wider text-right">Amount (UGX)</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-200">
+                <tbody class="text-gray-800">
                     {% for e in expenses %}
-                    <tr class="border-t border-white/5 hover:bg-white/5 transition">
+                    <tr class="border-t border-gray-100 hover:bg-gray-50 transition">
                         <td class="p-5 text-sm text-gray-500">{{ e.date_spent|date:"M d, Y" }}</td>
                         <td class="p-5 font-bold">{{ e.category }}</td>
-                        <td class="p-5 text-sm text-gray-400 italic">{{ e.description|default:"---" }}</td>
-                        <td class="p-5 text-right text-rose-400 font-bold">{{ e.amount|intcomma }}</td>
+                        <td class="p-5 text-sm text-gray-600 italic">{{ e.description|default:"---" }}</td>
+                        <td class="p-5 text-right text-rose-600 font-bold">{{ e.amount|intcomma }}</td>
                     </tr>
                     {% empty %}
                     <tr>
