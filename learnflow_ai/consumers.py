@@ -57,6 +57,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 )
             ]
         )
+        self.has_sent_speaking_state = False
 
         self.live_session_task = asyncio.create_task(self.stream_with_gemini())
 
@@ -73,6 +74,10 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                         if model_turn is not None:
                             for part in model_turn.parts:
                                 if getattr(part, 'inline_data', None) is not None:
+                                    if not self.has_sent_speaking_state:
+                                        await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'speaking'}))
+                                        self.has_sent_speaking_state = True
+
                                     encoded_audio = base64.b64encode(part.inline_data.data).decode('ascii')
                                     await self.send(text_data=json.dumps({
                                         'type': 'audio_chunk',
