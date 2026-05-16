@@ -123,7 +123,6 @@
 </div>
 
 <script>
-    // Map your existing client state variables to this new crisp layout
     const D = {
         statusDot: document.getElementById('status-dot'),
         statusText: document.getElementById('status-text'),
@@ -133,57 +132,145 @@
         micIcon: document.getElementById('mic-icon'),
         workspace: document.getElementById('demonstration-workspace'),
         emptyState: document.getElementById('workspace-empty-state'),
-        cardCounter: document.getElementById('card-counter')
+        cardCounter: document.getElementById('card-counter'),
+        audioWave: document.getElementById('audio-wave')
     };
 
+    let socket = null;
+    let audioContext = null;
+    let analyserNode = null;
+    let dataArray = null;
+    let micStream = null;
+    let audioProcessor = null;
+    let isSessionActive = false;
+    let animationFrameId = null;
+    let wavePhase = 0;
     let totalCardsRendered = 0;
+    let speaking = false;
 
-    // Helper Function to cleanly alter state UI styles matching your consumer states
+    const ctx = D.audioWave.getContext('2d');
+
+    function initCanvasSize() {
+        const rect = D.audioWave.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        D.audioWave.width = rect.width * dpr;
+        D.audioWave.height = rect.height * dpr;
+        D.audioWave.style.width = `${rect.width}px`;
+        D.audioWave.style.height = `${rect.height}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', initCanvasSize);
+    initCanvasSize();
+
     function setButtonState(state) {
+        if (state === 'connecting') {
+            D.statusDot.className = 'h-2 w-2 rounded-full bg-sky-400 animate-pulse';
+            D.statusText.innerText = 'Connecting';
+            D.statusText.classList.remove('text-violet-400', 'text-emerald-400', 'text-text-secondary');
+            D.statusText.classList.add('text-sky-400');
+            D.micBtn.className = 'h-20 w-20 bg-brand-surface border border-sky-500/20 rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-sky-400/50 group';
+            D.micIcon.className = 'fas fa-circle-notch text-sky-400 fa-spin';
+            D.badgeMode.innerText = 'CONNECTING';
+            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-md text-sky-400';
+            D.promptText.innerText = 'Establishing your live learning channel...';
+            return;
+        }
         if (state === 'ready') {
-            D.statusDot.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
-            D.statusText.innerText = "Connected";
+            D.statusDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse';
+            D.statusText.innerText = 'Connected';
             D.statusText.classList.remove('text-text-secondary');
             D.statusText.classList.add('text-emerald-400');
-            
-            D.micBtn.className = "h-20 w-20 bg-accent-cyan rounded-full flex items-center justify-center text-brand-dark text-2xl transition-all duration-300 hover:scale-105 active:scale-95 glow-pulse";
-            D.micIcon.className = "fas fa-stop text-brand-dark";
-            D.badgeMode.innerText = "LISTENING";
-            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md text-emerald-400";
-            D.promptText.innerText = "Go ahead, ask your academic question aloud...";
+            D.micBtn.className = 'h-20 w-20 bg-accent-cyan rounded-full flex items-center justify-center text-brand-dark text-2xl transition-all duration-300 hover:scale-105 active:scale-95 glow-pulse';
+            D.micIcon.className = 'fas fa-stop text-brand-dark';
+            D.badgeMode.innerText = 'LISTENING';
+            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md text-emerald-400';
+            D.promptText.innerText = 'Go ahead, ask your academic question aloud...';
         } else if (state === 'thinking') {
-            D.badgeMode.innerText = "THINKING";
-            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-md text-purple-400";
-            D.promptText.innerText = "Nakintu is formulating your analytical breakthrough...";
+            D.statusDot.className = 'h-2 w-2 rounded-full bg-violet-500 animate-pulse';
+            D.statusText.innerText = 'Thinking';
+            D.statusText.classList.remove('text-emerald-400');
+            D.statusText.classList.add('text-violet-400');
+            D.badgeMode.innerText = 'THINKING';
+            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-md text-purple-400';
+            D.promptText.innerText = 'Nakintu is formulating your analytical breakthrough...';
+        } else if (state === 'speaking') {
+            D.statusDot.className = 'h-2 w-2 rounded-full bg-accent-cyan animate-pulse';
+            D.statusText.innerText = 'Speaking';
+            D.statusText.classList.remove('text-violet-400', 'text-emerald-400', 'text-text-secondary');
+            D.statusText.classList.add('text-accent-cyan');
+            D.badgeMode.innerText = 'SPEAKING';
+            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-accent-cyan/10 border border-accent-cyan/20 px-2.5 py-1 rounded-md text-accent-cyan';
+            D.promptText.innerText = 'Nakintu AI is speaking back to you...';
         } else {
-            // Disconnected / Idle State
-            D.statusDot.className = "h-2 w-2 rounded-full bg-gray-500";
-            D.statusText.innerText = "Disconnected";
-            D.statusText.className = "text-xs font-medium text-text-secondary tracking-wide uppercase";
-            
-            D.micBtn.className = "h-20 w-20 bg-brand-surface border border-brand-surface rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-accent-cyan/50 group";
-            D.micIcon.className = "fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors";
-            D.badgeMode.innerText = "IDLE";
-            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary";
-            D.promptText.innerText = "Tap the mic to open a live audio learning channel.";
+            D.statusDot.className = 'h-2 w-2 rounded-full bg-gray-500';
+            D.statusText.innerText = 'Disconnected';
+            D.statusText.className = 'text-xs font-medium text-text-secondary tracking-wide uppercase';
+            D.micBtn.className = 'h-20 w-20 bg-brand-surface border border-brand-surface rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-accent-cyan/50 group';
+            D.micIcon.className = 'fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors';
+            D.badgeMode.innerText = 'IDLE';
+            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary';
+            D.promptText.innerText = 'Tap the mic to open a live audio learning channel.';
         }
     }
 
-    // Intercept tool card generation to remove onboarding empty state smoothly
+    function float32ToInt16(buffer) {
+        const len = buffer.length;
+        const int16 = new Int16Array(len);
+        for (let i = 0; i < len; i++) {
+            let s = Math.max(-1, Math.min(1, buffer[i]));
+            int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        return int16;
+    }
+
+    function createAudioBufferFromPCM(rawBuffer) {
+        const int16 = new Int16Array(rawBuffer);
+        const float32 = new Float32Array(int16.length);
+        for (let i = 0; i < int16.length; i++) {
+            float32[i] = Math.max(-1, Math.min(1, int16[i] / 0x7fff));
+        }
+        const audioBuffer = audioContext.createBuffer(1, float32.length, 16000);
+        audioBuffer.copyToChannel(float32, 0, 0);
+        return audioBuffer;
+    }
+
+    function cleanupLiveSession() {
+        if (audioProcessor) {
+            audioProcessor.disconnect();
+            audioProcessor.onaudioprocess = null;
+            audioProcessor = null;
+        }
+        if (micStream) {
+            micStream.getTracks().forEach((track) => track.stop());
+            micStream = null;
+        }
+        if (socket) {
+            try { socket.close(); } catch (err) { console.warn(err); }
+            socket = null;
+        }
+        if (audioContext && audioContext.state !== 'closed') {
+            audioContext.close().catch(() => {});
+        }
+        audioContext = null;
+        analyserNode = null;
+        dataArray = null;
+        isSessionActive = false;
+        speaking = false;
+    }
+
     function appendDemonstrationCard(args) {
         if (D.emptyState) {
             D.emptyState.remove();
             D.emptyState = null;
         }
-        
-        const icon = args.type === 'code' ? 'fa-code' : 'fa-lightbulb';
-        const accentClass = args.type === 'code' ? 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/20' : 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-        
+        const cardType = (args.card_type || args.type || 'concept').toLowerCase();
+        const icon = cardType === 'code' ? 'fa-code' : 'fa-lightbulb';
+        const accentClass = cardType === 'code' ? 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/20' : 'text-amber-400 bg-amber-400/10 border-amber-400/20';
         const rawMarkdown = marked.parse(args.content_markdown || '');
         const cleanHTML = DOMPurify.sanitize(rawMarkdown);
-        
         const cardMarkup = `
-            <div class="w-full bg-brand-surface/40 border border-brand-surface rounded-2xl p-5 text-text-primary shadow-sm hover:border-brand-surface/80 transition-all duration-200 animate-fadeIn">
+            <div class="w-full bg-brand-surface/40 border border-brand-surface rounded-2xl p-5 text-text-primary shadow-sm hover:border-brand-surface/80 transition-all duration-200">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="inline-flex h-10 w-10 items-center justify-center rounded-xl border ${accentClass} text-sm">
                         <i class="fas ${icon}"></i>
@@ -196,12 +283,167 @@
                 <div class="prose prose-invert max-w-none text-xs text-text-secondary leading-relaxed space-y-2">${cleanHTML}</div>
             </div>
         `;
-        
         D.workspace.insertAdjacentHTML('beforeend', cardMarkup);
         totalCardsRendered++;
         D.cardCounter.innerText = `${totalCardsRendered} Card${totalCardsRendered !== 1 ? 's' : ''}`;
-        
         D.workspace.scrollTop = D.workspace.scrollHeight;
     }
+
+    function drawWave() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        const width = D.audioWave.width / (window.devicePixelRatio || 1);
+        const height = D.audioWave.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, width, height);
+        if (!isSessionActive) {
+            return;
+        }
+        animationFrameId = requestAnimationFrame(drawWave);
+        let amplitude = 10;
+        let frequency = 0.02;
+        let color = '#00DDEB';
+        if (speaking) {
+            amplitude = 18;
+            frequency = 0.03;
+            color = '#4ADE80';
+        } else if (D.badgeMode.innerText === 'THINKING') {
+            amplitude = 14;
+            frequency = 0.05;
+            color = '#7C3AED';
+        }
+        wavePhase += 0.04;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 10) {
+            const y = height / 2 + Math.sin((x * frequency) + wavePhase) * amplitude;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    async function startLiveSession() {
+        if (isSessionActive) {
+            return;
+        }
+        setButtonState('connecting');
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            analyserNode = audioContext.createAnalyser();
+            analyserNode.fftSize = 256;
+            dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
+            socket.binaryType = 'arraybuffer';
+            socket.onopen = async () => {
+                isSessionActive = true;
+                setButtonState('ready');
+                drawWave();
+                try {
+                    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                } catch (err) {
+                    console.error(err);
+                    alert('Microphone permission denied. Please allow access and try again.');
+                    disconnectSession();
+                    return;
+                }
+                const source = audioContext.createMediaStreamSource(micStream);
+                audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                source.connect(audioProcessor);
+                audioProcessor.connect(audioContext.destination);
+                audioProcessor.onaudioprocess = (event) => {
+                    if (!socket || socket.readyState !== WebSocket.OPEN || D.badgeMode.innerText !== 'LISTENING') return;
+                    const inputData = event.inputBuffer.getChannelData(0);
+                    const int16 = float32ToInt16(inputData);
+                    socket.send(int16.buffer);
+                };
+            };
+            socket.onmessage = (event) => {
+                if (typeof event.data !== 'string') {
+                    console.warn('Unexpected binary message from websocket');
+                    return;
+                }
+                let payload;
+                try {
+                    payload = JSON.parse(event.data);
+                } catch (err) {
+                    console.warn('Invalid JSON from websocket', err);
+                    return;
+                }
+                if (payload.type === 'state_change') {
+                    if (payload.state === 'speaking') {
+                        speaking = true;
+                    } else {
+                        speaking = false;
+                    }
+                    setButtonState(payload.state);
+                    return;
+                }
+                if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
+                    appendDemonstrationCard(payload.args);
+                    return;
+                }
+                if (payload.type === 'audio_chunk') {
+                    speaking = true;
+                    setButtonState('speaking');
+                    try {
+                        const decoded = window.atob(payload.data);
+                        const bytes = new Uint8Array(decoded.length);
+                        for (let i = 0; i < decoded.length; i++) {
+                            bytes[i] = decoded.charCodeAt(i);
+                        }
+                        const audioBuffer = createAudioBufferFromPCM(bytes.buffer);
+                        const sourceNode = audioContext.createBufferSource();
+                        sourceNode.buffer = audioBuffer;
+                        sourceNode.connect(audioContext.destination);
+                        sourceNode.start();
+                        sourceNode.onended = () => {
+                            speaking = false;
+                            setButtonState('ready');
+                        };
+                    } catch (err) {
+                        console.error('Unable to play audio chunk', err);
+                    }
+                }
+            };
+            socket.onerror = (err) => {
+                console.error('WebSocket error', err);
+                disconnectSession();
+            };
+            socket.onclose = () => {
+                disconnectSession();
+            };
+        } catch (err) {
+            console.error('Live session failed', err);
+            alert('Unable to start live session. Please refresh and try again.');
+            disconnectSession();
+        }
+    }
+
+    function disconnectSession() {
+        cleanupLiveSession();
+        setButtonState('idle');
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+    }
+
+    D.micBtn.addEventListener('click', () => {
+        if (isSessionActive) {
+            disconnectSession();
+        } else {
+            startLiveSession();
+        }
+    });
+
+    window.addEventListener('beforeunload', disconnectSession);
+
+    setButtonState('idle');
 </script>
 {% endblock %}
