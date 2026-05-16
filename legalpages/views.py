@@ -16,10 +16,19 @@ from youtube_transcript_api._errors import (
     NoTranscriptFound 
 )
 
-import google.genai as genai
-from google.genai.errors import APIError
-from google.genai import types 
-from google.genai.types import HarmCategory, HarmBlockThreshold
+try:
+    import google.genai as genai
+    from google.genai.errors import APIError
+    from google.genai import types
+    from google.genai.types import HarmCategory, HarmBlockThreshold
+    GOOGLE_GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    APIError = Exception
+    types = None
+    HarmCategory = None
+    HarmBlockThreshold = None
+    GOOGLE_GENAI_AVAILABLE = False
 
 # ----------------------------------------------------------------------
 # FOR TESTING ONLY: Hardcoded Gemini API Key
@@ -41,34 +50,36 @@ except ImportError:
 
 # --- AI Schema Definition ---
 
-ANALYSIS_SCHEMA = types.Schema(
-    type=types.Type.OBJECT,
-    properties={
-        "summary": types.Schema(
-            type=types.Type.STRING,
-            description="A detailed, comprehensive summary of the video content in markdown format."
-        ),
-        "quiz": types.Schema(
-            type=types.Type.ARRAY,
-            description="A list of 3 multiple-choice questions based on the video content.",
-            items=types.Schema(
-                type=types.Type.OBJECT,
-                properties={
-                    "question": types.Schema(type=types.Type.STRING),
-                    "options": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)),
-                    "correct_answer": types.Schema(type=types.Type.STRING, description="The correct option from the list of options.")
-                },
-                required=["question", "options", "correct_answer"]
-            )
-        ),
-        "action_plan": types.Schema(
-            type=types.Type.STRING,
-            description="A structured, actionable plan (3-5 steps) for the user to implement the knowledge gained, presented in markdown format."
-        ),
-    },
-    required=["summary", "quiz", "action_plan"]
-)
-
+if GOOGLE_GENAI_AVAILABLE and types is not None:
+    ANALYSIS_SCHEMA = types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "summary": types.Schema(
+                type=types.Type.STRING,
+                description="A detailed, comprehensive summary of the video content in markdown format."
+            ),
+            "quiz": types.Schema(
+                type=types.Type.ARRAY,
+                description="A list of 3 multiple-choice questions based on the video content.",
+                items=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "question": types.Schema(type=types.Type.STRING),
+                        "options": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)),
+                        "correct_answer": types.Schema(type=types.Type.STRING, description="The correct option from the list of options.")
+                    },
+                    required=["question", "options", "correct_answer"]
+                )
+            ),
+            "action_plan": types.Schema(
+                type=types.Type.STRING,
+                description="A structured, actionable plan (3-5 steps) for the user to implement the knowledge gained, presented in markdown format."
+            ),
+        },
+        required=["summary", "quiz", "action_plan"]
+    )
+else:
+    ANALYSIS_SCHEMA = None
 
 # --- Static Page Views (Kept for completeness) ---
 
@@ -139,6 +150,9 @@ def call_gemini_api_with_retry(prompt, system_instruction=None, response_schema=
     Handles API calls to Gemini with built-in exponential backoff retry logic.
     Returns (result_text, error_message).
     """
+    if not GOOGLE_GENAI_AVAILABLE or genai is None or types is None:
+        return None, "Gemini Live library is not installed or not available. Install google-genai to enable AI calls."
+
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     generation_config = types.GenerateContentConfig(
