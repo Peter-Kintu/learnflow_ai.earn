@@ -1,6 +1,7 @@
 import os
 import json
 import asyncio
+import base64
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -72,7 +73,13 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                         if model_turn is not None:
                             for part in model_turn.parts:
                                 if getattr(part, 'inline_data', None) is not None:
-                                    await self.send(bytes_data=part.inline_data.data)
+                                    encoded_audio = base64.b64encode(part.inline_data.data).decode('ascii')
+                                    await self.send(text_data=json.dumps({
+                                        'type': 'audio_chunk',
+                                        'data': encoded_audio,
+                                        'sample_rate': 16000,
+                                        'encoding': 'pcm16'
+                                    }))
 
                     if getattr(response, 'tool_call', None) is not None:
                         for call in response.tool_call.function_calls:
@@ -107,9 +114,22 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 await self.gemini_session.send_realtime_input(text=data.get('text'))
 
         if bytes_data:
-            await self.gemini_session.send_realtime_input(
-                media_chunks=[types.Blob(data=bytes_data, mime_type='audio/pcm;rate=16000')]
-            )
+            if self.gemini_session is None:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Gemini live session is not ready for audio input yet.'
+                }))
+                return
+
+            try:
+                await self.gemini_session.send_realtime_input(
+                    media_chunks=[types.Blob(data=bytes_data, mime_type='audio/pcm;rate=16000')]
+                )
+            except Exception as exc:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': f'Failed to forward audio chunk: {exc}',
+                }))
 
     async def disconnect(self, close_code):
         if self.live_session_task:
