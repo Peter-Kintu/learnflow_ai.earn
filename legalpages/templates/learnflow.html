@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Live AI Teacher - Nakintu AI{% endblock %}
+{% block title %}Live Classroom - Nakintu AI{% endblock %}
 
 {% block extra_head %}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,498 +13,195 @@
             theme: {
                 extend: {
                     colors: {
-                        'primary-bg': '#061928',
-                        'secondary-bg': '#0D2640',
-                        'panel-bg': '#122E56',
-                        'surface-glass': 'rgba(15, 23, 42, 0.88)',
-                        'accent-cyan': '#00DDEB',
-                        'accent-violet': '#8B5CF6',
-                        'text-light': '#E2E8F0',
-                        'text-muted': '#94A3B8',
-                    },
-                    boxShadow: {
-                        'soft-glow': '0 20px 60px rgba(0, 221, 235, 0.18)',
-                        'outer-glow': '0 28px 90px rgba(15, 23, 42, 0.16)',
-                    },
-                },
-            },
+                        'brand-dark': '#070F1E',      /* Deep Space Black/Blue */
+                        'brand-panel': '#0E1726',     /* Premium Matte Card */
+                        'brand-surface': '#172237',   /* Interactive Elements */
+                        'accent-cyan': '#00DDEB',     /* Active Glow Accent */
+                        'accent-violet': '#7C3AED',   /* Processing State */
+                        'text-primary': '#F3F4F6',    /* Crisp White */
+                        'text-secondary': '#9CA3AF',  /* Soft Gray */
+                    }
+                }
+            }
         }
     </script>
     <style>
-        body {
-            background: radial-gradient(circle at top left, rgba(0, 221, 235, 0.12), transparent 24%),
-                        radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 22%),
-                        linear-gradient(180deg, #061928 0%, #071B2B 100%);
+        .glow-pulse {
+            box-shadow: 0 0 20px rgba(0, 221, 235, 0.2);
+            animation: pulse-glow 2s infinite alternate;
         }
-
-        .glass-panel {
-            background: rgba(13, 38, 64, 0.88);
-            -webkit-backdrop-filter: blur(18px);
-            backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px rgba(0, 221, 235, 0.15); }
+            100% { box-shadow: 0 0 30px rgba(0, 221, 235, 0.4); }
         }
-
-        .pulse-ring {
-            box-shadow: 0 0 0 rgba(0, 221, 235, 0.5);
-            animation: pulseRing 2.5s infinite;
-        }
-
-        @keyframes pulseRing {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.06); opacity: 0.3; }
-            100% { transform: scale(0.95); opacity: 0.8; }
-        }
-
-        .strip-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(0, 221, 235, 0.16);
-        }
-
-        .canvas-container {
-            position: relative;
-            overflow: hidden;
-            border-radius: 2rem;
-        }
-
-        #liveAiCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .state-pill {
-            -webkit-backdrop-filter: blur(16px);
-            backdrop-filter: blur(16px);
-        }
+        /* Custom scrollbar for a cleaner feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #070F1E; }
+        ::-webkit-scrollbar-thumb { background: #172237; border-radius: 3px; }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="min-h-screen px-4 py-10 lg:px-8 lg:py-14 text-text-light">
-        <div class="max-w-7xl mx-auto space-y-10">
-            <section class="glass-panel p-8 lg:p-12 rounded-[2rem] border border-white/10">
-                <div class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr] items-center">
-                    <div>
-                        <p class="text-sm uppercase tracking-[0.4em] text-accent-cyan mb-4">Live AI Teacher</p>
-                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6">
-                            Build the most responsive real-time Nakintu AI teacher in the world.
-                        </h1>
-                        <p class="max-w-2xl text-base sm:text-lg text-text-muted leading-8">
-                            This page streams browser audio into an async Django Channels backend, proxies it through Gemini Live, and renders structured demonstration cards instantly with Tailwind visuals.
-                        </p>
-                    </div>
-                    <div class="space-y-4 rounded-[1.5rem] bg-secondary-bg/90 p-6 border border-accent-cyan/20 shadow-soft-glow">
-                        <div class="inline-flex items-center gap-3 text-sm text-text-muted uppercase tracking-[0.3em] mb-4">
-                            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-r from-accent-cyan to-accent-violet pulse-ring"></span>
-                            Real-time WebSocket learning channel
-                        </div>
-                        <div class="rounded-3xl bg-[#071B2F] p-5 border border-white/10">
-                            <p class="text-sm text-text-light/80 leading-7">Uses Django Channels + Daphne to keep your backend non-blocking while Gemini Live handles low latency audio and stateful instruction routing.</p>
-                        </div>
-                        <div class="grid gap-3">
-                            <div class="rounded-3xl bg-[#081C31] p-4 border border-accent-cyan/10">
-                                <p class="text-sm text-text-muted">Backend Engine</p>
-                                <p class="mt-2 text-white font-semibold">Django Channels + Gemini Live</p>
-                            </div>
-                            <div class="rounded-3xl bg-[#081C31] p-4 border border-accent-cyan/10">
-                                <p class="text-sm text-text-muted">Client Experience</p>
-                                <p class="mt-2 text-white font-semibold">Canvas pulse + voice input + demo cards</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="glass-panel rounded-[2rem] border border-white/10 p-6 lg:p-8">
-                <div class="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
-                    <div class="canvas-container aspect-[16/9] bg-[#061C33] rounded-[2rem] border border-white/10 overflow-hidden">
-                        <canvas id="liveAiCanvas"></canvas>
-                        <div class="absolute top-5 left-5 inline-flex items-center gap-2 state-pill rounded-full border border-accent-cyan/20 bg-white/10 px-3 py-2 text-xs text-text-light shadow-glow-cyan">
-                            <span id="stateDot" class="h-2.5 w-2.5 rounded-full bg-gray-500 animate-pulse"></span>
-                            <span id="stateText" class="font-semibold uppercase tracking-[0.25em]">Disconnected</span>
-                        </div>
-                    </div>
-
-                    <div class="space-y-5">
-                        <div class="rounded-[1.75rem] bg-secondary-bg p-6 border border-accent-cyan/15 shadow-soft-glow">
-                            <h2 class="text-2xl font-bold text-white mb-3">Live Teaching Controls</h2>
-                            <p class="text-text-muted leading-7 mb-6">Tap the microphone button to start your real-time session. Gemini streams audio and delivers rich demonstration cards for every answer.</p>
-                            <button id="micBtn" class="w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-violet px-6 py-4 text-base font-semibold text-slate-950 shadow-glow-cyan transition duration-200 hover:opacity-95">
-                                <i class="fas fa-microphone"></i> Start Speaking
-                            </button>
-                            <div class="rounded-2xl bg-[#071B2F] p-5 border border-white/10">
-                                <p class="text-sm text-text-muted">Current mode:</p>
-                                <p class="mt-2 text-white font-semibold" id="modeDescription">Ready for live interaction.</p>
-                            </div>
-                        </div>
-
-                        <div class="rounded-[1.75rem] bg-secondary-bg p-6 border border-accent-cyan/15 shadow-soft-glow">
-                            <h3 class="text-xl font-semibold text-white mb-4">Demonstration Cards</h3>
-                            <div id="demonstration-container" class="space-y-4"></div>
-                            <p class="text-sm text-text-muted mt-4">Structured cards from Gemini appear here when the model invokes the live tool call.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+<div class="min-h-screen bg-brand-dark text-text-primary font-sans flex flex-col antialiased">
+    
+    <header class="w-full border-b border-brand-surface bg-brand-panel/50 backdrop-blur px-8 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="h-9 w-9 bg-accent-cyan/10 border border-accent-cyan/30 rounded-xl flex items-center justify-center text-accent-cyan shadow-sm">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold tracking-tight text-white">Nakintu AI</h1>
+                <p class="text-xs text-text-secondary">Your Personal Academic Mentor</p>
+            </div>
         </div>
-    </div>
-{% endblock %}
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-brand-dark px-3 py-1.5 rounded-full border border-brand-surface">
+                <span id="status-dot" class="h-2 w-2 rounded-full bg-gray-500"></span>
+                <span id="status-text" class="text-xs font-medium text-text-secondary tracking-wide uppercase">Disconnected</span>
+            </div>
+        </div>
+    </header>
 
-{% block extra_js %}
-    <script>
-        let socket = null;
-        let audioContext = null;
-        let analyserNode = null;
-        let dataArray = null;
-        let aiState = 'idle';
-        let micStream = null;
-        let audioProcessor = null;
-        let isSessionActive = false;
-        let animationFrameId = null;
-
-        const canvas = document.getElementById('liveAiCanvas');
-        const ctx = canvas.getContext('2d');
-        const stateDot = document.getElementById('stateDot');
-        const stateText = document.getElementById('stateText');
-        const micBtn = document.getElementById('micBtn');
-        const modeDescription = document.getElementById('modeDescription');
-        const demonstrationContainer = document.getElementById('demonstration-container');
-
-        function initCanvasSize() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-
-        window.addEventListener('resize', () => {
-            initCanvasSize();
-            if (aiState !== 'idle' && !animationFrameId) {
-                animatePulse();
-            }
-        });
-
-        initCanvasSize();
-
-        function setButtonState(type) {
-            if (type === 'connecting') {
-                micBtn.className = 'w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-violet px-6 py-4 text-base font-semibold text-slate-950 shadow-glow-cyan transition duration-200 opacity-80';
-                micBtn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Connecting...';
-                micBtn.disabled = true;
-            } else if (type === 'active') {
-                micBtn.className = 'w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 to-amber-500 px-6 py-4 text-base font-semibold text-white shadow-soft-glow transition duration-200 hover:opacity-95';
-                micBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Session';
-                micBtn.disabled = false;
-            } else {
-                micBtn.className = 'w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-violet px-6 py-4 text-base font-semibold text-slate-950 shadow-glow-cyan transition duration-200 hover:opacity-95';
-                micBtn.innerHTML = '<i class="fas fa-microphone"></i> Start Speaking';
-                micBtn.disabled = false;
-            }
-        }
-
-        function updateUiState(newState) {
-            aiState = newState;
-            stateText.innerText = newState;
-            modeDescription.textContent = {
-                listening: 'Listening for your question...',
-                thinking: 'Gemini Live is composing an answer...',
-                speaking: 'Nakintu AI is speaking back to you.',
-                idle: 'Ready for live interaction.',
-            }[newState] || 'Ready for live interaction.';
-
-            stateDot.className = 'h-2.5 w-2.5 rounded-full animate-pulse ' +
-                (newState === 'listening' ? 'bg-emerald-400' :
-                newState === 'thinking' ? 'bg-violet-500' :
-                newState === 'speaking' ? 'bg-accent-cyan' : 'bg-gray-500');
-
-            if (newState === 'idle') {
-                stopVisualizer();
-            } else {
-                startVisualizer();
-            }
-        }
-
-        function float32ToInt16(buffer) {
-            const l = buffer.length;
-            const int16 = new Int16Array(l);
-            for (let i = 0; i < l; i++) {
-                let s = Math.max(-1, Math.min(1, buffer[i]));
-                int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-            }
-            return int16;
-        }
-
-        function convertInt16ToFloat32(buffer) {
-            const view = new Int16Array(buffer);
-            const float32 = new Float32Array(view.length);
-            for (let i = 0; i < view.length; i++) {
-                float32[i] = Math.max(-1, Math.min(1, view[i] / 0x7fff));
-            }
-            return float32;
-        }
-
-        function createAudioBufferFromPCM(rawBuffer) {
-            const float32Data = convertInt16ToFloat32(rawBuffer);
-            const audioBuffer = audioContext.createBuffer(1, float32Data.length, 16000);
-            audioBuffer.copyToChannel(float32Data, 0, 0);
-            return audioBuffer;
-        }
-
-        function startVisualizer() {
-            if (!animationFrameId) animatePulse();
-        }
-
-        function stopVisualizer() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            const w = canvas.width / (window.devicePixelRatio || 1);
-            const h = canvas.height / (window.devicePixelRatio || 1);
-            ctx.clearRect(0, 0, w, h);
-        }
-
-        function animatePulse() {
-            if (aiState === 'idle') {
-                stopVisualizer();
-                return;
-            }
-
-            animationFrameId = requestAnimationFrame(animatePulse);
-            const w = canvas.width / (window.devicePixelRatio || 1);
-            const h = canvas.height / (window.devicePixelRatio || 1);
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = 'rgba(6, 25, 40, 0.2)';
-            ctx.fillRect(0, 0, w, h);
-
-            let amplitude = 12;
-            let frequency = 0.015;
-            let color = '#00DDEB';
-
-            if (aiState === 'thinking') {
-                amplitude = 24;
-                frequency = 0.05;
-                color = '#8B5CF6';
-            } else if (aiState === 'speaking') {
-                amplitude = 32;
-                frequency = 0.02;
-                color = '#00DDEB';
-            } else if (aiState === 'listening') {
-                amplitude = 16;
-                frequency = 0.018;
-                color = '#4ADE80';
-            }
-
-            wavePhase += 0.05;
-            for (let layer = 0; layer < 3; layer++) {
-                ctx.beginPath();
-                ctx.strokeStyle = layer === 0 ? color : `${color}33`;
-                ctx.lineWidth = layer === 0 ? 3 : 1.5;
-                for (let x = 0; x <= w; x += 20) {
-                    const envelope = Math.sin((x / w) * Math.PI);
-                    const y = h / 2 + Math.sin((x * frequency) + wavePhase + layer) * amplitude * envelope;
-                    if (x === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-            }
-        }
-
-        function cleanupLiveSession() {
-            if (audioProcessor) {
-                audioProcessor.disconnect();
-                audioProcessor.onaudioprocess = null;
-                audioProcessor = null;
-            }
-
-            if (micStream) {
-                micStream.getTracks().forEach((track) => track.stop());
-                micStream = null;
-            }
-
-            if (socket) {
-                try {
-                    socket.close();
-                } catch (err) {
-                    console.warn('Socket close failed', err);
-                }
-                socket = null;
-            }
-
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close().catch(() => {});
-            }
-            audioContext = null;
-            analyserNode = null;
-            dataArray = null;
-            isSessionActive = false;
-        }
-
-        function disconnectSession(message) {
-            console.warn('Live session disconnected:', message);
-            cleanupLiveSession();
-            updateUiState('idle');
-            setButtonState('ready');
-        }
-
-        async function startLiveSession() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                alert('Your browser does not support microphone input for live AI sessions.');
-                setButtonState('ready');
-                return;
-            }
-
-            if (isSessionActive) {
-                return;
-            }
-
-            setButtonState('connecting');
-
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-
-                analyserNode = audioContext.createAnalyser();
-                analyserNode.fftSize = 256;
-                dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-
-                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-                socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
-                socket.binaryType = 'arraybuffer';
-
-                socket.onopen = async () => {
-                    isSessionActive = true;
-                    updateUiState('listening');
-                    setButtonState('active');
-
-                    try {
-                        micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-                    } catch (err) {
-                        console.error('Microphone permission denied or unavailable.', err);
-                        alert('Please allow microphone access to start the live AI session.');
-                        disconnectSession('Microphone permission denied');
-                        return;
-                    }
-
-                    const source = audioContext.createMediaStreamSource(micStream);
-                    audioProcessor = audioContext.createScriptProcessor(2048, 1, 1);
-                    source.connect(audioProcessor);
-                    audioProcessor.connect(audioContext.destination);
-
-                    audioProcessor.onaudioprocess = (e) => {
-                        if (aiState !== 'listening' || !socket || socket.readyState !== WebSocket.OPEN) {
-                            return;
-                        }
-
-                        const inputData = e.inputBuffer.getChannelData(0);
-                        const int16 = float32ToInt16(inputData);
-                        socket.send(int16.buffer);
-                    };
-                };
-
-                socket.onmessage = async (event) => {
-                    if (event.data instanceof ArrayBuffer) {
-                        console.warn('Received raw ArrayBuffer from websocket; expected JSON messages.');
-                        return;
-                    }
-
-                    let payload;
-                    try {
-                        payload = JSON.parse(event.data);
-                    } catch (err) {
-                        console.warn('Unexpected websocket message format:', err);
-                        return;
-                    }
-
-                    if (payload.type === 'state_change') {
-                        updateUiState(payload.state);
-                        return;
-                    }
-
-                    if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
-                        injectStripCard(payload.args);
-                        return;
-                    }
-
-                    if (payload.type === 'audio_chunk') {
-                        updateUiState('speaking');
-                        try {
-                            const decoded = window.atob(payload.data);
-                            const bytes = new Uint8Array(decoded.length);
-                            for (let i = 0; i < decoded.length; i++) {
-                                bytes[i] = decoded.charCodeAt(i);
-                            }
-                            const audioBuffer = createAudioBufferFromPCM(bytes.buffer);
-                            const sourceNode = audioContext.createBufferSource();
-                            sourceNode.buffer = audioBuffer;
-                            sourceNode.connect(audioContext.destination);
-                            sourceNode.start();
-                            sourceNode.onended = () => {
-                                if (aiState === 'speaking') {
-                                    updateUiState('listening');
-                                }
-                            };
-                        } catch (err) {
-                            console.error('Failed to decode audio_chunk payload:', err);
-                        }
-                    }
-                };
-
-                socket.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    disconnectSession('WebSocket error');
-                };
-
-                socket.onclose = () => {
-                    disconnectSession('WebSocket closed');
-                };
-            } catch (err) {
-                console.error('Failed to start live session:', err);
-                alert('Unable to initialize live audio session. Please refresh the page and try again.');
-                disconnectSession('Startup failure');
-            }
-        }
-
-        function injectStripCard(args) {
-            if (!demonstrationContainer) return;
-            if (demonstrationContainer.children.length === 0) {
-                demonstrationContainer.innerHTML = '';
-            }
-
-            const icon = args.card_type === 'code' ? 'fa-code' : 'fa-lightbulb';
-            const rawMarkdown = marked.parse(args.content_markdown || '');
-            const cleanHTML = DOMPurify.sanitize(rawMarkdown);
-            const cardMarkup = `
-                <div class="strip-card rounded-3xl border p-5 text-text-light shadow-soft-glow transition duration-300 hover:-translate-y-1">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-cyan/10 text-accent-cyan text-lg">
-                            <i class="fas ${icon}"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm uppercase tracking-[0.25em] text-text-muted">Live Demonstration</p>
-                            <h3 class="text-lg font-bold text-white">${args.title || 'Demonstration'}</h3>
-                        </div>
-                    </div>
-                    <div class="prose prose-invert max-w-none text-text-muted">${cleanHTML}</div>
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
+        
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <div class="bg-brand-panel border border-brand-surface rounded-3xl p-8 flex flex-col items-center justify-center flex-1 min-h-[320px] relative overflow-hidden">
+                <div class="absolute top-4 left-4 flex items-center gap-2">
+                    <span id="badge-mode" class="text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary">
+                        IDLE
+                    </span>
                 </div>
-            `;
-            demonstrationContainer.insertAdjacentHTML('beforeend', cardMarkup);
+
+                <div class="w-full max-w-[280px] h-32 flex items-center justify-center">
+                    <canvas id="audio-wave" class="w-full h-full"></canvas>
+                </div>
+
+                <p id="instruction-prompt" class="text-sm text-text-secondary text-center max-w-xs mt-4">
+                    Tap the mic to open a live audio learning channel.
+                </p>
+            </div>
+
+            <div class="bg-brand-panel border border-brand-surface rounded-3xl p-6 flex flex-col items-center gap-4">
+                <button id="mic-toggle-btn" aria-label="Toggle live session" class="h-20 w-20 bg-brand-surface border border-brand-surface rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-accent-cyan/50 group">
+                    <i id="mic-icon" class="fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors"></i>
+                </button>
+                <div class="text-center">
+                    <span class="text-xs text-text-secondary block font-medium">Session Control</span>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="lg:col-span-7 flex flex-col bg-brand-panel border border-brand-surface rounded-3xl overflow-hidden min-h-[500px]">
+            
+            <div class="px-6 py-4 border-b border-brand-surface bg-brand-panel/80 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-layer-group text-accent-cyan text-xs"></i>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-white">Visual Demonstrations</h2>
+                </div>
+                <span id="card-counter" class="text-xs font-mono text-text-secondary bg-brand-dark px-2 py-0.5 rounded border border-brand-surface">0 Cards</span>
+            </div>
+
+            <div id="demonstration-workspace" class="flex-1 p-6 overflow-y-auto space-y-6 flex flex-col justify-center items-center">
+                
+                <div id="workspace-empty-state" class="text-center max-w-sm space-y-3">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-text-secondary/50 text-xl mb-2">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-white">Interactive Visual Workspace</h3>
+                    <p class="text-xs text-text-secondary leading-relaxed">
+                        When you speak to Nakintu AI, targeted breakdowns, code blocks, or schematic workflows will render elegantly inside this panel.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<script>
+    // Map your existing client state variables to this new crisp layout
+    const D = {
+        statusDot: document.getElementById('status-dot'),
+        statusText: document.getElementById('status-text'),
+        badgeMode: document.getElementById('badge-mode'),
+        promptText: document.getElementById('instruction-prompt'),
+        micBtn: document.getElementById('mic-toggle-btn'),
+        micIcon: document.getElementById('mic-icon'),
+        workspace: document.getElementById('demonstration-workspace'),
+        emptyState: document.getElementById('workspace-empty-state'),
+        cardCounter: document.getElementById('card-counter')
+    };
+
+    let totalCardsRendered = 0;
+
+    // Helper Function to cleanly alter state UI styles matching your consumer states
+    function setButtonState(state) {
+        if (state === 'ready') {
+            D.statusDot.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+            D.statusText.innerText = "Connected";
+            D.statusText.classList.remove('text-text-secondary');
+            D.statusText.classList.add('text-emerald-400');
+            
+            D.micBtn.className = "h-20 w-20 bg-accent-cyan rounded-full flex items-center justify-center text-brand-dark text-2xl transition-all duration-300 hover:scale-105 active:scale-95 glow-pulse";
+            D.micIcon.className = "fas fa-stop text-brand-dark";
+            D.badgeMode.innerText = "LISTENING";
+            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md text-emerald-400";
+            D.promptText.innerText = "Go ahead, ask your academic question aloud...";
+        } else if (state === 'thinking') {
+            D.badgeMode.innerText = "THINKING";
+            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-md text-purple-400";
+            D.promptText.innerText = "Nakintu is formulating your analytical breakthrough...";
+        } else {
+            // Disconnected / Idle State
+            D.statusDot.className = "h-2 w-2 rounded-full bg-gray-500";
+            D.statusText.innerText = "Disconnected";
+            D.statusText.className = "text-xs font-medium text-text-secondary tracking-wide uppercase";
+            
+            D.micBtn.className = "h-20 w-20 bg-brand-surface border border-brand-surface rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-accent-cyan/50 group";
+            D.micIcon.className = "fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors";
+            D.badgeMode.innerText = "IDLE";
+            D.badgeMode.className = "text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary";
+            D.promptText.innerText = "Tap the mic to open a live audio learning channel.";
         }
+    }
 
-        micBtn.addEventListener('click', () => {
-            if (isSessionActive) {
-                disconnectSession('Stopped by user');
-            } else {
-                startLiveSession();
-            }
-        });
-
-        setButtonState('ready');
-    </script>
+    // Intercept tool card generation to remove onboarding empty state smoothly
+    function appendDemonstrationCard(args) {
+        if (D.emptyState) {
+            D.emptyState.remove();
+            D.emptyState = null;
+        }
+        
+        const icon = args.type === 'code' ? 'fa-code' : 'fa-lightbulb';
+        const accentClass = args.type === 'code' ? 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/20' : 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+        
+        const rawMarkdown = marked.parse(args.content_markdown || '');
+        const cleanHTML = DOMPurify.sanitize(rawMarkdown);
+        
+        const cardMarkup = `
+            <div class="w-full bg-brand-surface/40 border border-brand-surface rounded-2xl p-5 text-text-primary shadow-sm hover:border-brand-surface/80 transition-all duration-200 animate-fadeIn">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="inline-flex h-10 w-10 items-center justify-center rounded-xl border ${accentClass} text-sm">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white tracking-wide">${args.title || 'Demonstration Analysis'}</h3>
+                        <p class="text-[10px] uppercase tracking-wider text-text-secondary">Live Document</p>
+                    </div>
+                </div>
+                <div class="prose prose-invert max-w-none text-xs text-text-secondary leading-relaxed space-y-2">${cleanHTML}</div>
+            </div>
+        `;
+        
+        D.workspace.insertAdjacentHTML('beforeend', cardMarkup);
+        totalCardsRendered++;
+        D.cardCounter.innerText = `${totalCardsRendered} Card${totalCardsRendered !== 1 ? 's' : ''}`;
+        
+        D.workspace.scrollTop = D.workspace.scrollHeight;
+    }
+</script>
 {% endblock %}
