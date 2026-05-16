@@ -222,72 +222,7 @@ def quiz_review(request, attempt_id):
     }
     return render(request, 'aiapp/quiz_review.html', context)
 
-
-# @login_required
-# @transaction.atomic
-# def create_quiz(request):
-#     """
-#     Handles the creation of a new quiz and its questions.
-#     """
-#     if request.method == 'POST':
-#         quiz_form = QuizForm(request.POST)
-        
-#         if quiz_form.is_valid():
-#             quiz = quiz_form.save(commit=False)
-#             quiz.teacher = request.user
-#             quiz.upload_code = quiz_form.cleaned_data.get('upload_code')
-#             quiz.save()
-            
-            # questions_data = request.POST.get('questions_data')
-            # if questions_data:
-            #     try:
-            #         questions_list = json.loads(questions_data)
-            #         for q_data in questions_list:
-            #             question_text = q_data.get('text')
-            #             if not question_text:
-            #                 continue
-
-            #             question_type = q_data.get('question_type', 'MC')
-                        
-            #             question_instance = Question.objects.create(
-            #                 quiz=quiz,
-            #                 text=question_text,
-            #                 question_type=question_type,
-            #             )
-
-                        # if question_type == 'MC':
-                        #     choices_data = q_data.get('choices', [])
-                        #     for c_data in choices_data:
-                        #         if c_data.get('text'):
-                        #             Choice.objects.create(
-                        #                 question=question_instance,
-                        #                 text=c_data['text'],
-                        #                 is_correct=c_data.get('isCorrect', False)
-                        #             )
-                        # elif question_type == 'SA':
-                        #     correct_answer_text = q_data.get('correct_answer_text')
-                        #     if correct_answer_text:
-                        #         question_instance.correct_answer_text = correct_answer_text
-                        #         question_instance.save()
-
-    #                 messages.success(request, f'"{quiz.title}" has been created successfully!')
-    #                 return redirect('aiapp:teacher_quiz_dashboard')
-
-    #             except (json.JSONDecodeError, KeyError) as e:
-    #                 print(f"JSON processing error: {e}")
-    #                 messages.error(request, "There was an error processing the quiz questions. Please check the data and try again.")
-    #                 raise
-    #     else:
-    #         messages.error(request, "Please correct the form errors below.")
-    #         print("Form errors:", quiz_form.errors)
-    # else:
-    #     quiz_form = QuizForm()
-        
-    # return render(request, 'aiapp/create_quiz.html', {
-    #     'quiz_form': quiz_form,
-    #     'show_ads': True
-    #     })
-       
+  
 
 @login_required
 def teacher_quiz_dashboard(request):
