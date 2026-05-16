@@ -18,6 +18,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/responsive-global.css' %}">
     
     <style>
         .glass-nav {
@@ -193,21 +194,38 @@
 </head>
 <body class="bg-white text-gray-900 min-h-screen flex flex-col">
 
-    <nav class="bg-white p-4 shadow-sm sticky top-0 z-50 border-b border-gray-200">
-        <div class="container mx-auto flex justify-between items-center relative">
-            
-            <button id="mobile-menu-button" class="text-gray-700 hover:text-gray-900 focus:outline-none p-1 rounded-md transition-colors duration-300" aria-label="Toggle navigation drawer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
-                    <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
-                </svg>
-            </button>
-            
-            <a href="{% url 'aiapp:home' %}" class="absolute left-1/2 transform -translate-x-1/2 text-3xl font-extrabold text-indigo-600 hover:text-indigo-500 transition-colors tracking-wide">
-                Nakintu <span class="text-indigo-600">AI</span>
-            </a>
-            
-            <div class="w-[28px] h-[28px]"></div>
+    <nav class="glass-nav bg-white/95 backdrop-blur-sm p-4 shadow-sm sticky top-0 z-50 border-b border-gray-200">
+        <div class="container-max flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <button id="mobile-menu-button" class="mobile-menu-toggle text-gray-700 hover:text-gray-900 focus:outline-none p-2 rounded-md transition-colors duration-300" aria-label="Toggle navigation drawer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <a href="{% url 'aiapp:home' %}" class="text-2xl sm:text-3xl font-extrabold text-indigo-600 hover:text-indigo-500 transition-colors tracking-tight">
+                    Nakintu <span class="text-indigo-600">AI</span>
+                </a>
+            </div>
 
+            <div class="desktop-menu items-center gap-2 flex-wrap">
+                <a href="{% url 'legalpages:learnflow_main' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Video Analyzer</a>
+                <a href="{% url 'video:video_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Videos</a>
+                <a href="{% url 'aiapp:quiz_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Quizzes</a>
+                <a href="{% url 'book:book_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Books</a>
+                <a href="{% url 'legalpages:overview' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Overview</a>
+            </div>
+
+            <div class="desktop-menu items-center gap-2">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'user:profile_detail' user.username %}" class="text-sm text-slate-700 hover:text-indigo-600">Profile</a>
+                    <form method="post" action="{% url 'user:logout' %}" class="inline-block">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'user:login' %}" class="px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition">Login</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
 
