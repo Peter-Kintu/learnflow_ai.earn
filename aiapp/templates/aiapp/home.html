@@ -85,9 +85,18 @@
             max-width: 760px;
         }
 
+        .hero-subtitle {
+            font-size: clamp(1rem, 1.2vw, 1.05rem);
+            color: #475569;
+            line-height: 1.85;
+            max-width: 760px;
+            margin-top: 0.35rem;
+            letter-spacing: -0.01em;
+        }
+
         .hero-features {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: 1fr;
             gap: 1rem;
             margin-top: 0.75rem;
         }
@@ -181,6 +190,15 @@
             font-size: 1rem;
             animation: fadeInUp 0.35s ease both;
             box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .chat-message p {
+            margin: 0 0 0.85rem;
+            white-space: pre-wrap;
+        }
+
+        .chat-message p:last-child {
+            margin-bottom: 0;
         }
 
         .chat-message.ai {
@@ -364,7 +382,16 @@
         }
 
         #voiceStatus {
-            display: none;
+            display: block;
+            min-height: 2.2rem;
+            padding: 0.85rem 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: #c7d2fe;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-align: center;
         }
 
         .wave-emoji {
@@ -400,7 +427,7 @@
                 padding: 2.25rem;
             }
             .hero-features {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             .chat-input-area {
                 padding: 2rem;
@@ -426,6 +453,9 @@
             }
             .chat-header-inner {
                 gap: 1.25rem;
+            }
+            .hero-features {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
             }
             .chat-area {
                 grid-template-columns: 1.4fr 0.8fr;
@@ -486,9 +516,11 @@
     <div class="chat-header">
         
         <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-
             Hello {{ user.username }}, hope you're fine <span class="wave-emoji inline-block">👋</span>
         </h1>
+        <p class="hero-subtitle">
+            Welcome to Nakintu AI — your responsive classroom companion for fast explanations, smart study plans, and spoken tutoring that follows your pace.
+        </p>
         <p id="localTimeDisplay" class="text-lg text-indigo-300 mt-1 font-medium"></p>
         <div class="hero-features">
             <div class="hero-feature">
@@ -533,9 +565,12 @@
         <div id="chatLog" class="overflow-y-auto">
             <div class="chat-message ai">
                 <strong>Nakintu AI:</strong>
-                <span class="text-gray-400">
-                    Hello, {{ user.username }}! I'm Nakintu AI, your enthusiastic and modern learning guide. What fascinating topic are we exploring today?
-                </span>
+                <p class="text-gray-400">
+                    Hello, {{ user.username }}! I'm Nakintu AI, your enthusiastic and modern learning guide.
+                </p>
+                <p class="text-gray-400">
+                    Share a topic and I will explain it step-by-step, pause naturally between ideas, and stop when you are ready for the next question.
+                </p>
             </div>
         </div>
 
