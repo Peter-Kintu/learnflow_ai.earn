@@ -17,7 +17,7 @@ ALLOWED_HOSTS = os.environ.get(
 CSRF_TRUSTED_ORIGINS = [
    
     'https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app',
-    ' http://127.0.0.1:8000',
+    'http://127.0.0.1:8000',
 
     ]
 
