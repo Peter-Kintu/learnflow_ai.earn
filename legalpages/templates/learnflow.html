@@ -341,13 +341,14 @@
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
             socket.binaryType = 'arraybuffer';
             socket.onopen = async () => {
+                console.debug('[LiveTeacher] websocket open', socket.url);
                 isSessionActive = true;
                 setButtonState('ready');
                 drawWave();
                 try {
                     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
                 } catch (err) {
-                    console.error(err);
+                    console.error('[LiveTeacher] microphone permission denied', err);
                     alert('Microphone permission denied. Please allow access and try again.');
                     disconnectSession();
                     return;
@@ -360,10 +361,12 @@
                     if (!socket || socket.readyState !== WebSocket.OPEN || D.badgeMode.innerText !== 'LISTENING') return;
                     const inputData = event.inputBuffer.getChannelData(0);
                     const int16 = float32ToInt16(inputData);
+                    console.debug('[LiveTeacher] sending audio chunk', int16.length, 'samples');
                     socket.send(int16.buffer);
                 };
             };
             socket.onmessage = (event) => {
+                console.debug('[LiveTeacher] websocket message', event.data && event.data.slice ? event.data.slice(0, 200) : event.data);
                 if (typeof event.data !== 'string') {
                     console.warn('Unexpected binary message from websocket');
                     return;
@@ -381,7 +384,9 @@
                     } else {
                         speaking = false;
                     }
-                    setButtonState(payload.state);
+                    // Map backend 'listening' to client 'ready'
+                    const mappedState = payload.state === 'listening' ? 'ready' : payload.state;
+                    setButtonState(mappedState);
                     return;
                 }
                 if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
@@ -412,10 +417,11 @@
                 }
             };
             socket.onerror = (err) => {
-                console.error('WebSocket error', err);
+                console.error('[LiveTeacher] websocket error', err);
                 disconnectSession();
             };
-            socket.onclose = () => {
+            socket.onclose = (event) => {
+                console.debug('[LiveTeacher] websocket closed', event.code, event.reason);
                 disconnectSession();
             };
         } catch (err) {

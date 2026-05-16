@@ -2,8 +2,11 @@ import os
 import json
 import asyncio
 import base64
+import logging
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+
+logger = logging.getLogger(__name__)
 
 try:
     from google import genai
@@ -22,6 +25,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
         self.client = None
         self.gemini_session = None
         self.live_session_task = None
+        logger.debug('LiveTeacherConsumer connect accepted: %s', self.channel_name)
 
         if not GENAI_AVAILABLE or types is None:
             await self.send(text_data=json.dumps({
@@ -65,6 +69,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
         try:
             async with self.client.aio.live.connect(model='gemini-3.1-flash-live-preview', config=self.config) as session:
                 self.gemini_session = session
+                logger.debug('LiveTeacherConsumer live session started: %s', self.channel_name)
                 await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'listening'}))
 
                 async for response in session.receive():
@@ -89,6 +94,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                     if getattr(response, 'tool_call', None) is not None:
                         for call in response.tool_call.function_calls:
                             if call.name == 'show_demonstration_card':
+                                logger.debug('LiveTeacherConsumer sending tool_call: %s %s', call.name, call.args)
                                 await self.send(text_data=json.dumps({
                                     'type': 'tool_call',
                                     'name': call.name,
@@ -109,6 +115,9 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def receive(self, text_data=None, bytes_data=None):
+        logger.debug('LiveTeacherConsumer receive text_data=%s bytes_data=%s',
+                     text_data[:200] if text_data else None,
+                     len(bytes_data) if bytes_data else None)
         if not GENAI_AVAILABLE or self.gemini_session is None:
             return
 
@@ -127,6 +136,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 return
 
             try:
+                logger.debug('LiveTeacherConsumer forwarding audio chunk %s bytes', len(bytes_data))
                 await self.gemini_session.send_realtime_input(
                     media_chunks=[types.Blob(data=bytes_data, mime_type='audio/pcm;rate=16000')]
                 )
