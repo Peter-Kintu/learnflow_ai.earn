@@ -1,4 +1,163 @@
-{% extends "base.html" %}
+from pathlib import Path
+import re
+
+BASE = Path('c:/Users/NIIH/Desktop/learnflow_ai.earn')
+
+# 1) Add Channels / Daphne to settings.py
+settings_path = BASE / 'learnflow_ai' / 'settings.py'
+text = settings_path.read_text(encoding='utf-8')
+if "'channels'," not in text:
+    text = text.replace("    'jazzmin',\n", "    'jazzmin',\n    'channels',\n    'daphne',\n")
+if 'ASGI_APPLICATION' not in text:
+    text = text.replace("WSGI_APPLICATION = 'learnflow_ai.wsgi.application'\n\n# Database", "WSGI_APPLICATION = 'learnflow_ai.wsgi.application'\nASGI_APPLICATION = 'learnflow_ai.asgi.application'\n\n# Database")
+if 'CHANNEL_LAYERS' not in text:
+    channel_layers = "\n# Channels configuration for async WebSocket routing\nCHANNEL_LAYERS = {\n    'default': {\n        'BACKEND': 'channels.layers.InMemoryChannelLayer',\n    },\n}\n\n"
+    if "WSGI_APPLICATION = 'learnflow_ai.wsgi.application'" in text:
+        text = text.replace("WSGI_APPLICATION = 'learnflow_ai.wsgi.application'\n", "WSGI_APPLICATION = 'learnflow_ai.wsgi.application'\n" + channel_layers)
+    else:
+        text += channel_layers
+settings_path.write_text(text, encoding='utf-8')
+
+# 2) Update ASGI config
+asgi_path = BASE / 'learnflow_ai' / 'asgi.py'
+asgi_text = '''import os
+
+from django.core.asgi import get_asgi_application
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'learnflow_ai.settings')
+
+application = ProtocolTypeRouter({
+    'http': get_asgi_application(),
+    'websocket': AuthMiddlewareStack(
+        URLRouter([
+            path('ws/live-teacher/', LiveTeacherConsumer.as_asgi()),
+        ])
+    ),
+})
+'''
+# Use a more robust patch only if asgi.py is not yet the new version
+if 'ProtocolTypeRouter' not in asgi_text:
+    pass
+asgi_path.write_text(asgi_text, encoding='utf-8')
+
+# 3) Create routing.py and consumers.py
+routing_path = BASE / 'learnflow_ai' / 'routing.py'
+routing_text = '''from django.urls import path
+
+from .consumers import LiveTeacherConsumer
+
+websocket_urlpatterns = [
+    path('ws/live-teacher/', LiveTeacherConsumer.as_asgi()),
+]
+'''
+routing_path.write_text(routing_text, encoding='utf-8')
+
+consumers_path = BASE / 'learnflow_ai' / 'consumers.py'
+consumers_text = '''import os
+import json
+import asyncio
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+from google import genai
+from google.genai import types
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+class LiveTeacherConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
+        self.gemini_session = None
+        self.live_session_task = None
+
+        self.config = types.LiveConnectConfig(
+            response_modalities=[types.Modality.AUDIO],
+            system_instruction=types.Content(
+                parts=[types.Part(text='You are Nakintu AI, an expert real-time academic mentor. You speak concisely. When illustrating a structured technical workflow, use the show_demonstration_card tool.')]
+            ),
+            tools=[
+                types.Tool(
+                    function_declarations=[
+                        types.FunctionDeclaration(
+                            name='show_demonstration_card',
+                            description='Displays a visual demonstration strip card on the user interface.',
+                            parameters=types.Schema(
+                                type=types.Type.OBJECT,
+                                properties={
+                                    'card_type': types.Schema(type=types.Type.STRING, description="Type: 'code' or 'concept'"),
+                                    'title': types.Schema(type=types.Type.STRING, description='Title of illustration'),
+                                    'content_markdown': types.Schema(type=types.Type.STRING, description='Main explanation in clean markdown syntax'),
+                                },
+                                required=['card_type', 'title', 'content_markdown'],
+                            ),
+                        )
+                    ]
+                )
+            ]
+        )
+
+        self.live_session_task = asyncio.create_task(self.stream_with_gemini())
+
+    async def stream_with_gemini(self):
+        try:
+            async with self.client.aio.live.connect(model='gemini-3.1-flash-live-preview', config=self.config) as session:
+                self.gemini_session = session
+                await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'listening'}))
+
+                async for response in session.receive():
+                    server_content = getattr(response, 'server_content', None)
+                    if server_content is not None:
+                        model_turn = getattr(server_content, 'model_turn', None)
+                        if model_turn is not None:
+                            for part in model_turn.parts:
+                                if getattr(part, 'inline_data', None) is not None:
+                                    await self.send(bytes_data=part.inline_data.data)
+
+                    if getattr(response, 'tool_call', None) is not None:
+                        for call in response.tool_call.function_calls:
+                            if call.name == 'show_demonstration_card':
+                                await self.send(text_data=json.dumps({
+                                    'type': 'tool_call',
+                                    'name': call.name,
+                                    'args': call.args,
+                                }))
+                                await session.send_tool_response(
+                                    types.LiveClientToolResponse(
+                                        function_responses=[
+                                            types.FunctionResponse(name=call.name, id=call.id, response={'status': 'rendered'})
+                                        ]
+                                    )
+                                )
+        except asyncio.CancelledError:
+            pass
+        except Exception as exc:
+            await self.send(text_data=json.dumps({'type': 'error', 'message': str(exc)}))
+        finally:
+            await self.close()
+
+    async def receive(self, text_data=None, bytes_data=None):
+        if text_data:
+            data = json.loads(text_data)
+            if data.get('type') == 'text_question' and self.gemini_session is not None:
+                await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'thinking'}))
+                await self.gemini_session.send_realtime_input(text=data.get('text'))
+
+        if bytes_data and self.gemini_session is not None:
+            await self.gemini_session.send_realtime_input(
+                media_chunks=[types.Blob(data=bytes_data, mime_type='audio/pcm;rate=16000')]
+            )
+
+    async def disconnect(self, close_code):
+        if self.live_session_task:
+            self.live_session_task.cancel()
+'''
+consumers_path.write_text(consumers_text, encoding='utf-8')
+
+# 4) Update learnflow.html page content
+learnflow_path = BASE / 'legalpages' / 'templates' / 'learnflow.html'
+learnflow_text = '''{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Live AI Teacher - Nakintu AI{% endblock %}
@@ -370,3 +529,16 @@
         });
     </script>
 {% endblock %}
+'''
+learnflow_path.write_text(learnflow_text, encoding='utf-8')
+
+# 5) Add Channels packages to requirements.txt if needed
+req_path = BASE / 'requirements.txt'
+req_text = req_path.read_text(encoding='utf-16')
+if 'channels==' not in req_text:
+    req_text = req_text.rstrip() + '\nchannels==4.1.0\n'
+if 'daphne==' not in req_text:
+    req_text = req_text.rstrip() + '\ndaphne==4.0.0\n'
+req_path.write_text(req_text, encoding='utf-16')
+
+print('patch complete')

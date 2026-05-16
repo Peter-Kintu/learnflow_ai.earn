@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     
     'jazzmin', # Keep Jazzmin just above admin
+    'channels',
+    'daphne',
+    'channels',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -85,6 +89,15 @@ TEMPLATES = [{
 }]
 
 WSGI_APPLICATION = 'learnflow_ai.wsgi.application'
+
+# Channels configuration for async WebSocket routing
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+ASGI_APPLICATION = 'learnflow_ai.asgi.application'
 
 # Database (Neon.tech or fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
