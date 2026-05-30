@@ -122,6 +122,40 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
             'calls': event['calls']
         }))
 
+    def get_call_group_name(self, call_id):
+        return f'live_call_{call_id}'
+
+    async def join_call_group(self, call_id):
+        if not call_id:
+            return
+        await self.channel_layer.group_add(self.get_call_group_name(call_id), self.channel_name)
+
+    async def leave_call_group(self, call_id):
+        if not call_id:
+            return
+        await self.channel_layer.group_discard(self.get_call_group_name(call_id), self.channel_name)
+
+    async def call_audio_chunk(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'audio_chunk',
+            'data': event['data'],
+            'sample_rate': event.get('sample_rate', 16000),
+            'encoding': event.get('encoding', 'pcm16'),
+        }))
+
+    async def call_tool_call(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'tool_call',
+            'name': event['name'],
+            'args': event['args'],
+        }))
+
+    async def call_state_change(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'state_change',
+            'state': event['state']
+        }))
+
     async def stream_with_gemini(self):
         try:
             async with self.client.aio.live.connect(model='gemini-3.1-flash-live-preview', config=self.config) as session:
@@ -137,26 +171,56 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                             for part in model_turn.parts:
                                 if getattr(part, 'inline_data', None) is not None:
                                     if not self.has_sent_speaking_state:
-                                        await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'speaking'}))
+                                        if self.call_id:
+                                            await self.channel_layer.group_send(
+                                                self.get_call_group_name(self.call_id),
+                                                {
+                                                    'type': 'call.state_change',
+                                                    'state': 'speaking'
+                                                }
+                                            )
+                                        else:
+                                            await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'speaking'}))
                                         self.has_sent_speaking_state = True
 
                                     encoded_audio = base64.b64encode(part.inline_data.data).decode('ascii')
-                                    await self.send(text_data=json.dumps({
-                                        'type': 'audio_chunk',
-                                        'data': encoded_audio,
-                                        'sample_rate': 16000,
-                                        'encoding': 'pcm16'
-                                    }))
+                                    if self.call_id:
+                                        await self.channel_layer.group_send(
+                                            self.get_call_group_name(self.call_id),
+                                            {
+                                                'type': 'call.audio_chunk',
+                                                'data': encoded_audio,
+                                                'sample_rate': 16000,
+                                                'encoding': 'pcm16'
+                                            }
+                                        )
+                                    else:
+                                        await self.send(text_data=json.dumps({
+                                            'type': 'audio_chunk',
+                                            'data': encoded_audio,
+                                            'sample_rate': 16000,
+                                            'encoding': 'pcm16'
+                                        }))
 
                     if getattr(response, 'tool_call', None) is not None:
                         for call in response.tool_call.function_calls:
                             if call.name == 'show_demonstration_card':
                                 logger.debug('LiveTeacherConsumer sending tool_call: %s %s', call.name, call.args)
-                                await self.send(text_data=json.dumps({
-                                    'type': 'tool_call',
-                                    'name': call.name,
-                                    'args': call.args,
-                                }))
+                                if self.call_id:
+                                    await self.channel_layer.group_send(
+                                        self.get_call_group_name(self.call_id),
+                                        {
+                                            'type': 'call.tool_call',
+                                            'name': call.name,
+                                            'args': call.args,
+                                        }
+                                    )
+                                else:
+                                    await self.send(text_data=json.dumps({
+                                        'type': 'tool_call',
+                                        'name': call.name,
+                                        'args': call.args,
+                                    }))
                                 await session.send_tool_response(
                                     types.LiveClientToolResponse(
                                         function_responses=[
@@ -197,6 +261,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 }
                 ACTIVE_CALL_MEMBERS[call_id] = {self.user_id}
                 self.call_id = call_id
+                await self.join_call_group(call_id)
                 await self.broadcast_lobby_state()
                 return
 
@@ -204,11 +269,14 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 call_id = data.get('call_id')
                 call = ACTIVE_LIVE_CALLS.get(call_id)
                 if call:
+                    if self.call_id and self.call_id != call_id:
+                        await self.leave_call_group(self.call_id)
                     members = ACTIVE_CALL_MEMBERS.setdefault(call_id, set())
                     if self.user_id not in members:
                         members.add(self.user_id)
                         call['participants'] = len(members)
                     self.call_id = call_id
+                    await self.join_call_group(call_id)
                     await self.broadcast_lobby_state()
                 return
 
@@ -228,6 +296,41 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'idle'}))
                 return
 
+            if message_type == 'audio_stream':
+                if not self.call_id:
+                    await self.send(text_data=json.dumps({'type': 'error', 'message': 'Join a live call before sending audio.'}))
+                    return
+                if self.mock_mode:
+                    await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'speaking'}))
+                    asyncio.create_task(self.send_mock_response())
+                    return
+                if self.gemini_session is None:
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'Gemini live session is not ready for audio input yet.'
+                    }))
+                    return
+                source_call_id = data.get('call_id')
+                if source_call_id and source_call_id != self.call_id:
+                    await self.send(text_data=json.dumps({'type': 'error', 'message': 'Audio stream call_id mismatch.'}))
+                    return
+                encoded_chunk = data.get('data')
+                if not encoded_chunk:
+                    await self.send(text_data=json.dumps({'type': 'error', 'message': 'Missing audio stream payload.'}))
+                    return
+                try:
+                    audio_bytes = base64.b64decode(encoded_chunk)
+                    logger.debug('LiveTeacherConsumer forwarding audio chunk %s bytes', len(audio_bytes))
+                    await self.gemini_session.send_realtime_input(
+                        media_chunks=[types.Blob(data=audio_bytes, mime_type='audio/pcm;rate=16000')]
+                    )
+                except Exception as exc:
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': f'Failed to forward audio chunk: {exc}',
+                    }))
+                return
+
             if message_type == 'text_question':
                 await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'thinking'}))
                 if self.mock_mode:
@@ -237,31 +340,11 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 return
 
         if bytes_data:
-            if self.mock_mode:
-                if not self.call_id:
-                    await self.send(text_data=json.dumps({'type': 'error', 'message': 'You must join a call before sending audio.'}))
-                    return
-                await self.send(text_data=json.dumps({'type': 'state_change', 'state': 'speaking'}))
-                asyncio.create_task(self.send_mock_response())
-                return
-
-            if self.gemini_session is None:
-                await self.send(text_data=json.dumps({
-                    'type': 'error',
-                    'message': 'Gemini live session is not ready for audio input yet.'
-                }))
-                return
-
-            try:
-                logger.debug('LiveTeacherConsumer forwarding audio chunk %s bytes', len(bytes_data))
-                await self.gemini_session.send_realtime_input(
-                    media_chunks=[types.Blob(data=bytes_data, mime_type='audio/pcm;rate=16000')]
-                )
-            except Exception as exc:
-                await self.send(text_data=json.dumps({
-                    'type': 'error',
-                    'message': f'Failed to forward audio chunk: {exc}',
-                }))
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Binary frames are no longer supported. Use structured JSON audio_stream events.'
+            }))
+            return
 
     async def _leave_current_call(self, call_id):
         if not call_id:
@@ -276,6 +359,7 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
             ACTIVE_CALL_MEMBERS.pop(call_id, None)
         if self.call_id == call_id:
             self.call_id = None
+        await self.leave_call_group(call_id)
         await self.broadcast_lobby_state()
 
     async def send_mock_response(self, question_text=''):
