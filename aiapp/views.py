@@ -18,6 +18,7 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect # Ensure this is imported at the top
 from .models import Quiz, Question, Choice # Ensure these are imported
+from .ai_providers import route_ai_request, route_tts_request
 from .forms import QuizForm # Ensure this is imported
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
@@ -747,21 +748,8 @@ def tts_proxy(request):
         if not text or not language_code:
             return JsonResponse({"error": "Missing 'text' or 'language_code'."}, status=400)
 
-        payload = {
-            "text": text,
-            "language_code": language_code
-        }
-
-        headers = {
-            "Authorization": BOTLHALE_API_TOKEN
-        }
-
-        response = requests.post(BOTLHALE_TTS_URL, headers=headers, data=payload)
-
-        if response.status_code != 200:
-            return JsonResponse({"error": "Botlhale API error", "details": response.text}, status=response.status_code)
-
-        return JsonResponse(response.json())
+        result = route_tts_request(text, language_code)
+        return JsonResponse(result)
 
     except Exception as e:
         return JsonResponse({"error": "Server error", "details": str(e)}, status=500)
@@ -905,40 +893,9 @@ def gemini_proxy(request):
             "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
         }
 
-        payload = {
-            "contents": contents,
-            "systemInstruction": system_instruction_content, 
-            "generationConfig": generation_config,
-        }
-
-        # 6. Make the API Request
-        resp = requests.post(url, json=payload)
-        
-        # 7. Error Handling 
-        if resp.status_code != 200:
-            if resp.status_code == 429:
-                return JsonResponse({
-                    "error": "rate_limit_exceeded",
-                    "message": "Nakintu AI is currently receiving a lot of requests.",
-                    "suggestion": "Please wait about 60 seconds before asking another question.",
-                    "retry_after": 60 
-                }, status=429)
-
-            return JsonResponse(
-                {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
-                status=resp.status_code,
-            )
-
-        # 8. Success Response Handling (CRITICAL FIX HERE)
-        data = resp.json()
-        text = "[No text returned]"
-        
-        # We must extract the text from the Gemini response structure
-        if "candidates" in data and len(data["candidates"]) > 0:
-            parts = data["candidates"][0].get("content", {}).get("parts", [])
-            text = " ".join([p.get("text", "") for p in parts])
-
-        return JsonResponse({"text": text})
+        body = json.loads(request.body.decode("utf-8"))
+        result = route_ai_request(body)
+        return JsonResponse(result)
 
     except Exception as e:
         print(f"Error in gemini_proxy: {e}")

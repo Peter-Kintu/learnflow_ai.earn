@@ -42,8 +42,9 @@
         .message p{margin:0 0 0.55rem}
 
         /* Composer (sticky bottom) */
-        .composer{display:flex;gap:0.6rem;align-items:center;padding:0.75rem;border-radius:10px;margin-top:0.75rem;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02)}
-        #chatInput{flex:1;background:transparent;border:none;color:var(--white);padding:0.6rem;border-radius:8px;min-height:46px;resize:none}
+        .composer{display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;padding:0.75rem;border-radius:10px;margin-top:0.75rem;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02)}
+        .language-selector{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--white);padding:0.7rem 0.9rem;border-radius:10px;font-size:0.95rem;min-width:180px;outline:none}
+        #chatInput{flex:1;background:transparent;border:none;color:var(--white);padding:0.6rem;border-radius:8px;min-height:46px;resize:none;min-width:220px}
         .action-icon-button{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);width:44px;height:44px;border-radius:8px;display:grid;place-items:center}
 
         /* Right panel */
@@ -135,6 +136,17 @@
 
             <div class="composer">
                 <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">🎤</button>
+                <select id="languageSelector" class="language-selector" aria-label="Choose language for AI responses">
+                    <option value="auto" selected>Auto-detect language</option>
+                    <option value="en">English</option>
+                    <option value="sw">Swahili</option>
+                    <option value="lg">Luganda</option>
+                    <option value="rw">Kinyarwanda</option>
+                    <option value="ha">Hausa</option>
+                    <option value="fr">French</option>
+                    <option value="es">Spanish</option>
+                    <option value="ar">Arabic</option>
+                </select>
                 <textarea id="chatInput" placeholder="Ask something or speak..." onkeydown="handleKeydown(event)"></textarea>
                 <button onclick="typeQuery()" class="action-icon-button" id="sendChatButton" title="Send Message">➤</button>
             </div>
@@ -170,6 +182,7 @@
     const recordButton = document.getElementById('recordButton');
     const voiceStatus = document.getElementById('voiceStatus');
     const chatInput = document.getElementById('chatInput'); 
+    const languageSelector = document.getElementById('languageSelector');
     // NEW: Get the send button for potential status updates (though not strictly required)
     const sendChatButton = document.getElementById('sendChatButton'); 
 
@@ -744,6 +757,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     parts: [{ text: item.text }]
   }));
 
+  const languageCode = languageSelector?.value || 'auto';
   let currentSystemInstruction = systemInstruction;
 
   if (userCurrentContext.currentTimeAndDate) {
@@ -771,15 +785,14 @@ Please proceed with your location-based query (e.g., "What is the weather like h
       },
       body: JSON.stringify({
         contents: fullContents,
-        config: { temperature: 0.7, maxOutputTokens: 2048 }
+        language_code: languageCode,
+        voice: false,
+        config: {
+          temperature: 0.7,
+          maxOutputTokens: 2048
+        }
       })
     });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
-    }
-
     const data = await response.json();
     const aiText = data.text || "I apologize, I could not generate a response.";
 

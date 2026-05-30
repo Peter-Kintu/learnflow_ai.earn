@@ -237,6 +237,14 @@ LOGGING = {
 # CRITICAL: This value MUST be set as an environment variable (e.g., in Render/Koyeb dashboard).
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_FALLBACK_KEY_FOR_DEV_ONLY")
 
+SUNBIRD_API_URL = os.environ.get('SUNBIRD_API_URL', '').strip()
+SUNBIRD_API_KEY = os.environ.get('SUNBIRD_API_KEY', '').strip()
+SUNBIRD_TTS_URL = os.environ.get('SUNBIRD_TTS_URL', '').strip()
+CEREBRAS_API_URL = os.environ.get('CEREBRAS_API_URL', '').strip()
+CEREBRAS_API_KEY = os.environ.get('CEREBRAS_API_KEY', '').strip()
+BOTLHALE_API_TOKEN = os.environ.get('BOTLHALE_API_TOKEN', '').strip()
+BOTLHALE_TTS_URL = os.environ.get('BOTLHALE_TTS_URL', 'https://api.botlhale.xyz/tts').strip()
+
 if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_FALLBACK_KEY_FOR_DEV_ONLY":
     # In production, this should ideally raise an error or log a warning if the key is missing.
     print("WARNING: GEMINI_API_KEY environment variable is not set. API calls will fail.")
