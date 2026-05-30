@@ -178,8 +178,17 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash') -> st
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
 
+    # Build Gemini-compatible request (filter out non-Gemini fields)
+    gemini_body = {
+        'contents': body.get('contents', []),
+    }
+    if 'systemInstruction' in body:
+        gemini_body['systemInstruction'] = body['systemInstruction']
+    if 'config' in body:
+        gemini_body['generationConfig'] = body['config']
+
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
-    response = requests.post(url, json=body, timeout=30)
+    response = requests.post(url, json=gemini_body, timeout=30)
     response.raise_for_status()
     return extract_text_from_response_body(response.json())
 
