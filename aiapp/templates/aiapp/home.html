@@ -1,172 +1,311 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-        :root{
-            --bg:#ffffff;
-            --panel:#f8f9fa;
-            --muted:#6c757d;
-            --accent:#6366f1;
-            --glass: rgba(99, 102, 241, 0.08);
-            --surface:#ffffff;
-            --white: #1a1a1a;
-            --border: #e9ecef;
-        }
+    :root {
+        --bg: #f9fbfc;
+        --sidebar-bg: #f0f4f9;
+        --surface: #ffffff;
+        --text-main: #1f1f1f;
+        --text-muted: #5f6368;
+        --accent: #4f46e5;
+        --accent-light: #e8eaf6;
+        --border: #e3e7ed;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
 
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:#f5f7fa;color:var(--white);min-height:100vh}
-        .chat-container-card{max-width:1400px;margin:1rem auto;padding:1rem;width:calc(100% - 2rem)}
-        .gf-layout{display:grid;grid-template-columns:280px 1fr 300px;gap:1.5rem;align-items:start}
-        .gf-sidebar, .gf-right, .gf-main{background:var(--panel);border-radius:16px;padding:1.5rem;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow: hidden;
+    }
 
-        /* Sidebar (conversations) */
-        .gf-sidebar h3{font-size:1rem;color:var(--white);margin-bottom:1rem;font-weight:700}
-        .conv-list{display:flex;flex-direction:column;gap:0.6rem}
-        .conv-item{display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:10px;cursor:pointer;background:transparent;border:1px solid transparent;transition:all 0.2s}
-        .conv-item:hover{background:var(--glass);border-color:var(--accent);color:var(--accent)}
-        .conv-item .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:0 0 8px}
-        .conv-item .title{color:var(--white);font-weight:500;font-size:0.95rem}
+    .chat-container-card {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
 
-        /* Main chat */
-        .gf-main{display:flex;flex-direction:column;min-height:75vh}
-        .gf-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-        .gf-topbar .title{font-size:1.3rem;font-weight:700;color:var(--white)}
-        .gf-topbar .actions{display:flex;gap:1rem;align-items:center}
+    .app-layout {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+    }
 
-        #chatLog{flex:1;overflow:auto;padding:1.5rem;border-radius:12px;background:#ffffff;border:1px solid var(--border);margin-bottom:1rem}
+    .sidebar {
+        width: 280px;
+        background: var(--sidebar-bg);
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem 1rem;
+        border-right: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
 
-        .message{max-width:75%;padding:1rem;margin:1rem 0;border-radius:14px;line-height:1.6;font-size:0.95rem;display:block}
-        .message.ai{background:#f0f4ff;color:#1a1a1a;border-left:4px solid var(--accent);margin-right:auto}
-        .message.user{background:var(--accent);color:white;margin-left:auto}
-        .message strong{display:block;font-weight:600;margin-bottom:0.5rem}
-        .message p{margin:0 0 0.6rem;line-height:1.6}
+    .sidebar h3 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin: 1.5rem 0 0.5rem 0.75rem;
+    }
 
-        /* Composer (sticky bottom) */
-        .composer{display:flex;flex-wrap:wrap;gap:0.8rem;align-items:flex-end;padding:1rem;border-radius:14px;margin-top:1rem;background:#ffffff;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-        .language-selector{background:#f8f9fa;border:1px solid var(--border);color:var(--white);padding:0.75rem 1rem;border-radius:10px;font-size:0.95rem;min-width:180px;outline:none;cursor:pointer;font-weight:500}
-        .language-selector:hover{border-color:var(--accent);background:var(--glass)}
-        #chatInput{flex:1;background:transparent;border:none;color:var(--white);padding:0.75rem;border-radius:8px;min-height:48px;resize:none;min-width:220px;font-size:0.95rem;font-family:inherit}
-        #chatInput::placeholder{color:var(--muted)}
-        .action-icon-button{background:var(--accent);border:1px solid var(--accent);width:48px;height:48px;border-radius:10px;display:grid;place-items:center;color:white;cursor:pointer;font-size:1.2rem;transition:all 0.2s}
-        .action-icon-button:hover{background:#4f46e5;transform:scale(1.05)}
+    .new-chat-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: var(--accent-light);
+        color: var(--accent);
+        border: none;
+        padding: 0.85rem 1.25rem;
+        border-radius: 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .new-chat-btn:hover { background: #dcdfe5; transform: translateY(-1px); }
 
-        /* Right panel */
-        .gf-right h4{margin-bottom:1rem;font-size:1rem;color:var(--white);font-weight:700}
-        .feature-card{background:var(--glass);padding:1rem;border-radius:12px;margin-bottom:1rem;border:1px solid var(--border)}
-        .feature-card strong{color:var(--accent);display:block;margin-bottom:0.5rem}
-        .feature-card div{color:var(--muted);font-size:0.9rem;line-height:1.5}
+    .conv-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; flex: 1; overflow-y: auto; }
+    .conv-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 20px;
+        cursor: pointer;
+        color: var(--text-main);
+        font-size: 0.92rem;
+        transition: background 0.2s;
+    }
+    .conv-item:hover, .conv-item.active { background: #e4e8ee; }
 
-        /* Small screens: stack columns */
-        @media (max-width: 880px){
-            .gf-layout{grid-template-columns:1fr;}
-            .gf-right{order:3}
-            .gf-sidebar{order:1}
-            .gf-main{order:2;min-height:60vh}
-            .gf-sidebar{display:flex;overflow:auto;padding:0.6rem;gap:0.5rem}
-        }
+    .util-tray {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #e4e8ee;
+    }
+    .util-tray button {
+        padding: 0.6rem;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--text-main);
+        transition: all 0.2s ease;
+    }
+    .util-tray button:hover { background: #f5f7fb; }
 
-        /* Smooth scrollbar */
-        #chatLog::-webkit-scrollbar{width:8px}
-        #chatLog::-webkit-scrollbar-track{background:#f8f9fa;border-radius:10px}
-        #chatLog::-webkit-scrollbar-thumb{background:var(--accent);border-radius:10px;opacity:0.6}
-        #chatLog::-webkit-scrollbar-thumb:hover{opacity:1}
-    </style>
-            border-top-color: transparent; 
-            border-radius: 50%; 
-            animation: spin 1s linear infinite; 
-            margin: 2rem auto; 
-        }
+    .main-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--surface);
+        position: relative;
+    }
 
-        @keyframes spin { 
-            to { transform: rotate(360deg); } 
-        }
+    .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+    }
+    .topbar .title { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
+    .topbar .time { font-size: 0.85rem; color: var(--text-muted); }
 
-        #voiceStatus{margin-top:0.8rem;color:var(--muted);font-size:0.9rem;text-align:center}
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .chat-container-card{padding:0.5rem}
-            .gf-layout{grid-template-columns:1fr;gap:1rem}
-            .message{max-width:90%}
-            .composer{gap:0.5rem;flex-direction:column}
-            #chatInput{min-width:100%}
-            .language-selector{width:100%}
-        }
-    </style>
+    #chatLog {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem 4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .chat-message {
+        display: flex;
+        gap: 1.5rem;
+        max-width: 850px;
+        width: 100%;
+        margin: 0 auto;
+        line-height: 1.6;
+        font-size: 1rem;
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .chat-message .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .chat-message.ai .avatar { background: var(--accent-light); }
+    .chat-message.user .avatar { background: #f0f0f0; }
+
+    .chat-message .content {
+        flex: 1;
+        padding-top: 0.25rem;
+    }
+    .chat-message strong { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 600; }
+    .chat-message p { margin-bottom: 0.75rem; color: var(--text-main); }
+
+    .input-wrapper {
+        width: 100%;
+        max-width: 850px;
+        margin: 0 auto 2rem auto;
+        padding: 0 2rem;
+    }
+    .composer {
+        display: flex;
+        align-items: center;
+        background: #f0f4f9;
+        border-radius: 28px;
+        padding: 0.5rem 1.5rem;
+        gap: 0.75rem;
+        transition: box-shadow 0.2s, background 0.2s;
+    }
+    .composer:focus-within {
+        background: var(--surface);
+        box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    #chatInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        padding: 0.75rem 0;
+        resize: none;
+        font-family: inherit;
+        font-size: 1rem;
+        color: var(--text-main);
+        max-height: 150px;
+    }
+
+    .language-selector {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+        font-weight: 500;
+        padding-right: 0.5rem;
+    }
+
+    .action-icon-button {
+        background: transparent;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: background 0.2s;
+        color: var(--text-muted);
+    }
+    .action-icon-button:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
+    #sendChatButton { color: var(--accent); }
+
+    #voiceStatus { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: -1.5rem; margin-bottom: 1rem; }
+
+    .loader {
+        width: 24px;
+        height: 24px;
+        border: 3px solid var(--accent-light);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-left: 3.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+        .sidebar { display: none; }
+        #chatLog { padding: 1.5rem; }
+        .input-wrapper { padding: 0 1rem; }
+    }
+</style>
 
 <div class="chat-container-card">
-    <div class="gf-layout">
-        <aside class="gf-sidebar">
-            <h3>Conversations</h3>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <button class="new-chat-btn" onclick="clearChat()">
+                <span>➕</span> New conversation
+            </button>
+
+            <h3>Recent</h3>
             <div class="conv-list">
-                <div class="conv-item">
-                    <div class="dot"></div>
-                    <div class="title">New conversation</div>
+                <div class="conv-item active" onclick="clearChat()">
+                    <span>💬</span>
+                    <span class="title">Current Chat</span>
                 </div>
-                <div class="conv-item">
-                    <div class="dot" style="background:transparent;border:1px solid rgba(255,255,255,0.03)"></div>
-                    <div class="title">Study plan demo</div>
+                <div class="conv-item" onclick="preFillQuestion('Explain this in simple terms')">
+                    <span>⚡</span>
+                    <span class="title">Quick Demo</span>
                 </div>
             </div>
-            <div style="margin-top:1rem">
-                <button onclick="preFillQuestion('Explain this in simple terms')" style="width:100%;padding:0.75rem;background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:600;transition:all 0.2s" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='var(--accent)'">⚡ Quick Example</button>
+
+            <div class="util-tray">
+                <button onclick="summarizeChat()">📝 Summarize Chat</button>
+                <button onclick="exportChat()">💾 Export Journey</button>
             </div>
         </aside>
 
-        <main class="gf-main">
-            <div class="gf-topbar">
-                <div class="title">👋 Hi {{ user.username }}, I'm Nakintu</div>
-                <div class="actions">
-                    <div id="localTimeDisplay" style="color:var(--muted);font-size:0.92rem;white-space:nowrap"></div>
-                </div>
+        <main class="main-container">
+            <div class="topbar">
+                <div class="title">Nakintu AI</div>
+                <div id="localTimeDisplay" class="time"></div>
             </div>
 
             <div id="chatLog">
-                <div class="message ai">
-                    <strong>🎓 Nakintu AI</strong>
-                    <p>Welcome! I'm your personal learning companion. Ask me anything—I'll explain concepts clearly, support multiple languages, and adapt to your learning style.</p>
-                    <p style="font-size:0.9rem;color:#999;margin-top:0.8rem">💡 Try: "Explain photosynthesis" or speak in your preferred language</p>
+                <div class="chat-message ai">
+                    <div class="avatar">🎓</div>
+                    <div class="content">
+                        <strong>Nakintu AI</strong>
+                        <p>Welcome! I'm your personal learning companion. Ask me anything—I'll explain concepts clearly, support multiple languages, and adapt to your learning style.</p>
+                        <p style="margin-top:0.5rem;color:#677178;font-size:0.95rem">💡 Try: "Explain photosynthesis" or speak in your preferred language.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="composer">
-                <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">🎤</button>
-                <select id="languageSelector" class="language-selector" aria-label="Choose language for AI responses">
-                    <option value="auto" selected>Auto-detect language</option>
-                    <option value="en">English</option>
-                    <option value="sw">Swahili</option>
-                    <option value="lg">Luganda</option>
-                    <option value="rw">Kinyarwanda</option>
-                    <option value="ha">Hausa</option>
-                    <option value="fr">French</option>
-                    <option value="es">Spanish</option>
-                    <option value="ar">Arabic</option>
-                </select>
-                <textarea id="chatInput" placeholder="Ask something or speak..." onkeydown="handleKeydown(event)"></textarea>
-                <button onclick="typeQuery()" class="action-icon-button" id="sendChatButton" title="Send Message">➤</button>
-            </div>
+            <div id="voiceStatus">Tap the mic to start voice input. Say 'stop' to end speech.</div>
 
-            <div id="voiceStatus" style="margin-top:0.6rem;color:var(--muted);font-size:0.9rem;text-align:center">Tap the mic to start voice input. Say 'stop' to end speech.</div>
+            <div class="input-wrapper">
+                <div class="composer">
+                    <button id="recordButton" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">🎤</button>
+                    <textarea id="chatInput" placeholder="Ask Nakintu anything..." rows="1" onkeydown="handleKeydown(event)"></textarea>
+                    <select id="languageSelector" class="language-selector" aria-label="Choose language">
+                        <option value="auto" selected>Auto</option>
+                        <option value="en">English</option>
+                        <option value="sw">Swahili</option>
+                        <option value="lg">Luganda</option>
+                        <option value="rw">Kinyarwanda</option>
+                        <option value="ha">Hausa</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="ar">Arabic</option>
+                    </select>
+                    <button onclick="typeQuery()" class="action-icon-button" id="sendChatButton" title="Send Message">➤</button>
+                </div>
+            </div>
         </main>
-
-        <aside class="gf-right">
-            <h4>✨ Features</h4>
-            <div class="feature-card">
-                <strong>⚡ Instant Answers</strong>
-                <div>Get clear, structured explanations tailored to your level.</div>
-            </div>
-            <div class="feature-card">
-                <strong>🎤 Voice Mode</strong>
-                <div>Speak or listen—supporting African and world languages.</div>
-            </div>
-            <div class="feature-card">
-                <strong>🌍 Multilingual</strong>
-                <div>Learn in Swahili, Luganda, and 30+ other languages.</div>
-            </div>
-            <div class="feature-card">
-                <strong>💾 Save & Export</strong>
-                <div>Keep your learning journey and share with friends.</div>
-            </div>
-        </aside>
     </div>
 </div>
 
@@ -237,35 +376,35 @@ const proxyUrl = "/api/gemini_proxy/";
 
 // Example of how to trigger the message
 async function handleUserSubmission() {
-    const userMessage = document.getElementById('chat-input').value;
-    
-    // ... logic to prepare finalMessages ...
+    const userMessage = chatInput.value.trim();
+    if (!userMessage) return;
+
+    const finalMessages = [
+        { role: 'user', parts: [{ text: userMessage }] }
+    ];
 
     const result = await sendMessage(finalMessages);
 
     if (result.isError) {
-        // Display the error message in the chat bubble
-        appendMessage('bot', result.text);
-        
-        // If it was a rate limit, start the visual countdown
+        appendMessage('ai', result.text, true);
         if (result.type === 'rate_limit') {
-            startCooldown(60); 
+            startCooldown(60);
         }
     } else {
-        // It's a normal string response
-        appendMessage('bot', result);
+        appendMessage('ai', result);
     }
 }
 
 function startCooldown(seconds) {
-    const btn = document.getElementById('send-btn'); // Ensure this matches your HTML button ID
-    const input = document.getElementById('chat-input');
+    const btn = sendChatButton;
+    const input = chatInput;
     if (!btn) return;
 
     btn.disabled = true;
     if (input) input.disabled = true;
 
     let remaining = seconds;
+    const originalText = btn.innerText;
     const interval = setInterval(() => {
         btn.innerText = `Wait (${remaining}s)`;
         remaining--;
@@ -274,7 +413,7 @@ function startCooldown(seconds) {
             clearInterval(interval);
             btn.disabled = false;
             if (input) input.disabled = false;
-            btn.innerText = "Send"; // Reset to original text
+            btn.innerText = originalText;
         }
     }, 1000);
 }
@@ -690,36 +829,31 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     function appendMessage(sender, text, isError = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${sender} ${isError ? 'error' : ''}`;
-        
+
+        const avatarIcon = sender === 'ai' ? '🎓' : '👤';
+        const profileLabel = sender === 'ai' ? 'Nakintu AI' : 'You';
+
+        messageDiv.innerHTML = `<div class="avatar">${avatarIcon}</div><div class="content"><strong>${profileLabel}</strong><span></span></div>`;
+        const contentSpan = messageDiv.querySelector('span');
+        chatLog.appendChild(messageDiv);
+
         if (sender === 'ai') {
-            messageDiv.innerHTML = `<strong>Ai:</strong> <span class="text-gray-400"></span>`;
-            const contentSpan = messageDiv.querySelector('span');
-            chatLog.appendChild(messageDiv);
-            
-            // Typewriter effect
             let i = 0;
             function typeWriter() {
                 if (i < text.length) {
-                    contentSpan.textContent += text.charAt(i); 
+                    contentSpan.textContent += text.charAt(i);
                     i++;
-                    setTimeout(typeWriter, 10);
+                    setTimeout(typeWriter, 8);
                 } else {
                     saveChatHistory();
-                    // 🔥 FIX: Clean the text for speaking ONLY after typing is complete 🔥
                     const speakableText = cleanText(text);
-                    speakText(speakableText); 
+                    speakText(speakableText);
                 }
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
             typeWriter();
-            
         } else {
-            // 🔥 CRITICAL FIX: Use textContent for user messages to prevent HTML rendering (XSS) 🔥
-            messageDiv.innerHTML = `<strong>You:</strong> `;
-            const textNode = document.createTextNode(text);
-            messageDiv.appendChild(textNode);
-            
-            chatLog.appendChild(messageDiv);
+            contentSpan.textContent = text;
             saveChatHistory();
             chatLog.scrollTop = chatLog.scrollHeight;
         }

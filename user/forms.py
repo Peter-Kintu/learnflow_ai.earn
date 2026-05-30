@@ -3,7 +3,6 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
 from .constants import ROLE_CHOICES
 from .models import Profile
-from book.models import Book
 import re # Import re for mobile number validation
 
 User = get_user_model()
@@ -196,44 +195,3 @@ class CustomUserChangeForm(UserChangeForm):
             Profile.objects.update_or_create(user=user, defaults={'role': role})
         return user
 
-class BookUploadForm(forms.ModelForm):
-    teacher_code = forms.CharField(
-        max_length=5,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': INPUT_CLASSES,
-            'placeholder': 'Enter your 5-digit teacher code'
-        }),
-        label="Teacher Verification Code"
-    )
-
-    class Meta:
-        model = Book
-        fields = ['title', 'description', 'cover_image_url', 'book_file_url', 'price']
-        widgets = {
-            'title': forms.TextInput(attrs={'class': INPUT_CLASSES}),
-            'description': forms.Textarea(attrs={'class': INPUT_CLASSES}),
-            'cover_image_url': forms.URLInput(attrs={'class': INPUT_CLASSES}),
-            'book_file_url': forms.URLInput(attrs={'class': INPUT_CLASSES}),
-            'price': forms.NumberInput(attrs={'class': INPUT_CLASSES}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-
-        if self.user and hasattr(self.user, 'profile') and self.user.profile.role == 'teacher':
-            self.fields['teacher_code'].required = True
-        else:
-            self.fields['teacher_code'].widget = forms.HiddenInput()
-
-    def clean_teacher_code(self):
-        code = self.cleaned_data.get('teacher_code')
-        if self.user and hasattr(self.user, 'profile') and self.user.profile.role == 'teacher':
-            if not code:
-                raise forms.ValidationError("Please enter your teacher verification code.")
-            if not code.isdigit():
-                raise forms.ValidationError("Teacher code must be numeric.")
-            if len(code) != 5:
-                raise forms.ValidationError("Teacher code must be 5 digits.")
-        return code

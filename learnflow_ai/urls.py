@@ -10,12 +10,11 @@ from user.views import ping
 from django.contrib.sitemaps.views import sitemap, index
 
 # Import your sitemap classes
-from .sitemap import StaticSitemap, QuizSitemap, BookSitemap, VideoSitemap
+from .sitemap import StaticSitemap, QuizSitemap, VideoSitemap
 
 sitemaps = {
     'static': StaticSitemap,
     'quizzes': QuizSitemap,
-    # 'books': BookSitemap,
     'videos': VideoSitemap,
 }
 
@@ -44,7 +43,6 @@ urlpatterns = [
 
     # ✅ Redirect old paths to new ones (fixes 404s and NoReverseMatch)
     path("quiz/<int:quiz_id>/", RedirectView.as_view(pattern_name="aiapp:quiz_detail", permanent=True)),
-    # path("books/<int:book_id>/", RedirectView.as_view(pattern_name="book:book_detail", permanent=True)),
     path("videos/<int:video_id>/", RedirectView.as_view(pattern_name="video:video_detail", permanent=True)),
 
     # Root URL routed to user app
@@ -53,7 +51,6 @@ urlpatterns = [
     # Other app routes
     path("aiapp/", include("aiapp.urls")),
     path("video/", include("video.urls")),
-    # path("book/", include("book.urls")),
     path("legal/", include(("legalpages.urls", "legalpages"), namespace="legalpages")),
     path("school/", include(("School.urls", "school"), namespace="school")),
   

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title>{% block title %}Nakintu AI - AI-Powered Education{% endblock %}</title>
-    <meta name="description" content="Nakintu AI is a multilingual educational platform offering AI-powered quizzes, books, and videos for African educators and students.">
+    <meta name="description" content="Nakintu AI is a multilingual educational platform offering AI-powered quizzes and videos for African educators and students.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app{{ request.path }}" />
 
@@ -42,7 +42,7 @@
         "name": "What is Nakintu AI?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Nakintu AI is a multilingual educational platform offering AI-powered quizzes, books, and videos for African educators and students."
+          "text": "Nakintu AI is a multilingual educational platform offering AI-powered quizzes and videos for African educators and students."
         }
       }]
     }
@@ -55,7 +55,7 @@
       "name": "Nakintu AI",
       "url": "https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app",
       "logo": "https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app/static/logo.png",
-      "description": "Nakintu AI empowers educators across Africa with multilingual quizzes, books, and videos."
+      "description": "Nakintu AI empowers educators across Africa with multilingual quizzes and videos."
     }
     </script>
     <style>
@@ -208,10 +208,9 @@
             </div>
 
             <div class="desktop-menu items-center gap-2 flex-wrap">
-                <a href="{% url 'legalpages:learnflow_main' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Video Analyzer</a>
+                <a href="{% url 'legalpages:learnflow_main' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Live Calls</a>
                 <a href="{% url 'video:video_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Videos</a>
                 <a href="{% url 'aiapp:quiz_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Quizzes</a>
-                <a href="{% url 'book:book_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Books</a>
                 <a href="{% url 'legalpages:overview' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Overview</a>
             </div>
 
@@ -259,7 +258,7 @@
                 
                 <a href="{% url 'legalpages:learnflow_main' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center text-lg font-medium {% if 'video_analysis/' in current_path or current_path == '/' %}text-white bg-indigo-600 shadow-lg border border-indigo-700/50{% else %}text-white bg-slate-700 hover:bg-indigo-700{% endif %}">
                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot mr-3"><path d="M12 8V4"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M7 15h10"/><path d="M8 9v2"/><path d="M16 9v2"/></svg>
-                   AI Video Analysis
+                   Live Calls
                 </a>
                 
                 <a href="{% url 'video:video_list' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center text-lg font-medium {% if 'videos/' in current_path %}text-indigo-400 bg-slate-700 shadow-inner border border-indigo-600/50{% else %}text-gray-300 hover:text-white hover:bg-slate-700{% endif %}">
@@ -275,11 +274,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-swords mr-3"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="11" y1="13" y2="19"/><line x1="2" x2="6" y1="16" y2="20"/><line x1="3" x2="5" y1="21" y2="19"/></svg>
                 Math game
             </a>
-                            <a href="{% url 'book:book_list' %}" class="block py-3 px-4 rounded-xl transition-colors duration-300 flex items-center text-lg font-medium {% if 'book/' in current_path %}text-indigo-400 bg-slate-700 shadow-inner border border-indigo-600/50{% else %}text-gray-300 hover:text-white hover:bg-slate-700{% endif %}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text mr-3"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 8h6"/><path d="M8 12h8"/></svg>
-                    Books
-                </a>
-                
                 {% if user.is_authenticated %}
                 <p class="text-sm font-semibold text-gray-500 mt-6 pb-1 uppercase tracking-wider">Your Flow</p>
 

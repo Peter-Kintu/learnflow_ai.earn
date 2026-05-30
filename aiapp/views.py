@@ -27,7 +27,6 @@ from .models import Quiz, Question, Choice, StudentAnswer, Attempt
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
-from book.models import Book
 from django.contrib.auth.decorators import login_required
 from urllib.parse import urljoin
 
@@ -692,7 +691,6 @@ def sitemap_view(request):
         urljoin(base_url, "/"),
         urljoin(base_url, "/aiapp/"),
         urljoin(base_url, "/video/"),
-        urljoin(base_url, "/book/"),
     ]
 
     try:
@@ -701,13 +699,6 @@ def sitemap_view(request):
             urls.append(urljoin(base_url, f"/quiz/{slug_or_pk}/"))
     except Exception:
         urls.append(urljoin(base_url, "/quiz/"))
-
-    try:
-        for b in Book.objects.all():
-            slug_or_pk = getattr(b, 'slug', None) or str(b.pk)
-            urls.append(urljoin(base_url, f"/books/{slug_or_pk}/"))
-    except Exception:
-        urls.append(urljoin(base_url, "/books/"))
 
     try:
         for v in Video.objects.all():

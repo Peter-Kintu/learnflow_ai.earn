@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'user', 
     'aiapp',
     'video',
-    'book',
     'legalpages',
 
     'django.contrib.humanize',
@@ -340,7 +339,7 @@ JAZZMIN_SETTINGS = {
     "site_logo": "static/images/nakintu_ai_logo.png",
     "site_icon": "static/images/favicon.ico",
     "welcome_sign": "Welcome to Nakintu AI — where every click is a step toward wisdom.",
-    "search_model": ["auth.User", "aiapp.Question", "video.Video", "book.Book"],
+    "search_model": ["auth.User", "aiapp.Question", "video.Video"],
     "user_avatar": None,
     "topmenu_links": [
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
@@ -348,11 +347,10 @@ JAZZMIN_SETTINGS = {
         {"model": "auth.User"},
         {"model": "aiapp.Question"},
         {"model": "video.Video"},
-        {"model": "book.Book"},
     ],
     "show_sidebar": True,
     "navigation_expanded": True,
-    "order_with_respect_to": ["auth", "aiapp", "video", "user", "book"],
+    "order_with_respect_to": ["auth", "aiapp", "video", "user"],
     "hide_apps": ["contenttypes", "sessions"],
     "hide_models": [],
     "icons": {
@@ -364,7 +362,6 @@ JAZZMIN_SETTINGS = {
         "aiapp.Quiz": "fas fa-puzzle-piece",
         "aiapp.StudentAnswer": "fas fa-edit",
         "video.Video": "fas fa-video",
-        "book.Book": "fas fa-book-open",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",

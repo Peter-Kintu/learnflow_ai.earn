@@ -3,7 +3,6 @@ from django.urls import reverse
 
 # Absolute imports to avoid ModuleNotFoundError
 from aiapp.models import Quiz
-from book.models import Book
 from video.models import Video
 
 
@@ -21,7 +20,6 @@ class StaticSitemap(Sitemap):
             "aiapp:home",
             "aiapp:quiz_list",
             "video:video_list",
-            "book:book_list",
         ]
 
     def location(self, item):
@@ -84,13 +82,6 @@ class QuizSitemap(BaseModelSitemap):
     priority = 0.8
     model = Quiz
     detail_view_name = "aiapp:quiz_detail"
-
-
-class BookSitemap(BaseModelSitemap):
-    """Sitemap for all Book objects."""
-    priority = 0.9
-    model = Book
-    detail_view_name = "book:book_detail"
 
 
 class VideoSitemap(BaseModelSitemap):
