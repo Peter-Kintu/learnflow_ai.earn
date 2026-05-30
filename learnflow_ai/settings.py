@@ -11,8 +11,23 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 
-    'artificial-shirlee-learnflow-8ec0e7a0.koyeb.app'
+    'artificial-shirlee-learnflow-8ec0e7a0.koyeb.app,localhost,127.0.0.1'
     ).split(',')
+
+# Add runtime platform-specific hostnames when available (e.g., Koyeb internal hostnames)
+for runtime_host in (
+    os.environ.get('HOSTNAME'),
+    os.environ.get('KOYEB_INSTANCE_ID'),
+    os.environ.get('KOYEB_APP_NAME'),
+    os.environ.get('PRIMARY_DOMAIN'),
+):
+    if runtime_host:
+        ALLOWED_HOSTS.append(runtime_host)
+
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+
+if os.environ.get('DJANGO_ALLOW_ALL_HOSTS', 'False') == 'True':
+    ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
    
