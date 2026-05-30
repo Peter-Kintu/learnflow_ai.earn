@@ -206,12 +206,9 @@
     let totalCardsRendered = 0;
     let speaking = false;
 
-    const liveCalls = [
-        { id: 'math-madness', title: 'Math Mastery Call', host: 'Amina', participants: 12, topic: 'Algebra', status: 'Live' },
-        { id: 'science-depth', title: 'Science Deep Dive', host: 'David', participants: 8, topic: 'Physics', status: 'Live' },
-        { id: 'swahili-study', title: 'Swahili Study Circle', host: 'Grace', participants: 5, topic: 'Language', status: 'Live' }
-    ];
+    let liveCalls = [];
     let activeCallId = null;
+    let isSocketConnected = false;
 
     const ctx = D.audioWave.getContext('2d');
 
@@ -243,25 +240,33 @@
 
         liveCalls.forEach((call) => {
             const card = document.createElement('div');
-            card.className = 'rounded-3xl border border-brand-surface bg-brand-dark/60 p-4 transition hover:border-accent-cyan/40';
+            card.className = 'rounded-3xl border border-brand-surface/20 bg-brand-dark/70 p-4 transition hover:border-accent-cyan/40 hover:bg-brand-panel/80';
             const isJoined = activeCallId === call.id;
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="text-xs uppercase tracking-wider text-text-secondary mb-2">${call.status}</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-accent-cyan">
+                            <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>${call.status}
+                        </div>
                         <h4 class="text-lg font-semibold text-white">${call.title}</h4>
-                        <p class="text-xs text-text-secondary mt-2">Host: ${call.host} · ${call.topic}</p>
+                        <p class="text-sm text-text-secondary">${call.participants} viewers · Host ${call.host}</p>
+                        <p class="text-xs text-text-secondary">Topic: ${call.topic}</p>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-text-secondary">${call.participants} participants</p>
-                        <button class="mt-3 inline-flex rounded-2xl bg-accent-cyan px-3 py-2 text-xs font-semibold text-brand-dark transition hover:bg-cyan-400" data-call-id="${call.id}">
+                    <div class="text-right flex flex-col items-end gap-3">
+                        <div class="inline-flex items-center gap-2 rounded-full border border-brand-surface/20 bg-brand-surface/10 px-3 py-1 text-xs text-text-secondary">
+                            <i class="fas fa-heart text-rose-400"></i>
+                            ${Math.max(call.participants * 3, 18)}
+                        </div>
+                        <button class="inline-flex rounded-2xl ${isJoined ? 'bg-gray-600 text-text-secondary cursor-default' : 'bg-accent-cyan text-brand-dark hover:bg-cyan-400'} px-4 py-2 text-xs font-semibold transition" data-call-id="${call.id}" ${isJoined ? 'disabled' : ''}>
                             ${isJoined ? 'Joined' : 'Join'}
                         </button>
                     </div>
                 </div>
             `;
             const joinButton = card.querySelector('button');
-            joinButton.addEventListener('click', () => joinCall(call.id));
+            if (joinButton && !joinButton.disabled) {
+                joinButton.addEventListener('click', () => joinCall(call.id));
+            }
             D.callList.appendChild(card);
         });
     }
@@ -286,41 +291,50 @@
         D.currentCallCard.classList.remove('hidden');
     }
 
-    function joinCall(callId) {
-        activeCallId = callId;
-        const call = liveCalls.find((item) => item.id === callId);
-        if (call) {
-            call.participants += 1;
+    function sendSocketEvent(eventPayload) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            console.warn('Socket is not ready yet:', eventPayload);
+            return;
         }
-        showCurrentCall();
+        socket.send(JSON.stringify(eventPayload));
+    }
+
+    function handleLobbyUpdate(calls) {
+        liveCalls = Array.isArray(calls) ? calls : [];
+        if (activeCallId && !liveCalls.some((room) => room.id === activeCallId)) {
+            activeCallId = null;
+        }
         renderCallList();
+        showCurrentCall();
+    }
+
+    function joinCall(callId) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            D.promptText.innerText = 'Connecting to live lobby...';
+            startLiveSession().then(() => sendSocketEvent({ type: 'join_call', call_id: callId }));
+        } else {
+            sendSocketEvent({ type: 'join_call', call_id: callId });
+        }
+        activeCallId = callId;
         D.promptText.innerText = 'You have joined a live call. Use the mic to speak.';
     }
 
     function createCall() {
         const title = prompt('What is the title of your live call?', 'Study Group Call');
         if (!title) return;
-        const newCall = {
-            id: `call-${Date.now()}`,
-            title,
-            host: 'You',
-            participants: 1,
-            topic: 'Open Study',
-            status: 'Live'
-        };
-        liveCalls.unshift(newCall);
-        activeCallId = newCall.id;
-        renderCallList();
-        showCurrentCall();
-        D.promptText.innerText = 'You created a live call. Invite others to join from the lobby.';
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            startLiveSession().then(() => {
+                sendSocketEvent({ type: 'create_call', title, host: 'You', topic: 'Open Study' });
+            });
+        } else {
+            sendSocketEvent({ type: 'create_call', title, host: 'You', topic: 'Open Study' });
+        }
+        D.promptText.innerText = 'Creating your live call...';
     }
 
     function leaveCall() {
         if (!activeCallId) return;
-        const call = liveCalls.find((item) => item.id === activeCallId);
-        if (call) {
-            call.participants = Math.max(0, call.participants - 1);
-        }
+        sendSocketEvent({ type: 'leave_call', call_id: activeCallId });
         activeCallId = null;
         showCurrentCall();
         renderCallList();
@@ -509,9 +523,11 @@
             socket.binaryType = 'arraybuffer';
             socket.onopen = async () => {
                 console.debug('[LiveTeacher] websocket open', socket.url);
+                isSocketConnected = true;
                 isSessionActive = true;
                 setButtonState('ready');
                 drawWave();
+                sendSocketEvent({ type: 'get_lobby' });
                 try {
                     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
                 } catch (err) {
@@ -525,19 +541,15 @@
                 source.connect(audioProcessor);
                 audioProcessor.connect(audioContext.destination);
                 audioProcessor.onaudioprocess = (event) => {
-                    if (!socket || socket.readyState !== WebSocket.OPEN || D.badgeMode.innerText !== 'LISTENING') return;
+                    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+                    if (!activeCallId) return;
                     const inputData = event.inputBuffer.getChannelData(0);
                     const int16 = float32ToInt16(inputData);
-                    console.debug('[LiveTeacher] sending audio chunk', int16.length, 'samples');
-                    socket.send(int16.buffer);
+                    const payload = float32ToInt16(inputData).buffer;
+                    socket.send(payload);
                 };
             };
             socket.onmessage = (event) => {
-                console.debug('[LiveTeacher] websocket message', event.data && event.data.slice ? event.data.slice(0, 200) : event.data);
-                if (typeof event.data !== 'string') {
-                    console.warn('Unexpected binary message from websocket');
-                    return;
-                }
                 let payload;
                 try {
                     payload = JSON.parse(event.data);
@@ -545,21 +557,39 @@
                     console.warn('Invalid JSON from websocket', err);
                     return;
                 }
+
+                if (payload.type === 'lobby_update') {
+                    handleLobbyUpdate(payload.calls);
+                    return;
+                }
+
+                if (payload.type === 'info') {
+                    D.promptText.innerText = payload.message || 'Live lobby connected.';
+                    return;
+                }
+
+                if (payload.type === 'error') {
+                    console.error('[LiveTeacher] error', payload.message);
+                    D.promptText.innerText = payload.message || 'Live error occurred.';
+                    return;
+                }
+
                 if (payload.type === 'state_change') {
                     if (payload.state === 'speaking') {
                         speaking = true;
                     } else {
                         speaking = false;
                     }
-                    // Map backend 'listening' to client 'ready'
                     const mappedState = payload.state === 'listening' ? 'ready' : payload.state;
                     setButtonState(mappedState);
                     return;
                 }
+
                 if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
                     appendDemonstrationCard(payload.args);
                     return;
                 }
+
                 if (payload.type === 'audio_chunk') {
                     speaking = true;
                     setButtonState('speaking');
