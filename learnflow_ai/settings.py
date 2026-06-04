@@ -43,6 +43,24 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 if os.environ.get('DJANGO_ALLOW_ALL_HOSTS', 'False') == 'True':
     ALLOWED_HOSTS = ['*']
 
+# Optional: allow an explicit Koyeb wildcard during debugging/early deploys.
+# This MUST be enabled via an environment variable in the platform dashboard.
+if os.environ.get('KOYEB_ALLOW_WILDCARD', 'False') == 'True':
+    ALLOWED_HOSTS = ['*']
+    print("KOYEB_ALLOW_WILDCARD=True set: allowing all hosts (ALLOWED_HOSTS=['*']).")
+
+# Debug: print detected runtime hosts to help diagnose DisallowedHost errors.
+# Enable by setting DJANGO_DEBUG=True or LOG_DETECTED_HOSTS=True in the environment.
+if os.environ.get('LOG_DETECTED_HOSTS', 'False') == 'True' or DEBUG:
+    try:
+        print("Computed ALLOWED_HOSTS:", ALLOWED_HOSTS)
+        print("ENV HOSTNAME:", os.environ.get('HOSTNAME'))
+        print("ENV KOYEB_INSTANCE_ID:", os.environ.get('KOYEB_INSTANCE_ID'))
+        print("socket.gethostname():", socket.gethostname())
+        print("socket.getfqdn():", socket.getfqdn())
+    except Exception:
+        pass
+
 CSRF_TRUSTED_ORIGINS = [
    
     'https://artificial-shirlee-learnflow-8ec0e7a0.koyeb.app',
