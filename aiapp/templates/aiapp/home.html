@@ -23,8 +23,9 @@
         background: var(--bg);
         color: var(--text-main);
         height: 100%;
-        width: 100vw;
-        overflow: auto;
+        width: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
         min-height: 100vh;
     }
 
@@ -32,6 +33,8 @@
         width: 100%;
         height: 100%;
         min-height: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .app-layout {
@@ -39,6 +42,7 @@
         height: 100%;
         width: 100%;
         min-height: 0;
+        flex-wrap: nowrap;
     }
 
     .sidebar {
@@ -129,8 +133,6 @@
         background: var(--surface);
         flex-shrink: 0;
     }
-    .topbar .title { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
-    .topbar .time { font-size: 0.85rem; color: var(--text-muted); }
 
     #chatLog {
         flex: 1;
@@ -140,12 +142,15 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto;
     }
 
     .chat-message {
         display: flex;
         gap: 1.5rem;
-        max-width: 850px;
+        max-width: 100%;
         width: 100%;
         margin: 0 auto;
         line-height: 1.6;
@@ -153,6 +158,17 @@
         animation: fadeIn 0.3s ease;
         word-break: break-word;
     }
+
+    .input-wrapper {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 2rem 1.5rem 2rem;
+        flex-shrink: 0;
+    }
+    .topbar .title { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
+    .topbar .time { font-size: 0.85rem; color: var(--text-muted); }
+
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
     .chat-message .avatar {
@@ -175,13 +191,6 @@
     .chat-message strong { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 600; }
     .chat-message p { margin-bottom: 0.75rem; color: var(--text-main); white-space: pre-line; word-wrap: break-word; }
 
-    .input-wrapper {
-        width: 100%;
-        max-width: 850px;
-        margin: 0 auto;
-        padding: 0 2rem 1.5rem 2rem;
-        flex-shrink: 0;
-    }
     .composer {
         display: flex;
         align-items: center;
@@ -250,11 +259,74 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 900px) {
-        .sidebar { display: none; }
-        #chatLog { padding: 1rem 1.5rem; }
-        .input-wrapper { padding: 0 1rem 1rem 1rem; }
+        .app-layout {
+            flex-direction: column;
+        }
+        .sidebar {
+            display: none;
+        }
+        .topbar {
+            padding: 0.85rem 1rem;
+        }
+        .topbar .title {
+            font-size: 1rem;
+        }
+        .topbar .time {
+            font-size: 0.85rem;
+        }
+        #chatLog {
+            padding: 1rem 1rem;
+            gap: 1.25rem;
+        }
+        .chat-message {
+            gap: 1rem;
+            font-size: 1.05rem;
+        }
+        .input-wrapper {
+            padding: 0 1rem 1rem 1rem;
+        }
+        .composer {
+            padding: 0.8rem 1rem;
+            gap: 0.65rem;
+        }
+        .composer button,
+        .language-selector,
+        #chatInput {
+            font-size: 0.98rem;
+        }
         body {
-            height: 100dvh;
+            height: 100vh;
+        }
+    }
+
+    @media (max-width: 600px) {
+        #chatLog {
+            padding: 1rem 0.75rem;
+        }
+        .input-wrapper {
+            padding: 0 0.75rem 1rem 0.75rem;
+        }
+        .chat-message {
+            font-size: 1.1rem;
+            gap: 0.85rem;
+        }
+        .composer {
+            padding: 0.85rem 0.9rem;
+        }
+        .composer button,
+        .language-selector,
+        #chatInput {
+            font-size: 1rem;
+        }
+        .sidebar {
+            display: none;
+        }
+    }
+
+    @media (min-width: 1400px) {
+        #chatLog,
+        .input-wrapper {
+            max-width: 1200px;
         }
     }
 </style>
@@ -295,8 +367,8 @@
                     <div class="avatar">🎓</div>
                     <div class="content">
                         <strong>Nakintu AI</strong>
-                        <p>Welcome! I'm your personal learning companion. Ask me anything—I'll explain concepts clearly, support multiple languages, and adapt to your learning style.</p>
-                        <p style="margin-top:0.5rem;color:#677178;font-size:0.95rem">💡 Try: "Explain photosynthesis" or speak in your preferred language.</p>
+                        <p>Welcome! I'm your personal learning companion with world-class teaching skills. I understand Ugandan, African, and global languages, and I work through Gemini, Sunbird, and Cerebras to stay reliable.</p>
+                        <p style="margin-top:0.5rem;color:#677178;font-size:0.95rem">💡 Try: "Explain photosynthesis" or ask in Luganda, Swahili, Hausa, French, Arabic, or your preferred language.</p>
                     </div>
                 </div>
             </div>
@@ -407,7 +479,8 @@ async function handleUserSubmission() {
             startCooldown(60);
         }
     } else {
-        appendMessage('ai', result);
+        appendMessage('ai', result.text);
+        console.log('AI provider used:', result.provider);
     }
 }
 
@@ -463,13 +536,16 @@ async function sendMessage(finalMessages) {
       return { 
         isError: true, 
         type: 'server_error', 
-        text: errorBody.error || `Server error (Status: ${response.status}). Please try again later.` 
+        text: errorBody.error || `Server error (Status: ${response.status}). Please try again later.`,
       };
     }
 
     // 3. Handle Successful Response
     const data = await response.json();
-    return data.text || "[No text returned]";
+    return {
+      text: data.text || "[No text returned]",
+      provider: data.provider || 'unknown'
+    };
 
   } catch (err) {
     // 4. Handle Network/Connection Errors
@@ -943,6 +1019,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     });
     const data = await response.json();
     const aiText = data.text || "I apologize, I could not generate a response.";
+    console.log('AI provider used:', data.provider || 'unknown');
 
     responseCount++;
     localStorage.setItem(responseCountKey, responseCount);

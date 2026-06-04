@@ -237,7 +237,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     body['language_code'] = language_code
     body['voice'] = voice
 
-    provider_order = ['gemini', 'cerebras', 'sunbird']
+    provider_order = ['gemini', 'sunbird', 'cerebras']
     provider_errors = []
     response_text = ''
     provider_used = 'unavailable'
@@ -277,7 +277,8 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
         fallback_details = '; '.join(provider_errors[-3:]) if provider_errors else 'No AI provider is configured.'
         response_text = (
             'The AI service is temporarily unavailable. '
-            'Please try again later or verify your Gemini, Cerebras, and Sunbird API settings. '
+            'Nakintu AI has attempted Gemini, Sunbird, and Cerebras. '
+            'Please try again shortly or verify your provider settings. '
             f'({fallback_details})'
         )
 
