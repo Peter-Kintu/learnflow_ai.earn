@@ -124,6 +124,14 @@ def extract_text_from_response_body(resp_json: Any) -> str:
     return ''
 
 
+def get_env_value(*keys: str) -> str:
+    for key in keys:
+        value = os.environ.get(key, '').strip()
+        if value:
+            return value
+    return ''
+
+
 def get_sunbird_request_payload(prompt: str, system_instruction: str, language_code: str, voice: bool, temperature: float) -> Dict[str, Any]:
     return {
         'prompt': prompt,
@@ -136,8 +144,8 @@ def get_sunbird_request_payload(prompt: str, system_instruction: str, language_c
 
 
 def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: str = '', voice: bool = False, temperature: float = 0.7) -> str:
-    url = os.environ.get('SUNBIRD_API_URL', '').strip()
-    api_key = os.environ.get('SUNBIRD_API_KEY', '').strip()
+    url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL')
+    api_key = get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY')
     if not url or not api_key:
         raise RuntimeError('Sunbird API is not configured.')
 
@@ -153,8 +161,8 @@ def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: s
 
 
 def call_cerebras_api(prompt: str, language_code: str = '', temperature: float = 0.7) -> str:
-    url = os.environ.get('CEREBRAS_API_URL', '').strip()
-    api_key = os.environ.get('CEREBRAS_API_KEY', '').strip()
+    url = get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL')
+    api_key = get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY')
     if not url or not api_key:
         raise RuntimeError('Cerebras API is not configured.')
 
@@ -175,7 +183,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
 
 
 def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 3) -> str:
-    api_key = os.environ.get('GEMINI_API_KEY', '').strip() or globals().get('__api_key', '')
+    api_key = get_env_value('GEMINI_API_KEY') or globals().get('__api_key', '')
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
 
@@ -267,10 +275,27 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     body['language_code'] = language_code
     body['voice'] = voice
 
+    available_providers = []
+    if get_env_value('GEMINI_API_KEY') or globals().get('__api_key', ''):
+        available_providers.append('gemini')
+    if get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL') and get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY'):
+        available_providers.append('sunbird')
+    if get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL') and get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY'):
+        available_providers.append('cerebras')
+
+    if not available_providers:
+        print('No configured AI providers available. Check GEMINI_API_KEY, SUNBIRD_API_URL, SUNBIRD_API_KEY, CEREBRAS_API_URL, CEREBRAS_API_KEY.')
+        return {
+            'text': build_local_fallback_response(prompt, language_code),
+            'provider': 'unconfigured',
+            'language_code': language_code,
+        }
+
+    preferred_order = ['gemini', 'sunbird', 'cerebras']
     if is_sunbird_language(language_code):
-        provider_order = ['sunbird', 'gemini', 'cerebras']
-    else:
-        provider_order = ['gemini', 'sunbird', 'cerebras']
+        preferred_order = ['sunbird', 'gemini', 'cerebras']
+
+    provider_order = [provider for provider in preferred_order if provider in available_providers]
 
     provider_errors = []
     response_text = ''
@@ -308,6 +333,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
                 continue
 
     if not response_text:
+        print(f'AI provider failover completed with no successful response. Providers tried: {provider_order}. Errors: {provider_errors}')
         response_text = build_local_fallback_response(prompt, language_code)
 
     return {

@@ -292,6 +292,30 @@
 
     #voiceStatus { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem auto 1rem; max-width: 860px; }
 
+    .loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1rem 0;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .loader::before {
+        content: '';
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(79, 70, 229, 0.2);
+        border-top-color: var(--accent);
+        border-radius: 9999px;
+        animation: spin 0.85s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -1003,6 +1027,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         const loaderDiv = document.createElement('div');
         loaderDiv.className = 'loader';
         loaderDiv.id = 'chatLoader';
+        loaderDiv.textContent = 'Nakintu is composing a response...';
         chatLog.appendChild(loaderDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
     }
