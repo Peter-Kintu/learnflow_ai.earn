@@ -49,16 +49,57 @@
         .live-card button {
             min-height: 42px;
         }
-        .feed-scroll::-webkit-scrollbar { width: 4px; }
-        .feed-scroll::-webkit-scrollbar-track { background: transparent; }
-        .feed-scroll::-webkit-scrollbar-thumb { background: rgba(0, 247, 255, 0.3); border-radius: 2px; }
-        .feed-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 247, 255, 0.5); }
+        .live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.5rem;
+            border-radius: 9999px;
+            background: rgba(255, 0, 110, 0.15);
+            color: #ffe4f8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+        .live-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+        .live-actions button {
+            min-height: 44px;
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 1.25rem;
+            transform: translateX(-50%);
+            z-index: 1200;
+            padding: 0.85rem 1rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc;
+            font-size: 0.9rem;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
         @media (max-width: 768px) {
             .hide-mobile { display: none !important; }
             .text-sm { font-size: 0.95rem !important; }
             .text-xs { font-size: 0.78rem !important; }
             .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
             .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+            .live-card { padding: 1rem; }
+            .live-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .live-card .text-xs { font-size: 0.78rem !important; }
         }
     </style>
 {% endblock %}
@@ -87,9 +128,9 @@
                 <!-- Live cards render here -->
                 <div class="flex flex-col items-center justify-center h-full py-12 text-center">
                     <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
-                    <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls yet. Be the first!</p>
+                    <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls available yet. Start a session to stream instantly.</p>
                     <button id="create-call-btn-hero" class="px-6 py-3 md:py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
-                        <i class="fas fa-plus mr-2"></i>Create Call
+                        <i class="fas fa-plus mr-2"></i>Create Live Stream
                     </button>
                 </div>
             </div>
@@ -100,18 +141,26 @@
             
             <!-- Active Call Info -->
             <div id="active-call-section" class="border-b border-brand-surface p-4 md:p-6 hidden">
-                <h3 id="active-call-title" class="text-base md:text-lg font-bold mb-2">Study Group Call</h3>
-                <p id="active-call-topic" class="text-sm text-text-secondary mb-4">📚 Mathematics</p>
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex -space-x-3">
-                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-pink to-red-600 flex items-center justify-center text-xs font-bold border border-brand-surface">A</div>
-                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-cyan to-blue-600 flex items-center justify-center text-xs font-bold border border-brand-surface">B</div>
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div>
+                        <h3 id="active-call-title" class="text-base md:text-lg font-bold mb-2">Study Group Call</h3>
+                        <p id="active-call-topic" class="text-sm text-text-secondary mb-3">📚 Mathematics</p>
+                        <div class="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                            <span class="inline-flex items-center gap-1"><span class="block h-2.5 w-2.5 rounded-full bg-accent-cyan"></span> Live now</span>
+                            <span id="active-viewer-count" class="inline-flex items-center gap-1">👥 0 watching</span>
+                            <span id="active-like-count" class="inline-flex items-center gap-1">❤️ 0 likes</span>
+                            <span id="active-share-count" class="inline-flex items-center gap-1">🔁 0 shares</span>
+                        </div>
                     </div>
-                    <span id="participant-count" class="text-sm text-text-secondary">342 watching</span>
+                    <button id="join-call-btn" class="w-full sm:w-auto py-2.5 md:py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition text-sm md:text-base">
+                        Join Live Room
+                    </button>
                 </div>
-                <button id="join-call-btn" class="w-full py-2.5 md:py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition text-sm md:text-base">
-                    Join Now
-                </button>
+                <div class="live-actions mt-4">
+                    <button id="active-like-btn" class="w-full py-2.5 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/15 transition text-sm">Like ❤️</button>
+                    <button id="active-share-btn" class="w-full py-2.5 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/15 transition text-sm">Share 🔁</button>
+                    <button id="active-follow-btn" class="w-full py-2.5 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/15 transition text-sm">Follow Host</button>
+                </div>
             </div>
 
             <!-- Chat / Notes Section -->
@@ -146,7 +195,9 @@
         activeCallSection: document.getElementById('active-call-section'),
         activeCallTitle: document.getElementById('active-call-title'),
         activeCallTopic: document.getElementById('active-call-topic'),
-        participantCount: document.getElementById('participant-count'),
+        activeViewerCount: document.getElementById('active-viewer-count'),
+        activeLikeCount: document.getElementById('active-like-count'),
+        activeShareCount: document.getElementById('active-share-count'),
         notesContainer: document.getElementById('notes-container'),
         toggleSessionBtn: document.getElementById('toggle-session-btn'),
         joinCallBtn: document.getElementById('join-call-btn'),
@@ -155,7 +206,47 @@
 
     let socket = null;
     let isSessionActive = false;
-    let liveCalls = [];
+    let liveCalls = [
+        {
+            id: 'live-1',
+            title: 'Math Marathon: Exam Strategy',
+            topic: 'Mathematics Mastery',
+            description: 'Solve exam-style questions in real time with step-by-step coaching.',
+            participants: 1924,
+            likes: 1492,
+            shares: 97,
+            host: 'Amina',
+            category: 'Math',
+            isActive: true,
+            comments: ['Welcome to the study session!', 'Ask your hard questions now.', 'Hit like to show support!']
+        },
+        {
+            id: 'live-2',
+            title: 'Quick English Writing Tips',
+            topic: 'Language & Grammar',
+            description: 'Learn how to write stronger essays, captions, and discussion answers.',
+            participants: 1127,
+            likes: 980,
+            shares: 64,
+            host: 'Kwame',
+            category: 'English',
+            isActive: true,
+            comments: ['Great view, everyone!', 'Share this stream with classmates.', 'Type your question below.']
+        },
+        {
+            id: 'live-3',
+            title: 'Science Challenge: Build Your Own Lab',
+            topic: 'Hands-on STEM',
+            description: 'Interactive experiments, quizzes, and science hacks for learners.',
+            participants: 840,
+            likes: 720,
+            shares: 38,
+            host: 'Sifa',
+            category: 'Science',
+            isActive: true,
+            comments: ['Tap follow to stay updated.', 'This lesson is live from Kampala.', 'A new quiz drops in 5 minutes.']
+        }
+    ];
     let activeCallId = null;
 
     function setStatus(connected) {
@@ -169,34 +260,37 @@
         const card = document.createElement('div');
         card.className = 'live-card rounded-xl p-3 md:p-4 cursor-pointer';
         card.innerHTML = `
-            <div class="flex gap-3 md:gap-4">
-                <!-- Thumbnail -->
-                <div class="flex-shrink-0 w-20 h-28 md:w-28 md:h-40 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-purple/20 flex items-center justify-center relative overflow-hidden">
-                    <i class="fas fa-video text-2xl md:text-3xl text-accent-cyan opacity-50"></i>
-                    <div class="absolute top-2 left-2 live-badge px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
-                        <span class="h-1.5 w-1.5 rounded-full bg-white"></span> LIVE
-                    </div>
-                    <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs font-semibold">${call.participants}👥</div>
+            <div class="flex gap-3 md:gap-4 sm:flex-row flex-col">
+                <div class="flex-shrink-0 w-full sm:w-28 h-44 sm:h-40 rounded-3xl bg-gradient-to-br from-accent-cyan/15 to-accent-purple/15 flex items-end justify-between p-3 relative overflow-hidden">
+                    <div class="live-pill">LIVE</div>
+                    <div class="text-xs text-white/90 backdrop-blur-sm bg-black/40 rounded-full px-2 py-1">${call.participants} viewers</div>
                 </div>
 
-                <!-- Info -->
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-sm md:text-base line-clamp-2 mb-1.5">${call.title}</h3>
-                    <p class="text-xs md:text-sm text-text-secondary mb-2 line-clamp-1">📚 ${call.topic}</p>
-                    
-                    <div class="flex items-center gap-2 mb-3 min-w-0">
-                        <div class="h-6 w-6 rounded-full bg-gradient-to-br from-accent-pink to-accent-purple flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            ${call.host.charAt(0).toUpperCase()}
+                <div class="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <h3 class="font-bold text-sm md:text-base line-clamp-2">${call.title}</h3>
+                            <span class="text-xs uppercase tracking-[0.18em] text-accent-cyan">${call.category}</span>
                         </div>
-                        <div class="min-w-0">
-                            <p class="text-xs md:text-sm font-semibold truncate">${call.host}</p>
-                            <p class="text-xs text-text-secondary">Host</p>
+                        <p class="text-xs md:text-sm text-text-secondary mb-2 line-clamp-2">${call.description}</p>
+                        <div class="flex items-center gap-3 text-xs text-text-secondary flex-wrap">
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-user"></i> ${call.host}</span>
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-heart"></i> ${call.likes.toLocaleString()}</span>
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-share"></i> ${call.shares.toLocaleString()}</span>
                         </div>
                     </div>
 
-                    <button class="w-full py-1.5 md:py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold text-xs md:text-sm hover:opacity-90 transition join-call-btn" data-call-id="${call.id}">
-                        Join Now
-                    </button>
+                    <div class="live-actions mt-4">
+                        <button class="bg-white/10 text-white rounded-xl font-semibold hover:bg-white/15 transition text-xs py-2 like-btn" data-call-id="${call.id}">
+                            <i class="fas fa-heart"></i> Like
+                        </button>
+                        <button class="bg-white/10 text-white rounded-xl font-semibold hover:bg-white/15 transition text-xs py-2 share-btn" data-call-id="${call.id}">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                        <button class="bg-gradient-to-r from-accent-cyan to-accent-purple rounded-xl text-sm font-semibold py-2 join-call-btn" data-call-id="${call.id}">
+                            Join Room
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -204,6 +298,14 @@
         card.querySelector('.join-call-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             joinCall(call.id);
+        });
+        card.querySelector('.like-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            likeCall(call.id);
+        });
+        card.querySelector('.share-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            shareCall(call.id);
         });
 
         return card;
@@ -217,9 +319,9 @@
             empty.className = 'flex flex-col items-center justify-center h-full py-12 text-center';
             empty.innerHTML = `
                 <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
-                <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls yet. Be the first!</p>
+                <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls available yet. Start a session to stream instantly.</p>
                 <button id="empty-create-btn" class="px-6 py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
-                    <i class="fas fa-plus mr-2"></i>Create Call
+                    <i class="fas fa-plus mr-2"></i>Create Live Stream
                 </button>
             `;
             D.liveFeed.appendChild(empty);
@@ -238,13 +340,75 @@
         if (call) {
             D.activeCallTitle.textContent = call.title;
             D.activeCallTopic.textContent = `📚 ${call.topic}`;
-            D.participantCount.textContent = `${call.participants} watching`;
+            D.activeViewerCount.textContent = `👥 ${call.participants} watching`;
+            D.activeLikeCount.textContent = `❤️ ${call.likes.toLocaleString()} likes`;
+            D.activeShareCount.textContent = `🔁 ${call.shares.toLocaleString()} shares`;
             D.activeCallSection.classList.remove('hidden');
+            updateNotes(call.comments);
+            showToast(`Joined ${call.title}`);
         }
 
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'join_call', call_id: callId }));
         }
+    }
+
+    function updateNotes(comments = []) {
+        D.notesContainer.innerHTML = '';
+        comments.forEach(comment => {
+            const item = document.createElement('div');
+            item.className = 'rounded-2xl bg-white/5 border border-white/10 p-3 text-xs text-text-secondary';
+            item.textContent = comment;
+            D.notesContainer.appendChild(item);
+        });
+    }
+
+    function likeCall(callId) {
+        const call = liveCalls.find(c => c.id === callId);
+        if (!call) return;
+        call.likes += 1;
+        renderFeed();
+        if (activeCallId === callId) {
+            D.activeLikeCount.textContent = `❤️ ${call.likes.toLocaleString()} likes`;
+        }
+        showToast('You liked this live stream.');
+    }
+
+    function shareCall(callId) {
+        const call = liveCalls.find(c => c.id === callId);
+        if (!call) return;
+        call.shares += 1;
+        renderFeed();
+        if (activeCallId === callId) {
+            D.activeShareCount.textContent = `🔁 ${call.shares.toLocaleString()} shares`;
+        }
+        const shareUrl = `${window.location.origin}${window.location.pathname}#${call.id}`;
+        if (navigator.share) {
+            navigator.share({ title: call.title, text: 'Join this live stream on Nakintu AI!', url: shareUrl })
+                .catch(() => showToast('Share cancelled.'));
+        } else {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Live stream link copied to clipboard.');
+            }).catch(() => {
+                showToast('Unable to copy link.');
+            });
+        }
+    }
+
+    function showToast(message) {
+        let toast = document.getElementById('toast-message');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast-message';
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(window.toastTimer);
+        window.toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2400);
     }
 
     function createCall() {
@@ -254,9 +418,15 @@
         const newCall = {
             id: `local-${Date.now()}`,
             title,
-            topic: 'Learning',
-            participants: Math.floor(Math.random() * 120) + 12,
-            host: 'You'
+            topic: 'Learning live classroom',
+            description: 'A new live session created by you, ready to welcome learners instantly.',
+            participants: Math.floor(Math.random() * 120) + 120,
+            likes: Math.floor(Math.random() * 30) + 10,
+            shares: Math.floor(Math.random() * 8) + 2,
+            host: 'You',
+            category: 'Live',
+            isActive: true,
+            comments: ['Your live room is ready.', 'Invite friends and classmates.', 'Use the like button to boost engagement.']
         };
 
         liveCalls.unshift(newCall);
@@ -286,6 +456,7 @@
                 isSessionActive = true;
                 setStatus(true);
                 socket.send(JSON.stringify({ type: 'get_lobby' }));
+                showToast('Live session connected.');
                 resolve();
             };
 
@@ -294,7 +465,7 @@
                     const payload = JSON.parse(event.data);
                     
                     if (payload.type === 'lobby_update') {
-                        liveCalls = payload.calls || [];
+                        liveCalls = payload.calls || liveCalls;
                         renderFeed();
                     }
                     if (payload.type === 'created_call') {
@@ -308,12 +479,14 @@
 
             socket.onerror = (err) => {
                 console.error('Socket error', err);
+                showToast('Live connection failed. Using local preview.');
                 reject(err);
             };
 
             socket.onclose = () => {
                 isSessionActive = false;
                 setStatus(false);
+                showToast('Live session disconnected.');
             };
         });
     }
