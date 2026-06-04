@@ -112,9 +112,46 @@
             transform: translateX(0); 
         }
 
-        /* The menu button is now ALWAYS visible on all screens */
+        /* The menu button is only visible on mobile screens; desktop uses the top bar links. */
         @media (min-width: 768px) {
-            /* Remove all old desktop nav overrides */
+            #mobile-menu-button,
+            #mobile-menu-close-button,
+            #mobile-menu,
+            #mobile-menu-content {
+                display: none !important;
+            }
+        }
+
+        /* Hide desktop nav link groups on small screens, keeping only the mobile drawer toggle visible. */
+        @media (max-width: 767px) {
+            .desktop-menu {
+                display: none !important;
+            }
+        }
+
+        .glass-nav .desktop-menu a,
+        .glass-nav .desktop-menu form button,
+        .mobile-menu-toggle,
+        #mobile-menu-close-button {
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .glass-nav .desktop-menu a:hover,
+        .glass-nav .desktop-menu form button:hover,
+        .mobile-menu-toggle:hover,
+        #mobile-menu-close-button:hover {
+            transform: translateY(-1px);
+        }
+        .mobile-menu-toggle {
+            background: rgba(79, 70, 229, 0.08);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+        }
+        .mobile-menu-toggle:focus,
+        #mobile-menu-close-button:focus,
+        .glass-nav .desktop-menu form button:focus,
+        .glass-nav .desktop-menu a:focus {
+            outline: 3px solid rgba(79, 70, 229, 0.24);
+            outline-offset: 3px;
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -374,6 +411,13 @@
         // Close menu on escape key press for better accessibility
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                closeMenu();
+            }
+        });
+
+        // Ensure the mobile drawer is never visible on larger screens after a resize.
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
                 closeMenu();
             }
         });
