@@ -257,48 +257,53 @@
     <body class="min-h-screen">
 
     <div class="bg-pattern"></div>
-    <div class="bg-slideshow">
-        <div class="slide-1"></div>
-        <div class="slide-2"></div>
-        <div class="slide-3"></div>
-        <div class="slide-4"></div>
-        <div class="slide-5"></div>
-    </div>
     <div class="overlay"></div>
 
-    <header class="sticky top-0 z-30 w-full glass-card border-b border-white/10 p-4">
-        <div class="flex justify-between items-center max-w-7xl mx-auto">
-        <div class="text-3xl font-extrabold tracking-tight">
-            <span class="text-slate-900">Nakintu</span><span class="text-gradient"> AI</span>
-        </div>
-        <nav class="space-x-4">
-            <a href="#hero" class="text-slate-600 hover:text-slate-900 transition duration-200 hidden sm:inline">Home</a>
-            <a href="#features" class="text-slate-600 hover:text-slate-900 transition duration-200 hidden sm:inline">Features</a>
-            <button id="login-toggle" 
-                    class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-full shadow-lg hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105">
-            Sign In
-            </button>
-        </nav>
+    <header class="sticky top-0 z-30 w-full glass-card border-b border-white/20 p-4">
+        <div class="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-3">
+            <div class="text-3xl font-extrabold tracking-tight">
+                <span class="text-slate-900">Nakintu</span><span class="text-gradient"> AI</span>
+            </div>
+            <nav class="site-nav">
+                <a href="#hero" class="text-slate-600 hover:text-slate-900 transition duration-200">Home</a>
+                <a href="#features" class="text-slate-600 hover:text-slate-900 transition duration-200">Features</a>
+                <button id="login-toggle"
+                        class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-full shadow-lg hover:from-indigo-700 hover:to-purple-700 transition transform hover:-translate-y-0.5 hover:scale-[1.02] w-full sm:w-auto">
+                    Sign In
+                </button>
+            </nav>
         </div>
     </header>
     <main class="max-w-7xl mx-auto p-4 sm:p-8 space-y-24">
         
-        <section id="hero" class="relative py-20 md:py-32 text-center">
-        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tighter mb-6">
-            Unlock <span class="text-gradient">Global Education</span>
-        </h1>
-        <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-10">
-            Nakintu AI empowers educators and students worldwide with multilingual, adaptive tools—making quality education accessible to every corner of the globe.
-        </p>
-        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <button id="hero-login-toggle" 
-                    class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-full shadow-2xl hover:scale-[1.03] transition duration-300 transform">
-            Start Learning Now
-            </button>
-            <a href="#chatbot-card" class="px-8 py-3 border border-indigo-500 text-indigo-300 font-bold text-lg rounded-full hover:bg-indigo-900 transition duration-300 inline-flex items-center justify-center">
-                Ask Our AI Assistant <span class="ml-2">💬</span>
-            </a>
-        </div>
+        <section id="hero" class="relative py-20 md:py-28 text-center lg:text-left">
+            <div class="relative max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] items-center gap-12 px-4 sm:px-6">
+                <div class="space-y-8">
+                    <div class="hero-cta-pill">
+                        <span>NEW</span>
+                        <span>Built for African learners with global reach</span>
+                    </div>
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tighter text-slate-950">
+                        Unlock <span class="text-gradient">Global Education</span>
+                    </h1>
+                    <p class="text-base sm:text-lg text-slate-600 max-w-3xl">
+                        Nakintu AI empowers educators and students worldwide with multilingual, adaptive tools—making quality education accessible to every corner of the globe.
+                    </p>
+                    <div class="hero-buttons mt-2">
+                        <button id="hero-login-toggle"
+                                class="px-7 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-full shadow-2xl hover:from-purple-700 hover:to-pink-700 transition transform hover:-translate-y-0.5 hover:scale-[1.02] w-full sm:w-auto">
+                            Start Learning Now
+                        </button>
+                        <a href="#chatbot-card"
+                           class="px-7 py-3 border border-indigo-500 text-indigo-700 bg-white/90 font-bold text-lg rounded-full hover:bg-indigo-50 transition duration-300 inline-flex items-center justify-center w-full sm:w-auto">
+                            Ask Our AI Assistant <span class="ml-2">💬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <img src="{% static 'images/image6.png' %}" alt="AI learning experience" loading="lazy" decoding="async">
+                </div>
+            </div>
         </section>
 
         <section id="features" class="py-16">
