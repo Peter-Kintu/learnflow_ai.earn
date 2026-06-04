@@ -26,7 +26,7 @@
     </script>
     <style>
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; background: #000; }
+        html, body { min-height: 100%; margin: 0; padding: 0; background: #000; }
         .live-badge {
             background: linear-gradient(135deg, #ff006e, #ff4365);
             animation: pulse-live 1s infinite;
@@ -40,15 +40,26 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(0, 247, 255, 0.1);
             transition: all 0.3s ease;
+            min-height: 170px;
         }
         .live-card:hover {
             border-color: rgba(0, 247, 255, 0.3);
             background: linear-gradient(135deg, rgba(0, 247, 255, 0.1), rgba(131, 56, 236, 0.1));
         }
+        .live-card button {
+            min-height: 42px;
+        }
         .feed-scroll::-webkit-scrollbar { width: 4px; }
         .feed-scroll::-webkit-scrollbar-track { background: transparent; }
         .feed-scroll::-webkit-scrollbar-thumb { background: rgba(0, 247, 255, 0.3); border-radius: 2px; }
         .feed-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 247, 255, 0.5); }
+        @media (max-width: 768px) {
+            .hide-mobile { display: none !important; }
+            .text-sm { font-size: 0.95rem !important; }
+            .text-xs { font-size: 0.78rem !important; }
+            .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+            .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+        }
     </style>
 {% endblock %}
 
@@ -71,13 +82,13 @@
 
     <div class="flex flex-col lg:flex-row min-h-[calc(100vh-80px)]">
         <!-- Main Feed -->
-        <div class="flex-1 w-full lg:w-2/3 border-r border-brand-surface overflow-hidden flex flex-col">
-            <div id="live-feed" class="feed-scroll flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-6 space-y-3 md:space-y-4">
+        <div class="flex-1 w-full lg:w-2/3 lg:border-r border-brand-surface overflow-hidden flex flex-col">
+            <div id="live-feed" class="feed-scroll flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-6 space-y-3 md:space-y-4 min-h-[420px]">
                 <!-- Live cards render here -->
                 <div class="flex flex-col items-center justify-center h-full py-12 text-center">
                     <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
                     <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls yet. Be the first!</p>
-                    <button id="create-call-btn-hero" class="px-6 py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
+                    <button id="create-call-btn-hero" class="px-6 py-3 md:py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
                         <i class="fas fa-plus mr-2"></i>Create Call
                     </button>
                 </div>
@@ -85,7 +96,7 @@
         </div>
 
         <!-- Right Sidebar (Desktop) / Bottom Panel (Mobile) -->
-        <div class="w-full lg:w-1/3 border-t lg:border-t-0 lg:border-r border-brand-surface bg-brand-panel/50 flex flex-col h-screen lg:h-auto">
+        <div class="w-full lg:w-1/3 border-t lg:border-t-0 lg:border-l border-brand-surface bg-brand-panel/50 flex flex-col overflow-hidden">
             
             <!-- Active Call Info -->
             <div id="active-call-section" class="border-b border-brand-surface p-4 md:p-6 hidden">
@@ -104,7 +115,7 @@
             </div>
 
             <!-- Chat / Notes Section -->
-            <div class="flex-1 flex flex-col border-b border-brand-surface min-h-[200px] lg:min-h-0">
+            <div class="flex-1 flex flex-col border-b border-brand-surface min-h-[220px] lg:min-h-0">
                 <div class="p-4 md:p-6 border-b border-brand-surface">
                     <h4 class="font-semibold text-sm md:text-base">Live Notes</h4>
                 </div>
@@ -114,12 +125,12 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="p-4 md:p-6 flex flex-col gap-2">
-                <button id="toggle-session-btn" class="w-full py-2.5 md:py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 text-sm md:text-base">
+            <div class="p-4 md:p-6 flex flex-col gap-3">
+                <button id="toggle-session-btn" class="w-full py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 text-sm md:text-base">
                     <i class="fas fa-microphone"></i>
                     <span>Start Session</span>
                 </button>
-                <button id="create-call-btn-side" class="w-full py-2 md:py-2.5 border border-accent-cyan text-accent-cyan rounded-lg font-semibold hover:bg-accent-cyan/10 transition text-xs md:text-sm">
+                <button id="create-call-btn-side" class="w-full py-3 border border-accent-cyan text-accent-cyan rounded-lg font-semibold hover:bg-accent-cyan/10 transition text-sm md:text-base">
                     <i class="fas fa-plus mr-1"></i> Create Call
                 </button>
             </div>
@@ -239,10 +250,22 @@
     function createCall() {
         const title = prompt('What is your live call about?', 'Study Group');
         if (!title) return;
-        
+
+        const newCall = {
+            id: `local-${Date.now()}`,
+            title,
+            topic: 'Learning',
+            participants: Math.floor(Math.random() * 120) + 12,
+            host: 'You'
+        };
+
+        liveCalls.unshift(newCall);
+        renderFeed();
+        joinCall(newCall.id);
+
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            startSession().then(() => {
-                socket.send(JSON.stringify({ type: 'create_call', title, topic: 'Learning' }));
+            startSession().catch(() => {
+                console.warn('Could not open WebSocket, using local call state only.');
             });
         } else {
             socket.send(JSON.stringify({ type: 'create_call', title, topic: 'Learning' }));
@@ -272,6 +295,10 @@
                     
                     if (payload.type === 'lobby_update') {
                         liveCalls = payload.calls || [];
+                        renderFeed();
+                    }
+                    if (payload.type === 'created_call') {
+                        liveCalls.unshift(payload.call);
                         renderFeed();
                     }
                 } catch (err) {
