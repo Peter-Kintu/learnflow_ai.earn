@@ -23,7 +23,8 @@ for runtime_host in (
     os.environ.get('PRIMARY_DOMAIN'),
 ):
     if runtime_host:
-        ALLOWED_HOSTS.append(runtime_host)
+        # Strip any trailing port (e.g. 'host:8000') to match Django ALLOWED_HOSTS expectations
+        ALLOWED_HOSTS.append(runtime_host.split(':')[0])
 
 # Also add the container's hostname and FQDN to handle platforms that expose
 # the instance id as the Host header (e.g., some serverless/container hosts).
