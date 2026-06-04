@@ -231,7 +231,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
         'Content-Type': 'application/json',
     }
 
-    model_name = 'llama-3.1-70b-instruct'
+    model_name = 'gpt-oss-120b'
     chat_payload = {
         'model': model_name,
         'messages': [
