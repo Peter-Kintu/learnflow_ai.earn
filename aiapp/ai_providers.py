@@ -144,9 +144,9 @@ def get_sunbird_request_payload(prompt: str, system_instruction: str, language_c
 
 
 def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: str = '', voice: bool = False, temperature: float = 0.7) -> str:
-    url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL')
+    base_url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL')
     api_key = get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY')
-    if not url or not api_key:
+    if not base_url or not api_key:
         raise RuntimeError('Sunbird API is not configured.')
 
     payload = get_sunbird_request_payload(prompt, system_instruction, language_code, voice, temperature)
@@ -155,15 +155,51 @@ def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: s
         'Content-Type': 'application/json',
     }
 
-    response = requests.post(url, json=payload, headers=headers, timeout=30)
-    response.raise_for_status()
-    return extract_text_from_response_body(response.json())
+    # Try the configured URL first, then a small set of common alternative endpoints
+    tried = []
+    candidate_paths = [
+        '',
+        '/v1/generate',
+        '/v1/completions',
+        '/v1/models/generate',
+        '/v1/generateText',
+        '/v1/text:generate',
+    ]
+
+    # Normalize base (strip trailing path if it contains a specific endpoint)
+    base = base_url.rstrip('/')
+
+    last_exc = None
+    for path in candidate_paths:
+        target = base + path if path else base
+        tried.append(target)
+        try:
+            resp = requests.post(target, json=payload, headers=headers, timeout=30)
+            if resp.status_code == 405:
+                # Wrong method for this endpoint - try next
+                last_exc = requests.exceptions.HTTPError(f'405 Method Not Allowed for {target}')
+                continue
+            if resp.status_code >= 400 and resp.status_code < 500:
+                # Client error - capture and try next
+                last_exc = requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target}')
+                continue
+            resp.raise_for_status()
+            # Attach diagnostics to globals for later inspection (non-invasive)
+            globals().setdefault('__last_sunbird_attempts', []).append({'url': target, 'status': resp.status_code})
+            return extract_text_from_response_body(resp.json())
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            globals().setdefault('__last_sunbird_attempts', []).append({'url': target, 'error': str(exc)})
+            continue
+
+    # If we reach here, all attempts failed
+    raise RuntimeError(f'Sunbird API failed. Tried endpoints: {tried}. Last error: {last_exc}')
 
 
 def call_cerebras_api(prompt: str, language_code: str = '', temperature: float = 0.7) -> str:
-    url = get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL')
+    base_url = get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL')
     api_key = get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY')
-    if not url or not api_key:
+    if not base_url or not api_key:
         raise RuntimeError('Cerebras API is not configured.')
 
     payload = {
@@ -177,9 +213,37 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
         'Content-Type': 'application/json',
     }
 
-    response = requests.post(url, json=payload, headers=headers, timeout=30)
-    response.raise_for_status()
-    return extract_text_from_response_body(response.json())
+    tried = []
+    candidate_paths = [
+        '',
+        '/v1/completions',
+        '/v1/models/{model}/generate'.format(model='llama-3.1-70b-instruct'),
+        '/v1/models/{model}/outputs'.format(model='llama-3.1-70b-instruct'),
+        '/v1/models/generate',
+    ]
+
+    base = base_url.rstrip('/')
+    last_exc = None
+    for path in candidate_paths:
+        target = base + path if path else base
+        tried.append(target)
+        try:
+            resp = requests.post(target, json=payload, headers=headers, timeout=30)
+            if resp.status_code == 404:
+                last_exc = requests.exceptions.HTTPError(f'404 Not Found for {target}')
+                continue
+            if resp.status_code >= 400 and resp.status_code < 500:
+                last_exc = requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target}')
+                continue
+            resp.raise_for_status()
+            globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'status': resp.status_code})
+            return extract_text_from_response_body(resp.json())
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'error': str(exc)})
+            continue
+
+    raise RuntimeError(f'Cerebras API failed. Tried endpoints: {tried}. Last error: {last_exc}')
 
 
 def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 2) -> str:
