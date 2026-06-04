@@ -284,11 +284,16 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
         available_providers.append('cerebras')
 
     if not available_providers:
-        print('No configured AI providers available. Check GEMINI_API_KEY, SUNBIRD_API_URL, SUNBIRD_API_KEY, CEREBRAS_API_URL, CEREBRAS_API_KEY.')
+        msg = 'No configured AI providers available. Check GEMINI_API_KEY, SUNBIRD_API_URL, SUNBIRD_API_KEY, CEREBRAS_API_URL, CEREBRAS_API_KEY.'
+        print(msg)
         return {
             'text': build_local_fallback_response(prompt, language_code),
             'provider': 'unconfigured',
             'language_code': language_code,
+            'diagnostics': {
+                'available_providers': available_providers,
+                'message': msg,
+            }
         }
 
     preferred_order = ['gemini', 'sunbird', 'cerebras']
@@ -333,13 +338,18 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
                 continue
 
     if not response_text:
-        print(f'AI provider failover completed with no successful response. Providers tried: {provider_order}. Errors: {provider_errors}')
+        error_msg = f'AI provider failover completed with no successful response. Providers tried: {provider_order}. Errors: {provider_errors}'
+        print(error_msg)
         response_text = build_local_fallback_response(prompt, language_code)
 
     return {
         'text': response_text,
         'provider': provider_used,
         'language_code': language_code,
+        'diagnostics': {
+            'providers_tried': provider_order,
+            'provider_errors': provider_errors,
+        }
     }
 
 

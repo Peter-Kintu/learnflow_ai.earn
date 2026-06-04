@@ -212,15 +212,6 @@
     }
     .ai-action-button:hover { background: #eef2ff; border-color: rgba(79, 70, 229, 0.32); transform: translateY(-1px); }
     .ai-action-button.liked { background: var(--accent); color: white; border-color: transparent; }
-    .like-count-pill {
-        background: #eef2ff;
-        color: var(--text-main);
-        border-radius: 999px;
-        padding: 0.45rem 0.8rem;
-        font-size: 0.85rem;
-        font-weight: 700;
-        border: 1px solid rgba(79, 70, 229, 0.12);
-    }
 
     .input-wrapper {
         width: 100%;
@@ -455,6 +446,7 @@
     
     // 🔥 NEW GLOBAL VARIABLE: To store and pass the user's accurate context to the AI 🔥
     let userCurrentContext = {};
+    let pendingPositiveFeedback = null;
     
     // --- Speech Synthesis Variables (TTS) ---
     let voices = [];
@@ -932,11 +924,10 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
     // ## Chat UI Functions ##
-    function appendMessage(sender, text, isError = false, likeCount = 0, liked = false) {
+    function appendMessage(sender, text, isError = false, positiveFeedback = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${sender} ${isError ? 'error' : ''}`;
-        messageDiv.dataset.likeCount = likeCount;
-        messageDiv.dataset.liked = liked ? 'true' : 'false';
+        messageDiv.dataset.positiveFeedback = positiveFeedback ? 'true' : 'false';
 
         const avatarIcon = sender === 'ai' ? '🎓' : '👤';
         const profileLabel = sender === 'ai' ? 'Nakintu AI' : 'You';
@@ -944,8 +935,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         const actionButtons = sender === 'ai' ? `
             <div class="message-actions">
                 <button type="button" class="ai-action-button copy-button">Copy</button>
-                <button type="button" class="ai-action-button like-button">${liked ? 'Liked' : 'Like'}</button>
-                <span class="like-count-pill">${likeCount} Reaction${likeCount === 1 ? '' : 's'}</span>
+                <button type="button" class="ai-action-button positive-button">Helpful</button>
             </div>` : '';
 
         messageDiv.innerHTML = `
@@ -961,10 +951,8 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
         function attachAiActions(rawText) {
             const copyButton = messageDiv.querySelector('.copy-button');
-            const likeButton = messageDiv.querySelector('.like-button');
-            const likeCountSpan = messageDiv.querySelector('.like-count-pill');
-            let currentLikeCount = parseInt(messageDiv.dataset.likeCount, 10) || 0;
-            let currentLiked = messageDiv.dataset.liked === 'true';
+            const positiveButton = messageDiv.querySelector('.positive-button');
+            let currentPositiveFeedback = messageDiv.dataset.positiveFeedback === 'true';
 
             if (copyButton) {
                 copyButton.addEventListener('click', async () => {
@@ -980,19 +968,18 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                 });
             }
 
-            if (likeButton) {
-                likeButton.classList.toggle('liked', currentLiked);
-                likeButton.textContent = currentLiked ? 'Liked' : 'Like';
+            if (positiveButton) {
+                positiveButton.classList.toggle('liked', currentPositiveFeedback);
+                positiveButton.textContent = 'Helpful';
 
-                likeButton.addEventListener('click', () => {
-                    currentLiked = !currentLiked;
-                    currentLikeCount = currentLiked ? currentLikeCount + 1 : Math.max(0, currentLikeCount - 1);
-                    messageDiv.dataset.likeCount = currentLikeCount;
-                    messageDiv.dataset.liked = currentLiked ? 'true' : 'false';
-                    likeButton.classList.toggle('liked', currentLiked);
-                    likeButton.textContent = currentLiked ? 'Liked' : 'Like';
-                    if (likeCountSpan) {
-                        likeCountSpan.textContent = `${currentLikeCount} Reaction${currentLikeCount === 1 ? '' : 's'}`;
+                positiveButton.addEventListener('click', () => {
+                    currentPositiveFeedback = !currentPositiveFeedback;
+                    messageDiv.dataset.positiveFeedback = currentPositiveFeedback ? 'true' : 'false';
+                    positiveButton.classList.toggle('liked', currentPositiveFeedback);
+                    if (currentPositiveFeedback) {
+                        pendingPositiveFeedback = 'The user indicated the previous AI answer was helpful. Continue in the same supportive educational style and maintain the helpful direction.';
+                    } else {
+                        pendingPositiveFeedback = null;
                     }
                     saveChatHistory();
                 });
@@ -1066,6 +1053,11 @@ Please proceed with your location-based query (e.g., "What is the weather like h
   if (userCurrentContext.latitude && userCurrentContext.longitude) {
     currentSystemInstruction += `\n- The user's specific coordinates are: **Lat ${userCurrentContext.latitude}, Lng ${userCurrentContext.longitude}**. Use this for location-aware requests and directions.`;
   }
+
+    if (pendingPositiveFeedback) {
+        currentSystemInstruction += `\n- USER FEEDBACK: ${pendingPositiveFeedback}`;
+        pendingPositiveFeedback = null;
+    }
 
   const fullContents = [
     { role: "user", parts: [{ text: currentSystemInstruction }] },
@@ -1285,12 +1277,11 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         chatLog.querySelectorAll('.chat-message').forEach(msgDiv => {
             const role = msgDiv.classList.contains('user') ? 'user' : 'ai';
             const textElement = msgDiv.querySelector('.message-text');
-            let text = textElement ? textElement.textContent.trim() : msgDiv.textContent.trim();
-            const likeCount = parseInt(msgDiv.dataset.likeCount, 10) || 0;
-            const liked = msgDiv.dataset.liked === 'true';
+            const text = textElement ? textElement.textContent.trim() : msgDiv.textContent.trim();
+            const positiveFeedback = msgDiv.dataset.positiveFeedback === 'true';
 
             if (text) {
-                finalMessages.push({ role, text, likes: likeCount, liked });
+                finalMessages.push({ role, text, positiveFeedback });
             }
         });
 
@@ -1323,17 +1314,15 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         history.forEach(item => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${item.role}`;
-            messageDiv.dataset.likeCount = item.likes || 0;
-            messageDiv.dataset.liked = item.liked ? 'true' : 'false';
+            messageDiv.dataset.positiveFeedback = item.positiveFeedback ? 'true' : 'false';
 
             const avatarIcon = item.role === 'ai' ? '🎓' : '👤';
             const profileLabel = item.role === 'ai' ? 'Nakintu AI' : 'You';
             const actionButtons = item.role === 'ai' ? `
-                <div class="message-actions">
-                    <button type="button" class="ai-action-button copy-button">Copy</button>
-                    <button type="button" class="ai-action-button like-button">${item.liked ? 'Liked' : 'Like'}</button>
-                    <span class="like-count-pill">${item.likes || 0} Reaction${(item.likes || 0) === 1 ? '' : 's'}</span>
-                </div>` : '';
+                    <div class="message-actions">
+                        <button type="button" class="ai-action-button copy-button">Copy</button>
+                        <button type="button" class="ai-action-button positive-button">Helpful</button>
+                    </div>` : '';
 
             messageDiv.innerHTML = `
                 <div class="avatar">${avatarIcon}</div>
@@ -1355,10 +1344,8 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             if (item.role === 'ai') {
                 const rawText = item.text;
                 const copyButton = messageDiv.querySelector('.copy-button');
-                const likeButton = messageDiv.querySelector('.like-button');
-                const likeCountSpan = messageDiv.querySelector('.like-count-pill');
-                let currentLikeCount = parseInt(messageDiv.dataset.likeCount, 10) || 0;
-                let currentLiked = messageDiv.dataset.liked === 'true';
+                    const positiveButton = messageDiv.querySelector('.positive-button');
+                    let currentPositiveFeedback = messageDiv.dataset.positiveFeedback === 'true';
 
                 if (copyButton) {
                     copyButton.addEventListener('click', async () => {
@@ -1374,19 +1361,18 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                     });
                 }
 
-                if (likeButton) {
-                    likeButton.classList.toggle('liked', currentLiked);
-                    likeButton.textContent = currentLiked ? 'Liked' : 'Like';
+                if (positiveButton) {
+                    positiveButton.classList.toggle('liked', currentPositiveFeedback);
+                    positiveButton.textContent = 'Helpful';
 
-                    likeButton.addEventListener('click', () => {
-                        currentLiked = !currentLiked;
-                        currentLikeCount = currentLiked ? currentLikeCount + 1 : Math.max(0, currentLikeCount - 1);
-                        messageDiv.dataset.likeCount = currentLikeCount;
-                        messageDiv.dataset.liked = currentLiked ? 'true' : 'false';
-                        likeButton.classList.toggle('liked', currentLiked);
-                        likeButton.textContent = currentLiked ? 'Liked' : 'Like';
-                        if (likeCountSpan) {
-                            likeCountSpan.textContent = `${currentLikeCount} Reaction${currentLikeCount === 1 ? '' : 's'}`;
+                    positiveButton.addEventListener('click', () => {
+                        currentPositiveFeedback = !currentPositiveFeedback;
+                        messageDiv.dataset.positiveFeedback = currentPositiveFeedback ? 'true' : 'false';
+                        positiveButton.classList.toggle('liked', currentPositiveFeedback);
+                        if (currentPositiveFeedback) {
+                            pendingPositiveFeedback = 'The user indicated the previous AI answer was helpful. Continue in the same supportive educational style and maintain the helpful direction.';
+                        } else {
+                            pendingPositiveFeedback = null;
                         }
                         saveChatHistory();
                     });
