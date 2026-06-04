@@ -1,4 +1,5 @@
 import os
+import socket
 from pathlib import Path
 import dj_database_url
 from decouple import config
@@ -23,6 +24,19 @@ for runtime_host in (
 ):
     if runtime_host:
         ALLOWED_HOSTS.append(runtime_host)
+
+# Also add the container's hostname and FQDN to handle platforms that expose
+# the instance id as the Host header (e.g., some serverless/container hosts).
+try:
+    host_name = socket.gethostname()
+    fqdn = socket.getfqdn()
+    for h in (host_name, fqdn):
+        if h:
+            # strip any port just in case
+            ALLOWED_HOSTS.append(h.split(':')[0])
+except Exception:
+    # If socket fails for any reason, continue without raising during import
+    pass
 
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
