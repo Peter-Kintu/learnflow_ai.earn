@@ -6,695 +6,325 @@
 {% block extra_head %}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'brand-dark': '#070F1E',      /* Deep Space Black/Blue */
-                        'brand-panel': '#0E1726',     /* Premium Matte Card */
-                        'brand-surface': '#172237',   /* Interactive Elements */
-                        'accent-cyan': '#00DDEB',     /* Active Glow Accent */
-                        'accent-violet': '#7C3AED',   /* Processing State */
-                        'text-primary': '#F3F4F6',    /* Crisp White */
-                        'text-secondary': '#9CA3AF',  /* Soft Gray */
+                        'brand-dark': '#000000',
+                        'brand-panel': '#0a0a0a',
+                        'brand-surface': '#1a1a1a',
+                        'accent-cyan': '#00f7ff',
+                        'accent-pink': '#ff006e',
+                        'accent-purple': '#8338ec',
+                        'text-primary': '#ffffff',
+                        'text-secondary': '#b3b3b3',
                     }
                 }
             }
         }
     </script>
     <style>
-        .glow-pulse {
-            box-shadow: 0 0 20px rgba(0, 221, 235, 0.2);
-            animation: pulse-glow 2s infinite alternate;
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; background: #000; }
+        .live-badge {
+            background: linear-gradient(135deg, #ff006e, #ff4365);
+            animation: pulse-live 1s infinite;
         }
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 15px rgba(0, 221, 235, 0.15); }
-            100% { box-shadow: 0 0 30px rgba(0, 221, 235, 0.4); }
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
-        /* Custom scrollbar for a cleaner feel */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #070F1E; }
-        ::-webkit-scrollbar-thumb { background: #172237; border-radius: 3px; }
+        .live-card {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.05), rgba(131, 56, 236, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 247, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .live-card:hover {
+            border-color: rgba(0, 247, 255, 0.3);
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.1), rgba(131, 56, 236, 0.1));
+        }
+        .feed-scroll::-webkit-scrollbar { width: 4px; }
+        .feed-scroll::-webkit-scrollbar-track { background: transparent; }
+        .feed-scroll::-webkit-scrollbar-thumb { background: rgba(0, 247, 255, 0.3); border-radius: 2px; }
+        .feed-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 247, 255, 0.5); }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-brand-dark text-text-primary font-sans flex flex-col antialiased">
-    
-    <header class="w-full border-b border-brand-surface bg-brand-panel/50 backdrop-blur px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="h-9 w-9 bg-accent-cyan/10 border border-accent-cyan/30 rounded-xl flex items-center justify-center text-accent-cyan shadow-sm">
-                <i class="fas fa-graduation-cap"></i>
-            </div>
+<div class="min-h-screen bg-brand-dark text-text-primary">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full bg-brand-panel/80 backdrop-blur border-b border-brand-surface px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2 md:gap-3">
+            <i class="fas fa-broadcast-tower text-accent-cyan text-lg md:text-xl"></i>
             <div>
-                <h1 class="text-lg font-semibold tracking-tight text-white">Nakintu AI</h1>
-                <p class="text-xs text-text-secondary">Your Personal Academic Mentor</p>
+                <h1 class="text-base md:text-lg font-bold">Nakintu Live</h1>
+                <p class="text-xs text-text-secondary hidden sm:block">Learn together in real-time</p>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 bg-brand-dark px-3 py-1.5 rounded-full border border-brand-surface">
-                <span id="status-dot" class="h-2 w-2 rounded-full bg-gray-500"></span>
-                <span id="status-text" class="text-xs font-medium text-text-secondary tracking-wide uppercase">Disconnected</span>
-            </div>
+        <div id="status-badge" class="flex items-center gap-2 bg-brand-surface px-3 md:px-4 py-1.5 md:py-2 rounded-full">
+            <span id="status-dot" class="h-2 w-2 rounded-full bg-gray-500"></span>
+            <span id="status-text" class="text-xs md:text-sm text-text-secondary">Offline</span>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
-        
-        <section class="lg:col-span-5 flex flex-col gap-6">
-            
-            <div class="bg-brand-panel border border-brand-surface rounded-3xl p-8 flex flex-col items-center justify-center flex-1 min-h-[320px] relative overflow-hidden">
-                <div class="absolute top-4 left-4 flex items-center gap-2">
-                    <span id="badge-mode" class="text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary">
-                        IDLE
-                    </span>
-                </div>
-
-                <div class="w-full max-w-[280px] h-32 flex items-center justify-center">
-                    <canvas id="audio-wave" class="w-full h-full"></canvas>
-                </div>
-
-                <p id="instruction-prompt" class="text-sm text-text-secondary text-center max-w-xs mt-4">
-                    Tap the mic to join an active live call or create your own.
-                </p>
-
-                <div class="mt-6 w-full grid gap-3">
-                    <button id="create-call-btn" class="w-full rounded-3xl bg-accent-cyan px-5 py-3 text-sm font-semibold text-brand-dark transition hover:bg-cyan-400">Create a New Call</button>
-                    <button id="mic-toggle-btn" aria-label="Toggle live session" class="w-full rounded-3xl bg-brand-surface border border-brand-surface px-5 py-4 text-sm font-semibold text-white transition hover:border-accent-cyan/50 hover:text-accent-cyan">
-                        <i id="mic-icon" class="fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors"></i>
-                        <span class="ml-2">Start / Stop Call</span>
+    <div class="flex flex-col lg:flex-row min-h-[calc(100vh-80px)]">
+        <!-- Main Feed -->
+        <div class="flex-1 w-full lg:w-2/3 border-r border-brand-surface overflow-hidden flex flex-col">
+            <div id="live-feed" class="feed-scroll flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-6 space-y-3 md:space-y-4">
+                <!-- Live cards render here -->
+                <div class="flex flex-col items-center justify-center h-full py-12 text-center">
+                    <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
+                    <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls yet. Be the first!</p>
+                    <button id="create-call-btn-hero" class="px-6 py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
+                        <i class="fas fa-plus mr-2"></i>Create Call
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="bg-brand-panel border border-brand-surface rounded-3xl p-6 flex flex-col gap-4">
-                <div class="flex items-center gap-3 mb-4">
-                    <i class="fas fa-user-friends text-accent-cyan"></i>
-                    <h3 class="text-sm font-semibold text-white">Live Call Tips</h3>
-                </div>
-                <div class="grid gap-3 text-sm text-text-secondary">
-                    <p>Browse scrollable live calls and join the one that matches your subject or study group.</p>
-                    <p>Any user can create a call, and others can join instantly from the lobby.</p>
-                    <p>Live calls are visible to the whole community — enter the conversation that fits your pace.</p>
-                </div>
-            </div>
-
-        </section>
-
-        <section class="lg:col-span-7 flex flex-col bg-brand-panel border border-brand-surface rounded-3xl overflow-hidden min-h-[500px]">
+        <!-- Right Sidebar (Desktop) / Bottom Panel (Mobile) -->
+        <div class="w-full lg:w-1/3 border-t lg:border-t-0 lg:border-r border-brand-surface bg-brand-panel/50 flex flex-col h-screen lg:h-auto">
             
-            <div class="px-6 py-4 border-b border-brand-surface bg-brand-panel/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-broadcast-tower text-accent-cyan text-sm"></i>
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-white">Live Call Lobby</h2>
+            <!-- Active Call Info -->
+            <div id="active-call-section" class="border-b border-brand-surface p-4 md:p-6 hidden">
+                <h3 id="active-call-title" class="text-base md:text-lg font-bold mb-2">Study Group Call</h3>
+                <p id="active-call-topic" class="text-sm text-text-secondary mb-4">📚 Mathematics</p>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex -space-x-3">
+                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-pink to-red-600 flex items-center justify-center text-xs font-bold border border-brand-surface">A</div>
+                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-cyan to-blue-600 flex items-center justify-center text-xs font-bold border border-brand-surface">B</div>
+                    </div>
+                    <span id="participant-count" class="text-sm text-text-secondary">342 watching</span>
                 </div>
-                <span id="live-count" class="text-xs font-mono text-text-secondary bg-brand-dark px-2 py-1 rounded border border-brand-surface">0 live calls</span>
+                <button id="join-call-btn" class="w-full py-2.5 md:py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition text-sm md:text-base">
+                    Join Now
+                </button>
             </div>
 
-            <div class="flex-1 p-6 overflow-y-auto space-y-6">
-                <div class="bg-brand-surface/10 border border-brand-surface rounded-3xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-semibold text-white">Available Live Calls</h3>
-                        <span id="open-calls-count" class="text-xs uppercase tracking-wider text-text-secondary">Scroll to join</span>
-                    </div>
-                    <div id="call-list" class="space-y-4 max-h-[320px] overflow-y-auto pr-2"></div>
-                    <div id="no-calls" class="text-text-secondary text-sm text-center py-8">No active calls yet. Start one now.</div>
+            <!-- Chat / Notes Section -->
+            <div class="flex-1 flex flex-col border-b border-brand-surface min-h-[200px] lg:min-h-0">
+                <div class="p-4 md:p-6 border-b border-brand-surface">
+                    <h4 class="font-semibold text-sm md:text-base">Live Notes</h4>
                 </div>
-
-                <div id="current-call-card" class="bg-brand-surface/10 border border-brand-surface rounded-3xl p-5 hidden">
-                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <p class="text-xs uppercase tracking-wider text-text-secondary mb-2">Joined Call</p>
-                            <h3 id="current-call-title" class="text-xl font-semibold text-white">Current Call Title</h3>
-                            <p id="current-call-host" class="text-sm text-text-secondary mt-1">Hosted by Nakintu</p>
-                        </div>
-                        <button id="leave-call-btn" class="inline-flex items-center justify-center rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Leave Call</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 mt-5">
-                        <div class="rounded-2xl bg-brand-dark/80 p-4">
-                            <p class="text-xs uppercase tracking-wider text-text-secondary">Participants</p>
-                            <p id="current-call-participants" class="mt-3 text-2xl font-semibold text-white">0</p>
-                        </div>
-                        <div class="rounded-2xl bg-brand-dark/80 p-4">
-                            <p class="text-xs uppercase tracking-wider text-text-secondary">Type</p>
-                            <p id="current-call-type" class="mt-3 text-2xl font-semibold text-white">Audio Learning</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-brand-surface/10 border border-brand-surface rounded-3xl p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-semibold text-white">Live Notes</h3>
-                        <span id="card-counter" class="text-xs uppercase tracking-wider text-text-secondary">0 Cards</span>
-                    </div>
-                    <div id="demonstration-workspace" class="min-h-[220px] overflow-y-auto flex flex-col justify-center items-center">
-                        <div id="workspace-empty-state" class="text-center max-w-sm space-y-3">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-text-secondary/50 text-xl mb-2">
-                                <i class="fas fa-magic"></i>
-                            </div>
-                            <h3 class="text-sm font-medium text-white">Live Notes Workspace</h3>
-                            <p class="text-xs text-text-secondary leading-relaxed">
-                                Join a call and Nakintu AI will surface shared notes, highlights, and guided summaries inside this space.
-                            </p>
-                        </div>
-                    </div>
+                <div id="notes-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-3">
+                    <p class="text-text-secondary text-xs md:text-sm text-center py-8">Join a call to see live notes</p>
                 </div>
             </div>
 
-        </section>
-
-    </main>
+            <!-- Action Buttons -->
+            <div class="p-4 md:p-6 flex flex-col gap-2">
+                <button id="toggle-session-btn" class="w-full py-2.5 md:py-3 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 text-sm md:text-base">
+                    <i class="fas fa-microphone"></i>
+                    <span>Start Session</span>
+                </button>
+                <button id="create-call-btn-side" class="w-full py-2 md:py-2.5 border border-accent-cyan text-accent-cyan rounded-lg font-semibold hover:bg-accent-cyan/10 transition text-xs md:text-sm">
+                    <i class="fas fa-plus mr-1"></i> Create Call
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     const D = {
+        liveFeed: document.getElementById('live-feed'),
         statusDot: document.getElementById('status-dot'),
         statusText: document.getElementById('status-text'),
-        badgeMode: document.getElementById('badge-mode'),
-        promptText: document.getElementById('instruction-prompt'),
-        micBtn: document.getElementById('mic-toggle-btn'),
-        micIcon: document.getElementById('mic-icon'),
-        workspace: document.getElementById('demonstration-workspace'),
-        emptyState: document.getElementById('workspace-empty-state'),
-        cardCounter: document.getElementById('card-counter'),
-        audioWave: document.getElementById('audio-wave'),
-        createCallBtn: document.getElementById('create-call-btn'),
-        callList: document.getElementById('call-list'),
-        liveCount: document.getElementById('live-count'),
-        openCallsCount: document.getElementById('open-calls-count'),
-        noCalls: document.getElementById('no-calls'),
-        currentCallCard: document.getElementById('current-call-card'),
-        currentCallTitle: document.getElementById('current-call-title'),
-        currentCallHost: document.getElementById('current-call-host'),
-        currentCallParticipants: document.getElementById('current-call-participants'),
-        currentCallType: document.getElementById('current-call-type'),
-        leaveCallBtn: document.getElementById('leave-call-btn')
+        activeCallSection: document.getElementById('active-call-section'),
+        activeCallTitle: document.getElementById('active-call-title'),
+        activeCallTopic: document.getElementById('active-call-topic'),
+        participantCount: document.getElementById('participant-count'),
+        notesContainer: document.getElementById('notes-container'),
+        toggleSessionBtn: document.getElementById('toggle-session-btn'),
+        joinCallBtn: document.getElementById('join-call-btn'),
+        createCallBtns: document.querySelectorAll('#create-call-btn-hero, #create-call-btn-side'),
     };
 
     let socket = null;
-    let audioContext = null;
-    let analyserNode = null;
-    let dataArray = null;
-    let micStream = null;
-    let audioProcessor = null;
     let isSessionActive = false;
-    let animationFrameId = null;
-    let wavePhase = 0;
-    let totalCardsRendered = 0;
-    let speaking = false;
-
     let liveCalls = [];
     let activeCallId = null;
-    let isSocketConnected = false;
 
-    const ctx = D.audioWave.getContext('2d');
-
-    function initCanvasSize() {
-        const rect = D.audioWave.parentElement.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        D.audioWave.width = rect.width * dpr;
-        D.audioWave.height = rect.height * dpr;
-        D.audioWave.style.width = `${rect.width}px`;
-        D.audioWave.style.height = `${rect.height}px`;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function setStatus(connected) {
+        D.statusDot.className = connected 
+            ? 'h-2 w-2 rounded-full bg-accent-cyan animate-pulse' 
+            : 'h-2 w-2 rounded-full bg-gray-500';
+        D.statusText.textContent = connected ? 'Connected' : 'Offline';
     }
 
-    function renderCallList() {
-        if (!D.callList || !D.liveCount || !D.openCallsCount || !D.noCalls) {
-            return;
-        }
-
-        D.callList.innerHTML = '';
-        D.liveCount.innerText = `${liveCalls.length} Live Call${liveCalls.length !== 1 ? 's' : ''}`;
-        D.openCallsCount.innerText = `${liveCalls.length} Open`;
-
-        if (!liveCalls.length) {
-            D.noCalls.classList.remove('hidden');
-            return;
-        }
-
-        D.noCalls.classList.add('hidden');
-
-        liveCalls.forEach((call) => {
-            const card = document.createElement('div');
-            card.className = 'rounded-3xl border border-brand-surface/20 bg-brand-dark/70 p-4 transition hover:border-accent-cyan/40 hover:bg-brand-panel/80';
-            const isJoined = activeCallId === call.id;
-            card.innerHTML = `
-                <div class="flex items-start justify-between gap-4">
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-accent-cyan">
-                            <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>${call.status}
-                        </div>
-                        <h4 class="text-lg font-semibold text-white">${call.title}</h4>
-                        <p class="text-sm text-text-secondary">${call.participants} viewers · Host ${call.host}</p>
-                        <p class="text-xs text-text-secondary">Topic: ${call.topic}</p>
+    function createCallCard(call) {
+        const card = document.createElement('div');
+        card.className = 'live-card rounded-xl p-3 md:p-4 cursor-pointer';
+        card.innerHTML = `
+            <div class="flex gap-3 md:gap-4">
+                <!-- Thumbnail -->
+                <div class="flex-shrink-0 w-20 h-28 md:w-28 md:h-40 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-purple/20 flex items-center justify-center relative overflow-hidden">
+                    <i class="fas fa-video text-2xl md:text-3xl text-accent-cyan opacity-50"></i>
+                    <div class="absolute top-2 left-2 live-badge px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+                        <span class="h-1.5 w-1.5 rounded-full bg-white"></span> LIVE
                     </div>
-                    <div class="text-right flex flex-col items-end gap-3">
-                        <div class="inline-flex items-center gap-2 rounded-full border border-brand-surface/20 bg-brand-surface/10 px-3 py-1 text-xs text-text-secondary">
-                            <i class="fas fa-heart text-rose-400"></i>
-                            ${Math.max(call.participants * 3, 18)}
-                        </div>
-                        <button class="inline-flex rounded-2xl ${isJoined ? 'bg-gray-600 text-text-secondary cursor-default' : 'bg-accent-cyan text-brand-dark hover:bg-cyan-400'} px-4 py-2 text-xs font-semibold transition" data-call-id="${call.id}" ${isJoined ? 'disabled' : ''}>
-                            ${isJoined ? 'Joined' : 'Join'}
-                        </button>
-                    </div>
+                    <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs font-semibold">${call.participants}👥</div>
                 </div>
-            `;
-            const joinButton = card.querySelector('button');
-            if (joinButton && !joinButton.disabled) {
-                joinButton.addEventListener('click', () => joinCall(call.id));
-            }
-            D.callList.appendChild(card);
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-sm md:text-base line-clamp-2 mb-1.5">${call.title}</h3>
+                    <p class="text-xs md:text-sm text-text-secondary mb-2 line-clamp-1">📚 ${call.topic}</p>
+                    
+                    <div class="flex items-center gap-2 mb-3 min-w-0">
+                        <div class="h-6 w-6 rounded-full bg-gradient-to-br from-accent-pink to-accent-purple flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            ${call.host.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs md:text-sm font-semibold truncate">${call.host}</p>
+                            <p class="text-xs text-text-secondary">Host</p>
+                        </div>
+                    </div>
+
+                    <button class="w-full py-1.5 md:py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-lg font-semibold text-xs md:text-sm hover:opacity-90 transition join-call-btn" data-call-id="${call.id}">
+                        Join Now
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        card.querySelector('.join-call-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            joinCall(call.id);
         });
+
+        return card;
     }
 
-    function showCurrentCall() {
-        if (!D.currentCallCard) return;
-        if (!activeCallId) {
-            D.currentCallCard.classList.add('hidden');
-            return;
+    function renderFeed() {
+        D.liveFeed.innerHTML = '';
+        
+        if (liveCalls.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'flex flex-col items-center justify-center h-full py-12 text-center';
+            empty.innerHTML = `
+                <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
+                <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls yet. Be the first!</p>
+                <button id="empty-create-btn" class="px-6 py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
+                    <i class="fas fa-plus mr-2"></i>Create Call
+                </button>
+            `;
+            D.liveFeed.appendChild(empty);
+            document.getElementById('empty-create-btn').addEventListener('click', createCall);
+        } else {
+            liveCalls.forEach(call => {
+                D.liveFeed.appendChild(createCallCard(call));
+            });
         }
-
-        const currentCall = liveCalls.find((call) => call.id === activeCallId);
-        if (!currentCall) {
-            D.currentCallCard.classList.add('hidden');
-            return;
-        }
-
-        D.currentCallTitle.innerText = currentCall.title;
-        D.currentCallHost.innerText = `Hosted by ${currentCall.host}`;
-        D.currentCallParticipants.innerText = currentCall.participants;
-        D.currentCallType.innerText = 'Live Audio Call';
-        D.currentCallCard.classList.remove('hidden');
-    }
-
-    function sendSocketEvent(eventPayload) {
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-            console.warn('Socket is not ready yet:', eventPayload);
-            return;
-        }
-        socket.send(JSON.stringify(eventPayload));
-    }
-
-    function handleLobbyUpdate(calls) {
-        liveCalls = Array.isArray(calls) ? calls : [];
-        if (activeCallId && !liveCalls.some((room) => room.id === activeCallId)) {
-            activeCallId = null;
-        }
-        renderCallList();
-        showCurrentCall();
     }
 
     function joinCall(callId) {
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-            D.promptText.innerText = 'Connecting to live lobby...';
-            startLiveSession().then(() => {
-                sendSocketEvent({ type: 'join_call', call_id: callId });
-                sendSocketEvent({ type: 'start_audio', call_id: callId });
-            });
-        } else {
-            sendSocketEvent({ type: 'join_call', call_id: callId });
-            sendSocketEvent({ type: 'start_audio', call_id: callId });
-        }
         activeCallId = callId;
-        D.promptText.innerText = 'You have joined a live call. Use the mic to speak.';
+        const call = liveCalls.find(c => c.id === callId);
+        
+        if (call) {
+            D.activeCallTitle.textContent = call.title;
+            D.activeCallTopic.textContent = `📚 ${call.topic}`;
+            D.participantCount.textContent = `${call.participants} watching`;
+            D.activeCallSection.classList.remove('hidden');
+        }
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'join_call', call_id: callId }));
+        }
     }
 
     function createCall() {
-        const title = prompt('What is the title of your live call?', 'Study Group Call');
+        const title = prompt('What is your live call about?', 'Study Group');
         if (!title) return;
+        
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            startLiveSession().then(() => {
-                sendSocketEvent({ type: 'create_call', title, host: 'You', topic: 'Open Study' });
+            startSession().then(() => {
+                socket.send(JSON.stringify({ type: 'create_call', title, topic: 'Learning' }));
             });
         } else {
-            sendSocketEvent({ type: 'create_call', title, host: 'You', topic: 'Open Study' });
-        }
-        D.promptText.innerText = 'Creating your live call...';
-    }
-
-    function leaveCall() {
-        if (!activeCallId) return;
-        sendSocketEvent({ type: 'stop_audio', call_id: activeCallId });
-        sendSocketEvent({ type: 'leave_call', call_id: activeCallId });
-        activeCallId = null;
-        showCurrentCall();
-        renderCallList();
-        D.promptText.innerText = 'Tap the mic to join a call or create your own.';
-    }
-
-    window.addEventListener('resize', initCanvasSize);
-    initCanvasSize();
-
-    function setButtonState(state) {
-        if (state === 'connecting') {
-            D.statusDot.className = 'h-2 w-2 rounded-full bg-sky-400 animate-pulse';
-            D.statusText.innerText = 'Connecting';
-            D.statusText.classList.remove('text-violet-400', 'text-emerald-400', 'text-text-secondary');
-            D.statusText.classList.add('text-sky-400');
-            D.micBtn.className = 'h-20 w-20 bg-brand-surface border border-sky-500/20 rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-sky-400/50 group';
-            D.micIcon.className = 'fas fa-circle-notch text-sky-400 fa-spin';
-            D.badgeMode.innerText = 'CONNECTING';
-            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-md text-sky-400';
-            D.promptText.innerText = 'Opening your live call channel...';
-            return;
-        }
-        if (state === 'ready') {
-            D.statusDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse';
-            D.statusText.innerText = 'Connected';
-            D.statusText.classList.remove('text-text-secondary');
-            D.statusText.classList.add('text-emerald-400');
-            D.micBtn.className = 'h-20 w-20 bg-accent-cyan rounded-full flex items-center justify-center text-brand-dark text-2xl transition-all duration-300 hover:scale-105 active:scale-95 glow-pulse';
-            D.micIcon.className = 'fas fa-stop text-brand-dark';
-            D.badgeMode.innerText = 'LIVE';
-            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md text-emerald-400';
-            D.promptText.innerText = 'You are live in a call. Speak when ready.';
-        } else if (state === 'thinking') {
-            D.statusDot.className = 'h-2 w-2 rounded-full bg-violet-500 animate-pulse';
-            D.statusText.innerText = 'Thinking';
-            D.statusText.classList.remove('text-emerald-400');
-            D.statusText.classList.add('text-violet-400');
-            D.badgeMode.innerText = 'THINKING';
-            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-md text-purple-400';
-            D.promptText.innerText = 'Nakintu is formulating your analytical breakthrough...';
-        } else if (state === 'speaking') {
-            D.statusDot.className = 'h-2 w-2 rounded-full bg-accent-cyan animate-pulse';
-            D.statusText.innerText = 'Speaking';
-            D.statusText.classList.remove('text-violet-400', 'text-emerald-400', 'text-text-secondary');
-            D.statusText.classList.add('text-accent-cyan');
-            D.badgeMode.innerText = 'SPEAKING';
-            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-accent-cyan/10 border border-accent-cyan/20 px-2.5 py-1 rounded-md text-accent-cyan';
-            D.promptText.innerText = 'Nakintu AI is speaking back to you...';
-        } else {
-            D.statusDot.className = 'h-2 w-2 rounded-full bg-gray-500';
-            D.statusText.innerText = 'Disconnected';
-            D.statusText.className = 'text-xs font-medium text-text-secondary tracking-wide uppercase';
-            D.micBtn.className = 'h-20 w-20 bg-brand-surface border border-brand-surface rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 hover:scale-105 active:scale-95 hover:border-accent-cyan/50 group';
-            D.micIcon.className = 'fas fa-microphone text-text-secondary group-hover:text-accent-cyan transition-colors';
-            D.badgeMode.innerText = 'IDLE';
-            D.badgeMode.className = 'text-[10px] font-bold uppercase tracking-widest bg-brand-surface px-2.5 py-1 rounded-md text-text-secondary';
-            D.promptText.innerText = 'Tap the mic to open a live audio learning channel.';
+            socket.send(JSON.stringify({ type: 'create_call', title, topic: 'Learning' }));
         }
     }
 
-    function float32ToInt16(buffer) {
-        const len = buffer.length;
-        const int16 = new Int16Array(len);
-        for (let i = 0; i < len; i++) {
-            let s = Math.max(-1, Math.min(1, buffer[i]));
-            int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-        }
-        return int16;
+    function startSession() {
+        return new Promise((resolve, reject) => {
+            if (isSessionActive) {
+                resolve();
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
+
+            socket.onopen = () => {
+                isSessionActive = true;
+                setStatus(true);
+                socket.send(JSON.stringify({ type: 'get_lobby' }));
+                resolve();
+            };
+
+            socket.onmessage = (event) => {
+                try {
+                    const payload = JSON.parse(event.data);
+                    
+                    if (payload.type === 'lobby_update') {
+                        liveCalls = payload.calls || [];
+                        renderFeed();
+                    }
+                } catch (err) {
+                    console.warn('Invalid JSON from socket', err);
+                }
+            };
+
+            socket.onerror = (err) => {
+                console.error('Socket error', err);
+                reject(err);
+            };
+
+            socket.onclose = () => {
+                isSessionActive = false;
+                setStatus(false);
+            };
+        });
     }
 
-    function encodeBase64(arrayBuffer) {
-        const bytes = new Uint8Array(arrayBuffer);
-        const chunkSize = 0x8000;
-        let binary = '';
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            const chunk = bytes.subarray(i, i + chunkSize);
-            binary += String.fromCharCode.apply(null, chunk);
-        }
-        return window.btoa(binary);
-    }
-
-    function createAudioBufferFromPCM(rawBuffer) {
-        const int16 = new Int16Array(rawBuffer);
-        const float32 = new Float32Array(int16.length);
-        for (let i = 0; i < int16.length; i++) {
-            float32[i] = Math.max(-1, Math.min(1, int16[i] / 0x7fff));
-        }
-        const audioBuffer = audioContext.createBuffer(1, float32.length, 16000);
-        audioBuffer.copyToChannel(float32, 0, 0);
-        return audioBuffer;
-    }
-
-    function cleanupLiveSession() {
-        if (audioProcessor) {
-            audioProcessor.disconnect();
-            audioProcessor.onaudioprocess = null;
-            audioProcessor = null;
-        }
-        if (micStream) {
-            micStream.getTracks().forEach((track) => track.stop());
-            micStream = null;
-        }
+    function stopSession() {
         if (socket) {
-            try { socket.close(); } catch (err) { console.warn(err); }
+            socket.close();
             socket = null;
         }
-        if (audioContext && audioContext.state !== 'closed') {
-            audioContext.close().catch(() => {});
-        }
-        audioContext = null;
-        analyserNode = null;
-        dataArray = null;
         isSessionActive = false;
-        speaking = false;
+        setStatus(false);
     }
 
-    function appendDemonstrationCard(args) {
-        if (D.emptyState) {
-            D.emptyState.remove();
-            D.emptyState = null;
-        }
-        const cardType = (args.card_type || args.type || 'concept').toLowerCase();
-        const icon = cardType === 'code' ? 'fa-code' : 'fa-lightbulb';
-        const accentClass = cardType === 'code' ? 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/20' : 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-        const rawMarkdown = marked.parse(args.content_markdown || '');
-        const cleanHTML = DOMPurify.sanitize(rawMarkdown);
-        const cardMarkup = `
-            <div class="w-full bg-brand-surface/40 border border-brand-surface rounded-2xl p-5 text-text-primary shadow-sm hover:border-brand-surface/80 transition-all duration-200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="inline-flex h-10 w-10 items-center justify-center rounded-xl border ${accentClass} text-sm">
-                        <i class="fas ${icon}"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-white tracking-wide">${args.title || 'Demonstration Analysis'}</h3>
-                        <p class="text-[10px] uppercase tracking-wider text-text-secondary">Live Document</p>
-                    </div>
-                </div>
-                <div class="prose prose-invert max-w-none text-xs text-text-secondary leading-relaxed space-y-2">${cleanHTML}</div>
-            </div>
-        `;
-        D.workspace.insertAdjacentHTML('beforeend', cardMarkup);
-        totalCardsRendered++;
-        D.cardCounter.innerText = `${totalCardsRendered} Card${totalCardsRendered !== 1 ? 's' : ''}`;
-        D.workspace.scrollTop = D.workspace.scrollHeight;
-    }
+    // Event Listeners
+    D.createCallBtns.forEach(btn => {
+        btn.addEventListener('click', createCall);
+    });
 
-    function drawWave() {
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-        const width = D.audioWave.width / (window.devicePixelRatio || 1);
-        const height = D.audioWave.height / (window.devicePixelRatio || 1);
-        ctx.clearRect(0, 0, width, height);
-        if (!isSessionActive) {
-            return;
-        }
-        animationFrameId = requestAnimationFrame(drawWave);
-        let amplitude = 10;
-        let frequency = 0.02;
-        let color = '#00DDEB';
-        if (speaking) {
-            amplitude = 18;
-            frequency = 0.03;
-            color = '#4ADE80';
-        } else if (D.badgeMode.innerText === 'THINKING') {
-            amplitude = 14;
-            frequency = 0.05;
-            color = '#7C3AED';
-        }
-        wavePhase += 0.04;
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = color;
-        ctx.beginPath();
-        for (let x = 0; x <= width; x += 10) {
-            const y = height / 2 + Math.sin((x * frequency) + wavePhase) * amplitude;
-            if (x === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-    }
-
-    async function startLiveSession() {
+    D.toggleSessionBtn.addEventListener('click', () => {
         if (isSessionActive) {
-            return;
-        }
-        setButtonState('connecting');
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-            analyserNode = audioContext.createAnalyser();
-            analyserNode.fftSize = 256;
-            dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-            let socketOpened = false;
-            const socketOpenPromise = new Promise((resolve, reject) => {
-                socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
-                socket.onopen = async () => {
-                    socketOpened = true;
-                    console.debug('[LiveTeacher] websocket open', socket.url);
-                    isSocketConnected = true;
-                    isSessionActive = true;
-                    setButtonState('ready');
-                    drawWave();
-                    sendSocketEvent({ type: 'get_lobby' });
-                    try {
-                        micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-                    } catch (err) {
-                        console.error('[LiveTeacher] microphone permission denied', err);
-                        alert('Microphone permission denied. Please allow access and try again.');
-                        disconnectSession();
-                        reject(err);
-                        return;
-                    }
-                    const source = audioContext.createMediaStreamSource(micStream);
-                    audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-                    source.connect(audioProcessor);
-                    audioProcessor.connect(audioContext.destination);
-                    audioProcessor.onaudioprocess = (event) => {
-                        if (!socket || socket.readyState !== WebSocket.OPEN) return;
-                        if (!activeCallId) return;
-                        const inputData = event.inputBuffer.getChannelData(0);
-                        const int16 = float32ToInt16(inputData);
-                        const audioChunk = encodeBase64(int16.buffer);
-                        sendSocketEvent({
-                            type: 'audio_stream',
-                            call_id: activeCallId,
-                            sample_rate: 16000,
-                            encoding: 'pcm16',
-                            data: audioChunk,
-                        });
-                    };
-                    resolve();
-                };
-                socket.onerror = (event) => {
-                    if (!socketOpened) {
-                        reject(new Error('WebSocket failed to connect'));
-                    }
-                };
-                socket.onclose = () => {
-                    if (!socketOpened) {
-                        reject(new Error('WebSocket closed before opening'));
-                    }
-                };
-            });
-            socket.onmessage = (event) => {
-                let payload;
-                try {
-                    payload = JSON.parse(event.data);
-                } catch (err) {
-                    console.warn('Invalid JSON from websocket', err);
-                    return;
-                }
-
-                if (payload.type === 'lobby_update') {
-                    handleLobbyUpdate(payload.calls);
-                    return;
-                }
-
-                if (payload.type === 'info') {
-                    D.promptText.innerText = payload.message || 'Live lobby connected.';
-                    return;
-                }
-
-                if (payload.type === 'error') {
-                    console.error('[LiveTeacher] error', payload.message);
-                    D.promptText.innerText = payload.message || 'Live error occurred.';
-                    return;
-                }
-
-                if (payload.type === 'state_change') {
-                    if (payload.state === 'speaking') {
-                        speaking = true;
-                    } else {
-                        speaking = false;
-                    }
-                    const mappedState = payload.state === 'listening' ? 'ready' : payload.state;
-                    setButtonState(mappedState);
-                    return;
-                }
-
-                if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
-                    appendDemonstrationCard(payload.args);
-                    return;
-                }
-
-                if (payload.type === 'audio_chunk') {
-                    speaking = true;
-                    setButtonState('speaking');
-                    try {
-                        const decoded = window.atob(payload.data);
-                        const bytes = new Uint8Array(decoded.length);
-                        for (let i = 0; i < decoded.length; i++) {
-                            bytes[i] = decoded.charCodeAt(i);
-                        }
-                        const audioBuffer = createAudioBufferFromPCM(bytes.buffer);
-                        const sourceNode = audioContext.createBufferSource();
-                        sourceNode.buffer = audioBuffer;
-                        sourceNode.connect(audioContext.destination);
-                        sourceNode.start();
-                        sourceNode.onended = () => {
-                            speaking = false;
-                            setButtonState('ready');
-                        };
-                    } catch (err) {
-                        console.error('Unable to play audio chunk', err);
-                    }
-                }
-            };
-            await socketOpenPromise;
-            socket.onerror = (err) => {
-                console.error('[LiveTeacher] websocket error', err);
-                disconnectSession();
-            };
-            socket.onclose = (event) => {
-                console.debug('[LiveTeacher] websocket closed', event.code, event.reason);
-                disconnectSession();
-            };
-        } catch (err) {
-            console.error('Live session failed', err);
-            alert('Unable to start live session. Please refresh and try again.');
-            disconnectSession();
-        }
-    }
-
-    function disconnectSession() {
-        cleanupLiveSession();
-        setButtonState('idle');
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-        }
-    }
-
-    D.micBtn.addEventListener('click', () => {
-        if (isSessionActive) {
-            disconnectSession();
+            stopSession();
+            D.toggleSessionBtn.innerHTML = '<i class="fas fa-microphone"></i><span>Start Session</span>';
         } else {
-            startLiveSession();
+            startSession();
+            D.toggleSessionBtn.innerHTML = '<i class="fas fa-stop"></i><span>Stop Session</span>';
         }
     });
 
-    if (D.createCallBtn) {
-        D.createCallBtn.addEventListener('click', createCall);
-    }
-    if (D.leaveCallBtn) {
-        D.leaveCallBtn.addEventListener('click', leaveCall);
-    }
+    D.joinCallBtn.addEventListener('click', () => {
+        if (activeCallId) {
+            joinCall(activeCallId);
+        }
+    });
 
-    renderCallList();
-    showCurrentCall();
+    // Initialize
+    setStatus(false);
+    renderFeed();
 
-    window.addEventListener('beforeunload', disconnectSession);
-
-    setButtonState('idle');
+    window.addEventListener('beforeunload', stopSession);
 </script>
 {% endblock %}
