@@ -286,15 +286,45 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     body['voice'] = voice
 
     available_providers = []
+    provider_availability = {}
+    
+    # Check Gemini
     if get_env_value('GEMINI_API_KEY') or globals().get('__api_key', ''):
         available_providers.append('gemini')
-    if get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL') and get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY'):
+        provider_availability['gemini'] = 'configured'
+    else:
+        provider_availability['gemini'] = 'missing GEMINI_API_KEY'
+    
+    # Check Sunbird
+    sunbird_url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL')
+    sunbird_key = get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY')
+    if sunbird_url and sunbird_key:
         available_providers.append('sunbird')
-    if get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL') and get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY'):
+        provider_availability['sunbird'] = 'configured'
+    else:
+        missing_parts = []
+        if not sunbird_url:
+            missing_parts.append('SUNBIRD_API_URL')
+        if not sunbird_key:
+            missing_parts.append('SUNBIRD_API_KEY')
+        provider_availability['sunbird'] = f"missing {', '.join(missing_parts)}"
+    
+    # Check Cerebras
+    cerebras_url = get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL')
+    cerebras_key = get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY')
+    if cerebras_url and cerebras_key:
         available_providers.append('cerebras')
+        provider_availability['cerebras'] = 'configured'
+    else:
+        missing_parts = []
+        if not cerebras_url:
+            missing_parts.append('CEREBRAS_API_URL')
+        if not cerebras_key:
+            missing_parts.append('CEREBRAS_API_KEY')
+        provider_availability['cerebras'] = f"missing {', '.join(missing_parts)}"
 
     if not available_providers:
-        msg = 'No configured AI providers available. Check GEMINI_API_KEY, SUNBIRD_API_URL, SUNBIRD_API_KEY, CEREBRAS_API_URL, CEREBRAS_API_KEY.'
+        msg = f'No configured AI providers available. Status: {provider_availability}'
         print(msg)
         return {
             'text': build_local_fallback_response(prompt, language_code),
@@ -302,6 +332,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
             'language_code': language_code,
             'diagnostics': {
                 'available_providers': available_providers,
+                'provider_availability': provider_availability,
                 'message': msg,
             }
         }
@@ -359,6 +390,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
         'diagnostics': {
             'providers_tried': provider_order,
             'provider_errors': provider_errors,
+            'provider_availability': provider_availability,
         }
     }
 
