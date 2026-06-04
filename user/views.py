@@ -12,6 +12,7 @@ import json
 import os
 import requests
 from django.views.decorators.csrf import csrf_exempt
+from aiapp.ai_providers import route_ai_request, build_local_fallback_response
 
 
 
@@ -256,84 +257,20 @@ def gemini_proxy(request):
         return JsonResponse({"error": "Only POST allowed"}, status=405)
 
     try:
-        # Request body handling
         body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
-        # 1. Setup API Key and URL 
-        # We prioritize the OS environment key (for Koyeb), but fall back to the Canvas global key
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            # Fallback for local testing/Canvas environment where the key is auto-injected
-            api_key = globals().get('__api_key', '')
-            if not api_key:
-                 # This check should theoretically never be reached in the Canvas environment
-                 return JsonResponse({"error": "The AI service is unavailable right now. Please try again after 2 seconds."}, status=503)
-
-
-        model = "gemini-2.5-flash"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-
-        # 2. Extract and Clean Contents (Chat History)
-        contents = body.get("contents")
-        if not contents:
-            # Fallback for testing
-            contents = [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
-
-        # CRITICAL FIX: Clean the history structure before sending
-        contents = clean_contents(contents)
-
-        # 3. Define System Instruction Text
-        system_instruction_text = (
-            "You are Nakintu AI, an educational partner developed by Kintu Peter, "
-            "CEO of Mwene Groups of Companies. Always provide accurate, empathetic, and concise answers."
-        )
-        
-        # CRITICAL FIX: Format the System Instruction as a Content object for the REST API
-        system_instruction_content = {
-            "role": "system",
-            "parts": [{"text": system_instruction_text}]
-        }
-
-        # 4. Construct Generation Config (Type Casting Fixes)
-        config = body.get("config") or {}
-        generation_config = {
-            # Ensure temperature is explicitly cast to a float
-            "temperature": float(config.get("temperature", 0.7)), 
-            # Ensure maxOutputTokens is explicitly cast to an integer
-            "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
-        }
-
-        # 5. Construct Final Payload
-        payload = {
-            "contents": contents,
-            # PASS THE CORRECTLY STRUCTURED CONTENT OBJECT
-            "systemInstruction": system_instruction_content, 
-            "generationConfig": generation_config,
-        }
-
-        # Debug log: Log the final outbound payload before sending
-        print("Outbound Gemini payload:", json.dumps(payload, indent=2))
-
-        # 6. Make the API Request
-        resp = requests.post(url, json=payload)
-        
-        # 7. Error Handling
-        if resp.status_code != 200:
-            print("AI proxy error details:", resp.text)
-            return JsonResponse(
-                {"error": "The AI service is unavailable right now. Please try again after 2 seconds."},
-                status=503,
-            )
-
-        # 8. Success Response Handling
-        data = resp.json()
-        text = ""
-        if "candidates" in data and data["candidates"]:
-            # Extracting text from parts, accommodating multiple parts if they exist
-            parts = data["candidates"][0].get("content", {}).get("parts", [])
-            text = " ".join(p.get("text", "") for p in parts if "text" in p)
-
-        return JsonResponse({"text": text, "raw": data})
-
-    except Exception:
-        return JsonResponse({"error": "The AI service is unavailable right now. Please try again after 2 seconds."}, status=503)
+    try:
+        response_data = route_ai_request(body)
+        return JsonResponse(response_data)
+    except Exception as exc:
+        print(f"Error in user gemini_proxy: {exc}")
+        return JsonResponse({
+            "text": build_local_fallback_response(
+                ' '.join(str(body.get('contents', []))),
+                body.get('language_code', '') or 'en'
+            ),
+            "provider": "fallback",
+            "language_code": body.get('language_code', '') or 'en',
+        })

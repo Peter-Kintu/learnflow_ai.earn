@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 from typing import Any, Dict, Optional
 
 import requests
@@ -173,7 +174,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
     return extract_text_from_response_body(response.json())
 
 
-def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash') -> str:
+def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 3) -> str:
     api_key = os.environ.get('GEMINI_API_KEY', '').strip() or globals().get('__api_key', '')
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
@@ -188,9 +189,30 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash') -> st
         gemini_body['generationConfig'] = body['config']
 
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
-    response = requests.post(url, json=gemini_body, timeout=30)
-    response.raise_for_status()
-    return extract_text_from_response_body(response.json())
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            response = requests.post(url, json=gemini_body, timeout=30)
+            if response.status_code == 429 or response.status_code >= 500:
+                attempt += 1
+                if attempt >= max_retries:
+                    response.raise_for_status()
+                sleep_seconds = 2 ** (attempt - 1)
+                print(f'Gemini API rate limit or server error, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
+                time.sleep(sleep_seconds)
+                continue
+
+            response.raise_for_status()
+            return extract_text_from_response_body(response.json())
+        except requests.exceptions.RequestException as exc:
+            attempt += 1
+            if attempt >= max_retries:
+                raise
+            sleep_seconds = 2 ** (attempt - 1)
+            print(f'Gemini API request failed, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}): {exc}')
+            time.sleep(sleep_seconds)
+
+    raise RuntimeError('Gemini API failed after retrying.')
 
 
 def create_prompt_from_contents(contents: Any, system_instruction: str = '') -> str:
