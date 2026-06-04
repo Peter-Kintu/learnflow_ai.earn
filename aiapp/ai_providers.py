@@ -182,7 +182,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
     return extract_text_from_response_body(response.json())
 
 
-def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 3) -> str:
+def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 2) -> str:
     api_key = get_env_value('GEMINI_API_KEY') or globals().get('__api_key', '')
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
@@ -201,12 +201,22 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
     while attempt < max_retries:
         try:
             response = requests.post(url, json=gemini_body, timeout=30)
-            if response.status_code == 429 or response.status_code >= 500:
+            if response.status_code == 429:
+                # Rate limited - let caller know to switch to fallback immediately
+                attempt += 1
+                if attempt >= max_retries:
+                    raise RuntimeError(f'Gemini API rate limited (429). Switching to fallback providers.')
+                sleep_seconds = 1
+                print(f'Gemini API rate limited, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
+                time.sleep(sleep_seconds)
+                continue
+            elif response.status_code >= 500:
+                # Server error - try a few times
                 attempt += 1
                 if attempt >= max_retries:
                     response.raise_for_status()
                 sleep_seconds = 2 ** (attempt - 1)
-                print(f'Gemini API rate limit or server error, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
+                print(f'Gemini API server error {response.status_code}, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
                 time.sleep(sleep_seconds)
                 continue
 
@@ -216,7 +226,7 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
             attempt += 1
             if attempt >= max_retries:
                 raise
-            sleep_seconds = 2 ** (attempt - 1)
+            sleep_seconds = 1
             print(f'Gemini API request failed, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}): {exc}')
             time.sleep(sleep_seconds)
 

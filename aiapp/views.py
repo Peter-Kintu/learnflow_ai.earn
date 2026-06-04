@@ -867,6 +867,11 @@ def gemini_proxy(request):
 
     try:
         result = route_ai_request(body)
+        # Log which provider was used
+        provider = result.get('provider', 'unknown')
+        print(f"AI Request completed using provider: {provider}")
+        if 'diagnostics' in result:
+            print(f"Diagnostics: {result['diagnostics']}")
         return JsonResponse(result)
 
     except Exception as e:
