@@ -3,6 +3,7 @@ import os
 import re
 import time
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -115,6 +116,20 @@ def extract_text_from_response_body(resp_json: Any) -> str:
         if 'data' in resp_json and isinstance(resp_json['data'], dict):
             return extract_text_from_response_body(resp_json['data'])
 
+        # Handle OpenAI/Cerebras style completions
+        if 'choices' in resp_json and isinstance(resp_json['choices'], list) and resp_json['choices']:
+            choice = resp_json['choices'][0]
+            if isinstance(choice, dict):
+                # Chat-style
+                msg = choice.get('message') or choice.get('delta')
+                if isinstance(msg, dict):
+                    content = msg.get('content') or msg.get('text')
+                    if isinstance(content, str):
+                        return content
+                # Text-style
+                if 'text' in choice and isinstance(choice['text'], str):
+                    return choice['text']
+
         # If the whole payload is a simple dictionary with a string contained deep in nested keys,
         # return the first string we can find.
         for value in resp_json.values():
@@ -130,6 +145,17 @@ def get_env_value(*keys: str) -> str:
         if value:
             return value
     return ''
+
+
+def clean_base_url(url: str) -> str:
+    """Extracts only the scheme and network location (host:port) to prevent nested path bugs."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    except Exception:
+        pass
+    return url.rstrip('/')
 
 
 def get_sunbird_request_payload(prompt: str, system_instruction: str, language_code: str, voice: bool, temperature: float) -> Dict[str, Any]:
@@ -155,23 +181,21 @@ def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: s
         'Content-Type': 'application/json',
     }
 
-    # Try the configured URL first, then a small set of common alternative endpoints
+
+    # Try a small set of common alternative endpoints
     tried = []
     candidate_paths = [
-        '',
         '/v1/generate',
+        '/tasks/tasks/mix-translate',
         '/v1/completions',
-        '/v1/models/generate',
-        '/v1/generateText',
-        '/v1/text:generate',
     ]
 
-    # Normalize base (strip trailing path if it contains a specific endpoint)
-    base = base_url.rstrip('/')
+    # Normalize base (strip any accidental path and keep scheme://host[:port])
+    base = clean_base_url(base_url)
 
     last_exc = None
     for path in candidate_paths:
-        target = base + path if path else base
+        target = base + path
         tried.append(target)
         try:
             resp = requests.post(target, json=payload, headers=headers, timeout=30)
@@ -215,17 +239,14 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
 
     tried = []
     candidate_paths = [
-        '',
+        '/v1/chat/completions',
         '/v1/completions',
-        '/v1/models/{model}/generate'.format(model='llama-3.1-70b-instruct'),
-        '/v1/models/{model}/outputs'.format(model='llama-3.1-70b-instruct'),
-        '/v1/models/generate',
     ]
 
-    base = base_url.rstrip('/')
+    base = clean_base_url(base_url)
     last_exc = None
     for path in candidate_paths:
-        target = base + path if path else base
+        target = base + path
         tried.append(target)
         try:
             resp = requests.post(target, json=payload, headers=headers, timeout=30)
@@ -455,6 +476,8 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
             'providers_tried': provider_order,
             'provider_errors': provider_errors,
             'provider_availability': provider_availability,
+            'sunbird_attempts': globals().get('__last_sunbird_attempts', []),
+            'cerebras_attempts': globals().get('__last_cerebras_attempts', []),
         }
     }
 
