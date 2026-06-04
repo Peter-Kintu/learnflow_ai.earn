@@ -153,13 +153,14 @@ if DATABASE_URL:
         'default': {
             **dj_database_url.config(
                 default=DATABASE_URL,
-                conn_max_age=600,
+                conn_max_age=int(os.environ.get('DATABASE_CONN_MAX_AGE', 60)),
                 ssl_require=True,
             ),
+            'CONN_MAX_AGE': int(os.environ.get('DATABASE_CONN_MAX_AGE', 60)),
+            'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'connect_timeout': 10,
                 'sslmode': 'require',
-
             },
         }
     }
