@@ -18,7 +18,7 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect # Ensure this is imported at the top
 from .models import Quiz, Question, Choice # Ensure these are imported
-from .ai_providers import route_ai_request, route_tts_request
+from .ai_providers import build_local_fallback_response, route_ai_request, route_tts_request
 from .forms import QuizForm # Ensure this is imported
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
@@ -862,35 +862,23 @@ def gemini_proxy(request):
 
     try:
         body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
-        api_key = os.environ.get("GEMINI_API_KEY") or globals().get('__api_key', '')
-        if not api_key:
-             return JsonResponse({"error": "Missing API Key"}, status=500)
-
-        model = "gemini-2.5-flash"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-
-        contents = body.get("contents") or [{"role": "user", "parts": [{"text": "Hello Gemini"}]}]
-        contents = clean_contents(contents)
-
-        system_instruction_content = {
-            "role": "system",
-            "parts": [{"text": "You are Nakintu AI, developed by Kintu Peter. Provide accurate and empathetic answers."}]
-        }
-
-        config = body.get("config") or {}
-        generation_config = {
-            "temperature": float(config.get("temperature", 0.7)), 
-            "maxOutputTokens": int(config.get("maxOutputTokens", 1024)),
-        }
-
-        body = json.loads(request.body.decode("utf-8"))
+    try:
         result = route_ai_request(body)
         return JsonResponse(result)
 
     except Exception as e:
         print(f"Error in gemini_proxy: {e}")
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({
+            "text": build_local_fallback_response(
+                ' '.join(str(body.get('contents', ''))),
+                body.get('language_code', '') or 'en'
+            ),
+            "provider": "fallback",
+            "language_code": body.get('language_code', '') or 'en',
+        })
 
 def tug_of_war_game(request):
     return render(request, 'aiapp/tug_of_war.html')

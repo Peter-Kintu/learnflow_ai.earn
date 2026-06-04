@@ -206,47 +206,8 @@
 
     let socket = null;
     let isSessionActive = false;
-    let liveCalls = [
-        {
-            id: 'live-1',
-            title: 'Math Marathon: Exam Strategy',
-            topic: 'Mathematics Mastery',
-            description: 'Solve exam-style questions in real time with step-by-step coaching.',
-            participants: 1924,
-            likes: 1492,
-            shares: 97,
-            host: 'Amina',
-            category: 'Math',
-            isActive: true,
-            comments: ['Welcome to the study session!', 'Ask your hard questions now.', 'Hit like to show support!']
-        },
-        {
-            id: 'live-2',
-            title: 'Quick English Writing Tips',
-            topic: 'Language & Grammar',
-            description: 'Learn how to write stronger essays, captions, and discussion answers.',
-            participants: 1127,
-            likes: 980,
-            shares: 64,
-            host: 'Kwame',
-            category: 'English',
-            isActive: true,
-            comments: ['Great view, everyone!', 'Share this stream with classmates.', 'Type your question below.']
-        },
-        {
-            id: 'live-3',
-            title: 'Science Challenge: Build Your Own Lab',
-            topic: 'Hands-on STEM',
-            description: 'Interactive experiments, quizzes, and science hacks for learners.',
-            participants: 840,
-            likes: 720,
-            shares: 38,
-            host: 'Sifa',
-            category: 'Science',
-            isActive: true,
-            comments: ['Tap follow to stay updated.', 'This lesson is live from Kampala.', 'A new quiz drops in 5 minutes.']
-        }
-    ];
+    let isConnecting = false;
+    let liveCalls = [];
     let activeCallId = null;
 
     function setStatus(connected) {
@@ -270,13 +231,13 @@
                     <div>
                         <div class="flex items-center justify-between gap-3 mb-2">
                             <h3 class="font-bold text-sm md:text-base line-clamp-2">${call.title}</h3>
-                            <span class="text-xs uppercase tracking-[0.18em] text-accent-cyan">${call.category}</span>
+                            <span class="text-xs uppercase tracking-[0.18em] text-accent-cyan">${call.category || call.topic || 'Live'}</span>
                         </div>
-                        <p class="text-xs md:text-sm text-text-secondary mb-2 line-clamp-2">${call.description}</p>
+                        <p class="text-xs md:text-sm text-text-secondary mb-2 line-clamp-2">${call.description || call.topic || 'Live study session happening now.'}</p>
                         <div class="flex items-center gap-3 text-xs text-text-secondary flex-wrap">
-                            <span class="inline-flex items-center gap-1"><i class="fas fa-user"></i> ${call.host}</span>
-                            <span class="inline-flex items-center gap-1"><i class="fas fa-heart"></i> ${call.likes.toLocaleString()}</span>
-                            <span class="inline-flex items-center gap-1"><i class="fas fa-share"></i> ${call.shares.toLocaleString()}</span>
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-user"></i> ${call.host || 'Host'}</span>
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-heart"></i> ${(call.likes || 0).toLocaleString()}</span>
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-share"></i> ${(call.shares || 0).toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -319,7 +280,7 @@
             empty.className = 'flex flex-col items-center justify-center h-full py-12 text-center';
             empty.innerHTML = `
                 <i class="fas fa-video text-5xl md:text-6xl text-text-secondary mb-4 opacity-30"></i>
-                <p class="text-text-secondary mb-6 text-sm md:text-base">No live calls available yet. Start a session to stream instantly.</p>
+                <p class="text-text-secondary mb-6 text-sm md:text-base">${isConnecting ? 'Connecting to the live lobby...' : 'No live calls available yet.'}</p>
                 <button id="empty-create-btn" class="px-6 py-2 bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full font-semibold hover:opacity-90 transition text-sm md:text-base">
                     <i class="fas fa-plus mr-2"></i>Create Live Stream
                 </button>
@@ -339,12 +300,12 @@
         
         if (call) {
             D.activeCallTitle.textContent = call.title;
-            D.activeCallTopic.textContent = `📚 ${call.topic}`;
-            D.activeViewerCount.textContent = `👥 ${call.participants} watching`;
-            D.activeLikeCount.textContent = `❤️ ${call.likes.toLocaleString()} likes`;
-            D.activeShareCount.textContent = `🔁 ${call.shares.toLocaleString()} shares`;
+            D.activeCallTopic.textContent = `📚 ${call.topic || call.category || 'Live session'}`;
+            D.activeViewerCount.textContent = `👥 ${call.participants || 0} watching`;
+            D.activeLikeCount.textContent = `❤️ ${(call.likes || 0).toLocaleString()} likes`;
+            D.activeShareCount.textContent = `🔁 ${(call.shares || 0).toLocaleString()} shares`;
             D.activeCallSection.classList.remove('hidden');
-            updateNotes(call.comments);
+            updateNotes(call.comments || []);
             showToast(`Joined ${call.title}`);
         }
 
@@ -366,7 +327,7 @@
     function likeCall(callId) {
         const call = liveCalls.find(c => c.id === callId);
         if (!call) return;
-        call.likes += 1;
+        call.likes = (call.likes || 0) + 1;
         renderFeed();
         if (activeCallId === callId) {
             D.activeLikeCount.textContent = `❤️ ${call.likes.toLocaleString()} likes`;
@@ -415,6 +376,19 @@
         const title = prompt('What is your live call about?', 'Study Group');
         if (!title) return;
 
+        const payload = {
+            type: 'create_call',
+            title,
+            topic: 'Learning',
+            host: 'You'
+        };
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(payload));
+            showToast('Creating your live session...');
+            return;
+        }
+
         const newCall = {
             id: `local-${Date.now()}`,
             title,
@@ -433,13 +407,9 @@
         renderFeed();
         joinCall(newCall.id);
 
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-            startSession().catch(() => {
-                console.warn('Could not open WebSocket, using local call state only.');
-            });
-        } else {
-            socket.send(JSON.stringify({ type: 'create_call', title, topic: 'Learning' }));
-        }
+        startSession().catch(() => {
+            console.warn('Could not open WebSocket, using local call state only.');
+        });
     }
 
     function startSession() {
@@ -449,14 +419,19 @@
                 return;
             }
 
+            isConnecting = true;
+            renderFeed();
+
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/live-teacher/`);
 
             socket.onopen = () => {
                 isSessionActive = true;
+                isConnecting = false;
                 setStatus(true);
                 socket.send(JSON.stringify({ type: 'get_lobby' }));
                 showToast('Live session connected.');
+                renderFeed();
                 resolve();
             };
 
@@ -479,14 +454,19 @@
 
             socket.onerror = (err) => {
                 console.error('Socket error', err);
+                isConnecting = false;
+                setStatus(false);
                 showToast('Live connection failed. Using local preview.');
+                renderFeed();
                 reject(err);
             };
 
             socket.onclose = () => {
                 isSessionActive = false;
+                isConnecting = false;
                 setStatus(false);
                 showToast('Live session disconnected.');
+                renderFeed();
             };
         });
     }
@@ -523,7 +503,12 @@
 
     // Initialize
     setStatus(false);
+    isConnecting = true;
     renderFeed();
+    startSession().catch(() => {
+        isConnecting = false;
+        renderFeed();
+    });
 
     window.addEventListener('beforeunload', stopSession);
 </script>

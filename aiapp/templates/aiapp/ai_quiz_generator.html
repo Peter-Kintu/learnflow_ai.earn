@@ -234,12 +234,18 @@ const CACHE_KEY_PREFIX = "learnflow_outline_";
  * MODIFIED: Improved voice tone (pitch), multilingual voice selection, and speed.
  */
 function fallbackToBrowserTTS(text, lang) {
+    if (!lang || !lang.toLowerCase().startsWith('en')) {
+        console.warn("TTS skipped: voiceover is enabled only for English output.");
+        return;
+    }
+
     console.warn("Falling back to browser's native TTS.");
     const utterance = new SpeechSynthesisUtterance(text);
     
     // 1. IMPROVE TONE (Pitch/Rate)
-    utterance.pitch = 1.1; // Slightly higher tone for an engaging teacher voice (default is 1)
-    utterance.rate = 0.88; // Lowered from 0.95 to 0.88 for a calmer, less speedy pace.
+    utterance.pitch = 1.05; // Slightly higher, clear voice for learners
+    utterance.rate = 0.85; // Slower pace for better comprehension
+    utterance.volume = 1.0;
 
     // 2. Multilingual Voice Selection Logic (Enhanced with user's priority list)
     const voices = speechSynthesis.getVoices();
@@ -302,6 +308,11 @@ function fallbackToBrowserTTS(text, lang) {
 async function speakText(text) {
     const selectedLang = document.getElementById("languageSelect").value;
 
+    if (!selectedLang || !selectedLang.toLowerCase().startsWith('en')) {
+        console.warn("Voiceover skipped because the selected language is not English.");
+        return;
+    }
+
     // 1. Text Cleaning: Aggressively strip Markdown and symbols that are read aloud, 
     // but PRESERVE punctuation (., ! ? : ;) to create natural pauses and flow.
     let cleanText = text
@@ -316,6 +327,9 @@ async function speakText(text) {
         .replace(/\//g, ' or ') // Replace slashes with "or"
         .replace(/[${}^|@<>=+]/g, ' ') // NEW: Remove symbols often read aloud: $, {, }, ^, |, @, <, >, =, +
         .replace(/\r?\n|\r/g, ' '); // Replace all newlines with a single space
+
+    // Ensure punctuation is clearly spaced so the speaker pauses naturally
+    cleanText = cleanText.replace(/([.,!?;:])/g, '$1 ');
 
     // Further cleaning and consolidation
     cleanText = cleanText.replace(/\s\s+/g, ' ').trim(); // Replace multiple spaces with a single space

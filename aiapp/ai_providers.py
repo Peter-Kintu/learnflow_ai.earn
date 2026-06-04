@@ -211,6 +211,26 @@ def create_prompt_from_contents(contents: Any, system_instruction: str = '') -> 
     return '\n'.join([part for part in prompt_parts if part])
 
 
+def build_local_fallback_response(prompt: str, language_code: str) -> str:
+    user_prompt = prompt.strip() if prompt else ''
+    if not user_prompt:
+        return (
+            'I am still here to help. Your request could not reach the normal AI engines at this time, '
+            'but I can provide guidance based on what you asked. Please try again in a few moments for a refreshed answer.'
+        )
+
+    cleaned_prompt = re.sub(r'\s+', ' ', user_prompt).strip()
+    if len(cleaned_prompt) > 260:
+        cleaned_prompt = cleaned_prompt[:260].rstrip() + '...'
+
+    return (
+        'I am currently unable to reach the cloud AI engines, but I can still help with your request. '
+        'Here is a best-effort response based on your input:\n\n'
+        f'Request summary: {cleaned_prompt}\n\n'
+        'Use this as a helpful guide while the service recovers, and resend your request in a few seconds if you need a more detailed answer.'
+    )
+
+
 def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     contents = body.get('contents', [])
     language_code = normalize_language_code(body.get('language_code', '') or '')
@@ -237,10 +257,14 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     body['language_code'] = language_code
     body['voice'] = voice
 
-    provider_order = ['gemini', 'sunbird', 'cerebras']
+    if is_sunbird_language(language_code):
+        provider_order = ['sunbird', 'gemini', 'cerebras']
+    else:
+        provider_order = ['gemini', 'sunbird', 'cerebras']
+
     provider_errors = []
     response_text = ''
-    provider_used = 'unavailable'
+    provider_used = 'fallback'
 
     for provider in provider_order:
         if provider == 'gemini':
@@ -274,13 +298,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
                 continue
 
     if not response_text:
-        fallback_details = '; '.join(provider_errors[-3:]) if provider_errors else 'No AI provider is configured.'
-        response_text = (
-            'The AI service is temporarily unavailable. '
-            'Nakintu AI has attempted Gemini, Sunbird, and Cerebras. '
-            'Please try again shortly or verify your provider settings. '
-            f'({fallback_details})'
-        )
+        response_text = build_local_fallback_response(prompt, language_code)
 
     return {
         'text': response_text,
