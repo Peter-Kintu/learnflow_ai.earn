@@ -226,38 +226,45 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
     if not base_url or not api_key:
         raise RuntimeError('Cerebras API is not configured.')
 
-    payload = {
-        'prompt': prompt,
-        'language': language_code or FALLBACK_LANGUAGE_CODE,
-        'temperature': temperature,
-        'mode': 'education',
-    }
     headers = {
         'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json',
     }
 
-    tried = []
-    candidate_paths = [
-        '/v1/chat/completions',
-        '/v1/completions',
-    ]
+    model_name = 'llama-3.1-70b-instruct'
+    chat_payload = {
+        'model': model_name,
+        'messages': [
+            {'role': 'system', 'content': f'Respond in language: {language_code or FALLBACK_LANGUAGE_CODE}.'},
+            {'role': 'user', 'content': prompt}
+        ],
+        'temperature': temperature,
+    }
+
+    completion_payload = {
+        'model': model_name,
+        'input': prompt,
+        'temperature': temperature,
+    }
 
     base = clean_base_url(base_url)
+    candidate_paths = [
+        ('/v1/chat/completions', chat_payload),
+        ('/v1/completions', completion_payload),
+    ]
+
+    tried = []
     last_exc = None
-    for path in candidate_paths:
+    for path, payload in candidate_paths:
         target = base + path
         tried.append(target)
         try:
             resp = requests.post(target, json=payload, headers=headers, timeout=30)
-            if resp.status_code == 404:
-                last_exc = requests.exceptions.HTTPError(f'404 Not Found for {target}')
-                continue
+            globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'status': resp.status_code})
             if resp.status_code >= 400 and resp.status_code < 500:
                 last_exc = requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target}')
                 continue
             resp.raise_for_status()
-            globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'status': resp.status_code})
             return extract_text_from_response_body(resp.json())
         except requests.exceptions.RequestException as exc:
             last_exc = exc
