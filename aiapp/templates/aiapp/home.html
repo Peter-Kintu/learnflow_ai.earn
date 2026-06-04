@@ -361,7 +361,7 @@
                     <div class="avatar">🎓</div>
                     <div class="content">
                         <strong>Nakintu AI</strong>
-                        <p>Welcome! I'm your personal learning companion with world-class teaching skills. I understand Ugandan, African, and global languages, and I work through Gemini, Sunbird, and Cerebras to stay reliable.</p>
+                        <p>Welcome! I'm your personal learning companion with world-class teaching skills. I understand Ugandan, African, and global languages, and I’m built to keep conversations helpful and dependable.</p>
                         <p style="margin-top:0.5rem;color:#677178;font-size:0.95rem">💡 Try: "Explain photosynthesis" or ask in Luganda, Swahili, Hausa, French, Arabic, or your preferred language.</p>
                     </div>
                 </div>
@@ -447,7 +447,7 @@
     const africanLanguageCode = 'sw-TZ'; 
 
     // --- API Configuration ---
-    // NOTE: Replace the placeholder with your actual Gemini API key.
+    // NOTE: Replace the placeholder with your actual AI API key.
   
 function getCookie(name) {
   let cookieValue = null;
@@ -480,11 +480,10 @@ async function handleUserSubmission() {
     if (result.isError) {
         appendMessage('ai', result.text, true);
         if (result.type === 'rate_limit') {
-            startCooldown(60);
+            startCooldown(2);
         }
     } else {
         appendMessage('ai', result.text);
-        console.log('AI provider used:', result.provider);
     }
 }
 
@@ -530,17 +529,17 @@ async function sendMessage(finalMessages) {
       return { 
         isError: true, 
         type: 'rate_limit', 
-        text: "Nakintu AI is a bit busy right now! Please wait about 60 seconds before your next question." 
+        text: "The system is busy right now. Please try again after 2 seconds.",
       };
     }
 
     // 2. Handle other non-OK responses
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
+      await response.text().catch(() => '');
       return { 
         isError: true, 
         type: 'server_error', 
-        text: errorBody.error || `Server error (Status: ${response.status}). Please try again later.`,
+        text: "Sorry, I couldn’t reach the AI service. Please try again after 2 seconds.",
       };
     }
 
@@ -557,7 +556,7 @@ async function sendMessage(finalMessages) {
     return { 
       isError: true, 
       type: 'network_error', 
-      text: "Connection lost. Please check your internet and try again." 
+      text: "Sorry, I couldn’t connect right now. Please try again after 2 seconds.",
     };
   }
 }
@@ -1067,8 +1066,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
       })
     });
     const data = await response.json();
-    const aiText = data.text || "I apologize, I could not generate a response.";
-    console.log('AI provider used:', data.provider || 'unknown');
+    const aiText = data.text || "I’m sorry, I couldn’t generate a response right now. Please try again after 2 seconds.";
 
     responseCount++;
     localStorage.setItem(responseCountKey, responseCount);
@@ -1076,9 +1074,9 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     removeLoader();
     appendMessage('ai', aiText);
   } catch (error) {
-    console.error('Gemini Proxy Error:', error);
+    console.error('AI proxy error:', error);
     removeLoader();
-    const errorMessage = `🚨 Could not connect to the AI service. Error: ${error.message}`;
+    const errorMessage = "Sorry, I couldn’t connect right now. Please try again after 2 seconds.";
     appendMessage('ai', errorMessage, true);
     speakText(cleanText(errorMessage));
   } finally {

@@ -267,7 +267,7 @@ def gemini_proxy(request):
             api_key = globals().get('__api_key', '')
             if not api_key:
                  # This check should theoretically never be reached in the Canvas environment
-                 return JsonResponse({"error": "Missing GEMINI_API_KEY in environment or globals."}, status=500)
+                 return JsonResponse({"error": "The AI service is unavailable right now. Please try again after 2 seconds."}, status=503)
 
 
         model = "gemini-2.5-flash"
@@ -319,11 +319,10 @@ def gemini_proxy(request):
         
         # 7. Error Handling
         if resp.status_code != 200:
-            # CRITICAL LOG: This will show the exact reason for the 400 error.
-            print("Gemini API Error Details:", resp.text)
+            print("AI proxy error details:", resp.text)
             return JsonResponse(
-                {"error": f"Gemini API error {resp.status_code}", "details": resp.text},
-                status=resp.status_code,
+                {"error": "The AI service is unavailable right now. Please try again after 2 seconds."},
+                status=503,
             )
 
         # 8. Success Response Handling
@@ -336,5 +335,5 @@ def gemini_proxy(request):
 
         return JsonResponse({"text": text, "raw": data})
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except Exception:
+        return JsonResponse({"error": "The AI service is unavailable right now. Please try again after 2 seconds."}, status=503)

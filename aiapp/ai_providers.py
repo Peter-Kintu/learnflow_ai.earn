@@ -214,21 +214,9 @@ def create_prompt_from_contents(contents: Any, system_instruction: str = '') -> 
 def build_local_fallback_response(prompt: str, language_code: str) -> str:
     user_prompt = prompt.strip() if prompt else ''
     if not user_prompt:
-        return (
-            'I am still here to help. Your request could not reach the normal AI engines at this time, '
-            'but I can provide guidance based on what you asked. Please try again in a few moments for a refreshed answer.'
-        )
+        return 'I’m still here to help. Please try again after 2 seconds.'
 
-    cleaned_prompt = re.sub(r'\s+', ' ', user_prompt).strip()
-    if len(cleaned_prompt) > 260:
-        cleaned_prompt = cleaned_prompt[:260].rstrip() + '...'
-
-    return (
-        'I am currently unable to reach the cloud AI engines, but I can still help with your request. '
-        'Here is a best-effort response based on your input:\n\n'
-        f'Request summary: {cleaned_prompt}\n\n'
-        'Use this as a helpful guide while the service recovers, and resend your request in a few seconds if you need a more detailed answer.'
-    )
+    return 'I’m still here to help. I couldn’t reach the AI service right now. Please try again after 2 seconds.'
 
 
 def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
