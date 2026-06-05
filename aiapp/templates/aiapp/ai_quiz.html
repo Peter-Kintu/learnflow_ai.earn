@@ -510,18 +510,27 @@ async function generateCourseOutline(isRegenerate) {
         courseContentDiv.innerHTML = markdownToHtml(generatedContent);
         aiCourseOutputDiv.classList.remove('hidden');
 
-        // 5. Enhance the output list items to be clickable
-        const listItems = courseContentDiv.querySelectorAll('ul li, ol li');
-        listItems.forEach((li, index) => {
-            // This applies the requested "clickable container" styling (raised, padded, dark background)
-            li.classList.add('clickable-step', 'bg-slate-800', 'p-4', 'rounded-lg', 'cursor-pointer', 'text-lg');
-            // MODIFIED: Pass the full context to loadDetailedLesson
-            li.setAttribute('onclick', `loadDetailedLesson(${index}, this.textContent, '${lang}')`);
-            
-            // Add a speaker icon
-            const icon = document.createElement('span');
-            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
-            li.appendChild(icon);
+        // 5. Convert path outline list items into clickable cards
+        const listWrappers = courseContentDiv.querySelectorAll('ul, ol');
+        listWrappers.forEach((listWrapper) => {
+            const cardGrid = document.createElement('div');
+            cardGrid.className = 'grid gap-4 md:grid-cols-2';
+
+            const listItems = Array.from(listWrapper.querySelectorAll('li'));
+            listItems.forEach((li, index) => {
+                const card = document.createElement('div');
+                card.className = 'clickable-step bg-slate-800 p-4 rounded-xl shadow-lg cursor-pointer text-lg transition hover:bg-slate-600';
+                card.innerHTML = li.innerHTML;
+                card.addEventListener('click', () => loadDetailedLesson(index, li.textContent.trim(), lang));
+
+                const icon = document.createElement('span');
+                icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+                card.appendChild(icon);
+
+                cardGrid.appendChild(card);
+            });
+
+            listWrapper.replaceWith(cardGrid);
         });
 
         // 6. Set the quiz context input (used by detailed lesson loader)
