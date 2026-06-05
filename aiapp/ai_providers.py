@@ -204,6 +204,28 @@ def clean_base_url(url: str) -> str:
     return url.rstrip('/')
 
 
+def build_api_targets(base_url: str, candidate_paths: list) -> list:
+    parsed = urlparse(base_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ValueError(f'Invalid API URL: {base_url}')
+
+    base = f'{parsed.scheme}://{parsed.netloc}'
+    targets = []
+    path = parsed.path.rstrip('/')
+    if path and path != '/':
+        primary = base + path
+        if parsed.query:
+            primary += '?' + parsed.query
+        targets.append(primary)
+
+    for candidate in candidate_paths:
+        candidate_url = base + candidate
+        if candidate_url not in targets:
+            targets.append(candidate_url)
+
+    return targets
+
+
 def get_sunbird_request_payload(prompt: str, system_instruction: str, language_code: str, voice: bool, temperature: float) -> Dict[str, Any]:
     return {
         'prompt': prompt,
@@ -216,54 +238,44 @@ def get_sunbird_request_payload(prompt: str, system_instruction: str, language_c
 
 
 def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: str = '', voice: bool = False, temperature: float = 0.7) -> str:
-    base_url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL')
+    """
+    Fixed to explicitly target the Sunbird Sunflower Simple endpoint using application/x-www-form-urlencoded data.
+    """
+    base_url = get_env_value('SUNBIRD_API_URL', 'SUNBIRD_URL') or 'https://api.sunbird.ai'
     api_key = get_env_value('SUNBIRD_API_KEY', 'SUNBIRD_KEY')
-    if not base_url or not api_key:
+    if not api_key:
         raise RuntimeError('Sunbird API is not configured.')
 
-    payload = get_sunbird_request_payload(prompt, system_instruction, language_code, voice, temperature)
+    target_url = f"{base_url.rstrip('/')}/tasks/sunflower_simple"
     headers = {
         'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
     }
 
+    payload = {
+        'instruction': prompt,
+        'model_type': 'qwen',
+        'temperature': temperature,
+        'system_message': system_instruction or f'Respond directly in language code: {language_code or FALLBACK_LANGUAGE_CODE}.',
+    }
 
-    # Try a small set of common alternative endpoints
-    tried = []
-    candidate_paths = [
-        '/v1/generate',
-        '/tasks/tasks/mix-translate',
-        '/v1/completions',
-    ]
-
-    # Normalize base (strip any accidental path and keep scheme://host[:port])
-    base = clean_base_url(base_url)
-
+    tried = [target_url]
     last_exc = None
-    for path in candidate_paths:
-        target = base + path
-        tried.append(target)
-        try:
-            resp = requests.post(target, json=payload, headers=headers, timeout=30)
-            if resp.status_code == 405:
-                # Wrong method for this endpoint - try next
-                last_exc = requests.exceptions.HTTPError(f'405 Method Not Allowed for {target}')
-                continue
-            if resp.status_code >= 400 and resp.status_code < 500:
-                # Client error - capture and try next
-                last_exc = requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target}')
-                continue
-            resp.raise_for_status()
-            # Attach diagnostics to globals for later inspection (non-invasive)
-            globals().setdefault('__last_sunbird_attempts', []).append({'url': target, 'status': resp.status_code})
-            return extract_text_from_response_body(resp.json())
-        except requests.exceptions.RequestException as exc:
-            last_exc = exc
-            globals().setdefault('__last_sunbird_attempts', []).append({'url': target, 'error': str(exc)})
-            continue
+    try:
+        resp = requests.post(target_url, data=payload, headers=headers, timeout=30)
+        globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'status': resp.status_code})
 
-    # If we reach here, all attempts failed
-    raise RuntimeError(f'Sunbird API failed. Tried endpoints: {tried}. Last error: {last_exc}')
+        if resp.status_code == 429:
+            raise requests.exceptions.HTTPError(f'429 Rate Limited for {target_url}')
+        if resp.status_code >= 400 and resp.status_code < 500:
+            raise requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target_url}')
+
+        resp.raise_for_status()
+        return extract_text_from_response_body(resp.json())
+    except requests.exceptions.RequestException as exc:
+        last_exc = exc
+        globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'error': str(exc)})
+        raise RuntimeError(f'Sunbird API failed. Tried endpoints: {tried}. Last error: {exc}')
 
 
 def call_cerebras_api(prompt: str, language_code: str = '', temperature: float = 0.7) -> str:
@@ -293,20 +305,28 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
         'temperature': temperature,
     }
 
-    base = clean_base_url(base_url)
-    candidate_paths = [
-        ('/v1/chat/completions', chat_payload),
-        ('/v1/completions', completion_payload),
-    ]
+    candidate_urls = build_api_targets(base_url, ['/v1/chat/completions', '/v1/completions'])
+    payload_mapping = {}
+    for target in candidate_urls:
+        parsed = urlparse(target)
+        if parsed.path.endswith('/chat/completions'):
+            payload_mapping[target] = chat_payload
+        elif parsed.path.endswith('/v1/completions'):
+            payload_mapping[target] = completion_payload
+        else:
+            payload_mapping[target] = completion_payload
 
     tried = []
     last_exc = None
-    for path, payload in candidate_paths:
-        target = base + path
+    for target in candidate_urls:
+        payload = payload_mapping[target]
         tried.append(target)
         try:
             resp = requests.post(target, json=payload, headers=headers, timeout=30)
             globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'status': resp.status_code})
+            if resp.status_code == 429:
+                last_exc = requests.exceptions.HTTPError(f'429 Rate Limited for {target}')
+                continue
             if resp.status_code >= 400 and resp.status_code < 500:
                 last_exc = requests.exceptions.HTTPError(f'{resp.status_code} Client Error for {target}')
                 continue
@@ -334,41 +354,57 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
     if 'config' in body:
         gemini_body['generationConfig'] = body['config']
 
-    url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
-    attempt = 0
-    while attempt < max_retries:
-        try:
-            response = requests.post(url, json=gemini_body, timeout=30)
-            if response.status_code == 429:
-                # Rate limited - let caller know to switch to fallback immediately
+    if api_key.startswith('AIza'):
+        headers = {'Content-Type': 'application/json'}
+        candidate_urls = [
+            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}',
+            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateText?key={api_key}',
+        ]
+    else:
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        }
+        candidate_urls = [
+            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateText',
+        ]
+
+    last_exc = None
+    for url in candidate_urls:
+        attempt = 0
+        while attempt < max_retries:
+            try:
+                response = requests.post(url, json=gemini_body, headers=headers, timeout=30)
+                if response.status_code == 429:
+                    attempt += 1
+                    if attempt >= max_retries:
+                        raise RuntimeError(f'Gemini API rate limited (429) at {url}. Switching to fallback providers.')
+                    sleep_seconds = 1
+                    print(f'Gemini API rate limited, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}) for {url}')
+                    time.sleep(sleep_seconds)
+                    continue
+                elif response.status_code >= 500:
+                    attempt += 1
+                    if attempt >= max_retries:
+                        response.raise_for_status()
+                    sleep_seconds = 2 ** (attempt - 1)
+                    print(f'Gemini API server error {response.status_code}, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}) for {url}')
+                    time.sleep(sleep_seconds)
+                    continue
+
+                response.raise_for_status()
+                return extract_text_from_response_body(response.json())
+            except requests.exceptions.RequestException as exc:
+                last_exc = exc
                 attempt += 1
                 if attempt >= max_retries:
-                    raise RuntimeError(f'Gemini API rate limited (429). Switching to fallback providers.')
+                    break
                 sleep_seconds = 1
-                print(f'Gemini API rate limited, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
+                print(f'Gemini API request failed for {url}, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}): {exc}')
                 time.sleep(sleep_seconds)
-                continue
-            elif response.status_code >= 500:
-                # Server error - try a few times
-                attempt += 1
-                if attempt >= max_retries:
-                    response.raise_for_status()
-                sleep_seconds = 2 ** (attempt - 1)
-                print(f'Gemini API server error {response.status_code}, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries})')
-                time.sleep(sleep_seconds)
-                continue
 
-            response.raise_for_status()
-            return extract_text_from_response_body(response.json())
-        except requests.exceptions.RequestException as exc:
-            attempt += 1
-            if attempt >= max_retries:
-                raise
-            sleep_seconds = 1
-            print(f'Gemini API request failed, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}): {exc}')
-            time.sleep(sleep_seconds)
-
-    raise RuntimeError('Gemini API failed after retrying.')
+    raise RuntimeError(f'Gemini API failed after retrying. Last error: {last_exc}')
 
 
 def create_prompt_from_contents(contents: Any, system_instruction: str = '') -> str:
