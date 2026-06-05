@@ -1102,7 +1102,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
   const lastMessage = history.length ? history[history.length - 1] : null;
   const fullContents = [
     { role: "user", parts: [{ text: currentSystemInstruction }] },
-    ...history.slice(-10)
+    ...history.slice(-6)
   ];
 
   if (!lastMessage || lastMessage.role !== 'user' || lastMessage.parts[0].text !== prompt) {

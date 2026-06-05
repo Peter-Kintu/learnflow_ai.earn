@@ -254,6 +254,38 @@ def clean_base_url(url: str) -> str:
     return url.rstrip('/')
 
 
+def strip_html_tags(text: str) -> str:
+    return re.sub(r'<[^>]+>', '', text or '').strip()
+
+
+def perform_internet_search(query: str, max_results: int = 4) -> list:
+    if not query:
+        return []
+
+    search_url = 'https://html.duckduckgo.com/html/'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    }
+    try:
+        resp = requests.get(search_url, params={'q': query}, headers=headers, timeout=10)
+        resp.raise_for_status()
+        html = resp.text
+
+        titles = re.findall(r'<a[^>]*class="result__a"[^>]*>(.*?)</a>', html, re.S)
+        snippets = re.findall(r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>', html, re.S)
+        results = []
+        for idx, title in enumerate(titles[:max_results]):
+            snippet = strip_html_tags(snippets[idx]) if idx < len(snippets) else ''
+            results.append(f"{idx + 1}. {strip_html_tags(title)}{(' - ' + snippet) if snippet else ''}")
+
+        if results:
+            return results
+    except Exception as exc:
+        globals().setdefault('__internet_search_errors', []).append(str(exc))
+
+    return []
+
+
 def build_api_targets(base_url: str, candidate_paths: list) -> list:
     parsed = urlparse(base_url)
     if not parsed.scheme or not parsed.netloc:
@@ -491,7 +523,20 @@ def build_local_fallback_response(prompt: str, language_code: str) -> str:
     if not user_prompt:
         return 'I’m still here to help. Please try again after 2 seconds.'
 
-    return 'I’m still here to help. I couldn’t reach the AI service right now. Please try again after 2 seconds.'
+    search_results = perform_internet_search(user_prompt, max_results=4)
+    if search_results:
+        summary = '\n'.join(search_results)
+        return (
+            'AI cloud providers are temporarily unavailable, so I searched the internet for your question. '
+            'Here are the top findings I could gather:\n\n'
+            f'{summary}\n\n'
+            'If you want a more detailed AI answer, please try again shortly.'
+        )
+
+    return (
+        'I’m still here to help. I couldn’t reach the AI service right now, and the internet search fallback also failed. '
+        'Please try again after 2 seconds.'
+    )
 
 
 def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
