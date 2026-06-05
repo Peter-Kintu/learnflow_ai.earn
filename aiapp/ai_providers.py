@@ -2,6 +2,8 @@ import json
 import os
 import re
 import time
+import html as _html
+import unicodedata
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
@@ -83,10 +85,25 @@ def guess_language_from_text(text: str) -> Optional[str]:
         return None
 
     normalized_text = text.lower()
+    # Prefer simple keyword matching but use whole-word checks to avoid false positives
     for code, markers in LANGUAGE_MARKERS.items():
         for marker in markers:
-            if marker in normalized_text:
-                return code
+            try:
+                if re.search(r"\b" + re.escape(marker.lower()) + r"\b", normalized_text):
+                    return code
+            except re.error:
+                if marker.lower() in normalized_text:
+                    return code
+
+    # Fallback: try langdetect if available (optional dependency)
+    try:
+        from langdetect import detect
+        lang = detect(text)
+        if lang:
+            return lang.split('-')[0]
+    except Exception:
+        pass
+
     return None
 
 
@@ -96,28 +113,54 @@ def is_sunbird_language(language_code: Optional[str]) -> bool:
 
 
 def extract_text_from_response_body(resp_json: Any) -> str:
+    def clean_extracted_text(text: str) -> str:
+        if not text:
+            return ''
+        # Unescape HTML entities
+        text = _html.unescape(text)
+        # Remove control characters
+        text = re.sub(r"[\x00-\x1F\x7F-\x9F]", '', text)
+        # Normalize unicode (NFKC) to collapse weird symbols
+        try:
+            text = unicodedata.normalize('NFKC', text)
+        except Exception:
+            pass
+        # Normalize line endings
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        # Collapse multiple blank lines into two
+        text = re.sub(r"\n{3,}", '\n\n', text)
+        # Trim spaces on each line
+        text = '\n'.join([ln.strip() for ln in text.split('\n')])
+        # Collapse multiple spaces
+        text = re.sub(r"[ \t]{2,}", ' ', text)
+        # Final trim
+        return text.strip()
+
+    raw_text = ''
     if resp_json is None:
         return ''
-    if isinstance(resp_json, str):
-        return resp_json
 
-    if isinstance(resp_json, dict):
+    if isinstance(resp_json, str):
+        raw_text = resp_json
+    elif isinstance(resp_json, dict):
         for key in ('answer', 'response', 'text', 'output', 'result'):
             if key in resp_json and isinstance(resp_json[key], str):
-                return resp_json[key]
+                raw_text = resp_json[key]
+                break
 
         # If there is a deep nested message structure, try to find it.
-        if 'candidates' in resp_json and isinstance(resp_json['candidates'], list) and resp_json['candidates']:
+        if not raw_text and 'candidates' in resp_json and isinstance(resp_json['candidates'], list) and resp_json['candidates']:
             candidate = resp_json['candidates'][0]
             content = candidate.get('content', {})
             if isinstance(content, dict) and 'parts' in content:
-                return ' '.join([p.get('text', '') for p in content.get('parts', []) if isinstance(p, dict)])
+                parts_texts = [p.get('text', '') for p in content.get('parts', []) if isinstance(p, dict)]
+                raw_text = ' '.join(parts_texts)
 
-        if 'data' in resp_json and isinstance(resp_json['data'], dict):
-            return extract_text_from_response_body(resp_json['data'])
+        if not raw_text and 'data' in resp_json and isinstance(resp_json['data'], dict):
+            raw_text = extract_text_from_response_body(resp_json['data'])
 
         # Handle OpenAI/Cerebras style completions
-        if 'choices' in resp_json and isinstance(resp_json['choices'], list) and resp_json['choices']:
+        if not raw_text and 'choices' in resp_json and isinstance(resp_json['choices'], list) and resp_json['choices']:
             choice = resp_json['choices'][0]
             if isinstance(choice, dict):
                 # Chat-style
@@ -125,18 +168,21 @@ def extract_text_from_response_body(resp_json: Any) -> str:
                 if isinstance(msg, dict):
                     content = msg.get('content') or msg.get('text')
                     if isinstance(content, str):
-                        return content
+                        raw_text = content
                 # Text-style
-                if 'text' in choice and isinstance(choice['text'], str):
-                    return choice['text']
+                if not raw_text and 'text' in choice and isinstance(choice['text'], str):
+                    raw_text = choice['text']
 
         # If the whole payload is a simple dictionary with a string contained deep in nested keys,
         # return the first string we can find.
-        for value in resp_json.values():
-            if isinstance(value, str):
-                return value
+        if not raw_text:
+            for value in resp_json.values():
+                if isinstance(value, str):
+                    raw_text = value
+                    break
 
-    return ''
+    cleaned = clean_extracted_text(raw_text)
+    return cleaned
 
 
 def get_env_value(*keys: str) -> str:

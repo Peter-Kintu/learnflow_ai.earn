@@ -588,9 +588,8 @@ async function sendMessage(finalMessages) {
 5. **TIME/DATE:** Always use the accurate time and date from the CURRENT CONTEXT when asked.
 
 CURRENT CONTEXT:
-- The user's accurate local date is **Friday, October 17, 2025**.
-- The user's accurate local time is **9:04 PM EAT**.
-- Your current virtual location is **Kampala, Uganda**.
+- The browser will provide an up-to-date CURRENT CONTEXT via the userCurrentContext object (date, time, coordinates when available).
+- Always prefer the dynamic userCurrentContext values over any static text. If coordinates are present use them for location-aware responses; otherwise use Kampala, Uganda as a reasonable virtual fallback.
 
 **INSTRUCTIONS FOR REAL-TIME DATA & PREDICTIONS:**
 - If the user asks for **real-time information (like news or current scores)**, use your internal browsing/search capability to provide the most current and accurate answer, acknowledging the inherent latency in news.
@@ -1041,7 +1040,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     parts: [{ text: item.text }]
   }));
 
-  const languageCode = languageSelector?.value || 'auto';
+  const languageCode = (languageSelector && languageSelector.value) || 'auto';
   let currentSystemInstruction = systemInstruction;
 
   if (userCurrentContext.currentTimeAndDate) {
@@ -1180,7 +1179,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             return response.text().then(text => {
                 try {
                     const err = JSON.parse(text);
-                    throw new Error(err.error?.message || `Status ${response.status}: Unknown API Error`);
+                    throw new Error((err && err.error && err.error.message) || `Status ${response.status}: Unknown API Error`);
                 } catch (e) {
                     throw new Error(`Non-JSON response (Status ${response.status}). Check server/proxy connection.`);
                 }
