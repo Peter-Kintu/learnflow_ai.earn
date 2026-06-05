@@ -347,13 +347,22 @@ function markdownToHtml(markdown) {
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
     html = html.replace(/_(.*?)_/g, '<em>$1</em>');
 
-    // Convert paragraphs and preserve line breaks within paragraphs.
+    // Convert list items so quiz questions and any ordered content remain legible.
+    html = html.replace(/^\s*[-*+•]\s+(.*)$/gm, '<li>$1</li>');
+    html = html.replace(/^\s*\d+[\.\)]\s+(.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*?<\/li>\s*)+/gs, match => {
+        const cleaned = match.trim().replace(/\n/g, '');
+        return cleaned.startsWith('<li>') ? `<ul>${cleaned}</ul>` : match;
+    });
+
+    // Convert paragraphs and collapse internal line breaks to spaces for cleaner paragraphs.
     const blocks = html.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
     html = blocks.map(p => {
         if (p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<ol') || p.startsWith('<div') || p.startsWith('<blockquote>')) {
             return p;
         }
-        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+        const paragraphText = p.replace(/\n+/g, ' ').replace(/\s\s+/g, ' ').trim();
+        return `<p>${paragraphText}</p>`;
     }).join('');
 
     return `<div class="markdown-output">${html}</div>`;
@@ -467,7 +476,7 @@ function generateResearchLinks(query, fullContext) {
 // Use the same proxy endpoint as your other script
 
 async function fetchAiContent(prompt, keyRole, model) {
-  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Output must be in clean Markdown.";
+  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language, using clean Markdown and best-in-the-world lesson quality. Write a beautifully organized, readable lesson with well-formed paragraphs and minimal bold formatting. Do not use bold text for every sentence. Only use bold for section headings if necessary.";
 
   const contents = [
     { role: "user", parts: [{ text: systemInstructionText }] },
@@ -590,29 +599,15 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
 
     // Create a detailed prompt
     // ✅ PROMPT MODIFICATION: Updated to STRICTLY enforce EXACTLY 7 questions AND **DO NOT** include answers.
-    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a clean, well-organized lesson plan and a comprehensive quiz. The output must be structured in clean Markdown with two distinct sections.
-    1. Detailed Lesson Content: Use normal paragraph text, short sentences, and clear headings. Provide a brief introduction, a few supporting paragraphs, and a concise summary. Do not make every sentence bold. Use bold formatting only for a single main section title if needed.
+    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a world-class, beautifully organized lesson plan and a comprehensive quiz. The output must be clean Markdown with two distinct sections.
+    1. Detailed Lesson Content: Write 4 paragraphs only — introduction, explanation, example/application, and summary. Use short, clear sentences and separate each paragraph with a blank line. Do not use bullet lists in the lesson section. Do not make every sentence bold; only use bold for one heading line if needed. Make the lesson world-class, the best learning content possible, clearly structured and easy to read.
     2. Comprehensive Quiz: Generate exactly 7 questions (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. Do not include the correct answers or an answer key.
-    Use paragraphs separated by blank lines, avoid long single-line blocks, and keep the lesson easy to scan. Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
+    Use clean paragraphs and clear headings. Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     
-    const cacheKey = fullContext + stepText; // Unique key for the detailed lesson
-
     try {
-        // 2. Check cache for detailed content
-        const cachedDetail = localStorage.getItem(cacheKey);
-        let generatedDetail = '';
-        
-        if (cachedDetail && cachedDetail.startsWith('AI_DETAIL:')) {
-            generatedDetail = cachedDetail.replace('AI_DETAIL:', '');
-            quizStatusDiv.textContent = `💾 Loaded detailed lesson from cache.`;
-        } else {
-            // 3. Fetch detailed content from AI (will use the dedicated DETAIL key)
-            generatedDetail = await fetchAiContent(prompt, 'DETAIL', 'gemini-2.5-flash');
-            
-            // 4. Save to cache
-            localStorage.setItem(cacheKey, 'AI_DETAIL:' + generatedDetail);
-            quizStatusDiv.textContent = `✅ Detailed lesson for "${stepTitle}" is ready.`;
-        }
+        // 2. Fetch detailed content from AI using the updated lesson prompt.
+        const generatedDetail = await fetchAiContent(prompt, 'DETAIL', 'gemini-2.5-flash');
+        quizStatusDiv.textContent = `✅ Detailed lesson for "${stepTitle}" is ready.`;
 
         // 5. Display content
         quizContentDiv.innerHTML = markdownToHtml(generatedDetail);
