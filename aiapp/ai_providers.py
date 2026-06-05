@@ -72,6 +72,7 @@ LANGUAGE_MARKERS = {
 
 FALLBACK_LANGUAGE_CODE = 'en'
 DEFAULT_PROVIDER_TIMEOUT = 12.0
+SUNBIRD_TIMEOUT = 8.0  # Aggressive timeout for Sunbird since it tends to hang
 
 
 def normalize_language_code(language_code: Optional[str]) -> str:
@@ -574,7 +575,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
             }
         }
 
-    preferred_order = ['cerebras', 'sunbird', 'gemini']
+    preferred_order = ['gemini', 'sunbird', 'cerebras']
 
     provider_order = [provider for provider in preferred_order if provider in available_providers]
 
@@ -605,7 +606,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
 
         if provider == 'sunbird' and os.environ.get('SUNBIRD_API_URL'):
             try:
-                response_text = call_sunbird_api(prompt, system_instruction, language_code, voice, temperature, timeout=DEFAULT_PROVIDER_TIMEOUT)
+                response_text = call_sunbird_api(prompt, system_instruction, language_code, voice, temperature, timeout=SUNBIRD_TIMEOUT)
                 if response_text:
                     provider_used = 'sunbird'
                     break
