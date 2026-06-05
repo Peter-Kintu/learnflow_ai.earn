@@ -150,6 +150,12 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
             'args': event['args'],
         }))
 
+    async def call_chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'chat_message',
+            'message': event['message']
+        }))
+
     async def call_state_change(self, event):
         await self.send(text_data=json.dumps({
             'type': 'state_change',
@@ -262,6 +268,10 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                 ACTIVE_CALL_MEMBERS[call_id] = {self.user_id}
                 self.call_id = call_id
                 await self.join_call_group(call_id)
+                await self.send(text_data=json.dumps({
+                    'type': 'created_call',
+                    'call': ACTIVE_LIVE_CALLS[call_id]
+                }))
                 await self.broadcast_lobby_state()
                 return
 
@@ -277,7 +287,42 @@ class LiveTeacherConsumer(AsyncWebsocketConsumer):
                         call['participants'] = len(members)
                     self.call_id = call_id
                     await self.join_call_group(call_id)
+                    await self.send(text_data=json.dumps({
+                        'type': 'joined_call',
+                        'call': call
+                    }))
                     await self.broadcast_lobby_state()
+                return
+
+            if message_type == 'chat_message':
+                if not self.call_id:
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'Join a live call before sending a chat message.'
+                    }))
+                    return
+
+                text = (data.get('text') or '').strip()
+                if not text:
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'Cannot send an empty chat message.'
+                    }))
+                    return
+
+                chat_payload = {
+                    'sender': data.get('sender', 'Viewer'),
+                    'text': text,
+                    'call_id': self.call_id,
+                    'timestamp': int(time.time())
+                }
+                await self.channel_layer.group_send(
+                    self.get_call_group_name(self.call_id),
+                    {
+                        'type': 'call.chat_message',
+                        'message': chat_payload
+                    }
+                )
                 return
 
             if message_type == 'leave_call':

@@ -163,7 +163,26 @@
                 </div>
             </div>
 
-            <!-- Chat / Notes Section -->
+            <!-- Live Chat Section -->
+            <div class="flex-1 flex flex-col border-b border-brand-surface min-h-[260px] lg:min-h-0">
+                <div class="p-4 md:p-6 border-b border-brand-surface">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-semibold text-sm md:text-base">Live Chat</h4>
+                        <span class="text-xs text-text-secondary">Viewer comments</span>
+                    </div>
+                </div>
+                <div id="chat-list" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-3 bg-black/10">
+                    <p class="text-text-secondary text-xs md:text-sm text-center py-8">No chat messages yet.</p>
+                </div>
+                <div class="p-4 md:p-6 border-t border-brand-surface">
+                    <div class="flex gap-2">
+                        <input id="chat-message-input" type="text" placeholder="Say something in chat..." class="flex-1 rounded-2xl bg-black/70 border border-brand-surface px-3 py-2 text-white placeholder:text-text-secondary focus:ring-2 focus:ring-accent-cyan outline-none" />
+                        <button id="send-chat-btn" class="px-4 py-2 bg-accent-purple text-white rounded-2xl font-semibold hover:opacity-90 transition text-sm">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Notes Section -->
             <div class="flex-1 flex flex-col border-b border-brand-surface min-h-[220px] lg:min-h-0">
                 <div class="p-4 md:p-6 border-b border-brand-surface">
                     <h4 class="font-semibold text-sm md:text-base">Live Notes</h4>
@@ -183,6 +202,13 @@
                     <i class="fas fa-plus mr-1"></i> Create Call
                 </button>
             </div>
+            <div class="p-4 md:p-6 border-t border-brand-surface">
+                <label for="chat-input" class="text-xs text-text-secondary uppercase tracking-[0.2em]">Ask the live room</label>
+                <div class="mt-3 flex gap-2">
+                    <input id="chat-input" type="text" placeholder="Ask a question or request a summary" class="flex-1 rounded-2xl bg-black/70 border border-brand-surface px-3 py-2 text-white placeholder:text-text-secondary focus:ring-2 focus:ring-accent-cyan outline-none" />
+                    <button id="send-question-btn" class="px-4 py-2 bg-accent-cyan text-black rounded-2xl font-semibold hover:opacity-90 transition text-sm">Send</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -199,9 +225,14 @@
         activeLikeCount: document.getElementById('active-like-count'),
         activeShareCount: document.getElementById('active-share-count'),
         notesContainer: document.getElementById('notes-container'),
+        chatList: document.getElementById('chat-list'),
+        chatMessageInput: document.getElementById('chat-message-input'),
+        sendChatBtn: document.getElementById('send-chat-btn'),
         toggleSessionBtn: document.getElementById('toggle-session-btn'),
         joinCallBtn: document.getElementById('join-call-btn'),
         createCallBtns: document.querySelectorAll('#create-call-btn-hero, #create-call-btn-side'),
+        chatInput: document.getElementById('chat-input'),
+        sendQuestionBtn: document.getElementById('send-question-btn'),
     };
 
     let socket = null;
@@ -209,12 +240,123 @@
     let isConnecting = false;
     let liveCalls = [];
     let activeCallId = null;
+    let liveMessages = [];
+    let chatMessages = [];
 
     function setStatus(connected) {
         D.statusDot.className = connected 
             ? 'h-2 w-2 rounded-full bg-accent-cyan animate-pulse' 
             : 'h-2 w-2 rounded-full bg-gray-500';
         D.statusText.textContent = connected ? 'Connected' : 'Offline';
+    }
+
+    function addLiveNote(text, meta = {}) {
+        liveMessages.unshift({ text, ...meta });
+        if (liveMessages.length > 25) {
+            liveMessages.length = 25;
+        }
+        renderNotes();
+    }
+
+    function addChatMessage(message) {
+        chatMessages.unshift(message);
+        if (chatMessages.length > 40) {
+            chatMessages.length = 40;
+        }
+        renderChat();
+    }
+
+    function renderChat() {
+        D.chatList.innerHTML = '';
+        if (chatMessages.length === 0) {
+            const placeholder = document.createElement('p');
+            placeholder.className = 'text-text-secondary text-xs md:text-sm text-center py-8';
+            placeholder.textContent = 'Live chat messages will appear here.';
+            D.chatList.appendChild(placeholder);
+            return;
+        }
+
+        chatMessages.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'rounded-2xl p-3 border text-xs leading-snug';
+            if (entry.own) {
+                item.className += ' bg-accent-cyan/10 border-accent-cyan/30 text-white';
+            } else {
+                item.className += ' bg-white/5 border-white/10 text-text-secondary';
+            }
+            item.innerHTML = `<span class="font-semibold text-white">${entry.sender}</span>: ${entry.text}`;
+            D.chatList.appendChild(item);
+        });
+        D.chatList.scrollTop = D.chatList.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        const text = D.chatMessageInput.value.trim();
+        if (!text) {
+            return;
+        }
+
+        const message = {
+            sender: 'You',
+            text,
+            own: true,
+            timestamp: Date.now()
+        };
+        addChatMessage(message);
+        D.chatMessageInput.value = '';
+
+        if (socket && socket.readyState === WebSocket.OPEN && activeCallId) {
+            socket.send(JSON.stringify({
+                type: 'chat_message',
+                text,
+                sender: 'You',
+                call_id: activeCallId
+            }));
+            return;
+        }
+
+        addLiveNote('Live chat is offline. Your message was added locally.', { type: 'error' });
+    }
+
+    function renderNotes() {
+        D.notesContainer.innerHTML = '';
+        if (liveMessages.length === 0) {
+            const placeholder = document.createElement('p');
+            placeholder.className = 'text-text-secondary text-xs md:text-sm text-center py-8';
+            placeholder.textContent = 'Join a call to see live notes and AI responses.';
+            D.notesContainer.appendChild(placeholder);
+            return;
+        }
+
+        liveMessages.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'rounded-2xl bg-white/5 border border-white/10 p-3 text-xs text-text-secondary';
+            if (entry.type === 'error') {
+                item.className = 'rounded-2xl bg-red-500/10 border border-red-400/20 p-3 text-xs text-red-100';
+            } else if (entry.type === 'success') {
+                item.className = 'rounded-2xl bg-cyan-500/10 border border-cyan-400/20 p-3 text-xs text-white';
+            }
+            item.innerHTML = entry.text;
+            D.notesContainer.appendChild(item);
+        });
+    }
+
+    function updateNotes(comments = []) {
+        comments.forEach(comment => addLiveNote(comment));
+    }
+
+    function sendQuestion() {
+        const question = D.chatInput.value.trim();
+        if (!question) {
+            return;
+        }
+        addLiveNote(`<strong>You:</strong> ${question}`, { type: 'success' });
+        D.chatInput.value = '';
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'text_question', text: question, call_id: activeCallId }));
+            return;
+        }
+        addLiveNote('No live connection available. Your question is queued locally.', { type: 'error' });
     }
 
     function createCallCard(call) {
@@ -306,6 +448,7 @@
             D.activeShareCount.textContent = `🔁 ${(call.shares || 0).toLocaleString()} shares`;
             D.activeCallSection.classList.remove('hidden');
             updateNotes(call.comments || []);
+            addLiveNote(`Joined ${call.title}.`, { type: 'success' });
             showToast(`Joined ${call.title}`);
         }
 
@@ -385,6 +528,7 @@
 
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(payload));
+            addLiveNote('Creating your live session on the live lobby...', { type: 'success' });
             showToast('Creating your live session...');
             return;
         }
@@ -438,14 +582,59 @@
             socket.onmessage = (event) => {
                 try {
                     const payload = JSON.parse(event.data);
-                    
+
                     if (payload.type === 'lobby_update') {
                         liveCalls = payload.calls || liveCalls;
                         renderFeed();
+                        return;
                     }
+
                     if (payload.type === 'created_call') {
-                        liveCalls.unshift(payload.call);
+                        const alreadyExists = liveCalls.some(call => call.id === payload.call.id);
+                        if (!alreadyExists) {
+                            liveCalls.unshift(payload.call);
+                        }
                         renderFeed();
+                        addLiveNote(`New live stream started: ${payload.call.title}.`);
+                        return;
+                    }
+
+                    if (payload.type === 'joined_call') {
+                        const updatedCall = payload.call;
+                        liveCalls = liveCalls.map(call => call.id === updatedCall.id ? updatedCall : call);
+                        renderFeed();
+                        addLiveNote(`You joined ${updatedCall.title}. Viewers: ${updatedCall.participants}`);
+                        return;
+                    }
+
+                    if (payload.type === 'chat_message') {
+                        addChatMessage({
+                            sender: payload.message.sender || 'Viewer',
+                            text: payload.message.text || '',
+                            own: false,
+                            timestamp: payload.message.timestamp || Date.now()
+                        });
+                        return;
+                    }
+
+                    if (payload.type === 'info') {
+                        addLiveNote(payload.message, { type: 'success' });
+                        return;
+                    }
+
+                    if (payload.type === 'error') {
+                        addLiveNote(payload.message, { type: 'error' });
+                        return;
+                    }
+
+                    if (payload.type === 'state_change') {
+                        addLiveNote(`Live state: ${payload.state}`);
+                        return;
+                    }
+
+                    if (payload.type === 'tool_call' && payload.name === 'show_demonstration_card') {
+                        addLiveNote(`<strong>${payload.args.title}</strong><br>${payload.args.content_markdown}`);
+                        return;
                     }
                 } catch (err) {
                     console.warn('Invalid JSON from socket', err);
@@ -484,6 +673,20 @@
     D.createCallBtns.forEach(btn => {
         btn.addEventListener('click', createCall);
     });
+    D.sendQuestionBtn.addEventListener('click', sendQuestion);
+    D.chatInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendQuestion();
+        }
+    });
+    D.sendChatBtn.addEventListener('click', sendChatMessage);
+    D.chatMessageInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendChatMessage();
+        }
+    });
 
     D.toggleSessionBtn.addEventListener('click', () => {
         if (isSessionActive) {
@@ -502,6 +705,7 @@
     });
 
     // Initialize
+    renderNotes();
     setStatus(false);
     isConnecting = true;
     renderFeed();
