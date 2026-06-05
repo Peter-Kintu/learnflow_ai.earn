@@ -349,6 +349,8 @@
     }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <div class="chat-container-card">
     <div class="app-layout">
         <aside class="sidebar" id="sidebarMenu">
@@ -749,36 +751,19 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     function formatAiResponseHtml(text) {
         if (!text) return '';
 
-        let html = escapeHtml(text.trim());
-
-        // Convert headings
-        html = html
-            .replace(/^######\s*(.+)$/gm, '<h6>$1</h6>')
-            .replace(/^#####\s*(.+)$/gm, '<h5>$1</h5>')
-            .replace(/^####\s*(.+)$/gm, '<h4>$1</h4>')
-            .replace(/^###\s*(.+)$/gm, '<h3>$1</h3>')
-            .replace(/^##\s*(.+)$/gm, '<h2>$1</h2>')
-            .replace(/^#\s*(.+)$/gm, '<h1>$1</h1>');
-
-        // Convert bold and italics
-        html = html
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/__(.*?)__/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/_(.*?)_/g, '<em>$1</em>');
-
-        // Convert lists
-        html = html.replace(/^\s*[-*+•]\s+(.*)$/gm, '<li>$1</li>');
-        html = html.replace(/^\s*\d+[\.\)]\s+(.*)$/gm, '<li>$1</li>');
-        html = html.replace(/(<li>.*?<\/li>\s*)+/gs, match => `<ul>${match.trim()}</ul>`);
-
-        const blocks = html.split(/\n{2,}/).map(block => block.trim()).filter(Boolean);
-        return blocks.map(block => {
-            if (block.startsWith('<h') || block.startsWith('<ul') || block.startsWith('<ol') || block.startsWith('<pre') || block.startsWith('<blockquote')) {
-                return block;
+        const renderer = {
+            html(rawHtml) {
+                return escapeHtml(rawHtml);
             }
-            return `<p>${block.replace(/\n/g, '<br>')}</p>`;
-        }).join('');
+        };
+
+        return marked.parse(text.trim(), {
+            gfm: true,
+            breaks: true,
+            headerIds: false,
+            mangle: false,
+            renderer
+        });
     }
 
     // ## NEW FUNCTION: Simple Language Guessing for TTS (Crucial Update!) ##
@@ -1100,13 +1085,12 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
   const lastMessage = history.length ? history[history.length - 1] : null;
-  const fullContents = [
-    { role: "user", parts: [{ text: currentSystemInstruction }] },
-    ...history.slice(-6)
-  ];
+  const maxHistoryItems = 10;
+  const trimmedHistory = history.slice(-maxHistoryItems);
+  const fullContents = [...trimmedHistory];
 
   if (!lastMessage || lastMessage.role !== 'user' || lastMessage.parts[0].text !== prompt) {
-    fullContents.push({ role: "user", parts: [{ text: prompt }] });
+    fullContents.push({ role: 'user', parts: [{ text: prompt }] });
   }
 
   try {
@@ -1118,6 +1102,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
       },
       body: JSON.stringify({
         contents: fullContents,
+        systemInstruction: currentSystemInstruction,
         language_code: languageCode,
         voice: false,
         config: {

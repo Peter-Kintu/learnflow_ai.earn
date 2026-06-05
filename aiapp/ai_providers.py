@@ -505,16 +505,32 @@ def create_prompt_from_contents(contents: Any, system_instruction: str = '') -> 
     if system_instruction:
         prompt_parts.append(system_instruction)
 
+    def append_message_text(role: str, text: str):
+        if not text or not text.strip():
+            return
+        normalized_role = role.lower()
+        if normalized_role == 'user':
+            prompt_parts.append(f'User: {text.strip()}')
+        elif normalized_role in ('ai', 'assistant', 'model'):
+            prompt_parts.append(f'Assistant: {text.strip()}')
+        else:
+            prompt_parts.append(text.strip())
+
     if isinstance(contents, list):
         for message in contents:
-            if message.get('role') == 'user':
-                for part in message.get('parts', []):
+            role = message.get('role', '')
+            parts = message.get('parts', [])
+            if isinstance(parts, list) and parts:
+                for part in parts:
                     if isinstance(part, dict):
-                        prompt_parts.append(part.get('text', ''))
+                        append_message_text(role, part.get('text', ''))
                     elif isinstance(part, str):
-                        prompt_parts.append(part)
+                        append_message_text(role, part)
+            elif isinstance(message.get('text'), str):
+                append_message_text(role, message.get('text', ''))
     elif isinstance(contents, dict):
         prompt_parts.append(json.dumps(contents))
+
     return '\n'.join([part for part in prompt_parts if part])
 
 
