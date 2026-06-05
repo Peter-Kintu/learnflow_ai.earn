@@ -107,9 +107,57 @@ def guess_language_from_text(text: str) -> Optional[str]:
     return None
 
 
+LANGUAGE_NAME_MAP = {
+    'sw': 'Swahili',
+    'swa': 'Swahili',
+    'lg': 'Luganda',
+    'rw': 'Kinyarwanda',
+    'rn': 'Kirundi',
+    'luo': 'Luo',
+    'ach': 'Acholi',
+    'ha': 'Hausa',
+    'ig': 'Igbo',
+    'yo': 'Yoruba',
+    'zu': 'Zulu',
+    'sn': 'Shona',
+    'xh': 'Xhosa',
+    'st': 'Sesotho',
+    'ts': 'Tswana',
+    'om': 'Oromo',
+    'ar': 'Arabic',
+    'fr': 'French',
+    'pt': 'Portuguese',
+    'es': 'Spanish',
+    'de': 'German',
+    'it': 'Italian',
+    'nl': 'Dutch',
+    'ru': 'Russian',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'hi': 'Hindi',
+    'bn': 'Bengali',
+    'tr': 'Turkish',
+    'vi': 'Vietnamese',
+    'ur': 'Urdu',
+}
+
 def is_sunbird_language(language_code: Optional[str]) -> bool:
     code = normalize_language_code(language_code)
     return code in SUNBIRD_LANGUAGE_CODES
+
+
+def get_language_name(language_code: str) -> str:
+    code = normalize_language_code(language_code)
+    return LANGUAGE_NAME_MAP.get(code, code or FALLBACK_LANGUAGE_CODE)
+
+
+def build_language_system_instruction(language_code: str, existing_instruction: str = '') -> str:
+    language_name = get_language_name(language_code)
+    default_instruction = f'Respond in {language_name}. If you cannot answer in {language_name}, say so clearly.'
+    if existing_instruction:
+        return f"{existing_instruction.strip()} {default_instruction}"
+    return default_instruction
 
 
 def extract_text_from_response_body(resp_json: Any) -> str:
@@ -392,6 +440,9 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
                     print(f'Gemini API server error {response.status_code}, retrying in {sleep_seconds}s (attempt {attempt}/{max_retries}) for {url}')
                     time.sleep(sleep_seconds)
                     continue
+                elif response.status_code >= 400:
+                    last_exc = requests.exceptions.HTTPError(f'{response.status_code} Client Error for {url}')
+                    break
 
                 response.raise_for_status()
                 return extract_text_from_response_body(response.json())
@@ -456,8 +507,11 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     if not language_code:
         language_code = FALLBACK_LANGUAGE_CODE
 
+    system_instruction = build_language_system_instruction(language_code, system_instruction)
+    body['systemInstruction'] = system_instruction
     body['language_code'] = language_code
     body['voice'] = voice
+    prompt = create_prompt_from_contents(contents, system_instruction)
 
     available_providers = []
     provider_availability = {}
