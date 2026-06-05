@@ -71,6 +71,7 @@ LANGUAGE_MARKERS = {
 }
 
 FALLBACK_LANGUAGE_CODE = 'en'
+DEFAULT_PROVIDER_TIMEOUT = 12.0
 
 
 def normalize_language_code(language_code: Optional[str]) -> str:
@@ -285,7 +286,7 @@ def get_sunbird_request_payload(prompt: str, system_instruction: str, language_c
     }
 
 
-def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: str = '', voice: bool = False, temperature: float = 0.7) -> str:
+def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: str = '', voice: bool = False, temperature: float = 0.7, timeout: float = DEFAULT_PROVIDER_TIMEOUT) -> str:
     """
     Fixed to explicitly target the Sunbird Sunflower Simple endpoint using application/x-www-form-urlencoded data.
     """
@@ -310,7 +311,7 @@ def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: s
     tried = [target_url]
     last_exc = None
     try:
-        resp = requests.post(target_url, data=payload, headers=headers, timeout=30)
+        resp = requests.post(target_url, data=payload, headers=headers, timeout=(5, timeout))
         globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'status': resp.status_code})
 
         if resp.status_code == 429:
@@ -320,13 +321,21 @@ def call_sunbird_api(prompt: str, system_instruction: str = '', language_code: s
 
         resp.raise_for_status()
         return extract_text_from_response_body(resp.json())
+    except requests.exceptions.ConnectTimeout as exc:
+        last_exc = exc
+        globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'error': f'Connect timeout: {exc}'})
+        raise RuntimeError(f'Sunbird API connection timed out after {timeout} seconds. Tried endpoints: {tried}. Last error: {exc}')
+    except requests.exceptions.ReadTimeout as exc:
+        last_exc = exc
+        globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'error': f'Read timeout: {exc}'})
+        raise RuntimeError(f'Sunbird API read timed out after {timeout} seconds. Tried endpoints: {tried}. Last error: {exc}')
     except requests.exceptions.RequestException as exc:
         last_exc = exc
         globals().setdefault('__last_sunbird_attempts', []).append({'url': target_url, 'error': str(exc)})
         raise RuntimeError(f'Sunbird API failed. Tried endpoints: {tried}. Last error: {exc}')
 
 
-def call_cerebras_api(prompt: str, language_code: str = '', temperature: float = 0.7) -> str:
+def call_cerebras_api(prompt: str, language_code: str = '', temperature: float = 0.7, timeout: float = DEFAULT_PROVIDER_TIMEOUT) -> str:
     base_url = get_env_value('CEREBRAS_API_URL', 'CEREBRAS_URL')
     api_key = get_env_value('CEREBRAS_API_KEY', 'CEREBRAS_KEY')
     if not base_url or not api_key:
@@ -370,7 +379,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
         payload = payload_mapping[target]
         tried.append(target)
         try:
-            resp = requests.post(target, json=payload, headers=headers, timeout=30)
+            resp = requests.post(target, json=payload, headers=headers, timeout=(5, timeout))
             globals().setdefault('__last_cerebras_attempts', []).append({'url': target, 'status': resp.status_code})
             if resp.status_code == 429:
                 last_exc = requests.exceptions.HTTPError(f'429 Rate Limited for {target}')
@@ -388,7 +397,7 @@ def call_cerebras_api(prompt: str, language_code: str = '', temperature: float =
     raise RuntimeError(f'Cerebras API failed. Tried endpoints: {tried}. Last error: {last_exc}')
 
 
-def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 2) -> str:
+def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_retries: int = 2, timeout: float = DEFAULT_PROVIDER_TIMEOUT) -> str:
     api_key = get_env_value('GEMINI_API_KEY') or globals().get('__api_key', '')
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
@@ -423,7 +432,7 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
         attempt = 0
         while attempt < max_retries:
             try:
-                response = requests.post(url, json=gemini_body, headers=headers, timeout=30)
+                response = requests.post(url, json=gemini_body, headers=headers, timeout=(5, timeout))
                 if response.status_code == 429:
                     attempt += 1
                     if attempt >= max_retries:
@@ -578,7 +587,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
     for provider in provider_order:
         if provider == 'gemini':
             try:
-                response_text = call_gemini_api(body)
+                response_text = call_gemini_api(body, timeout=DEFAULT_PROVIDER_TIMEOUT)
                 if response_text:
                     provider_used = 'gemini'
                     break
@@ -588,7 +597,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
 
         if provider == 'cerebras' and os.environ.get('CEREBRAS_API_URL'):
             try:
-                response_text = call_cerebras_api(prompt, language_code, temperature)
+                response_text = call_cerebras_api(prompt, language_code, temperature, timeout=DEFAULT_PROVIDER_TIMEOUT)
                 if response_text:
                     provider_used = 'cerebras'
                     break
@@ -598,7 +607,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
 
         if provider == 'sunbird' and os.environ.get('SUNBIRD_API_URL'):
             try:
-                response_text = call_sunbird_api(prompt, system_instruction, language_code, voice, temperature)
+                response_text = call_sunbird_api(prompt, system_instruction, language_code, voice, temperature, timeout=DEFAULT_PROVIDER_TIMEOUT)
                 if response_text:
                     provider_used = 'sunbird'
                     break
