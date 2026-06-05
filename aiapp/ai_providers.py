@@ -574,9 +574,7 @@ def route_ai_request(body: Dict[str, Any]) -> Dict[str, Any]:
             }
         }
 
-    preferred_order = ['gemini', 'sunbird', 'cerebras']
-    if is_sunbird_language(language_code):
-        preferred_order = ['sunbird', 'gemini', 'cerebras']
+    preferred_order = ['cerebras', 'sunbird', 'gemini']
 
     provider_order = [provider for provider in preferred_order if provider in available_providers]
 
