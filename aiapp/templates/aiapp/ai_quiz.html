@@ -348,7 +348,7 @@ function markdownToHtml(markdown) {
     
     // Convert bulleted lists (Unordered)
     // Replace markdown list items with <li> tags
-    let listHtml = html.replace(/^\s*[\*-]\s+(.*)$/gm, '<li>$1</li>');
+    let listHtml = html.replace(/^\s*[\*\-\+•]\s+(.*)$/gm, '<li>$1</li>');
     
     // Wrap consecutive <li> tags into a <ul> block
     // The (\n?<li>.*?<\/li>)+/gs pattern is greedy and ensures all consecutive <li>s are caught
@@ -356,7 +356,7 @@ function markdownToHtml(markdown) {
 
     // Convert numbered lists (Ordered)
     // Replace markdown list items with <li> tags
-    listHtml = listHtml.replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>');
+    listHtml = listHtml.replace(/^\s*\d+[\.\)]\s+(.*)$/gm, '<li>$1</li>');
     
     // Wrap consecutive <li> tags into an <ol> block, but avoid re-wrapping <ul> blocks (which may contain <li>s)
     listHtml = listHtml.replace(/(\n?<li>.*?<\/li>)+/gs, (match) => {
@@ -379,6 +379,69 @@ function markdownToHtml(markdown) {
     }).join('');
 
     return `<div class="markdown-output">${html}</div>`;
+}
+
+function renderOutlineCards(container, rawMarkdown, lang) {
+    const renderCardGrid = (items) => {
+        const cardGrid = document.createElement('div');
+        cardGrid.className = 'grid gap-4 md:grid-cols-2';
+
+        items.forEach((text, index) => {
+            const card = document.createElement('div');
+            card.className = 'clickable-step bg-slate-800 p-4 rounded-xl shadow-lg cursor-pointer text-lg transition hover:bg-slate-600';
+            card.textContent = text;
+            card.addEventListener('click', () => loadDetailedLesson(index, text.trim(), lang));
+
+            const icon = document.createElement('span');
+            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+            card.appendChild(icon);
+            cardGrid.appendChild(card);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(cardGrid);
+    };
+
+    const parseMarkdownItems = () => {
+        const items = Array.from(rawMarkdown.matchAll(/^\s*(?:\d+[\.\)]|[-*\+•])\s+(.*)$/gm)).map(m => m[1].trim()).filter(Boolean);
+        if (items.length > 1) {
+            return items;
+        }
+
+        const lines = rawMarkdown.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        const lineItems = lines
+            .map(line => {
+                const match = line.match(/^\s*(?:\d+[\.\)]|[-*\+•])\s+(.*)$/);
+                return match ? match[1].trim() : null;
+            })
+            .filter(Boolean);
+        if (lineItems.length > 1) {
+            return lineItems;
+        }
+
+        const inlineItems = rawMarkdown.split(/(?=\d+[\.\)])/).map(item => item.trim()).filter(Boolean);
+        if (inlineItems.length > 1) {
+            return inlineItems.map(item => item.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+        }
+
+        return items;
+    };
+
+    const listWrappers = container.querySelectorAll('ul, ol');
+    let items = [];
+    if (listWrappers.length > 0) {
+        listWrappers.forEach((listWrapper) => {
+            items.push(...Array.from(listWrapper.querySelectorAll('li')).map(li => li.textContent.trim()).filter(Boolean));
+        });
+    }
+
+    if (items.length < 2) {
+        items = parseMarkdownItems();
+    }
+
+    if (items.length > 0) {
+        renderCardGrid(items);
+    }
 }
 
 /**
@@ -497,8 +560,8 @@ async function generateCourseOutline(isRegenerate) {
             isCached = true;
         } else {
             // 2. Fetch from AI
-            // ✅ OPTIMIZED PROMPT: Enforce exactly 8 modules for consistent, multi-step path generation
-            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have **exactly 8** distinct, engaging modules to ensure a complete course. Each module must be formatted strictly as a single list item: \n- **[Module Number] - [Title]:** [Brief, action-oriented description]\n. Provide ONLY the markdown list, no introductory or concluding text. Respond in the language with code ${lang}.`;
+            // ✅ OPTIMIZED PROMPT: Enforce at least 12 modules so the outline produces many clickable cards
+            const prompt = `Generate a structured, step-by-step learning path outline for a ${level} level learner who wants to master "${subject}". Their specific goals/preferences are: "${goals}". The path **MUST** have at least **12** distinct, engaging modules. Each module should be formatted as a separate numbered or bulleted item, such as:\n1. [Module Title] — [Brief, action-oriented description]\nProvide ONLY the markdown list, with no introductory or concluding text. Respond in the language with code ${lang}.`;
             generatedContent = await fetchAiContent(prompt, 'OUTLINE', 'gemini-2.5-flash');
             
             // 3. Save to cache
@@ -508,30 +571,8 @@ async function generateCourseOutline(isRegenerate) {
 
         // 4. Process and Display
         courseContentDiv.innerHTML = markdownToHtml(generatedContent);
+        renderOutlineCards(courseContentDiv, generatedContent, lang);
         aiCourseOutputDiv.classList.remove('hidden');
-
-        // 5. Convert path outline list items into clickable cards
-        const listWrappers = courseContentDiv.querySelectorAll('ul, ol');
-        listWrappers.forEach((listWrapper) => {
-            const cardGrid = document.createElement('div');
-            cardGrid.className = 'grid gap-4 md:grid-cols-2';
-
-            const listItems = Array.from(listWrapper.querySelectorAll('li'));
-            listItems.forEach((li, index) => {
-                const card = document.createElement('div');
-                card.className = 'clickable-step bg-slate-800 p-4 rounded-xl shadow-lg cursor-pointer text-lg transition hover:bg-slate-600';
-                card.innerHTML = li.innerHTML;
-                card.addEventListener('click', () => loadDetailedLesson(index, li.textContent.trim(), lang));
-
-                const icon = document.createElement('span');
-                icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
-                card.appendChild(icon);
-
-                cardGrid.appendChild(card);
-            });
-
-            listWrapper.replaceWith(cardGrid);
-        });
 
         // 6. Set the quiz context input (used by detailed lesson loader)
         document.getElementById('quizPromptInput').value = `Course: ${subject}, Level: ${level}, Goals: ${goals}, Language Code: ${lang}`;
@@ -550,7 +591,9 @@ async function generateCourseOutline(isRegenerate) {
 
 // Function to handle loading the detailed lesson/quiz content
 async function loadDetailedLesson(stepIndex, stepText, lang) {
-    const stepTitle = stepText.match(/\*\*(.*?)\*\*/)?.[1] || `Step ${stepIndex + 1}`;
+    const stepTitle = stepText.match(/\*\*(.*?)\*\*/)?.[1]
+        || stepText.replace(/^\s*\d+[\.\)]\s*/, '').split(/[—–:-]/)[0].trim()
+        || `Step ${stepIndex + 1}`;
     const quizModal = document.getElementById('quizModal');
     const quizContentDiv = document.getElementById('quizContent');
     const quizStatusDiv = document.getElementById('quizStatus');
@@ -569,8 +612,8 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
 
     // Create a detailed prompt
     // ✅ PROMPT MODIFICATION: Updated to STRICTLY enforce EXACTLY 7 questions AND **DO NOT** include answers.
-    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a detailed lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
-    1. **Detailed Lesson Content:** Provide a comprehensive and engaging lesson (max 800 words, using rich headings, bullet points, and practical, real-world examples).
+    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a clean, well-organized lesson plan and a comprehensive quiz. The output must be structured in two main sections. 
+    1. **Detailed Lesson Content:** Provide a clear and engaging lesson with headings, short paragraphs (2-3 sentences each), and practical examples. Use section headings like Overview, Key Concepts, Practical Steps, and Summary. Avoid long walls of text.
     2. **Comprehensive Quiz:** Generate **exactly 7 questions** (mix of multiple-choice, fill-in-the-blank, and true/false) based on the lesson content. **STRICTLY ensure there are exactly 7 questions**. **DO NOT include the correct answers or an answer key in the output.**
     Respond ONLY in high-quality Markdown and in the language with code ${lang}.`;
     

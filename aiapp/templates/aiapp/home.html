@@ -333,8 +333,19 @@
         .chat-message { gap: 0.75rem; }
         .chat-message .avatar { width: 34px; height: 34px; font-size: 1.05rem; }
         .chat-message.user .content { max-width: 84%; }
-        .composer { padding: 0.85rem 1rem; }
-        .language-selector { display: none; }
+        .composer { padding: 0.85rem 1rem; gap: 0.5rem; }
+        .language-selector {
+            display: inline-flex;
+            min-width: 80px;
+            max-width: 120px;
+            font-size: 0.88rem;
+            padding: 0.4rem 0.7rem;
+            background: rgba(255,255,255,0.95);
+            border-radius: 999px;
+            border: 1px solid rgba(226,232,240,0.9);
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
     }
 </style>
 
@@ -736,8 +747,38 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
     function formatAiResponseHtml(text) {
-        const paragraphs = text.trim().split(/\n{2,}/).map(paragraph => paragraph.trim()).filter(Boolean);
-        return paragraphs.map(paragraph => `<p>${escapeHtml(paragraph).replace(/\n/g, ' ')}</p>`).join('');
+        if (!text) return '';
+
+        let html = escapeHtml(text.trim());
+
+        // Convert headings
+        html = html
+            .replace(/^######\s*(.+)$/gm, '<h6>$1</h6>')
+            .replace(/^#####\s*(.+)$/gm, '<h5>$1</h5>')
+            .replace(/^####\s*(.+)$/gm, '<h4>$1</h4>')
+            .replace(/^###\s*(.+)$/gm, '<h3>$1</h3>')
+            .replace(/^##\s*(.+)$/gm, '<h2>$1</h2>')
+            .replace(/^#\s*(.+)$/gm, '<h1>$1</h1>');
+
+        // Convert bold and italics
+        html = html
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/__(.*?)__/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/_(.*?)_/g, '<em>$1</em>');
+
+        // Convert lists
+        html = html.replace(/^\s*[-*+•]\s+(.*)$/gm, '<li>$1</li>');
+        html = html.replace(/^\s*\d+[\.\)]\s+(.*)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*?<\/li>\s*)+/gs, match => `<ul>${match.trim()}</ul>`);
+
+        const blocks = html.split(/\n{2,}/).map(block => block.trim()).filter(Boolean);
+        return blocks.map(block => {
+            if (block.startsWith('<h') || block.startsWith('<ul') || block.startsWith('<ol') || block.startsWith('<pre') || block.startsWith('<blockquote')) {
+                return block;
+            }
+            return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+        }).join('');
     }
 
     // ## NEW FUNCTION: Simple Language Guessing for TTS (Crucial Update!) ##
@@ -1058,11 +1099,15 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         pendingPositiveFeedback = null;
     }
 
+  const lastMessage = history.length ? history[history.length - 1] : null;
   const fullContents = [
     { role: "user", parts: [{ text: currentSystemInstruction }] },
-    ...history.slice(-10),
-    { role: "user", parts: [{ text: prompt }] }
+    ...history.slice(-10)
   ];
+
+  if (!lastMessage || lastMessage.role !== 'user' || lastMessage.parts[0].text !== prompt) {
+    fullContents.push({ role: "user", parts: [{ text: prompt }] });
+  }
 
   try {
     const response = await fetch(proxyUrl, {
