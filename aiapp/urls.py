@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import tts_proxy
+from .views import tts_proxy, gemini_proxy, get_chat_history, init_chat_session
 from aiapp.views import gemini_proxy
 
 
@@ -28,6 +28,8 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/edit/', views.edit_quiz, name='edit_quiz'),
     path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
     path("api/gemini_proxy/", gemini_proxy, name="gemini_proxy"),
+    path("api/chat-history/", get_chat_history, name="get_chat_history"),
+    path("api/init-chat-session/", init_chat_session, name="init_chat_session"),
      # AI Quiz Generator URL - FIXED
     path('ai_quiz_generator/', views.ai_quiz_generator, name='ai_quiz_generator'),
     

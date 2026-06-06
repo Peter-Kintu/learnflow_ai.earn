@@ -756,41 +756,34 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     function formatAiResponseHtml(text) {
         if (!text) return '';
 
-        // First, clean up the text for better formatting
-        let cleaned = text.trim();
-        
-        // Remove excessive special characters while preserving readability
-        cleaned = cleaned.replace(/([^\s]{80,})/g, '$1 '); // Add space after long words
-        cleaned = cleaned.replace(/\n{3,}/g, '\n\n'); // Limit consecutive newlines
-        
-        const renderer = {
-            html(rawHtml) {
-                return escapeHtml(rawHtml);
-            },
-            paragraph(token) {
-                return `<p>${token.text}</p>`;
-            }
-        };
-
-        let html = marked.parse(cleaned, {
-            gfm: true,
-            breaks: true,
-            headerIds: false,
-            mangle: false,
-            renderer
-        });
-        
-        // Post-process: Remove extra symbols and improve spacing
-        html = html.replace(/(<p>)(.*?)(<\/p>)/g, function(match, p1, content, p3) {
-            // Remove leading/trailing symbols from paragraph content
-            content = content.replace(/^[\s*\-•]+/, '').replace(/[\s*\-•]+$/, '');
-            return p1 + content + p3;
-        });
-        
-        // Ensure proper spacing between elements
-        html = html.replace(/<\/p>(?!<\/div>)/g, '</p>');
-        
-        return html;
+        try {
+            // Use marked.js to parse markdown to HTML
+            // This handles: **bold**, *italic*, # headings, - lists, | tables |, code blocks, etc.
+            let html = marked.parse(text, {
+                breaks: true,           // Convert \n to <br>
+                gfm: true,             // GitHub Flavored Markdown (tables, strikethrough)
+                mangle: false          // Don't mangle @mentions
+            });
+            
+            // Add CSS classes for better styling of parsed elements
+            html = html.replace(/<table>/g, '<table style="border-collapse: collapse; width: 100%; margin: 10px 0;">');
+            html = html.replace(/<th>/g, '<th style="border: 1px solid #e2e8f0; padding: 8px; background: #eef2ff; font-weight: 700;">');
+            html = html.replace(/<td>/g, '<td style="border: 1px solid #e2e8f0; padding: 8px;">');
+            html = html.replace(/<code>/g, '<code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">');
+            html = html.replace(/<pre>/g, '<pre style="background: #f1f5f9; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 10px 0;">');
+            html = html.replace(/<h1>/g, '<h1 style="font-size: 1.5em; margin: 15px 0 10px; font-weight: 800;">');
+            html = html.replace(/<h2>/g, '<h2 style="font-size: 1.3em; margin: 12px 0 8px; font-weight: 700;">');
+            html = html.replace(/<h3>/g, '<h3 style="font-size: 1.1em; margin: 10px 0 6px; font-weight: 700;">');
+            html = html.replace(/<ul>/g, '<ul style="margin: 10px 0; padding-left: 20px;">');
+            html = html.replace(/<ol>/g, '<ol style="margin: 10px 0; padding-left: 20px;">');
+            html = html.replace(/<li>/g, '<li style="margin: 4px 0;">');
+            
+            return html;
+        } catch (error) {
+            console.error('Error parsing markdown:', error);
+            // Fallback to plain text if markdown parsing fails
+            return `<p>${escapeHtml(text)}</p>`;
+        }
     }
 
     // ## NEW FUNCTION: Simple Language Guessing for TTS (Crucial Update!) ##
@@ -1039,27 +1032,19 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         }
 
         if (sender === 'ai') {
-            let i = 0;
-            function typeWriter() {
-                if (i < text.length) {
-                    contentDiv.textContent += text.charAt(i);
-                    i++;
-                    setTimeout(typeWriter, 8);
-                } else {
-                    contentDiv.innerHTML = formatAiResponseHtml(text);
-                    saveChatHistory();
-                    const speakableText = cleanText(text);
-                    speakText(speakableText);
-                    attachAiActions(text);
-                }
-                chatLog.scrollTop = chatLog.scrollHeight;
-            }
-            typeWriter();
+            // For AI messages: render markdown as HTML immediately (no typewriter)
+            contentDiv.innerHTML = formatAiResponseHtml(text);
+            saveChatHistory();
+            const speakableText = cleanText(text);
+            speakText(speakableText);
+            attachAiActions(text);
         } else {
+            // For user messages: just show plain text
             contentDiv.textContent = text;
             saveChatHistory();
-            chatLog.scrollTop = chatLog.scrollHeight;
         }
+        
+        chatLog.scrollTop = chatLog.scrollHeight;
     }
 
     function addLoader() {
@@ -1350,49 +1335,68 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     }
 
     function loadChatHistory() {
+        // ✅ NEW: Fetch chat history from server database
+        // This ensures messages persist even after browser closes
+        
+        fetch('/api/chat-history/')
+            .then(response => response.json())
+            .then(data => {
+                if (!chatLog) return;
+                chatLog.innerHTML = ''; // Clear initial state
+                
+                const messages = data.messages || [];
+                
+                if (messages.length === 0) {
+                    // Show welcome message if no history
+                    chatLog.innerHTML = `
+                        <div class="chat-message ai">
+                            <div class="avatar">🎓</div>
+                            <div class="content">
+                                <strong>Nakintu AI:</strong>
+                                <p>Hello! I'm Nakintu AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Render all messages from database
+                messages.forEach(msg => {
+                    appendMessage(msg.role, msg.text, false, false);
+                });
+                
+                chatLog.scrollTop = chatLog.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Failed to load chat history:', error);
+                // Fallback to localStorage if server unavailable
+                loadChatHistoryFromLocalStorage();
+            });
+    }
+
+    function loadChatHistoryFromLocalStorage() {
+        // Fallback function for offline scenarios
         const history = getChatHistory();
         if (!chatLog) return;
-        chatLog.innerHTML = ''; // Clear the initial message template
+        chatLog.innerHTML = '';
         
         if (history.length === 0) {
-            // Restore initial welcome message if history is empty
             chatLog.innerHTML = `
                 <div class="chat-message ai">
-                    <strong>Nakintu AI:</strong>
-                    <span class="text-gray-400">
-                        Hello! I'm Nakintu AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!
-                    </span>
+                    <div class="avatar">🎓</div>
+                    <div class="content">
+                        <strong>Nakintu AI:</strong>
+                        <p>Hello! I'm Nakintu AI, your modern learning partner. Ask me anything—from local history to global trends—and let's make learning fun!</p>
+                    </div>
                 </div>
             `;
             return;
         }
 
         history.forEach(item => {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${item.role}`;
-            messageDiv.dataset.positiveFeedback = item.positiveFeedback ? 'true' : 'false';
-
-            const avatarIcon = item.role === 'ai' ? '🎓' : '👤';
-            const profileLabel = item.role === 'ai' ? 'Nakintu AI' : 'You';
-            const actionButtons = item.role === 'ai' ? `
-                    <div class="message-actions">
-                        <button type="button" class="ai-action-button copy-button">Copy</button>
-                        <button type="button" class="ai-action-button positive-button">Helpful</button>
-                    </div>` : '';
-
-            messageDiv.innerHTML = `
-                <div class="avatar">${avatarIcon}</div>
-                <div class="content">
-                    <strong>${profileLabel}</strong>
-                    <div class="message-text"></div>
-                    ${actionButtons}
-                </div>`;
-
-            const contentDiv = messageDiv.querySelector('.message-text');
-            if (contentDiv) {
-                if (item.role === 'ai') {
-                    contentDiv.innerHTML = formatAiResponseHtml(item.text);
-                } else {
+            appendMessage(item.role, item.text, false, item.positiveFeedback || false);
+        });
+    }
                     contentDiv.textContent = item.text;
                 }
             }

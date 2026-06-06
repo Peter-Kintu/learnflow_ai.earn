@@ -2,6 +2,7 @@ import io
 import json
 import os
 import requests
+import uuid
 from .tasks import ask_learnflow_ai
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -17,13 +18,13 @@ from docx import Document
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect # Ensure this is imported at the top
-from .models import Quiz, Question, Choice # Ensure these are imported
+from .models import Quiz, Question, Choice, ChatMessage # Ensure these are imported
 from .ai_providers import build_local_fallback_response, route_ai_request, route_tts_request
 from .forms import QuizForm # Ensure this is imported
 # Import the necessary libraries for PDF generation
 from xhtml2pdf import pisa
 # Import models and forms from both aiapp and video apps
-from .models import Quiz, Question, Choice, StudentAnswer, Attempt
+from .models import Quiz, Question, Choice, StudentAnswer, Attempt, ChatMessage
 from .forms import QuizForm
 from video.models import Video
 from video.forms import VideoForm
@@ -856,7 +857,12 @@ def clean_contents(messages):
 # ---------------------------------------------
 
 @csrf_exempt
+@csrf_exempt
 def gemini_proxy(request):
+    """
+    Proxy endpoint for AI chat.
+    Saves all messages to database for persistent history.
+    """
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
 
@@ -866,24 +872,139 @@ def gemini_proxy(request):
         return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
     try:
+        # Extract user message from request body
+        contents = body.get('contents', [])
+        user_message_text = ''
+        
+        if contents and len(contents) > 0:
+            # Get the last user message
+            last_content = contents[-1]
+            if isinstance(last_content, dict):
+                parts = last_content.get('parts', [])
+                if parts and len(parts) > 0:
+                    user_message_text = parts[0].get('text', '')
+        
+        # Get or create session ID from request cookies
+        session_id = request.COOKIES.get('chat_session_id', str(uuid.uuid4()))
+        
+        # 1. Save user message to database
+        if user_message_text:
+            ChatMessage.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                session_id=session_id,
+                role='user',
+                text=user_message_text,
+                language_code=body.get('language_code', 'en')
+            )
+        
+        # 2. Get AI Response
         result = route_ai_request(body)
-        # Log which provider was used
+        ai_response_text = result.get('text', '')
         provider = result.get('provider', 'unknown')
+        
+        # 3. Save AI response to database
+        if ai_response_text:
+            ChatMessage.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                session_id=session_id,
+                role='model',
+                text=ai_response_text,
+                language_code=body.get('language_code', 'en')
+            )
+        
+        # Log which provider was used
         print(f"AI Request completed using provider: {provider}")
         if 'diagnostics' in result:
             print(f"Diagnostics: {result['diagnostics']}")
-        return JsonResponse(result)
+        
+        response = JsonResponse(result)
+        response.set_cookie('chat_session_id', session_id, max_age=30*24*60*60)  # 30 days
+        return response
 
     except Exception as e:
         print(f"Error in gemini_proxy: {e}")
+        fallback_text = build_local_fallback_response(
+            ' '.join(str(body.get('contents', ''))),
+            body.get('language_code', '') or 'en'
+        )
         return JsonResponse({
-            "text": build_local_fallback_response(
-                ' '.join(str(body.get('contents', ''))),
-                body.get('language_code', '') or 'en'
-            ),
+            "text": fallback_text,
             "provider": "fallback",
             "language_code": body.get('language_code', '') or 'en',
         })
+
+
+@csrf_exempt
+def get_chat_history(request):
+    """
+    Retrieves chat history for the current user/session.
+    Returns messages in chronological order for rendering in UI.
+    """
+    if request.method != "GET":
+        return JsonResponse({"error": "Only GET allowed"}, status=405)
+
+    try:
+        # Get session ID from cookies
+        session_id = request.COOKIES.get('chat_session_id', '')
+        
+        # Query messages
+        if request.user.is_authenticated:
+            # Authenticated users: get their personal messages
+            messages_qs = ChatMessage.objects.filter(
+                user=request.user
+            ).order_by('created_at')
+        elif session_id:
+            # Guest users: get messages by session ID
+            messages_qs = ChatMessage.objects.filter(
+                session_id=session_id,
+                user__isnull=True
+            ).order_by('created_at')
+        else:
+            # No session: return empty history
+            return JsonResponse({"messages": [], "session_id": session_id})
+        
+        # Serialize messages
+        messages_data = []
+        for msg in messages_qs:
+            messages_data.append({
+                'role': msg.role,
+                'text': msg.text,
+                'created_at': msg.created_at.isoformat(),
+                'language_code': msg.language_code
+            })
+        
+        return JsonResponse({
+            "messages": messages_data,
+            "session_id": session_id,
+            "count": len(messages_data)
+        })
+    
+    except Exception as e:
+        print(f"Error in get_chat_history: {e}")
+        return JsonResponse({"error": "Failed to retrieve history", "details": str(e)}, status=500)
+
+
+@csrf_exempt
+def init_chat_session(request):
+    """
+    Initializes a new chat session for unauthenticated users.
+    Returns session ID to be stored in browser cookies.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+    
+    try:
+        session_id = str(uuid.uuid4())
+        response = JsonResponse({
+            "session_id": session_id,
+            "user_authenticated": request.user.is_authenticated
+        })
+        response.set_cookie('chat_session_id', session_id, max_age=30*24*60*60)  # 30 days
+        return response
+    
+    except Exception as e:
+        print(f"Error in init_chat_session: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 def tug_of_war_game(request):
     return render(request, 'aiapp/tug_of_war.html')

@@ -151,3 +151,55 @@ class StudentAnswer(models.Model):
 
     def __str__(self):
         return f'{self.student.username} answered {self.question.text[:20]}...'
+
+
+class ChatMessage(models.Model):
+    """
+    Stores persistent chat messages between users and the AI.
+    Enables chat history to survive browser refreshes and tab closures.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='chat_messages',
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="The user who sent the message (null for anonymous/guest sessions)"
+    )
+    session_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        default='',
+        help_text="Browser session identifier for tracking guest conversations"
+    )
+    role = models.CharField(
+        max_length=50,
+        choices=[('user', 'User'), ('model', 'AI Model')],
+        db_index=True,
+        help_text="Who sent the message: 'user' or 'model'"
+    )
+    text = models.TextField(
+        help_text="The full text content of the message (can include markdown)"
+    )
+    language_code = models.CharField(
+        max_length=10,
+        default='en',
+        help_text="Language code for the message (e.g., 'en', 'sw', 'ha')"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="When the message was created"
+    )
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['session_id', 'created_at']),
+        ]
+
+    def __str__(self):
+        user_or_session = self.user.username if self.user else f"Session:{self.session_id[:8]}"
+        return f"{user_or_session} ({self.role}): {self.text[:50]}..."
