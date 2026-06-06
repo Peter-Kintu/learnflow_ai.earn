@@ -196,8 +196,11 @@
     .chat-message.user .content { background: var(--accent); color: white; }
     .chat-message strong { display: block; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem; font-weight: 700; }
     .chat-message.user strong { color: rgba(255,255,255,0.9); }
-    .chat-message p { color: currentColor; white-space: pre-line; word-wrap: break-word; margin: 0 0 1rem; }
+    .chat-message p { color: currentColor; white-space: normal; word-wrap: break-word; margin: 0 0 1.2rem; line-height: 1.8; font-size: 0.95rem; }
     .chat-message p:last-child { margin-bottom: 0; }
+    .chat-message h1, .chat-message h2, .chat-message h3 { margin: 1.5rem 0 0.8rem 0; font-size: 1rem; font-weight: 700; }
+    .chat-message ul, .chat-message ol { margin: 0.8rem 0 0.8rem 1.5rem; }
+    .chat-message li { margin-bottom: 0.5rem; line-height: 1.7; }
     .chat-message .message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.85rem; }
     .ai-action-button {
         border: 1px solid rgba(79, 70, 229, 0.16);
@@ -718,26 +721,28 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         let cleaned = text;
 
         // 1. Remove link/citation brackets and their content
-        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content content inside brackets, remove brackets themselves (e.g. for [text](link))
+        cleaned = cleaned.replace(/\[(.*?)\]/g, '$1'); // Keep content inside brackets, remove brackets themselves
 
-        // 2. Remove common markdown bold/italic/strikethrough symbols (**, *, __, _, ~~).
+        // 2. Remove common markdown bold/italic/strikethrough symbols (**, *, __, _, ~~)
         cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Removes ** and __ for bold/strong
         cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2'); // Removes * and _ for italics/emphasis
         cleaned = cleaned.replace(/~~(.*?)~~/g, '$1'); // Removes ~~ for strikethrough
 
-        // 3. Remove list markers, headings, and specific disruptive punctuation (like " and lone *)
-        cleaned = cleaned.replace(/^\s*[-*]+\s+/gm, ''); // Removes list markers: -, *, --, etc. at the start of a line
-        cleaned = cleaned.replace(/#+\s*/g, ''); // Removes heading symbols (e.g., #, ##, ###)
-        cleaned = cleaned.replace(/"/g, ''); // Remove all double quotes (user requested)
+        // 3. Remove list markers, headings, and specific disruptive punctuation
+        cleaned = cleaned.replace(/^\s*[-*+]+\s+/gm, ''); // Removes list markers at the start of lines
+        cleaned = cleaned.replace(/#+\s*/g, ''); // Removes heading symbols
+        cleaned = cleaned.replace(/"/g, ''); // Remove all double quotes
+        cleaned = cleaned.replace(/`/g, ''); // Remove backticks
         cleaned = cleaned.replace(/---/g, ' '); // Remove triple dashes (horizontal rule)
-        cleaned = cleaned.replace(/--/g, ' '); // Remove double dashes (en/em dashes)
-        cleaned = cleaned.replace(/-/g, ' '); // Remove remaining single hyphens (user requested, replace with space)
+        cleaned = cleaned.replace(/--/g, ' '); // Remove double dashes
+        cleaned = cleaned.replace(/([^a-zA-Z0-9])\s*-\s*([^a-zA-Z0-9])/g, ' '); // Remove standalone dashes
+        cleaned = cleaned.replace(/[>≥≤<«»]/g, ' '); // Remove comparison/bracket symbols
 
         // 4. Clean up excessive whitespace that might result from removals
         cleaned = cleaned.replace(/\s\s+/g, ' '); // Replace multiple spaces with a single space
         
         // 5. Specifically remove code blocks entirely for speech synthesis
-        cleaned = cleaned.replace(/```.*?```/gs, ' Code block output is not spoken. ');
+        cleaned = cleaned.replace(/```.*?```/gs, ' '); // Remove code blocks
 
         return cleaned.trim(); // Trim leading/trailing whitespace
     }
@@ -751,19 +756,41 @@ Please proceed with your location-based query (e.g., "What is the weather like h
     function formatAiResponseHtml(text) {
         if (!text) return '';
 
+        // First, clean up the text for better formatting
+        let cleaned = text.trim();
+        
+        // Remove excessive special characters while preserving readability
+        cleaned = cleaned.replace(/([^\s]{80,})/g, '$1 '); // Add space after long words
+        cleaned = cleaned.replace(/\n{3,}/g, '\n\n'); // Limit consecutive newlines
+        
         const renderer = {
             html(rawHtml) {
                 return escapeHtml(rawHtml);
+            },
+            paragraph(token) {
+                return `<p>${token.text}</p>`;
             }
         };
 
-        return marked.parse(text.trim(), {
+        let html = marked.parse(cleaned, {
             gfm: true,
             breaks: true,
             headerIds: false,
             mangle: false,
             renderer
         });
+        
+        // Post-process: Remove extra symbols and improve spacing
+        html = html.replace(/(<p>)(.*?)(<\/p>)/g, function(match, p1, content, p3) {
+            // Remove leading/trailing symbols from paragraph content
+            content = content.replace(/^[\s*\-•]+/, '').replace(/[\s*\-•]+$/, '');
+            return p1 + content + p3;
+        });
+        
+        // Ensure proper spacing between elements
+        html = html.replace(/<\/p>(?!<\/div>)/g, '</p>');
+        
+        return html;
     }
 
     // ## NEW FUNCTION: Simple Language Guessing for TTS (Crucial Update!) ##

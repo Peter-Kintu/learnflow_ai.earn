@@ -242,12 +242,83 @@
     let activeCallId = null;
     let liveMessages = [];
     let chatMessages = [];
+    
+    // Web Audio API setup for PCM16 audio playback
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    let audioQueue = [];
+    let isPlayingAudio = false;
 
     function setStatus(connected) {
         D.statusDot.className = connected 
             ? 'h-2 w-2 rounded-full bg-accent-cyan animate-pulse' 
             : 'h-2 w-2 rounded-full bg-gray-500';
         D.statusText.textContent = connected ? 'Connected' : 'Offline';
+    }
+
+    // Web Audio API: Convert base64 PCM16 to playable audio
+    function decodePCM16(base64Data) {
+        try {
+            const binaryString = window.atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Int16Array(len / 2);
+            
+            for (let i = 0; i < len; i += 2) {
+                bytes[i / 2] = (binaryString.charCodeAt(i + 1) << 8) | binaryString.charCodeAt(i);
+            }
+            
+            // Convert 16-bit PCM integers to Float32 for Web Audio API
+            const float32Data = new Float32Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) {
+                float32Data[i] = bytes[i] / 32768.0;
+            }
+            
+            return float32Data;
+        } catch (err) {
+            console.error('Error decoding PCM16 audio:', err);
+            return null;
+        }
+    }
+
+    // Queue and play audio chunks sequentially to avoid overlapping
+    function queueAudioChunk(float32Data) {
+        if (!float32Data) return;
+        audioQueue.push(float32Data);
+        processAudioQueue();
+    }
+
+    function processAudioQueue() {
+        if (isPlayingAudio || audioQueue.length === 0) return;
+        
+        isPlayingAudio = true;
+        const float32Data = audioQueue.shift();
+        
+        try {
+            const buffer = audioContext.createBuffer(1, float32Data.length, 16000);
+            buffer.getChannelData(0).set(float32Data);
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            
+            source.onended = () => {
+                isPlayingAudio = false;
+                processAudioQueue(); // Process next in queue
+            };
+            
+            source.start(0);
+        } catch (err) {
+            console.error('Error playing audio chunk:', err);
+            isPlayingAudio = false;
+            processAudioQueue();
+        }
+    }
+
+    // Play PCM16 audio chunk from base64-encoded data
+    function playAudioChunk(base64Data) {
+        const float32Data = decodePCM16(base64Data);
+        if (float32Data) {
+            queueAudioChunk(float32Data);
+        }
     }
 
     function addLiveNote(text, meta = {}) {
@@ -364,9 +435,10 @@
         card.className = 'live-card rounded-xl p-3 md:p-4 cursor-pointer';
         card.innerHTML = `
             <div class="flex gap-3 md:gap-4 sm:flex-row flex-col">
-                <div class="flex-shrink-0 w-full sm:w-28 h-44 sm:h-40 rounded-3xl bg-gradient-to-br from-accent-cyan/15 to-accent-purple/15 flex items-end justify-between p-3 relative overflow-hidden">
-                    <div class="live-pill">LIVE</div>
-                    <div class="text-xs text-white/90 backdrop-blur-sm bg-black/40 rounded-full px-2 py-1">${call.participants} viewers</div>
+                <div class="flex-shrink-0 w-full sm:w-28 h-44 sm:h-40 rounded-3xl bg-black relative overflow-hidden">
+                    <video id="remote-video-${call.id}" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                    <div class="live-pill absolute top-3 left-3 z-10">LIVE</div>
+                    <div class="text-xs text-white/90 absolute bottom-3 right-3 backdrop-blur-sm bg-black/40 rounded-full px-2 py-1 z-10">${call.participants} viewers</div>
                 </div>
 
                 <div class="flex-1 min-w-0 flex flex-col justify-between">
@@ -604,6 +676,22 @@
                         liveCalls = liveCalls.map(call => call.id === updatedCall.id ? updatedCall : call);
                         renderFeed();
                         addLiveNote(`You joined ${updatedCall.title}. Viewers: ${updatedCall.participants}`);
+                        return;
+                    }
+
+                    // NEW: Handle incoming audio chunks from Gemini/Host
+                    if (payload.type === 'audio_chunk' && payload.data) {
+                        playAudioChunk(payload.data);
+                        return;
+                    }
+
+                    // NEW: Handle incoming video stream data (for future WebRTC integration)
+                    if (payload.type === 'video_frame' && activeCallId) {
+                        const videoElement = document.getElementById(`remote-video-${activeCallId}`);
+                        if (videoElement && payload.data) {
+                            // Video frame handling with WebRTC will be implemented next
+                            console.log('Video frame received (WebRTC integration pending)');
+                        }
                         return;
                     }
 
