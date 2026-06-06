@@ -96,8 +96,6 @@ INSTALLED_APPS = [
     'jazzmin', # Keep Jazzmin just above admin
     'channels',
     'daphne',
-    'channels',
-    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
