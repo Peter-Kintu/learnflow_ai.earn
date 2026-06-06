@@ -408,7 +408,7 @@
             <div class="input-wrapper">
                 <div class="composer">
                     <button id="recordButton" type="button" onclick="toggleRecording()" class="action-icon-button" title="Start Recording">🎤</button>
-                    <textarea id="chatInput" placeholder="Ask Nakintu anything..." rows="1" onkeydown="handleKeydown(event)"></textarea>
+                    <textarea id="chatInput" placeholder="Ask Nakintu anything..." rows="1"></textarea>
                     <select id="languageSelector" class="language-selector" aria-label="Choose language">
                         <option value="auto" selected>Auto</option>
                         <option value="en">English</option>
@@ -420,7 +420,7 @@
                         <option value="es">Spanish</option>
                         <option value="ar">Arabic</option>
                     </select>
-                    <button type="button" onclick="typeQuery()" class="action-icon-button" id="sendChatButton" title="Send Message">➤</button>
+                    <button type="button" class="action-icon-button" id="sendChatButton" title="Send Message">➤</button>
                 </div>
             </div>
         </main>

@@ -435,14 +435,9 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
     if not api_key:
         raise RuntimeError('Gemini API key is missing.')
 
-    # Build Gemini-compatible request (filter out non-Gemini fields)
-    gemini_body = {
-        'contents': body.get('contents', []),
-    }
-    if 'systemInstruction' in body:
-        gemini_body['systemInstruction'] = body['systemInstruction']
-    if 'config' in body:
-        gemini_body['generationConfig'] = body['config']
+    prompt_text = create_prompt_from_contents(body.get('contents', []), body.get('systemInstruction', ''))
+    if not prompt_text:
+        raise RuntimeError('No valid prompt could be built for Gemini API.')
 
     if api_key.startswith('AIza'):
         headers = {'Content-Type': 'application/json'}
@@ -460,12 +455,29 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
             f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateText',
         ]
 
+    max_output_tokens = int(body.get('config', {}).get('maxOutputTokens', 1024))
     last_exc = None
+
     for url in candidate_urls:
         attempt = 0
         while attempt < max_retries:
             try:
-                response = requests.post(url, json=gemini_body, headers=headers, timeout=(5, timeout))
+                parsed_url = urlparse(url)
+                if parsed_url.path.endswith(':generateContent'):
+                    request_payload = {
+                        'temperature': float(body.get('config', {}).get('temperature', 0.7)),
+                        'maxOutputTokens': max_output_tokens,
+                        'candidateCount': 1,
+                        'contents': [{'type': 'text', 'text': prompt_text}],
+                    }
+                else:
+                    request_payload = {
+                        'input': prompt_text,
+                        'temperature': float(body.get('config', {}).get('temperature', 0.7)),
+                        'maxOutputTokens': max_output_tokens,
+                    }
+
+                response = requests.post(url, json=request_payload, headers=headers, timeout=(5, timeout))
                 if response.status_code == 429:
                     attempt += 1
                     if attempt >= max_retries:
