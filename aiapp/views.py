@@ -967,7 +967,7 @@ def get_chat_history(request):
         messages_data = []
         for msg in messages_qs:
             messages_data.append({
-                'role': msg.role,
+                'role': 'ai' if msg.role == 'model' else msg.role,
                 'text': msg.text,
                 'created_at': msg.created_at.isoformat(),
                 'language_code': msg.language_code

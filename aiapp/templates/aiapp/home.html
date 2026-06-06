@@ -199,6 +199,11 @@
     .chat-message p { color: currentColor; white-space: normal; word-wrap: break-word; margin: 0 0 1.2rem; line-height: 1.8; font-size: 0.95rem; }
     .chat-message p:last-child { margin-bottom: 0; }
     .chat-message h1, .chat-message h2, .chat-message h3 { margin: 1.5rem 0 0.8rem 0; font-size: 1rem; font-weight: 700; }
+    .chat-message table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    .chat-message th, .chat-message td { border: 1px solid #e2e8f0; padding: 0.85rem; text-align: left; }
+    .chat-message thead th { background: #eef2ff; }
+    .chat-message code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .chat-message pre { background: #f1f5f9; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
     .chat-message ul, .chat-message ol { margin: 0.8rem 0 0.8rem 1.5rem; }
     .chat-message li { margin-bottom: 0.5rem; line-height: 1.7; }
     .chat-message .message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.85rem; }
@@ -757,15 +762,21 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         if (!text) return '';
 
         try {
+            // Normalize line endings and trim whitespace
+            const normalizedText = text.replace(/\r\n/g, '\n').trim();
+
             // Use marked.js to parse markdown to HTML
-            // This handles: **bold**, *italic*, # headings, - lists, | tables |, code blocks, etc.
-            let html = marked.parse(text, {
-                breaks: true,           // Convert \n to <br>
-                gfm: true,             // GitHub Flavored Markdown (tables, strikethrough)
-                mangle: false          // Don't mangle @mentions
+            // Handles headings, bold/italic, lists, tables, code blocks, etc.
+            let html = marked.parse(normalizedText, {
+                breaks: true,
+                gfm: true,
+                headerIds: false,
+                smartLists: true,
+                smartypants: true,
+                mangle: false
             });
             
-            // Add CSS classes for better styling of parsed elements
+            // Add inline styling for common markdown output elements
             html = html.replace(/<table>/g, '<table style="border-collapse: collapse; width: 100%; margin: 10px 0;">');
             html = html.replace(/<th>/g, '<th style="border: 1px solid #e2e8f0; padding: 8px; background: #eef2ff; font-weight: 700;">');
             html = html.replace(/<td>/g, '<td style="border: 1px solid #e2e8f0; padding: 8px;">');
@@ -777,11 +788,10 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             html = html.replace(/<ul>/g, '<ul style="margin: 10px 0; padding-left: 20px;">');
             html = html.replace(/<ol>/g, '<ol style="margin: 10px 0; padding-left: 20px;">');
             html = html.replace(/<li>/g, '<li style="margin: 4px 0;">');
-            
+
             return html;
         } catch (error) {
             console.error('Error parsing markdown:', error);
-            // Fallback to plain text if markdown parsing fails
             return `<p>${escapeHtml(text)}</p>`;
         }
     }
@@ -970,14 +980,15 @@ Please proceed with your location-based query (e.g., "What is the weather like h
 
     // ## Chat UI Functions ##
     function appendMessage(sender, text, isError = false, positiveFeedback = false) {
+        const normalizedSender = sender === 'model' ? 'ai' : sender;
         const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${sender} ${isError ? 'error' : ''}`;
+        messageDiv.className = `chat-message ${normalizedSender} ${isError ? 'error' : ''}`;
         messageDiv.dataset.positiveFeedback = positiveFeedback ? 'true' : 'false';
 
-        const avatarIcon = sender === 'ai' ? '🎓' : '👤';
-        const profileLabel = sender === 'ai' ? 'Nakintu AI' : 'You';
+        const avatarIcon = normalizedSender === 'ai' ? '🎓' : '👤';
+        const profileLabel = normalizedSender === 'ai' ? 'Nakintu AI' : 'You';
 
-        const actionButtons = sender === 'ai' ? `
+        const actionButtons = normalizedSender === 'ai' ? `
             <div class="message-actions">
                 <button type="button" class="ai-action-button copy-button">Copy</button>
                 <button type="button" class="ai-action-button positive-button">Helpful</button>
@@ -1031,7 +1042,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
             }
         }
 
-        if (sender === 'ai') {
+        if (normalizedSender === 'ai') {
             // For AI messages: render markdown as HTML immediately (no typewriter)
             contentDiv.innerHTML = formatAiResponseHtml(text);
             saveChatHistory();
@@ -1344,7 +1355,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                 if (!chatLog) return;
                 chatLog.innerHTML = ''; // Clear initial state
                 
-                const messages = data.messages || [];
+                        const messages = data.messages || [];
                 
                 if (messages.length === 0) {
                     // Show welcome message if no history
@@ -1362,7 +1373,7 @@ Please proceed with your location-based query (e.g., "What is the weather like h
                 
                 // Render all messages from database
                 messages.forEach(msg => {
-                    appendMessage(msg.role, msg.text, false, false);
+                    appendMessage(msg.role === 'model' ? 'ai' : msg.role, msg.text, false, false);
                 });
                 
                 chatLog.scrollTop = chatLog.scrollHeight;
@@ -1394,7 +1405,8 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         }
 
         history.forEach(item => {
-            appendMessage(item.role, item.text, false, item.positiveFeedback || false);
+            const normalizedRole = item.role === 'model' ? 'ai' : item.role;
+            appendMessage(normalizedRole, item.text, false, item.positiveFeedback || false);
         });
     }
 
