@@ -487,10 +487,10 @@ function generateResearchLinks(query, fullContext) {
 // Use the same proxy endpoint as your other script
 
 async function fetchAiContent(prompt, keyRole, model) {
-  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Use clean paragraph-based Markdown with professional tone and no bold formatting unless absolutely necessary. Avoid headings and lists unless the user explicitly asks for them. Keep the output readable, focused, and well organized.";
+  const systemInstructionText = "You are a senior educational AI assistant. Provide a professional, well-structured lesson in clear paragraph form. The lesson section must be exactly 4 paragraphs, each separated by one blank line. Use plain text only, with no bold formatting, no headings in the lesson section, and no bullet lists. After the lesson, present 7 quiz questions separated by blank lines. Write in a polished, readable style like a senior software designer preparing a study note.";
 
   const contents = [
-    { role: "user", parts: [{ text: systemInstructionText }] },
+    { role: "system", parts: [{ text: systemInstructionText }] },
     { role: "user", parts: [{ text: prompt }] }
   ];
 
@@ -609,24 +609,22 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     quizModal.classList.remove('hidden');
 
     // Create a detailed prompt with enhanced formatting requirements
-    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a world-class, beautifully organized lesson plan and a comprehensive quiz.
+    const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a world-class, polished lesson and quiz.
 
-LESSON FORMATTING REQUIREMENTS:
-1. Write exactly 4 well-developed paragraphs for the lesson content: (1) Introduction, (2) Core Explanation, (3) Real-world Example/Application, (4) Summary & Key Takeaways.
-2. Separate each paragraph with a blank line (double newline) for maximum readability.
-3. Each paragraph should have 3-5 sentences with clear, flowing logic.
-4. Use short, simple sentences (10-15 words per sentence).
-5. Do NOT use bullet points, numbered lists, headings, or bold text in the lesson section.
-6. Avoid icons, emojis, or decorative text in the lesson section.
-7. Keep the lesson content professional, polished, and tightly organized.
+LESSON FORMAT:
+1. Produce exactly 4 well-developed paragraphs only.
+2. Each paragraph must be separated by a single blank line.
+3. Paragraph 1 should introduce the topic. Paragraph 2 should explain the core concept. Paragraph 3 should provide one practical example. Paragraph 4 should summarize the key takeaways.
+4. Use 3-5 sentences per paragraph, with concise, modern, professional language.
+5. Do NOT use bold text, headings, bullet points, numbered lists, emojis, or decorative formatting in the lesson section.
+6. Keep the lesson highly readable and organized like senior-level technical documentation.
 
-QUIZ FORMATTING REQUIREMENTS:
-1. Generate exactly 7 questions (mix of multiple-choice, fill-in-the-blank, and true/false).
-2. Do NOT include answers or an answer key.
-3. Number each question clearly.
-4. Separate each question with a blank line.
+QUIZ FORMAT:
+1. After the lesson, provide exactly 7 quiz questions.
+2. Use only numbered questions (1-7), each separated by one blank line.
+3. Do NOT include answers, an answer key, or extra commentary.
 
-Respond ONLY in high-quality Markdown with clear paragraph breaks and in the language with code ${lang}. No introduction or conclusion text - start directly with content.`;
+Respond only with the lesson and quiz content in the language with code ${lang}. Do not add any extra introductions, titles, or conclusions.`;
     
     try {
         // 2. Fetch detailed content from AI using the updated lesson prompt.
