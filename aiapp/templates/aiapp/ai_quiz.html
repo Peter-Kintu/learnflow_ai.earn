@@ -487,7 +487,7 @@ function generateResearchLinks(query, fullContext) {
 // Use the same proxy endpoint as your other script
 
 async function fetchAiContent(prompt, keyRole, model) {
-  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language, using clean Markdown and best-in-the-world lesson quality. Write a beautifully organized, readable lesson with well-formed paragraphs and minimal bold formatting. Do not use bold text for every sentence. Only use bold for section headings if necessary.";
+  const systemInstructionText = "You are a world-class educational AI, specializing in creating personalized, structured learning content. Respond strictly in the requested language. Use clean paragraph-based Markdown with professional tone and no bold formatting unless absolutely necessary. Avoid headings and lists unless the user explicitly asks for them. Keep the output readable, focused, and well organized.";
 
   const contents = [
     { role: "user", parts: [{ text: systemInstructionText }] },
@@ -611,20 +611,20 @@ async function loadDetailedLesson(stepIndex, stepText, lang) {
     // Create a detailed prompt with enhanced formatting requirements
     const prompt = `Based on this learning context: [${fullContext}], and focusing specifically on the module: "${stepText}", generate a world-class, beautifully organized lesson plan and a comprehensive quiz.
 
-**LESSON FORMATTING REQUIREMENTS:**
-1. Write exactly 4 well-developed paragraphs for the lesson content: (1) Introduction, (2) Core Explanation, (3) Real-world Example/Application, (4) Summary & Key Takeaways
-2. CRITICAL: Separate each paragraph with a blank line (double newline) for maximum readability
-3. Each paragraph should have 3-5 sentences with clear, flowing logic
-4. Use short, simple sentences (10-15 words per sentence)
-5. Do NOT use bullet points or lists in the lesson section
-6. Do NOT make text bold - use plain text only
-7. Focus on clarity and educational excellence
+LESSON FORMATTING REQUIREMENTS:
+1. Write exactly 4 well-developed paragraphs for the lesson content: (1) Introduction, (2) Core Explanation, (3) Real-world Example/Application, (4) Summary & Key Takeaways.
+2. Separate each paragraph with a blank line (double newline) for maximum readability.
+3. Each paragraph should have 3-5 sentences with clear, flowing logic.
+4. Use short, simple sentences (10-15 words per sentence).
+5. Do NOT use bullet points, numbered lists, headings, or bold text in the lesson section.
+6. Avoid icons, emojis, or decorative text in the lesson section.
+7. Keep the lesson content professional, polished, and tightly organized.
 
-**QUIZ FORMATTING REQUIREMENTS:**
-1. Generate exactly 7 questions (mix of multiple-choice, fill-in-the-blank, and true/false)
-2. Do NOT include answers or an answer key
-3. Number each question clearly
-4. Separate each question with a blank line
+QUIZ FORMATTING REQUIREMENTS:
+1. Generate exactly 7 questions (mix of multiple-choice, fill-in-the-blank, and true/false).
+2. Do NOT include answers or an answer key.
+3. Number each question clearly.
+4. Separate each question with a blank line.
 
 Respond ONLY in high-quality Markdown with clear paragraph breaks and in the language with code ${lang}. No introduction or conclusion text - start directly with content.`;
     
