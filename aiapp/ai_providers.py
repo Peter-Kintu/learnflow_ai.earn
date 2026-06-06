@@ -463,19 +463,19 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
         while attempt < max_retries:
             try:
                 parsed_url = urlparse(url)
-                if parsed_url.path.endswith(':generateContent'):
-                    request_payload = {
+                # Use the Generative Language "TextPrompt" style with a `prompt.parts` array
+                # This avoids sending unknown top-level fields like `contents`/`input`
+                base_prompt = {'prompt': {'parts': [{'text': prompt_text}]}}
+                request_payload = dict(base_prompt)
+
+                # Some endpoints (OAuth/Bearer) accept generation params; API-key endpoints may reject them.
+                # Attach optional generation params only for non-API-key (Bearer) requests to reduce 400s.
+                if not api_key.startswith('AIza'):
+                    request_payload.update({
                         'temperature': float(body.get('config', {}).get('temperature', 0.7)),
                         'maxOutputTokens': max_output_tokens,
                         'candidateCount': 1,
-                        'contents': [{'type': 'text', 'text': prompt_text}],
-                    }
-                else:
-                    request_payload = {
-                        'input': prompt_text,
-                        'temperature': float(body.get('config', {}).get('temperature', 0.7)),
-                        'maxOutputTokens': max_output_tokens,
-                    }
+                    })
 
                 response = requests.post(url, json=request_payload, headers=headers, timeout=(5, timeout))
                 if response.status_code == 429:
