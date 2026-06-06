@@ -66,20 +66,45 @@ class RoomGeminiSession:
     async def _stream_with_gemini(self):
         """Manage the Gemini Live stream for this room."""
         try:
-            async with self.client.aio.live.connect(model='gemini-3.1-flash-live-preview', config=self.config) as session:
-                self.session = session
-                logger.debug('RoomGeminiSession started for call_id: %s', self.call_id)
+            # Determine the best available model
+            # Fallback order: gemini-2.0-flash-exp (experimental) → gemini-2.0-flash (stable) → gemini-1.5-flash
+            available_models = [
+                'gemini-2.0-flash-exp',      # Latest experimental
+                'gemini-2.0-flash',          # Latest stable
+                'gemini-1.5-flash',          # Previous generation
+            ]
+            
+            selected_model = None
+            for model_name in available_models:
+                try:
+                    # Try to connect with this model
+                    logger.info('Attempting to connect to Gemini model: %s', model_name)
+                    async with self.client.aio.live.connect(model=model_name, config=self.config) as session:
+                        self.session = session
+                        selected_model = model_name
+                        logger.info('✓ Successfully connected to Gemini Live model: %s', selected_model)
+                        break
+                except Exception as e:
+                    logger.warning('Failed to connect to model %s: %s', model_name, str(e)[:100])
+                    continue
+            
+            if not selected_model:
+                raise Exception('All Gemini Live models failed. Check API key and quota.')
+            
+            logger.debug('RoomGeminiSession started for call_id: %s (model: %s)', self.call_id, selected_model)
                 
-                async for response in session.receive():
-                    server_content = getattr(response, 'server_content', None)
-                    if server_content is not None:
-                        model_turn = getattr(server_content, 'model_turn', None)
-                        if model_turn is not None:
-                            for part in model_turn.parts:
-                                if getattr(part, 'inline_data', None) is not None:
-                                    # Broadcast audio response to all users in this room
+            async for response in session.receive():
+                server_content = getattr(response, 'server_content', None)
+                if server_content is not None:
+                    model_turn = getattr(server_content, 'model_turn', None)
+                    if model_turn is not None:
+                        for part in model_turn.parts:
+                            if getattr(part, 'inline_data', None) is not None:
+                                # Broadcast audio response to all users in this room
+                                try:
                                     encoded_audio = base64.b64encode(part.inline_data.data).decode('ascii')
-                                    logger.debug('Broadcasting audio chunk from Gemini to call_id: %s', self.call_id)
+                                    logger.debug('Broadcasting audio chunk from Gemini to call_id: %s (%d bytes)', 
+                                              self.call_id, len(encoded_audio))
                                     # Use channel layer to broadcast to all in the room
                                     from channels.layers import get_channel_layer
                                     channel_layer = get_channel_layer()
@@ -92,29 +117,34 @@ class RoomGeminiSession:
                                             'encoding': 'pcm16'
                                         }
                                     )
+                                except Exception as broadcast_err:
+                                    logger.error('Failed to broadcast audio: %s', broadcast_err)
                     
                     # Handle tool calls (e.g., show_demonstration_card)
                     if getattr(response, 'tool_call', None) is not None:
                         for call in response.tool_call.function_calls:
                             if call.name == 'show_demonstration_card':
                                 logger.debug('RoomGeminiSession tool_call: %s', call.name)
-                                from channels.layers import get_channel_layer
-                                channel_layer = get_channel_layer()
-                                await channel_layer.group_send(
-                                    f'live_call_{self.call_id}',
-                                    {
-                                        'type': 'room.tool_call',
-                                        'name': call.name,
-                                        'args': call.args,
-                                    }
-                                )
-                                await session.send_tool_response(
-                                    types.LiveClientToolResponse(
-                                        function_responses=[
-                                            types.FunctionResponse(name=call.name, id=call.id, response={'status': 'rendered'})
-                                        ]
+                                try:
+                                    from channels.layers import get_channel_layer
+                                    channel_layer = get_channel_layer()
+                                    await channel_layer.group_send(
+                                        f'live_call_{self.call_id}',
+                                        {
+                                            'type': 'room.tool_call',
+                                            'name': call.name,
+                                            'args': call.args,
+                                        }
                                     )
-                                )
+                                    await session.send_tool_response(
+                                        types.LiveClientToolResponse(
+                                            function_responses=[
+                                                types.FunctionResponse(name=call.name, id=call.id, response={'status': 'rendered'})
+                                            ]
+                                        )
+                                    )
+                                except Exception as tool_err:
+                                    logger.error('Failed to handle tool call: %s', tool_err)
         except asyncio.CancelledError:
             logger.debug('RoomGeminiSession cancelled for call_id: %s', self.call_id)
         except Exception as exc:

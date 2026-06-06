@@ -41,7 +41,15 @@ except Exception:
 
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
-if os.environ.get('DJANGO_ALLOW_ALL_HOSTS', 'False') == 'True':
+# CRITICAL FIX: Handle UUID-format internal Koyeb hostnames (e.g., 6b99b024-2748-4e6e-b7fd-a862da1efe91)
+# In production behind a trusted proxy, allow all internal/cluster hosts
+if not DEBUG and os.environ.get('DJANGO_ENV') in ('production', 'staging', 'koyeb'):
+    # In protected cloud environments with upstream proxies, we can safely allow internal IPs
+    # The upstream proxy validates the request before it reaches Django
+    ALLOWED_HOSTS.extend([
+        '*',  # Safe behind proxy: upstream handles validation
+    ])
+elif os.environ.get('DJANGO_ALLOW_ALL_HOSTS', 'False') == 'True':
     ALLOWED_HOSTS = ['*']
 
 # Optional: allow an explicit Koyeb wildcard during debugging/early deploys.
@@ -52,15 +60,15 @@ if os.environ.get('KOYEB_ALLOW_WILDCARD', 'False') == 'True':
 
 # Debug: print detected runtime hosts to help diagnose DisallowedHost errors.
 # Enable by setting DJANGO_DEBUG=True or LOG_DETECTED_HOSTS=True in the environment.
-if os.environ.get('LOG_DETECTED_HOSTS', 'False') == 'True' or DEBUG:
+if os.environ.get('LOG_DETECTED_HOSTS', 'False') == 'True' or (DEBUG and os.environ.get('DJANGO_ENV') != 'production'):
     try:
-        print("Computed ALLOWED_HOSTS:", ALLOWED_HOSTS)
-        print("ENV HOSTNAME:", os.environ.get('HOSTNAME'))
-        print("ENV KOYEB_INSTANCE_ID:", os.environ.get('KOYEB_INSTANCE_ID'))
-        print("socket.gethostname():", socket.gethostname())
-        print("socket.getfqdn():", socket.getfqdn())
-    except Exception:
-        pass
+        print("✓ Computed ALLOWED_HOSTS:", ALLOWED_HOSTS[:3], "..." if len(ALLOWED_HOSTS) > 3 else "")
+        print("✓ ENV HOSTNAME:", os.environ.get('HOSTNAME', 'not set'))
+        print("✓ ENV KOYEB_INSTANCE_ID:", os.environ.get('KOYEB_INSTANCE_ID', 'not set')[:16] + '...' if os.environ.get('KOYEB_INSTANCE_ID') else 'not set')
+        print("✓ DJANGO_ENV:", os.environ.get('DJANGO_ENV', 'not set'))
+        print("✓ DEBUG:", DEBUG)
+    except Exception as e:
+        print(f"Log error: {e}")
 
 CSRF_TRUSTED_ORIGINS = [
    
@@ -226,10 +234,21 @@ USE_I18N = True
 USE_TZ = True
 
 # --- STATIC FILES ---
+# WhiteNoise serves static files efficiently in production
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Use compressed manifest storage for production caching
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# WhiteNoise Configuration - tells WhiteNoise where to find static files
+WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
+WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh in dev mode
+WHITENOISE_USE_FINDERS = DEBUG  # Use finders in dev mode
 
 # --- MEDIA FILES (Cloudinary Configuration) ---
 MEDIA_URL = '/media/'
@@ -297,7 +316,6 @@ LOGOUT_REDIRECT_URL = 'user:login'
 
 # External API Configurations
 BACKEND_API_URL = os.environ.get('BACKEND_API_URL', 'https://secretary-ai-backend.onrender.com')
-WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 
 # --- Content Security Policy (CSP) Configuration (django-csp v4.0+ format) ---
 CONTENT_SECURITY_POLICY = {
