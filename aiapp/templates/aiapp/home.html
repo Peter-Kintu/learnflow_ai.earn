@@ -1446,7 +1446,22 @@ Please proceed with your location-based query (e.g., "What is the weather like h
         initSpeechRecognition(); // Initialize recognition on page load
 
         if (sendChatButton) {
-            sendChatButton.addEventListener('click', typeQuery);
+            const triggerSend = (e) => {
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                // If input is empty, focus it and give a subtle hint instead of sending
+                if (chatInput && chatInput.value.trim() === '') {
+                    chatInput.focus();
+                    chatInput.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.12)';
+                    setTimeout(() => { chatInput.style.boxShadow = ''; }, 400);
+                    return;
+                }
+                typeQuery();
+            };
+
+            // Click for mouse, pointer/touch for mobile/touch devices
+            sendChatButton.addEventListener('click', triggerSend);
+            sendChatButton.addEventListener('pointerdown', (e) => { if (e) e.preventDefault(); triggerSend(e); });
+            sendChatButton.addEventListener('touchstart', (e) => { if (e) e.preventDefault(); triggerSend(e); }, { passive: false });
         }
         if (chatInput) {
             chatInput.addEventListener('keydown', handleKeydown);
