@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from .views import tts_proxy, gemini_proxy, get_chat_history, init_chat_session
-from aiapp.views import gemini_proxy
 
 
 

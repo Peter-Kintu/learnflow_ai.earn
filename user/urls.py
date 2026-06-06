@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
-from aiapp.views import gemini_proxy
+from aiapp.views import gemini_proxy, get_chat_history, init_chat_session
 
 app_name = "user"
 
@@ -15,6 +15,8 @@ urlpatterns = [
     # Alias for landing page
     path('landing/', views.login_request, name='landing'),
     path("api/gemini_proxy/", gemini_proxy, name="gemini_proxy"),
+    path("api/chat-history/", get_chat_history, name="get_chat_history"),
+    path("api/init-chat-session/", init_chat_session, name="init_chat_session"),
 
     # Authentication routes
     path('register/', views.register_request, name='register'),

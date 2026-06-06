@@ -495,7 +495,21 @@ def call_gemini_api(body: Dict[str, Any], model: str = 'gemini-2.5-flash', max_r
                     time.sleep(sleep_seconds)
                     continue
                 elif response.status_code >= 400:
-                    last_exc = requests.exceptions.HTTPError(f'{response.status_code} Client Error for {url}')
+                    response_text = response.text[:1024] if response.text else '<no response body>'
+                    print(f'Gemini {response.status_code} response body: {response_text}')
+                    if parsed_url.path.endswith(':generateText') and 'input' in request_payload:
+                        alt_payload = {
+                            'prompt': prompt_text,
+                            'temperature': float(body.get('config', {}).get('temperature', 0.7)),
+                            'maxOutputTokens': max_output_tokens,
+                        }
+                        print(f'Gemini generateText 400, retrying with alternate prompt payload for {url}');
+                        response = requests.post(url, json=alt_payload, headers=headers, timeout=(5, timeout))
+                        if response.ok:
+                            return extract_text_from_response_body(response.json())
+                        response_text = response.text[:1024] if response.text else '<no response body>'
+                        print(f'Gemini alternate payload failed: {response_text}')
+                    last_exc = requests.exceptions.HTTPError(f'{response.status_code} Client Error for {url}: {response_text}')
                     break
 
                 response.raise_for_status()

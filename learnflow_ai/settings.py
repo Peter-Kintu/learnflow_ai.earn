@@ -246,7 +246,7 @@ else:
 # WhiteNoise Configuration - tells WhiteNoise where to find static files
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'public')
 WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh in dev mode
-WHITENOISE_USE_FINDERS = DEBUG  # Use finders in dev mode
+WHITENOISE_USE_FINDERS = True  # Always use finders so static files in /static/ are available without requiring collectstatic on every deploy
 
 # --- MEDIA FILES (Cloudinary Configuration) ---
 MEDIA_URL = '/media/'

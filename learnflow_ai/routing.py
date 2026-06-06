@@ -1,7 +1,8 @@
-from django.urls import path, re_path
+from django.urls import path
 
 from .consumers import LiveTeacherConsumer
 
 websocket_urlpatterns = [
-    re_path(r'^ws/live-teacher/?$', LiveTeacherConsumer.as_asgi()),
+    path('ws/live-teacher/', LiveTeacherConsumer.as_asgi()),
+    path('ws/live-teacher', LiveTeacherConsumer.as_asgi()),
 ]
